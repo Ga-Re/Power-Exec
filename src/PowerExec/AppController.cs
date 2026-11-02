@@ -46,18 +46,22 @@ public sealed class AppController : IDisposable
         Repository.Changed += (_, _) =>
         {
             UpdateKnownFiles();
+            _ = MaintainPathsAsync();
             Panel.Rebuild();
         };
 
         _panelWindow = new PanelWindow(this);
         CreateTriggers();
 
+        StartFullscreenWatch();
         _hotkey = new HotkeyService();
         _hotkey.Pressed += (_, _) => ShowPanelFromHotkey();
         var hotkeyError = _hotkey.Register(Settings.Hotkey);
 
         _tray = new TrayIcon(this);
 
+        AppLog.Info($"Power-Exec {UpdateService.CurrentVersionText} gestartet ({Settings.Folders.Count} Ordner)");
+        Repository.LoadCache();
         Repository.SetupWatchers();
         _ = Repository.ScanAsync();
         AutostartService.Apply(Settings.StartWithWindows);
@@ -129,6 +133,51 @@ public sealed class AppController : IDisposable
 
     internal IEnumerable<EdgeTriggerWindow> Triggers => _triggers;
 
+    private System.Windows.Threading.DispatcherTimer? _fullscreenTimer;
+
+    /// <summary>Prüft jede Sekunde, ob das Vordergrundfenster einen Monitor vollständig bedeckt.</summary>
+    private void StartFullscreenWatch()
+    {
+        _fullscreenTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _fullscreenTimer.Tick -= OnFullscreenTick;
+        _fullscreenTimer.Tick += OnFullscreenTick;
+        _fullscreenTimer.Start();
+    }
+
+    private void OnFullscreenTick(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (!Settings.HideHotZoneInFullscreen)
+            {
+                foreach (var t in _triggers) t.SetSuspended(false);
+                return;
+            }
+            var hwnd = Interop.NativeMethods.GetForegroundWindow();
+            System.Drawing.Rectangle? rect = null;
+            string cls = string.Empty;
+            if (hwnd != IntPtr.Zero && Interop.NativeMethods.IsWindowVisible(hwnd) &&
+                Interop.NativeMethods.GetWindowThreadProcessId(hwnd, out var pid) != 0 && pid != Environment.ProcessId &&
+                Interop.NativeMethods.GetWindowRect(hwnd, out var r))
+            {
+                rect = System.Drawing.Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
+                cls = Interop.NativeMethods.ClassNameOf(hwnd);
+            }
+            foreach (var t in _triggers)
+            {
+                bool full = rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, t.Monitor.Bounds, cls);
+                if (full && !_panelWindowIsOpen) t.SetSuspended(true);
+                else if (!full) t.SetSuspended(false);
+            }
+        }
+        catch
+        {
+            // Erkennung ist optional
+        }
+    }
+
+    private bool _panelWindowIsOpen => _panelWindow?.IsOpen == true;
+
     public void ShowPanelFromTrigger(MonitorInfo monitor) => _panelWindow?.ShowPanel(monitor, viaHotkey: false);
 
     public void ShowPanelFromHotkey()
@@ -185,13 +234,82 @@ public sealed class AppController : IDisposable
         foreach (var folder in Settings.Folders)
         {
             var status = Repository.FolderStatuses.FirstOrDefault(s => s.Path.Equals(folder.Path, StringComparison.OrdinalIgnoreCase));
-            if (status == null || status.Error != null) continue;
+            if (status == null || status.Error != null || status.FromCache) continue;
             var found = Repository.Items
                 .Where(i => i.RootFolder.Equals(folder.Path, StringComparison.OrdinalIgnoreCase))
                 .Select(i => FolderVisibility.RelativePath(folder, i.FullPath));
             changed |= FolderVisibility.UpdateKnown(folder, found);
         }
         if (changed) SaveSettings();
+    }
+
+    private static readonly Dictionary<string, (DateTime Written, string? Fingerprint)> FingerprintCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private static string? CachedFingerprint(string path)
+    {
+        try
+        {
+            var written = File.GetLastWriteTimeUtc(path);
+            lock (FingerprintCache)
+                if (FingerprintCache.TryGetValue(path, out var c) && c.Written == written) return c.Fingerprint;
+            var fp = PathMigration.Fingerprint(path);
+            lock (FingerprintCache) FingerprintCache[path] = (written, fp);
+            return fp;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private bool _maintaining;
+
+    /// <summary>
+    /// Nach jedem Scan: umbenannte/verschobene Dateien wiederfinden (Profile, Favorit, Sortierung übernehmen)
+    /// und Fingerabdrücke der gemerkten Dateien aktualisieren. Läuft im Hintergrund.
+    /// </summary>
+    private async Task MaintainPathsAsync()
+    {
+        if (Repository.IsScanning || _maintaining) return;
+        _maintaining = true;
+        try
+        {
+            var okRoots = Repository.FolderStatuses.Where(s => s.Error == null && !s.FromCache).Select(s => s.Path).ToList();
+            if (okRoots.Count == 0) return;
+            var existing = Repository.Items
+                .Where(i => okRoots.Any(r => r.Equals(i.RootFolder, StringComparison.OrdinalIgnoreCase)))
+                .Select(i => i.FullPath).ToList();
+            var snapshot = SettingsStore.Clone(Settings);
+            var (moves, fpChanged) = await Task.Run(() =>
+            {
+                var m = PathMigration.Migrate(snapshot, existing, okRoots, CachedFingerprint, p => { try { return new FileInfo(p).Length; } catch { return (long?)null; } });
+                var c = PathMigration.UpdateFingerprints(snapshot, existing, CachedFingerprint);
+                return (m, c);
+            });
+            if (moves.Count == 0 && !fpChanged) return;
+            foreach (var m in moves)
+            {
+                PathMigration.Apply(Settings, m);
+                AppLog.Info($"Umbenannt/verschoben erkannt: {m.OldPath} → {m.NewPath} (Profile und Favorit übernommen)");
+            }
+            Settings.Fingerprints = snapshot.Fingerprints;
+            SaveSettings();
+            if (moves.Count > 0)
+            {
+                Panel.Rebuild();
+                _tray?.ShowBalloon("Datei wiedergefunden", moves.Count == 1
+                    ? $"{Path.GetFileName(moves[0].OldPath)} heißt jetzt {Path.GetFileName(moves[0].NewPath)}. Profile und Favorit wurden übernommen."
+                    : $"{moves.Count} umbenannte oder verschobene Dateien erkannt. Profile und Favoriten wurden übernommen.");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Abgleich umbenannter Dateien fehlgeschlagen", ex);
+        }
+        finally
+        {
+            _maintaining = false;
+        }
     }
 
     /// <summary>Standardaktion im Panel: Standardprofil des Eintrags ausführen.</summary>
@@ -219,7 +337,10 @@ public sealed class AppController : IDisposable
                 return;
             }
             var request = BuildRequest(item, profile, mode, values);
+            if (!ConfirmRun(item, profile, remote ? profile.Machines.Count : 0, null)) return;
             _panelWindow?.HideAfterAction();
+            RecordRun(item, profile);
+            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name} · {(remote ? profile.Machines.Count + " Rechner" : "lokal")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             if (remote)
             {
                 MachineList.MarkUsed(Settings, profile.Machines);
@@ -238,8 +359,51 @@ public sealed class AppController : IDisposable
             return;
         }
 
+        if (!ConfirmRun(item, profile, 0, null)) return;
         _panelWindow?.HideAfterAction();
-        Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null);
+        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null))
+        {
+            RecordRun(item, profile);
+            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+        }
+    }
+
+    /// <summary>Sicherheitsabfrage, falls im Profil eingestellt.</summary>
+    public bool ConfirmRun(LaunchItem item, LaunchProfile profile, int targetCount, Window? owner)
+    {
+        if (!profile.ConfirmBeforeRun) return true;
+        var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
+        var where = targetCount > 0 ? $" auf {targetCount} {(targetCount == 1 ? "Rechner" : "Rechnern")}" : string.Empty;
+        var text = $"„{name}“ mit dem Profil „{profile.Name}“{where} wirklich ausführen?" +
+                   (profile.RunAsAdmin ? "\n\nDer Start erfolgt mit Administratorrechten." : string.Empty);
+        var result = owner != null
+            ? MessageBox.Show(owner, text, "Ausführen bestätigen", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)
+            : MessageBox.Show(text, "Ausführen bestätigen", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+        return result == MessageBoxResult.Yes;
+    }
+
+    /// <summary>Entfernt die Zonen-Kennung („aus dem Internet“) einer Datei.</summary>
+    public void UnblockItem(LaunchItem item)
+    {
+        if (WindowsMetadata.Unblock(item.FullPath))
+        {
+            AppLog.Info($"Entsperrt: {item.FullPath}");
+            Repository.Reload(item);
+            _ = Repository.ScanAsync();
+        }
+        else
+        {
+            MessageBox.Show($"{item.FileName} konnte nicht entsperrt werden (fehlende Schreibrechte?).", "Entsperren",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>Für „Zuletzt ausgeführt“ merken.</summary>
+    public void RecordRun(LaunchItem item, LaunchProfile profile)
+    {
+        RecentRunList.Add(Settings, item.FullPath, profile.IsImplicit ? "Standard" : profile.Name);
+        SaveSettings();
+        Panel.Rebuild();
     }
 
     private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
@@ -295,6 +459,20 @@ public sealed class AppController : IDisposable
         var account = cred?.Account ?? $"{Environment.UserDomainName}\\{Environment.UserName}";
         var vm = new ResultsViewModel(this, request, account);
         var w = new ResultsWindow(vm);
+        vm.Finished += () =>
+        {
+            if (!Settings.NotifyOnFinish || w.IsActive) return;
+            bool problems = vm.ErrorCount + vm.UnreachableCount > 0 || vm.RunnerError != null;
+            _tray?.ShowBalloon($"{request.Item.DisplayName} ist fertig",
+                vm.RunnerError ?? $"{vm.SuccessCount} erfolgreich · {vm.ErrorCount} Fehler · {vm.UnreachableCount} nicht erreichbar",
+                () =>
+                {
+                    if (!w.IsLoaded) return;
+                    if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+                    w.Activate();
+                },
+                warning: problems);
+        };
         w.Show();
         w.Activate();
         vm.Start(cred);

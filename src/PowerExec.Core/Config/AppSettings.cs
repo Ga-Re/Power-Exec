@@ -15,6 +15,9 @@ public enum AnimationMode { Smooth, Fast, Off }
 
 public enum ThemeMode { System, Dark, Light }
 
+/// <summary>Gruppierung im Panel.</summary>
+public enum GroupingMode { Folder, Category }
+
 public enum PsEngine { WindowsPowerShell, PowerShell7 }
 
 public enum RemoteEngineMode { WindowsPowerShell, PreferPowerShell7 }
@@ -109,9 +112,30 @@ public sealed class AppSettings
     /// <summary>Programmsymbole für EXE, Verknüpfungen und Snap-ins anzeigen.</summary>
     public bool ShowProgramIcons { get; set; } = true;
 
+    /// <summary>Hover-Zone ausblenden, solange auf dem Monitor ein Programm im Vollbild läuft.</summary>
+    public bool HideHotZoneInFullscreen { get; set; } = true;
+
+    /// <summary>Gruppen im Panel: nach Ordner oder nach eigenen Kategorien.</summary>
+    public GroupingMode Grouping { get; set; } = GroupingMode.Folder;
+
+    /// <summary>Reihenfolge der Kategorien im Panel.</summary>
+    public List<string> CategoryOrder { get; set; } = new();
+
+    /// <summary>Anzahl der Einträge in „Zuletzt ausgeführt“ (0 = Gruppe ausblenden).</summary>
+    public int RecentRunsCount { get; set; } = 5;
+
     // Panel-Zustand
     public List<string> Favorites { get; set; } = new();
     public List<string> CollapsedGroups { get; set; } = new();
+
+    /// <summary>Zuletzt ausgeführte Einträge (neueste zuerst).</summary>
+    public List<RecentRun> RecentRuns { get; set; } = new();
+
+    /// <summary>Eigene Reihenfolge je Gruppe (Drag &amp; Drop): Gruppenschlüssel → Pfade.</summary>
+    public Dictionary<string, List<string>> CustomOrder { get; set; } = new();
+
+    /// <summary>Fingerabdrücke (Größe:SHA-256) von Dateien mit Profil oder Favorit – zum Wiederfinden nach Umbenennen.</summary>
+    public Dictionary<string, string> Fingerprints { get; set; } = new();
 
     // Ausführung
     public PsEngine DefaultEngine { get; set; } = PsEngine.PowerShell7;
@@ -121,6 +145,15 @@ public sealed class AppSettings
     public bool NoExit { get; set; } = true;
     public int ThrottleLimit { get; set; } = 16;
     public int RemoteTimeoutSeconds { get; set; } = 60;
+
+    /// <summary>Remote über HTTPS (WinRM-Port 5986).</summary>
+    public bool RemoteUseSsl { get; set; }
+
+    /// <summary>Zeitlimit beim Einlesen eines Ordners (Sekunden). Danach wird der zwischengespeicherte Stand gezeigt.</summary>
+    public int ScanTimeoutSeconds { get; set; } = 10;
+
+    /// <summary>Windows-Benachrichtigung, wenn eine Remote- oder Massenausführung fertig ist.</summary>
+    public bool NotifyOnFinish { get; set; } = true;
     public string LogFolder { get; set; } = string.Empty;
     public EditorKind Editor { get; set; } = EditorKind.VSCode;
     public string EditorPath { get; set; } = string.Empty;

@@ -10,6 +10,13 @@ namespace PowerExec.Services;
 public sealed record FolderStatus(string Path, int Count, IReadOnlyList<ExcludedFile> ExcludedFiles, string? Error)
 {
     public int Excluded => ExcludedFiles.Count;
+
+    /// <summary>Dauer des Einlesens.</summary>
+    public TimeSpan Duration { get; init; }
+
+    /// <summary>Angezeigt wird der zwischengespeicherte Stand (Ordner nicht erreichbar oder Start).</summary>
+    public bool FromCache { get; init; }
+    public DateTime? CachedAtUtc { get; init; }
 }
 
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
@@ -50,6 +57,34 @@ public sealed class ItemRepository : IDisposable
         _ = ScanAsync();
     }
 
+    private readonly ScanCache _scanCache = new();
+    private Dictionary<string, CachedFolder> _cached = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Zeigt beim Start sofort den zwischengespeicherten Stand an, bis der erste Scan fertig ist.</summary>
+    public void LoadCache()
+    {
+        _cached = _scanCache.Load();
+        var items = new List<LaunchItem>();
+        var statuses = new List<FolderStatus>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var folder in _settings.Folders)
+        {
+            if (!_cached.TryGetValue(folder.Path, out var c)) continue;
+            foreach (var it in c.Items)
+                if (seen.Add(it.FullPath))
+                {
+                    items.Add(it);
+                    _cache[it.FullPath] = it;
+                }
+            statuses.Add(new FolderStatus(folder.Path, c.Items.Count, c.Excluded, null) { FromCache = true, CachedAtUtc = c.ScannedUtc });
+        }
+        if (items.Count == 0) return;
+        Items = items;
+        FolderStatuses = statuses;
+        AppLog.Info($"Zwischenspeicher geladen: {items.Count} Einträge");
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     public async Task ScanAsync()
     {
         var version = Interlocked.Increment(ref _scanVersion);
@@ -65,6 +100,8 @@ public sealed class ItemRepository : IDisposable
         LastScan = DateTime.Now;
         IsScanning = false;
         Changed?.Invoke(this, EventArgs.Empty);
+        var snapshot = _cached.Values.Where(c => settings.Folders.Any(f => f.Path.Equals(c.Path, StringComparison.OrdinalIgnoreCase))).ToList();
+        _ = Task.Run(() => _scanCache.Save(snapshot));
     }
 
     private (List<LaunchItem>, List<FolderStatus>) ScanAll(AppSettings settings)
@@ -72,20 +109,50 @@ public sealed class ItemRepository : IDisposable
         var items = new List<LaunchItem>();
         var statuses = new List<FolderStatus>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var timeout = TimeSpan.FromSeconds(Math.Max(2, settings.ScanTimeoutSeconds));
 
         foreach (var folder in settings.Folders)
         {
-            var result = FolderScanner.Scan(folder, settings);
-            statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.Excluded, result.Error));
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            // Das reine Durchsuchen bekommt ein Zeitlimit – eine nicht erreichbare Freigabe kann sonst minutenlang hängen.
+            var scanTask = Task.Run(() => FolderScanner.Scan(folder, settings));
+            ScanResult? result = scanTask.Wait(timeout) ? scanTask.Result : null;
+            string? error = result == null ? $"Keine Antwort nach {timeout.TotalSeconds:0} s" : result.Error;
+
+            if (result == null || result.Error != null)
+            {
+                sw.Stop();
+                if (_cached.TryGetValue(folder.Path, out var c) && c.Items.Count > 0)
+                {
+                    foreach (var it in c.Items)
+                        if (seen.Add(it.FullPath)) items.Add(it);
+                    statuses.Add(new FolderStatus(folder.Path, c.Items.Count, c.Excluded,
+                        $"{error} – angezeigt wird der Stand vom {c.ScannedUtc.ToLocalTime():dd.MM. HH:mm}")
+                    { Duration = sw.Elapsed, FromCache = true, CachedAtUtc = c.ScannedUtc });
+                }
+                else
+                {
+                    statuses.Add(new FolderStatus(folder.Path, 0, Array.Empty<ExcludedFile>(), error) { Duration = sw.Elapsed });
+                }
+                AppLog.Warn($"Ordner {folder.Path}: {error}");
+                continue;
+            }
 
             var loaded = new LaunchItem?[result.Files.Count];
             Parallel.For(0, result.Files.Count, new ParallelOptions { MaxDegreeOfParallelism = 4 }, i =>
             {
-                var path = result.Files[i];
-                loaded[i] = GetOrLoad(path, folder.Path);
+                loaded[i] = GetOrLoad(result.Files[i], folder.Path);
             });
-            foreach (var it in loaded)
-                if (it != null && seen.Add(it.FullPath)) items.Add(it);
+            var folderItems = loaded.Where(i => i != null).Cast<LaunchItem>().ToList();
+            foreach (var it in folderItems)
+                if (seen.Add(it.FullPath)) items.Add(it);
+            sw.Stop();
+            statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.Excluded, null) { Duration = sw.Elapsed });
+            _cached[folder.Path] = new CachedFolder
+            {
+                Path = folder.Path, ScannedUtc = DateTime.UtcNow, Items = folderItems, Excluded = result.Excluded.ToList()
+            };
+            AppLog.Info($"Ordner {folder.Path}: {result.Files.Count} Dateien, {result.ExcludedCount} per Muster ausgeschlossen, {sw.ElapsedMilliseconds} ms");
         }
 
         // Cache auf aktuelle Dateien begrenzen
@@ -103,6 +170,7 @@ public sealed class ItemRepository : IDisposable
                 string.Equals(cached.RootFolder, root, StringComparison.OrdinalIgnoreCase))
                 return cached;
             var item = _loader.Load(path, root);
+            item.ZoneId = WindowsMetadata.ReadZoneId(path);
             _cache[path] = item;
             return item;
         }
@@ -116,6 +184,7 @@ public sealed class ItemRepository : IDisposable
     public LaunchItem Reload(LaunchItem item)
     {
         var fresh = _loader.Load(item.FullPath, item.RootFolder);
+        fresh.ZoneId = WindowsMetadata.ReadZoneId(item.FullPath);
         _cache[item.FullPath] = fresh;
         return fresh;
     }

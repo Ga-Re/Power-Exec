@@ -33,6 +33,9 @@ public sealed class LaunchProfile
     /// <summary>Zusätzliche Argumente für EXE, Verknüpfungen, Batch und Snap-ins.</summary>
     public string Arguments { get; set; } = string.Empty;
 
+    /// <summary>Vor dem Start eine Sicherheitsabfrage zeigen.</summary>
+    public bool ConfirmBeforeRun { get; set; }
+
     /// <summary>true = automatisch erzeugtes Profil ohne gespeicherte Konfiguration.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsImplicit { get; set; }
@@ -50,6 +53,7 @@ public sealed class LaunchProfile
         Dialog = Dialog,
         Parameters = Parameters.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.OrdinalIgnoreCase),
         Arguments = Arguments,
+        ConfirmBeforeRun = ConfirmBeforeRun,
         IsImplicit = IsImplicit
     };
 }
@@ -60,6 +64,10 @@ public sealed class EntryConfig
     public string Path { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>Eigene Kategorie für die Gruppierung im Panel (leer = keine).</summary>
+    public string Category { get; set; } = string.Empty;
+
     public List<LaunchProfile> Profiles { get; set; } = new();
 
     public EntryConfig Clone() => new()
@@ -67,6 +75,15 @@ public sealed class EntryConfig
         Path = Path,
         DisplayName = DisplayName,
         Description = Description,
+        Category = Category,
         Profiles = Profiles.Select(p => p.Clone()).ToList()
     };
+}
+
+/// <summary>Ein Eintrag in „Zuletzt ausgeführt“.</summary>
+public sealed class RecentRun
+{
+    public string Path { get; set; } = string.Empty;
+    public string ProfileName { get; set; } = string.Empty;
+    public DateTime TimeUtc { get; set; }
 }

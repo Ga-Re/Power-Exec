@@ -4,7 +4,10 @@
 ; Dort hat Power-Exec Schreibrechte, damit spätere Updates ohne UAC-Abfrage funktionieren.
 ;
 ; Bauen (wird von .github/workflows/release.yml erledigt):
-;   ISCC.exe /DMyAppVersion=1.2.3 /DMyFileVersion=1.2.3 /DSourceDir=..\out installer\PowerExec.iss
+;   ISCC.exe /DMyAppVersion=1.2.3 /DMyFileVersion=1.2.3 /DSourceDir=..\out\app installer\PowerExec.iss
+;
+; SourceDir ist eine Ordner-Veröffentlichung (self-contained, ReadyToRun): Power-Exec startet daraus
+; ohne Entpacken in einen Temp-Ordner – schneller und ohne Ärger mit Virenscannern.
 
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
@@ -14,7 +17,7 @@
   #define MyFileVersion "0.0.0"
 #endif
 #ifndef SourceDir
-  #define SourceDir "..\out"
+  #define SourceDir "..\out\app"
 #endif
 
 #define MyAppName "Power-Exec"
@@ -38,7 +41,8 @@ VersionInfoVersion={#MyFileVersion}
 DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-DisableDirPage=auto
+; Fester Ort pro Benutzer (Schreibrechte für Updates, sicheres Aufräumen alter Dateien)
+DisableDirPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -63,8 +67,14 @@ Name: "german"; MessagesFile: "compiler:Languages\German.isl"
 Name: "desktopicon"; Description: "Verknüpfung auf dem &Desktop erstellen"; GroupDescription: "Zusätzliche Verknüpfungen:"; Flags: unchecked
 Name: "autostart"; Description: "Power-Exec mit &Windows starten"; GroupDescription: "Start:"
 
+[InstallDelete]
+; Reste älterer Versionen (andere Bibliotheksstände) entfernen. Nur Programmdateien – Einstellungen liegen in %APPDATA%.
+Type: files; Name: "{app}\*.dll"
+Type: files; Name: "{app}\*.pdb"
+Type: files; Name: "{app}\*.json"
+
 [Files]
-Source: "{#SourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

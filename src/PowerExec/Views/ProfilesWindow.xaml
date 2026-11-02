@@ -42,6 +42,8 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="180"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Bottom">
                     <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold"/>
@@ -54,6 +56,11 @@
                 <StackPanel Grid.Column="4">
                     <TextBlock Text="Beschreibung" Style="{StaticResource FieldLabel}"/>
                     <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding DescriptionPlaceholder}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="6">
+                    <TextBlock Text="Kategorie" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox IsEditable="True" ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=LostFocus}"
+                              ToolTip="Für die Gruppierung „Nach Kategorie“ (Einstellungen › Panel). Neue Namen einfach eintippen."/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -125,6 +132,8 @@
                             <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" FontSize="14"/>
                         </StackPanel>
                         <CheckBox Content="Standardprofil (Klick im Panel)" IsChecked="{Binding IsDefault}" VerticalAlignment="Bottom" Margin="0,0,20,8"/>
+                        <CheckBox Content="Vor dem Start bestätigen" IsChecked="{Binding ConfirmBeforeRun}" VerticalAlignment="Bottom" Margin="0,0,20,8"
+                                  ToolTip="Sicherheitsabfrage „Wirklich ausführen?“ – sinnvoll für kritische Scripte"/>
                         <CheckBox IsChecked="{Binding RunAsAdmin}" VerticalAlignment="Bottom" Margin="0,0,0,8">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="13" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>

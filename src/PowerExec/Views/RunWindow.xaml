@@ -20,7 +20,7 @@
             <Setter Property="Padding" Value="1"/>
         </Style>
         <DataTemplate x:Key="MachineTemplate">
-            <Border x:Name="Bd" CornerRadius="4" Padding="8,0,4,0" Height="38" Background="Transparent">
+            <Border x:Name="Bd" CornerRadius="4" Padding="8,3,4,3" MinHeight="38" Background="Transparent">
                 <DockPanel>
                     <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding ToggleFavoriteCommand}"
                             ToolTip="Favorit umschalten">
@@ -31,7 +31,11 @@
                     </Button>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding LastUsed}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" Margin="8,0"/>
                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}"/>
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}"/>
+                            <TextBlock x:Name="TestInfo" Text="{Binding TestText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"
+                                       MaxWidth="230" ToolTip="{Binding TestText}" Visibility="{Binding HasTest, Converter={StaticResource Vis}}"/>
+                        </StackPanel>
                     </CheckBox>
                 </DockPanel>
             </Border>
@@ -39,6 +43,12 @@
                 <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
+                <DataTrigger Binding="{Binding TestOk}" Value="True">
+                    <Setter TargetName="TestInfo" Property="Foreground" Value="{DynamicResource Status.Success}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TestOk}" Value="False">
+                    <Setter TargetName="TestInfo" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
     </Window.Resources>
@@ -198,6 +208,16 @@
                                 <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Margin="8,0,0,0" Command="{Binding AddMachineCommand}"/>
                                 <TextBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
                                          Tag="Rechnername(n), mit Komma getrennt" PreviewKeyDown="MachineBox_KeyDown"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,0,0,10">
+                                <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Command="{Binding TestConnectionCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding TestButtonText}"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Text="{Binding SslHint}" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"
+                                           ToolTip="Prüft WinRM, Anmeldung, PowerShell-Version und den Endpunkt PowerShell.7 für die ausgewählten Rechner. HTTPS stellst du unter Einstellungen › Ausführung ein."/>
                             </DockPanel>
                             <Border Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.CardAlt}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" Margin="0,0,0,8">
                                 <StackPanel>

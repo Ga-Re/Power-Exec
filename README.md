@@ -19,6 +19,10 @@ oder remote auf einem oder vielen Rechnern.
 - Gruppen (Favoriten und Ordner) einklappbar; Kontextmenü pro Gruppe (Im Explorer öffnen, Neu einlesen, Einklappen …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
+- Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
+- Gruppierung **nach Ordner oder nach eigenen Kategorien**; Reihenfolge der Einträge per **Drag & Drop**
+- Doppelklick startet das Standardprofil; Split-Button für weitere Profile
+- Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
 
 **Ordner**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
@@ -26,6 +30,8 @@ oder remote auf einem oder vielen Rechnern.
 - **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
 - Ordner-Optionen: Unterordner ja/nein, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
 - Dateiwächter: Änderungen erscheinen automatisch
+- **Offline-fest:** Antwortet ein Ordner nicht innerhalb des Zeitlimits (z. B. Freigabe offline), zeigt das Panel den zuletzt eingelesenen Stand; beim Start erscheint sofort der zwischengespeicherte Stand
+- **Umbenennen/Verschieben:** Profile, Favorit, Sortierung und Verlauf wandern automatisch mit (Erkennung über Dateiinhalt bzw. gleichen Namen)
 
 **Startprofile je Eintrag (⚙)**
 - Eigener Anzeigename und eigene Beschreibung im Panel
@@ -33,6 +39,7 @@ oder remote auf einem oder vielen Rechnern.
 - Pro Profil: als Administrator ausführen; bei PowerShell jeder Parameter **fest**, **vorbelegt** oder **fragen**, Ziel (dieser PC, feste Rechner, beim Start wählen), Ausführen-Dialog (immer, nur wenn nötig, nie), PowerShell-Version, -NoExit, -NoProfile
 - Bei EXE, Verknüpfungen, Batch und Snap-ins: zusätzliche Argumente
 - Parameter vom Typ `PSCredential`/`SecureString` oder mit „Password“ im Namen werden nie gespeichert
+- Optionale **Sicherheitsabfrage** vor dem Start und eigene **Kategorie** je Eintrag
 
 | Dateityp | Lokal | Admin | Anderer Benutzer | Remote / Masse | Info im Panel |
 |---|---|---|---|---|---|
@@ -59,11 +66,19 @@ oder remote auf einem oder vielen Rechnern.
 - **Scriptordner mitsenden:** kopiert Begleitdateien und Module über die Remote-Sitzung in einen Temp-Ordner auf dem Ziel und löscht ihn danach. Das vermeidet das Double-Hop-Problem, weil der Zielrechner nicht selbst auf die Freigabe zugreifen muss. Dauerhaft aktivierbar mit der Zeile `PowerExec: CopyFolder` unter `.NOTES`.
 - Ergebnisliste mit Status (Erfolgreich / Fehler / Nicht erreichbar), aufklappbarer Ausgabe, Log, CSV-Export und „Fehlgeschlagene wiederholen“
 - CredSSP wird bewusst nicht unterstützt (Anmeldedaten würden an den Zielrechner weitergegeben)
+- **Verbindungstest** je Rechner im Dialog: WinRM erreichbar, Anmeldung, PowerShell-Version, PowerShell 7; Option **HTTPS (5986)**; verständliche Hinweise bei TrustedHosts- und DNS-Problemen
+- **Windows-Benachrichtigung**, wenn ein Remote-Lauf fertig ist (Klick öffnet die Ergebnisliste)
 
 **Sicherheit**
 - Anmeldedaten werden bei jedem Start abgefragt und nie gespeichert
 - Bei Remote gehen sie nur über stdin an den lokalen Runner-Prozess, nie über die Kommandozeile oder eine Datei
 - Netzlaufwerke werden vor dem Start in UNC-Pfade umgewandelt (erhöhte Prozesse und andere Konten sehen keine verbundenen Laufwerke). Fehlt dem gewählten Konto der Zugriff, erscheint ein klarer Hinweis.
+
+- **Blockierte Dateien** (aus dem Internet heruntergeladen) werden markiert und lassen sich mit „Entsperren“ freigeben; beim Aufklappen eines Eintrags wird die **digitale Signatur** angezeigt
+
+**Diagnose & Daten**
+- Protokoll (`%LOCALAPPDATA%\Power-Exec\app.log`) mit Einlesezeiten, Starts und Fehlern; „Protokoll kopieren“ für Fehlermeldungen
+- Einstellungen **exportieren/importieren** (zusammenführen oder ersetzen) – ohne Kennwörter
 
 **Updates**
 - „Nach Updates suchen“ auch direkt in den Einstellungen; eine gefundene Version erscheint dort als Hinweis mit „Jetzt aktualisieren“
@@ -83,7 +98,8 @@ Beim Deinstallieren wird gefragt, ob auch die Einstellungen gelöscht werden sol
 
 Ohne Installation: `PowerExec.exe` aus dem Release in einen Ordner mit Schreibrechten legen und starten (portable Nutzung).
 
-Beide Varianten sind eigenständig, eine .NET-Installation ist nicht nötig. Voraussetzung: Windows 10 oder 11 (x64).
+Beide Varianten sind eigenständig, eine .NET-Installation ist nicht nötig. Die installierte Version startet schneller,
+weil sie als vorkompilierter Programmordner ausgeliefert wird; die portable EXE entpackt sich beim ersten Start einmalig. Voraussetzung: Windows 10 oder 11 (x64).
 Da die Dateien nicht signiert sind, kann Windows SmartScreen beim ersten Start warnen („Weitere Informationen“ → „Trotzdem ausführen“).
 
 Einstellungen: `%APPDATA%\Power-Exec\settings.json`

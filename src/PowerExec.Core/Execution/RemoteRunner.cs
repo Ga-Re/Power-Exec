@@ -61,6 +61,7 @@ public static class RemoteRunner
             ["CopyFolder"] = r.CopyFolder,
             ["RequiredModules"] = modules,
             ["ThrottleLimit"] = settings.ThrottleLimit,
+            ["UseSsl"] = settings.RemoteUseSsl,
             ["OpenTimeoutSec"] = settings.RemoteTimeoutSeconds
         };
         var json = JsonSerializer.Serialize(cfg);

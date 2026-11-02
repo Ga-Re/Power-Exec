@@ -256,6 +256,61 @@ public partial class PanelWindow : Window
         }
     }
 
+    // ---- Drag & Drop: Reihenfolge innerhalb einer Gruppe ----------------------
+
+    private const string DragFormat = "PowerExec.Item";
+    private Point _dragStart;
+    private ViewModels.ItemViewModel? _dragCandidate;
+
+    private void Row_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragStart = e.GetPosition(this);
+        _dragCandidate = (sender as FrameworkElement)?.DataContext as ViewModels.ItemViewModel;
+    }
+
+    private void Row_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _dragCandidate == null || _app.Panel.IsSearching) return;
+        var pos = e.GetPosition(this);
+        if (Math.Abs(pos.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(pos.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance * 2) return;
+        var item = _dragCandidate;
+        _dragCandidate = null;
+        Mouse.Capture(null);
+        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DragFormat, item), DragDropEffects.Move);
+    }
+
+    private static bool InsertAfter(FrameworkElement row, DragEventArgs e) => e.GetPosition(row).Y > row.ActualHeight / 2;
+
+    private void Row_DragOver(object sender, DragEventArgs e)
+    {
+        if (sender is not Border row || !e.Data.GetDataPresent(DragFormat)) return;
+        var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
+        var target = row.DataContext as ViewModels.ItemViewModel;
+        bool sameGroup = target != null && _app.Panel.Groups.Any(g => g.AllowReorder && g.Items.Contains(source) && g.Items.Contains(target));
+        e.Effects = sameGroup && !ReferenceEquals(source, target) ? DragDropEffects.Move : DragDropEffects.None;
+        // Einfügemarke oben bzw. unten
+        row.BorderThickness = e.Effects == DragDropEffects.Move
+            ? (InsertAfter(row, e) ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0))
+            : new Thickness(0);
+        e.Handled = true;
+    }
+
+    private void Row_DragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is Border row) row.BorderThickness = new Thickness(0);
+    }
+
+    private void Row_Drop(object sender, DragEventArgs e)
+    {
+        if (sender is not Border row) return;
+        row.BorderThickness = new Thickness(0);
+        if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ViewModels.ItemViewModel target) return;
+        var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
+        _app.Panel.MoveItem(source, target, InsertAfter(row, e));
+        e.Handled = true;
+    }
+
     /// <summary>Doppelklick auf einen Eintrag: wie der Ausführen-Knopf (Standardprofil).</summary>
     private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
     {

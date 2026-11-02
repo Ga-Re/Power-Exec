@@ -20,6 +20,8 @@
             <MenuItem Header="Andere einklappen" Command="{Binding CollapseOthersCommand}"/>
             <MenuItem Header="Alle einklappen" Command="{Binding CollapseAllCommand}"/>
             <MenuItem Header="Alle ausklappen" Command="{Binding ExpandAllCommand}"/>
+            <MenuItem Header="Reihenfolge zurücksetzen (alphabetisch)" Command="{Binding ResetOrderCommand}"
+                      Visibility="{Binding AllowReorder, Converter={StaticResource Vis}}"/>
             <Separator Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"/>
             <MenuItem Header="Ordner-Einstellungen …" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -122,7 +124,9 @@
         </Style>
 
         <DataTemplate x:Key="ItemTemplate">
-            <Border x:Name="Row" CornerRadius="6" Background="Transparent" Margin="0,1">
+            <Border x:Name="Row" CornerRadius="6" Background="Transparent" Margin="0,1" BorderBrush="{DynamicResource Accent}" BorderThickness="0"
+                    AllowDrop="True" PreviewMouseLeftButtonDown="Row_PreviewMouseLeftButtonDown" PreviewMouseMove="Row_PreviewMouseMove"
+                    DragOver="Row_DragOver" DragLeave="Row_DragLeave" Drop="Row_Drop">
                 <StackPanel>
                     <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}" MouseDoubleClick="Row_DoubleClick"
                             ContextMenu="{StaticResource ItemMenu}" ToolTipService.InitialShowDelay="900">
@@ -146,6 +150,8 @@
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
                                                Visibility="{Binding HasParseError, Converter={StaticResource Vis}}" ToolTip="{Binding ParseError}"/>
+                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
+                                               Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}" ToolTip="{Binding BlockedText}"/>
                                 </DockPanel>
                                 <TextBlock x:Name="Syn" Text="{Binding Synopsis}" FontSize="12" Margin="0,2,0,0" Foreground="{DynamicResource Text.Secondary}"
                                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
@@ -159,6 +165,13 @@
                         <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                    Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
+                        <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Entsperren" Command="{Binding UnblockCommand}"
+                                    Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top"/>
+                            <TextBlock Text="{Binding BlockedText}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <TextBlock x:Name="Sig" Text="{Binding SignatureText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,0,8"
+                                   Visibility="{Binding SignatureText, Converter={StaticResource Vis}}"/>
                         <WrapPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
                                 <!-- Ein Profil: normaler Button -->
@@ -215,6 +228,9 @@
                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
+                <DataTrigger Binding="{Binding SignatureValid}" Value="True">
+                    <Setter TargetName="Sig" Property="Foreground" Value="{DynamicResource Status.Success}"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
                     <Setter TargetName="Syn" Property="TextWrapping" Value="Wrap"/>
@@ -370,10 +386,17 @@
                                                     </TextBlock.RenderTransform>
                                                 </TextBlock>
                                                 <Grid Grid.Column="1" Margin="8,0">
-                                                    <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="13" Foreground="{DynamicResource Star}"
-                                                               Visibility="{Binding IsFavorites, Converter={StaticResource Vis}}"/>
-                                                    <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="13"
-                                                               Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"/>
+                                                    <TextBlock Text="{Binding IconGlyph}" FontSize="13">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsFavorites}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Star}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </Grid>
                                                 <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="3" Text="{Binding CountText}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>

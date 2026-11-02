@@ -16,16 +16,19 @@ public sealed class ItemViewModel : ObservableObject
     private bool _isSelected;
     private ImageSource? _icon;
     private readonly EntryConfig? _entry;
+    private readonly string? _subtitle;
 
-    public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey)
+    public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey,
+        LaunchProfile? fixedProfile = null, string? subtitle = null)
     {
+        _subtitle = subtitle;
         _app = app;
         _panel = panel;
         Item = item;
         Key = groupKey + "|" + item.FullPath;
         _entry = app.Settings.FindEntry(item.FullPath);
         Profiles = ProfileResolver.GetProfiles(app.Settings, item);
-        DefaultProfile = Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
+        DefaultProfile = fixedProfile ?? Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
         ProfileMenu = Profiles.Select(p => new ProfileMenuItem(
             p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
             new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
@@ -45,6 +48,7 @@ public sealed class ItemViewModel : ObservableObject
         CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.FullPath); } catch { } });
         ToggleFavoriteCommand = new RelayCommand(() => _app.ToggleFavorite(Item));
         HideCommand = new RelayCommand(() => _app.HideItem(Item));
+        UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
     }
 
     public LaunchItem Item { get; }
@@ -57,7 +61,8 @@ public sealed class ItemViewModel : ObservableObject
     public IReadOnlyList<ProfileMenuItem> ProfileMenu { get; }
     public bool HasProfileMenu => Profiles.Count > 1;
     /// <summary>Info-Zeile; ohne Synopsis der Pfad relativ zum Ordner (unterscheidet gleichnamige Dateien).</summary>
-    public string Synopsis => !string.IsNullOrWhiteSpace(_entry?.Description) ? _entry!.Description
+    public string Synopsis => _subtitle != null ? _subtitle
+        : !string.IsNullOrWhiteSpace(_entry?.Description) ? _entry!.Description
         : string.IsNullOrWhiteSpace(Item.Synopsis) ? RelativePath : Item.Synopsis;
 
     public string RelativePath
@@ -131,7 +136,10 @@ public sealed class ItemViewModel : ObservableObject
     public bool IsSelected
     {
         get => _isSelected;
-        set => Set(ref _isSelected, value);
+        set
+        {
+            if (Set(ref _isSelected, value) && value) LoadSignature();
+        }
     }
 
     public void RefreshFavorite() => OnPropertyChanged(nameof(IsFavorite));
@@ -147,6 +155,28 @@ public sealed class ItemViewModel : ObservableObject
     public ICommand ToggleFavoriteCommand { get; }
     public ICommand HideCommand { get; }
     public ICommand ManageProfilesCommand { get; }
+    public ICommand UnblockCommand { get; }
+
+    // ---- Sicherheit: Zonen-Kennung und Signatur ---------------------------
+
+    public bool IsBlocked => Item.IsBlocked;
+    public string BlockedText => $"Blockiert: {Core.Metadata.ZoneIdentifier.Describe(Item.ZoneId)}. Je nach Execution Policy startet das Script nicht.";
+
+    private string? _signatureText;
+    private bool _signatureValid;
+
+    /// <summary>Signaturstatus; wird beim Aufklappen im Hintergrund ermittelt.</summary>
+    public string? SignatureText { get => _signatureText; private set => Set(ref _signatureText, value); }
+    public bool SignatureValid { get => _signatureValid; private set => Set(ref _signatureValid, value); }
+
+    private async void LoadSignature()
+    {
+        if (_signatureText != null || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
+        SignatureText = "Signatur wird geprüft …";
+        var (text, valid) = await Task.Run(() => Services.SignatureService.Check(Item.FullPath));
+        SignatureValid = valid;
+        SignatureText = text;
+    }
 }
 
 /// <summary>Eintrag im Profil-Menü am Ausführen-Knopf.</summary>

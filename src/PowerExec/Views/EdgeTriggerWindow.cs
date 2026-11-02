@@ -90,6 +90,23 @@ public sealed class EdgeTriggerWindow : Window
     }
 
     public System.Drawing.Rectangle CurrentRect => ScreenService.HotZone(_monitor, _app.Settings);
+    public MonitorInfo Monitor => _monitor;
+
+    private bool _suspended;
+
+    /// <summary>Hover-Zone vorübergehend deaktivieren (Vollbild-Programm auf diesem Monitor).</summary>
+    public void SetSuspended(bool suspended)
+    {
+        if (_suspended == suspended) return;
+        _suspended = suspended;
+        _hoverTimer.Stop();
+        if (suspended) Hide();
+        else
+        {
+            Show();
+            Place();
+        }
+    }
 
     private void Place()
     {

@@ -68,6 +68,8 @@ public sealed class SettingsStore
         s.ThrottleLimit = Math.Clamp(s.ThrottleLimit, 1, 128);
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
         s.MaxRecentMachines = Math.Clamp(s.MaxRecentMachines, 1, 200);
+        s.RecentRunsCount = Math.Clamp(s.RecentRunsCount, 0, 20);
+        s.ScanTimeoutSeconds = Math.Clamp(s.ScanTimeoutSeconds, 2, 120);
         foreach (var f in s.Folders) FolderVisibility.MigrateLegacyExcludes(f);
         s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));
         foreach (var e in s.Entries)

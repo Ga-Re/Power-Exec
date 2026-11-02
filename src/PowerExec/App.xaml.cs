@@ -45,6 +45,7 @@ public partial class App : Application
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec");
             Directory.CreateDirectory(dir);
             File.AppendAllText(Path.Combine(dir, "error.log"), $"{DateTime.Now:u} {e.Exception}{Environment.NewLine}");
+            Services.AppLog.Error("Unerwarteter Fehler", e.Exception);
         }
         catch { }
         MessageBox.Show("Ein unerwarteter Fehler ist aufgetreten:\n\n" + e.Exception.Message, "Power-Exec",

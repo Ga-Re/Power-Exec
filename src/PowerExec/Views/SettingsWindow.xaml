@@ -45,6 +45,8 @@
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}"/>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Diagnose &amp; Daten"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=diag}"/>
             </StackPanel>
         </DockPanel>
 
@@ -216,6 +218,11 @@
                                                                                     Visibility="{Binding IsNew, Converter={StaticResource Vis}}">
                                                                                 <TextBlock Text="NEU" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource OnAccent}"/>
                                                                             </Border>
+                                                                            <Border Margin="8,0,0,0" Padding="6,0" CornerRadius="9" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
+                                                                                    Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}"
+                                                                                    ToolTip="Aus dem Internet heruntergeladen – im Panel über „Entsperren“ freigeben">
+                                                                                <TextBlock Text="BLOCKIERT" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Status.Warning}"/>
+                                                                            </Border>
                                                                         </StackPanel>
                                                                         <TextBlock Text="{Binding Info}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                                                                     </StackPanel>
@@ -325,6 +332,18 @@
                             <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                 <TextBlock Text="Bei Änderungen automatisch neu einlesen" Style="{StaticResource RowTitle}"/>
                                 <TextBlock Text="Neue, umbenannte oder gelöschte Dateien erscheinen sofort." Style="{StaticResource RowDesc}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="2" Maximum="60" TickFrequency="1" Value="{Binding ScanTimeoutSeconds}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ScanTimeoutSeconds, StringFormat={}{0} s}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="Zeitlimit für nicht erreichbare Ordner" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Antwortet ein Ordner (z. B. eine Freigabe) nicht rechtzeitig, zeigt das Panel den zuletzt eingelesenen Stand." Style="{StaticResource RowDesc}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -520,6 +539,64 @@
                                 <TextBlock Text="Dieser Filter ist ausgewählt, wenn das Panel aufgeht." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Groupings}" SelectedValue="{Binding Grouping}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Gruppierung im Panel" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Nach Ordner oder nach eigenen Kategorien. Die Kategorie legst du im Profil-Dialog (⚙) eines Eintrags fest. Reihenfolge der Einträge: per Drag &amp; Drop im Panel." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                            <StackPanel Visibility="{Binding IsCategoryGrouping, Converter={StaticResource Vis}}" Margin="0,12,0,0">
+                                <TextBlock Text="Reihenfolge der Kategorien" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="4,4">
+                                                <DockPanel>
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding UpCommand}" ToolTip="Nach oben">
+                                                            <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding DownCommand}" ToolTip="Nach unten">
+                                                            <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="Aus der Liste entfernen">
+                                                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="12" Margin="4,0,10,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Kategorie"/>
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Command="{Binding AddCategoryCommand}" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
+                                           Text="Einträge ohne Kategorie erscheinen in der Gruppe „Ohne Kategorie“."/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="0" Maximum="10" TickFrequency="1" Value="{Binding RecentRunsCount}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding RecentRunsText}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="„Zuletzt ausgeführt“" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Anzahl der zuletzt gestarteten Einträge oben im Panel (mit dem verwendeten Profil). 0 = ausblenden." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HideHotZoneInFullscreen}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Bei Vollbild-Programmen ausblenden" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Die Hover-Zone ist deaktiviert, solange auf dem Monitor ein Video, eine Präsentation, ein Spiel oder eine Remotedesktop-Sitzung im Vollbild läuft. Das Tastenkürzel funktioniert weiterhin." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowProgramIcons}" VerticalAlignment="Center"/>
@@ -618,6 +695,20 @@
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteUseSsl}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Remote über HTTPS (Port 5986)" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Nötig für Rechner außerhalb der Domäne bzw. wenn WinRM nur per HTTPS erreichbar ist. Auf dem Zielrechner muss ein HTTPS-Listener eingerichtet sein." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NotifyOnFinish}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Benachrichtigen, wenn ein Remote-Lauf fertig ist" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Windows-Benachrichtigung mit Zusammenfassung; ein Klick öffnet die Ergebnisliste." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
                         <StackPanel>
                             <DockPanel>
                                 <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Editors}" SelectedValue="{Binding Editor}"/>
@@ -652,6 +743,69 @@
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Anmeldedaten" Style="{StaticResource RowTitle}"/>
                                 <TextBlock Text="Werden bei jedem Start abgefragt und nie gespeichert." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Diagnose & Daten -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=diag}">
+                    <TextBlock Text="Diagnose &amp; Daten" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Protokoll für die Fehlersuche, Einlesezeiten und das Sichern der Einstellungen." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource Btn.Standard}" Content="Exportieren …" Command="{Binding ExportCommand}"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Einstellungen sichern" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Ordner, Startprofile, Favoriten, Kategorien und Rechnerliste als Datei – zum Sichern oder für einen anderen PC. Kennwörter sind nie enthalten." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <TextBlock Text="Ordner" Style="{StaticResource RowTitle}" Margin="0,0,0,6"/>
+                            <ItemsControl ItemsSource="{Binding FolderTimes}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Margin="0,2">
+                                            <TextBlock x:Name="Info" DockPanel.Dock="Right" Text="{Binding Text}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="12,0,0,0"
+                                                       TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+                                            <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                                                <Setter TargetName="Info" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding SystemInfo}" Style="{StaticResource Caption}" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,8">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Aktualisieren" Command="{Binding RefreshLogCommand}" FontSize="12"/>
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Protokoll kopieren" Command="{Binding CopyLogCommand}" FontSize="12" Margin="8,0,0,0"/>
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Ordner öffnen" Command="{Binding OpenAppLogFolderCommand}" FontSize="12" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Protokoll" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="{Binding LogFile}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4" Height="280">
+                                <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="10,8"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="11" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                                         HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
+                            </Border>
+                            <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
+                                       Text="Bei Problemen „Protokoll kopieren“ und den Text mitschicken – er enthält Version, Ordner-Status und die letzten Meldungen, aber keine Kennwörter."/>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 

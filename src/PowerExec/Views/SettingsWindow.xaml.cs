@@ -18,6 +18,11 @@ public partial class SettingsWindow : Window
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
         Closed += (_, _) => vm.Detach();
+        vm.ReopenRequested += () =>
+        {
+            Close();
+            _app.ShowSettings();
+        };
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

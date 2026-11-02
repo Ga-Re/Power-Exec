@@ -33,6 +33,13 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Beenden", null, (_, _) => app.Exit());
         _icon.ContextMenuStrip = menu;
+        _icon.BalloonTipClicked += (_, _) =>
+        {
+            var action = _balloonClick;
+            _balloonClick = null;
+            if (action != null) Application.Current.Dispatcher.BeginInvoke(action);
+        };
+        _icon.BalloonTipClosed += (_, _) => _balloonClick = null;
         _icon.MouseClick += (_, e) =>
         {
             if (e.Button == Forms.MouseButtons.Left) app.ShowPanelFromHotkey();
@@ -54,9 +61,12 @@ public sealed class TrayIcon : IDisposable
         return Drawing.SystemIcons.Application;
     }
 
-    public void ShowBalloon(string title, string text)
+    private Action? _balloonClick;
+
+    public void ShowBalloon(string title, string text, Action? onClick = null, bool warning = false)
     {
-        try { _icon.ShowBalloonTip(5000, title, text, Forms.ToolTipIcon.Info); } catch { }
+        _balloonClick = onClick;
+        try { _icon.ShowBalloonTip(6000, title, text, warning ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info); } catch { }
     }
 
     public void Dispose()

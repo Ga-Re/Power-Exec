@@ -91,6 +91,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     private string _machines;
     private DialogMode _dialog;
     private string _arguments;
+    private bool _confirm;
     private static int _counter;
 
     public ProfileEditViewModel(ProfilesViewModel owner, LaunchProfile p)
@@ -106,6 +107,7 @@ public sealed class ProfileEditViewModel : ObservableObject
         _machines = string.Join(", ", p.Machines);
         _dialog = p.Dialog;
         _arguments = p.Arguments;
+        _confirm = p.ConfirmBeforeRun;
         var key = "p" + Interlocked.Increment(ref _counter);
         foreach (var param in owner.Item.Parameters)
             Parameters.Add(new ProfileParamViewModel(this, param, ProfileResolver.SettingFor(p, param), key));
@@ -151,6 +153,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     public string Machines { get => _machines; set { if (Set(ref _machines, value ?? string.Empty)) OnChanged(); } }
     public DialogMode Dialog { get => _dialog; set { if (Set(ref _dialog, value)) OnChanged(); } }
     public string Arguments { get => _arguments; set { if (Set(ref _arguments, value ?? string.Empty)) OnChanged(); } }
+    public bool ConfirmBeforeRun { get => _confirm; set { if (Set(ref _confirm, value)) OnChanged(); } }
 
     public string Summary => ProfileResolver.Summary(ToProfile(), _owner.Item);
 
@@ -215,7 +218,8 @@ public sealed class ProfileEditViewModel : ObservableObject
             Target = _target,
             Machines = MachineList.ParseNames(_machines).ToList(),
             Dialog = _dialog,
-            Arguments = _arguments.Trim()
+            Arguments = _arguments.Trim(),
+            ConfirmBeforeRun = _confirm
         };
         foreach (var param in Parameters.Where(x => !x.IsSecure))
             p.Parameters[param.Name] = param.ToSetting();
@@ -232,6 +236,7 @@ public sealed class ProfilesViewModel : ObservableObject
     private ProfileEditViewModel? _selected;
     private string _displayName;
     private string _description;
+    private string _category;
 
     public ProfilesViewModel(AppController app, LaunchItem item, AppSettings target, bool saveImmediately)
     {
@@ -242,6 +247,13 @@ public sealed class ProfilesViewModel : ObservableObject
         var entry = target.FindEntry(item.FullPath);
         _displayName = entry?.DisplayName ?? string.Empty;
         _description = entry?.Description ?? string.Empty;
+        _category = entry?.Category ?? string.Empty;
+        Categories = target.CategoryOrder
+            .Concat(target.Entries.Select(e => e.Category))
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
 
         var profiles = entry != null && entry.Profiles.Count > 0
             ? entry.Profiles.Select(p => p.Clone()).ToList()
@@ -273,6 +285,10 @@ public sealed class ProfilesViewModel : ObservableObject
 
     public string DisplayName { get => _displayName; set => Set(ref _displayName, value ?? string.Empty); }
     public string Description { get => _description; set => Set(ref _description, value ?? string.Empty); }
+
+    /// <summary>Eigene Kategorie (Gruppierung „Nach Kategorie“).</summary>
+    public string Category { get => _category; set => Set(ref _category, value ?? string.Empty); }
+    public IReadOnlyList<string> Categories { get; }
 
     public ObservableCollection<ProfileEditViewModel> Profiles { get; } = new();
 
@@ -341,8 +357,11 @@ public sealed class ProfilesViewModel : ObservableObject
             Path = Item.FullPath,
             DisplayName = DisplayName.Trim(),
             Description = Description.Trim(),
+            Category = Category.Trim(),
             Profiles = Profiles.Select(p => p.ToProfile()).ToList()
         };
+        if (entry.Category.Length > 0 && !_target.CategoryOrder.Contains(entry.Category, StringComparer.CurrentCultureIgnoreCase))
+            _target.CategoryOrder.Add(entry.Category);
         _target.Entries.RemoveAll(e => string.Equals(e.Path, Item.FullPath, StringComparison.OrdinalIgnoreCase));
         _target.Entries.Add(entry);
         if (_saveImmediately) _app.OnProfilesSaved();

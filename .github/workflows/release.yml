@@ -64,7 +64,7 @@ jobs:
         if: steps.version.outputs.skip == 'false'
         run: dotnet test tests/PowerExec.Core.Tests -c Release
 
-      - name: Veröffentlichen (Einzeldatei, ohne .NET-Installation lauffähig)
+      - name: Portable Einzeldatei veröffentlichen
         if: steps.version.outputs.skip == 'false'
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
@@ -73,6 +73,15 @@ jobs:
           -p:Version=${{ steps.version.outputs.version }}
           -o out
 
+      - name: Programmordner für den Installer veröffentlichen (ReadyToRun, ohne Entpacken)
+        if: steps.version.outputs.skip == 'false'
+        run: >
+          dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishReadyToRun=true
+          -p:Version=${{ steps.version.outputs.version }}
+          -o out/app
+
       - name: Installer bauen (Inno Setup)
         if: steps.version.outputs.skip == 'false'
         shell: pwsh
@@ -80,7 +89,7 @@ jobs:
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
           if (-not (Test-Path $iscc)) { throw "ISCC.exe nicht gefunden: $iscc" }
-          & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "/DMyFileVersion=${{ steps.version.outputs.fileversion }}" "/DSourceDir=..\out" installer\PowerExec.iss
+          & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "/DMyFileVersion=${{ steps.version.outputs.fileversion }}" "/DSourceDir=..\out\app" installer\PowerExec.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup ist mit Code $LASTEXITCODE fehlgeschlagen." }
 
       - name: Prüfsummen

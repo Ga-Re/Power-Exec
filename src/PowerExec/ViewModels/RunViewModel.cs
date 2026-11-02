@@ -91,6 +91,14 @@ public sealed class MachineViewModel : ObservableObject
 
     public ICommand ToggleFavoriteCommand { get; }
     public ICommand RemoveCommand { get; }
+
+    private string? _testText;
+    private bool? _testOk;
+
+    /// <summary>Ergebnis des Verbindungstests (null = nicht getestet).</summary>
+    public string? TestText { get => _testText; set { if (Set(ref _testText, value)) OnPropertyChanged(nameof(HasTest)); } }
+    public bool? TestOk { get => _testOk; set => Set(ref _testOk, value); }
+    public bool HasTest => _testText != null;
 }
 
 public sealed class RunViewModel : ObservableObject
@@ -141,6 +149,7 @@ public sealed class RunViewModel : ObservableObject
             RecentMachines.Insert(0, new MachineViewModel(this, name, false, "aus Profil", true));
 
         AddMachineCommand = new RelayCommand(AddMachines, () => !string.IsNullOrWhiteSpace(NewMachine));
+        TestConnectionCommand = new RelayCommand(() => _ = TestConnectionsAsync(), () => _remote && !_testing && SelectedMachines.Any());
         RunCommand = new RelayCommand(Execute, () => CanRun);
         UpdatePreview();
     }
@@ -269,6 +278,35 @@ public sealed class RunViewModel : ObservableObject
             : "Befehlsvorschau: So startet Power-Exec das Script.";
 
     public ICommand AddMachineCommand { get; }
+    public ICommand TestConnectionCommand { get; }
+
+    private bool _testing;
+    public bool IsTesting { get => _testing; private set { if (Set(ref _testing, value)) { OnPropertyChanged(nameof(TestButtonText)); CommandManager.InvalidateRequerySuggested(); } } }
+    public string TestButtonText => _testing ? "Teste …" : "Verbindung testen";
+    public string SslHint => _app.Settings.RemoteUseSsl ? "Verbindung über HTTPS (5986)" : "Verbindung über HTTP (5985)";
+
+    /// <summary>Prüft die gewählten Rechner: WinRM erreichbar, Anmeldung, PowerShell-Version, Endpunkt PowerShell.7.</summary>
+    private async Task TestConnectionsAsync()
+    {
+        var machines = SelectedMachines.ToList();
+        if (machines.Count == 0) return;
+        RunCredential? cred = null;
+        if (_mode == ExecutionMode.OtherUser)
+        {
+            cred = Views.CredentialWindow.Prompt(OwnerWindow?.Invoke(), "Verbindungstest", remote: true);
+            if (cred == null) return;
+        }
+        IsTesting = true;
+        foreach (var m in machines) { m.TestText = "wird getestet …"; m.TestOk = null; }
+        var results = await RemoteTestService.RunAsync(machines.Select(m => m.Name).ToList(), _app.Settings, cred);
+        foreach (var m in machines)
+        {
+            var r = results.FirstOrDefault(x => x.Computer.Equals(m.Name, StringComparison.OrdinalIgnoreCase));
+            m.TestOk = r?.Ok ?? false;
+            m.TestText = r?.Summary ?? "keine Antwort";
+        }
+        IsTesting = false;
+    }
     public ICommand RunCommand { get; }
 
     /// <summary>Wird vom Fenster gesetzt, um sich nach erfolgreichem Start zu schließen.</summary>
@@ -343,15 +381,23 @@ public sealed class RunViewModel : ObservableObject
         }
         Validation = string.Empty;
         var req = BuildRequest(values);
+        if (!_app.ConfirmRun(Item, Profile, _remote ? req.Targets.Count : 0, OwnerWindow?.Invoke())) return;
 
         if (_remote)
         {
             MachineList.MarkUsed(_app.Settings, req.Targets);
             _app.SaveSettings();
-            if (_app.StartRemote(req, OwnerWindow?.Invoke())) CloseRequested?.Invoke();
+            if (_app.StartRemote(req, OwnerWindow?.Invoke()))
+            {
+                _app.RecordRun(Item, Profile);
+                AppLog.Info($"Start (Dialog): {Item.FullPath} · {req.Targets.Count} Rechner");
+                CloseRequested?.Invoke();
+            }
         }
         else if (_app.Launcher.StartLocal(req, OwnerWindow?.Invoke()))
         {
+            _app.RecordRun(Item, Profile);
+            AppLog.Info($"Start (Dialog): {Item.FullPath} · lokal{(req.Mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             CloseRequested?.Invoke();
         }
     }

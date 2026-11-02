@@ -158,6 +158,9 @@ public sealed class ResultsViewModel : ObservableObject
         RowsView.Refresh();
     }
 
+    /// <summary>Wird ausgelöst, wenn alle Rechner fertig sind (oder der Lauf abgebrochen wurde).</summary>
+    public event Action? Finished;
+
     private void OnCompleted(string? error)
     {
         foreach (var row in Rows.Where(r => r.Status == RemoteStatus.Running))
@@ -166,6 +169,8 @@ public sealed class ResultsViewModel : ObservableObject
         IsRunning = false;
         RaiseCounts();
         WriteLog();
+        AppLog.Info($"Remote-Lauf beendet: {_request.Item.FileName} · {StatusLine}" + (error != null ? " · Runner: " + error : string.Empty));
+        Finished?.Invoke();
         _session?.Dispose();
         _session = null;
         CommandManager.InvalidateRequerySuggested();

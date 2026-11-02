@@ -4,6 +4,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Search;
+using PowerExec.Core.Profiles;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 
@@ -132,27 +133,68 @@ public sealed class PanelViewModel : ObservableObject
             ? items.OrderBy(i => ItemFilter.Rank(i, query)).ThenBy(i => i.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             : items.OrderBy(i => i.DisplayName, StringComparer.CurrentCultureIgnoreCase);
 
+        // Eigene Reihenfolge (Drag & Drop) gilt nur ohne Suche
+        List<LaunchItem> Arrange(string key, IEnumerable<LaunchItem> items)
+        {
+            var ordered = Order(items).ToList();
+            return searching ? ordered : ItemOrdering.Apply(ordered, i => i.FullPath, settings.CustomOrder.GetValueOrDefault(key));
+        }
+
+        GroupViewModel MakeGroup(string key, string title, string kind, string? folderPath, IEnumerable<LaunchItem> items, string? error = null) =>
+            new(this, _app, key, title, kind == "fav", folderPath,
+                Arrange(key, items).Select(i => new ItemViewModel(_app, this, i, key)).ToList(),
+                searching || !collapsed.Contains(key), error, kind, allowReorder: !searching);
+
         var groups = new List<GroupViewModel>();
         if (!searching && _filter == TypeFilter.All)
         {
-            var favs = Order(pool.Where(i => _app.IsFavorite(i.FullPath))).ToList();
-            if (favs.Count > 0)
+            // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
+            if (settings.RecentRunsCount > 0)
             {
-                const string key = "fav";
-                groups.Add(new GroupViewModel(this, _app, key, "Favoriten", true, null,
-                    favs.Select(i => new ItemViewModel(_app, this, i, key)).ToList(), !collapsed.Contains(key), null));
+                var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+                var recent = settings.RecentRuns
+                    .Where(r => byPath.ContainsKey(r.Path))
+                    .Take(settings.RecentRunsCount)
+                    .Select(r =>
+                    {
+                        var item = byPath[r.Path];
+                        var profile = ProfileResolver.GetProfiles(settings, item)
+                            .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
+                        var subtitle = (profile.IsImplicit ? string.Empty : profile.Name + " · ") + RecentRunList.Ago(r.TimeUtc);
+                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle);
+                    })
+                    .ToList();
+                if (recent.Count > 0)
+                    groups.Add(new GroupViewModel(this, _app, "recent", "Zuletzt ausgeführt", false, null, recent,
+                        !collapsed.Contains("recent"), null, "recent", allowReorder: false));
             }
+
+            var favs = pool.Where(i => _app.IsFavorite(i.FullPath)).ToList();
+            if (favs.Count > 0) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
         }
 
-        foreach (var folder in settings.Folders)
+        if (settings.Grouping == GroupingMode.Category)
         {
-            var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
-            var items = Order(pool.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase))).ToList();
-            if (items.Count == 0 && (searching || _filter != TypeFilter.All || status?.Error == null)) continue;
-            var key = "folder:" + folder.Path;
-            groups.Add(new GroupViewModel(this, _app, key, folder.Path, false, folder.Path,
-                items.Select(i => new ItemViewModel(_app, this, i, key)).ToList(),
-                searching || !collapsed.Contains(key), status?.Error));
+            string CategoryOf(LaunchItem i) => settings.FindEntry(i.FullPath)?.Category?.Trim() ?? string.Empty;
+            var byCategory = pool.GroupBy(CategoryOf, StringComparer.CurrentCultureIgnoreCase).ToList();
+            var order = settings.CategoryOrder;
+            foreach (var g in byCategory
+                         .Where(g => g.Key.Length > 0)
+                         .OrderBy(g => { var i = order.FindIndex(c => c.Equals(g.Key, StringComparison.CurrentCultureIgnoreCase)); return i < 0 ? int.MaxValue : i; })
+                         .ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase))
+                groups.Add(MakeGroup("cat:" + g.Key, g.Key, "category", null, g));
+            var rest = byCategory.FirstOrDefault(g => g.Key.Length == 0);
+            if (rest != null) groups.Add(MakeGroup("cat:", "Ohne Kategorie", "category", null, rest));
+        }
+        else
+        {
+            foreach (var folder in settings.Folders)
+            {
+                var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
+                var items = pool.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (items.Count == 0 && (searching || _filter != TypeFilter.All || status?.Error == null)) continue;
+                groups.Add(MakeGroup("folder:" + folder.Path, folder.Path, "folder", folder.Path, items, status?.Error));
+            }
         }
 
         Groups.Clear();
@@ -198,6 +240,27 @@ public sealed class PanelViewModel : ObservableObject
     }
 
     public IEnumerable<ItemViewModel> AllItems => Groups.SelectMany(g => g.Items);
+
+    /// <summary>Drag &amp; Drop: Eintrag innerhalb seiner Gruppe vor bzw. hinter einen anderen schieben.</summary>
+    public void MoveItem(ItemViewModel dragged, ItemViewModel target, bool after)
+    {
+        var group = Groups.FirstOrDefault(g => g.Items.Contains(dragged));
+        if (group == null || !group.AllowReorder || !group.Items.Contains(target) || ReferenceEquals(dragged, target)) return;
+        var current = group.Items.Select(i => i.Item.FullPath).ToList();
+        _app.Settings.CustomOrder[group.Key] = ItemOrdering.Move(current, dragged.Item.FullPath, target.Item.FullPath, after);
+        _app.SaveSettings();
+        Rebuild();
+    }
+
+    /// <summary>Eigene Reihenfolge einer Gruppe verwerfen (wieder alphabetisch).</summary>
+    public void ResetOrder(GroupViewModel group)
+    {
+        if (_app.Settings.CustomOrder.Remove(group.Key))
+        {
+            _app.SaveSettings();
+            Rebuild();
+        }
+    }
 
     public IEnumerable<ItemViewModel> VisibleItems => Groups.Where(g => g.IsExpanded).SelectMany(g => g.Items);
 

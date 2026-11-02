@@ -61,6 +61,7 @@ $worker = {
         $opt = New-PSSessionOption -OpenTimeout ([int]$cfg.OpenTimeoutSec * 1000)
         $common = @{ ComputerName = $computer; SessionOption = $opt; ErrorAction = 'Stop' }
         if ($cred) { $common.Credential = $cred }
+        if ($cfg.UseSsl) { $common.UseSSL = $true }
 
         if ($cfg.Engine -eq 'PowerShell7') {
             try {
@@ -81,6 +82,12 @@ $worker = {
                 if ($code -eq 5 -or $ex.Message -match 'Access is denied|Zugriff verweigert') {
                     $result.status = 'Error'
                     $result.error = 'Zugriff verweigert.'
+                } elseif ($ex.Message -match 'TrustedHosts') {
+                    $result.status = 'Error'
+                    $result.error = 'Rechner nicht vertrauenswürdig (TrustedHosts): vollständigen Domänennamen verwenden, HTTPS aktivieren oder den Rechner in TrustedHosts eintragen.'
+                } elseif ($ex.Message -match 'cannot find the computer|kann den Computer .* nicht finden|nicht gefunden') {
+                    $result.status = 'Unreachable'
+                    $result.error = 'Rechnername nicht auflösbar (DNS).'
                 } else {
                     $result.status = 'Unreachable'
                     $result.error = 'Verbindung fehlgeschlagen (WinRM).'

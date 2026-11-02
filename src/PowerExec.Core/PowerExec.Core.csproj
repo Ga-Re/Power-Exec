@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Execution\RemoteRunner.ps1" LogicalName="PowerExec.RemoteRunner.ps1" />
+    <EmbeddedResource Include="Execution\RemoteTest.ps1" LogicalName="PowerExec.RemoteTest.ps1" />
   </ItemGroup>
 </Project>

@@ -21,6 +21,35 @@ public sealed class WindowsMetadata : IPlatformMetadata
             item.Description = info.CompanyName.Trim();
     }
 
+    /// <summary>Zonen-Kennung aus dem Datenstrom „Zone.Identifier“ (nur NTFS/ReFS; sonst null).</summary>
+    public static int? ReadZoneId(string path)
+    {
+        try
+        {
+            var stream = path + ZoneIdentifier.StreamName;
+            if (!File.Exists(stream)) return null;
+            return ZoneIdentifier.ParseZoneId(File.ReadAllText(stream));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Entfernt die Zonen-Kennung (wie „Entsperren“ in den Dateieigenschaften).</summary>
+    public static bool Unblock(string path)
+    {
+        try
+        {
+            File.Delete(path + ZoneIdentifier.StreamName);
+            return ReadZoneId(path) == null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void FillShortcut(LaunchItem item)
     {
         var shellType = Type.GetTypeFromProgID("WScript.Shell");

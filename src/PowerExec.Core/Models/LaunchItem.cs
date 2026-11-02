@@ -54,6 +54,12 @@ public sealed class LaunchItem
 
     public DateTime LastWriteTimeUtc { get; set; }
 
+    /// <summary>Zonen-Kennung (3 = Internet). Gesetzt, wenn die Datei als heruntergeladen markiert ist.</summary>
+    public int? ZoneId { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsBlocked => Metadata.ZoneIdentifier.IsBlocked(ZoneId);
+
     public bool HasParameters => Parameters.Count > 0;
 
     public bool IsPowerShell => Type == ItemType.PowerShell;

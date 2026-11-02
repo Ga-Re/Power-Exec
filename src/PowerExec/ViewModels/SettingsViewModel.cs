@@ -60,6 +60,7 @@ public sealed class EntryRowViewModel : ObservableObject
     public ItemType Type { get; }
     public bool IsLocked => Pattern != null;
     public bool CanToggle => !IsLocked;
+    public bool IsBlocked => Item?.IsBlocked == true;
     public ImageSource? Icon => _icon;
     public bool HasIcon => _icon != null;
 
@@ -378,6 +379,24 @@ public sealed class ColorPresetViewModel : ObservableObject
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));
 }
 
+public sealed class CategoryItemViewModel
+{
+    public CategoryItemViewModel(string name, Action<CategoryItemViewModel, int> move, Action<CategoryItemViewModel> remove)
+    {
+        Name = name;
+        UpCommand = new RelayCommand(() => move(this, -1));
+        DownCommand = new RelayCommand(() => move(this, 1));
+        RemoveCommand = new RelayCommand(() => remove(this));
+    }
+
+    public string Name { get; }
+    public ICommand UpCommand { get; }
+    public ICommand DownCommand { get; }
+    public ICommand RemoveCommand { get; }
+}
+
+public sealed record FolderTimeInfo(string Path, string Text, bool IsProblem);
+
 public sealed class SettingsViewModel : ObservableObject
 {
     private readonly AppController _app;
@@ -412,11 +431,23 @@ public sealed class SettingsViewModel : ObservableObject
         InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Panel.UpdateBusy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
         _app.Panel.PropertyChanged += OnPanelChanged;
+        AppLog.Changed += OnLogChanged;
         OpenLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
         OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
         BrowseEditorCommand = new RelayCommand(BrowseEditor);
         BrowseLogFolderCommand = new RelayCommand(BrowseLogFolder);
         SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "folders");
+
+        foreach (var c in _s.CategoryOrder.Concat(_s.Entries.Select(e => e.Category))
+                     .Where(c => !string.IsNullOrWhiteSpace(c)).Distinct(StringComparer.CurrentCultureIgnoreCase))
+            Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory));
+        AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
+
+        CopyLogCommand = new RelayCommand(() => { try { Clipboard.SetText(DiagnosticsText()); } catch { } });
+        OpenAppLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(System.IO.Path.GetDirectoryName(AppLog.FilePath)!, isFolder: true));
+        RefreshLogCommand = new RelayCommand(() => OnPropertyChanged(nameof(LogText)));
+        ExportCommand = new RelayCommand(Export);
+        ImportCommand = new RelayCommand(Import);
         UpdateStatus = app.Updates.LastCheck is { } t
             ? (app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar (geprüft {t:HH:mm})." : $"Aktuell (geprüft {t:HH:mm}).")
             : "Noch nicht geprüft.";
@@ -430,6 +461,7 @@ public sealed class SettingsViewModel : ObservableObject
     public string DefaultExtensions { get => _defaultExtensions; set => Set(ref _defaultExtensions, value ?? string.Empty); }
     public string GlobalExcludes { get => _globalExcludes; set => Set(ref _globalExcludes, value ?? string.Empty); }
     public bool AutoRescan { get => _s.AutoRescan; set { _s.AutoRescan = value; OnPropertyChanged(); } }
+    public int ScanTimeoutSeconds { get => _s.ScanTimeoutSeconds; set { _s.ScanTimeoutSeconds = value; OnPropertyChanged(); } }
 
     // Panel
     public ScreenEdge Edge { get => _s.Edge; set { _s.Edge = value; OnPropertyChanged(); } }
@@ -574,6 +606,40 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     public bool ShowProgramIcons { get => _s.ShowProgramIcons; set { _s.ShowProgramIcons = value; OnPropertyChanged(); } }
+    public bool HideHotZoneInFullscreen { get => _s.HideHotZoneInFullscreen; set { _s.HideHotZoneInFullscreen = value; OnPropertyChanged(); } }
+    public int RecentRunsCount { get => _s.RecentRunsCount; set { _s.RecentRunsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(RecentRunsText)); } }
+    public string RecentRunsText => _s.RecentRunsCount == 0 ? "aus" : _s.RecentRunsCount.ToString();
+
+    // Gruppierung und Kategorien
+    public GroupingMode Grouping { get => _s.Grouping; set { _s.Grouping = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsCategoryGrouping)); } }
+    public bool IsCategoryGrouping => _s.Grouping == GroupingMode.Category;
+    public IReadOnlyList<KeyValuePair<GroupingMode, string>> Groupings { get; } = new[]
+    {
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Folder, "Nach Ordner"),
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Category, "Nach eigener Kategorie")
+    };
+    public ObservableCollection<CategoryItemViewModel> Categories { get; } = new();
+    private string _newCategory = string.Empty;
+    public string NewCategory { get => _newCategory; set => Set(ref _newCategory, value ?? string.Empty); }
+    public ICommand AddCategoryCommand { get; }
+
+    private void MoveCategory(CategoryItemViewModel c, int delta)
+    {
+        var i = Categories.IndexOf(c);
+        var j = i + delta;
+        if (i < 0 || j < 0 || j >= Categories.Count) return;
+        Categories.Move(i, j);
+    }
+
+    private void RemoveCategory(CategoryItemViewModel c) => Categories.Remove(c);
+
+    private void AddCategory()
+    {
+        var name = NewCategory.Trim();
+        if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory));
+        NewCategory = string.Empty;
+    }
 
     // Ausführung
     public PsEngine DefaultEngine { get => _s.DefaultEngine; set { _s.DefaultEngine = value; OnPropertyChanged(); } }
@@ -602,6 +668,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool NoExit { get => _s.NoExit; set { _s.NoExit = value; OnPropertyChanged(); } }
     public int ThrottleLimit { get => _s.ThrottleLimit; set { _s.ThrottleLimit = value; OnPropertyChanged(); } }
     public int RemoteTimeoutSeconds { get => _s.RemoteTimeoutSeconds; set { _s.RemoteTimeoutSeconds = value; OnPropertyChanged(); } }
+    public bool RemoteUseSsl { get => _s.RemoteUseSsl; set { _s.RemoteUseSsl = value; OnPropertyChanged(); } }
+    public bool NotifyOnFinish { get => _s.NotifyOnFinish; set { _s.NotifyOnFinish = value; OnPropertyChanged(); } }
     public string LogFolder { get => _s.LogFolder; set { _s.LogFolder = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(LogFolderDisplay)); } }
     public string LogFolderDisplay => _s.EffectiveLogFolder;
 
@@ -688,7 +756,92 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>Vom Fenster beim Schließen aufgerufen.</summary>
-    public void Detach() => _app.Panel.PropertyChanged -= OnPanelChanged;
+    public void Detach()
+    {
+        _app.Panel.PropertyChanged -= OnPanelChanged;
+        AppLog.Changed -= OnLogChanged;
+    }
+
+    // ---- Diagnose ---------------------------------------------------------
+
+    public string LogText => AppLog.Recent(400);
+    public string LogFile => AppLog.FilePath;
+
+    private void OnLogChanged() => Application.Current?.Dispatcher.BeginInvoke(() => OnPropertyChanged(nameof(LogText)));
+
+    public IReadOnlyList<FolderTimeInfo> FolderTimes => _app.Repository.FolderStatuses.Select(st => new FolderTimeInfo(st.Path,
+        st.Error != null ? st.Error
+        : st.FromCache ? $"zwischengespeichert (Stand {st.CachedAtUtc?.ToLocalTime():dd.MM. HH:mm})"
+        : $"{st.Count} Dateien · {st.Duration.TotalMilliseconds:0} ms", st.Error != null)).ToList();
+
+    public string SystemInfo =>
+        $"Power-Exec {UpdateService.CurrentVersionText} · {(UpdateService.IsInstalledViaSetup ? "installiert" : "portabel")} · " +
+        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(Launcher.IsPwshInstalled ? "ja" : "nein")}";
+
+    public ICommand CopyLogCommand { get; }
+    public ICommand OpenAppLogFolderCommand { get; }
+    public ICommand RefreshLogCommand { get; }
+
+    private string DiagnosticsText() =>
+        SystemInfo + Environment.NewLine + Environment.NewLine +
+        string.Join(Environment.NewLine, FolderTimes.Select(f => $"{f.Path}: {f.Text}")) + Environment.NewLine + Environment.NewLine +
+        AppLog.Recent(400);
+
+    // ---- Sichern & Wiederherstellen ----------------------------------------
+
+    public ICommand ExportCommand { get; }
+    public ICommand ImportCommand { get; }
+
+    /// <summary>Nach einem Import schließt sich das Fenster und öffnet sich mit den neuen Einstellungen.</summary>
+    public event Action? ReopenRequested;
+
+    private void Export()
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Power-Exec-Einstellungen (*.json)|*.json",
+            FileName = $"Power-Exec-Einstellungen_{DateTime.Now:yyyy-MM-dd}.json"
+        };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            File.WriteAllText(dlg.FileName, SettingsTransfer.Export(_app.Settings));
+            AppLog.Info($"Einstellungen exportiert: {dlg.FileName}");
+            MessageBox.Show("Die gespeicherten Einstellungen wurden exportiert.\nKennwörter sind darin nicht enthalten.", "Exportieren",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Exportieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void Import()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Power-Exec-Einstellungen (*.json)|*.json|Alle Dateien (*.*)|*.*" };
+        if (dlg.ShowDialog() != true) return;
+        AppSettings imported;
+        try
+        {
+            imported = SettingsTransfer.Parse(File.ReadAllText(dlg.FileName));
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        var answer = MessageBox.Show(
+            $"{imported.Folders.Count} Ordner, {imported.Entries.Count} konfigurierte Einträge, {imported.Favorites.Count} Favoriten.\n\n" +
+            "Ja = zusammenführen (vorhandene Einstellungen bleiben, Ordner und Profile werden ergänzt)\n" +
+            "Nein = alles ersetzen\nAbbrechen = nichts ändern",
+            "Einstellungen importieren", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel);
+        if (answer == MessageBoxResult.Cancel) return;
+        var result = answer == MessageBoxResult.Yes ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
+        result.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
+        _app.ApplySettings(result);
+        AppLog.Info($"Einstellungen importiert ({(answer == MessageBoxResult.Yes ? "zusammengeführt" : "ersetzt")}): {dlg.FileName}");
+        ReopenRequested?.Invoke();
+    }
 
     private async Task CheckUpdatesAsync()
     {
@@ -720,6 +873,10 @@ public sealed class SettingsViewModel : ObservableObject
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
         _s.Pinned = _app.Settings.Pinned;
+        _s.RecentRuns = _app.Settings.RecentRuns.ToList();
+        _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
+        _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
+        _s.CategoryOrder = Categories.Select(c => c.Name).ToList();
         _s.Machines = _app.Settings.Machines
             .Where(m => !_machinesCleared || m.Favorite)
             .Select(m => new MachineEntry { Name = m.Name, Favorite = m.Favorite, LastUsedUtc = m.LastUsedUtc })
