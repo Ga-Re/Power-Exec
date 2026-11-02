@@ -1,0 +1,419 @@
+<Window x:Class="PowerExec.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Power-Exec – Einstellungen" Style="{StaticResource AppWindow}"
+        Width="1040" Height="760" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="RowTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+        <Style x:Key="RowDesc" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+        <Style x:Key="RowCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+            <Setter Property="Width" Value="260"/>
+            <Setter Property="DisplayMemberPath" Value="Value"/>
+            <Setter Property="SelectedValuePath" Value="Key"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="230"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Navigation -->
+        <DockPanel Margin="12,12,8,12">
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="14,0,0,0"/>
+            <StackPanel>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ordner"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=folders}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Panel &amp; Verhalten"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ausführung"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
+            </StackPanel>
+        </DockPanel>
+
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="16,8,28,24">
+
+                <!-- Ordner -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=folders}">
+                    <TextBlock Text="Ordner" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Diese Ordner werden nach Scripten und Programmen durchsucht." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+
+                    <ItemsControl ItemsSource="{Binding Folders}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="Card" Style="{StaticResource Card}" Padding="16,12">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Command="{Binding RemoveCommand}" ToolTip="Ordner entfernen">
+                                                <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/>
+                                            </Button>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="8,0"/>
+                                            <TextBlock DockPanel.Dock="Left" Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="18" Margin="0,0,12,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                            <TextBox Text="{Binding Path, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" Tag="Pfad, z. B. C:\Scripts oder \\server\freigabe"/>
+                                        </DockPanel>
+                                        <WrapPanel Margin="30,10,0,0">
+                                            <CheckBox Content="Unterordner einbeziehen" IsChecked="{Binding Recursive}" Margin="0,0,24,6" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Dateiendungen:" VerticalAlignment="Center" Margin="0,0,8,6" Foreground="{DynamicResource Text.Secondary}"/>
+                                            <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="260" Margin="0,0,0,6"
+                                                     Tag="leer = Standard-Dateiendungen" FontFamily="{StaticResource MonoFont}"/>
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" Margin="30,4,0,0"/>
+
+                                        <WrapPanel Margin="30,10,0,0">
+                                            <TextBlock Text="Ausgeschlossen:" VerticalAlignment="Center" Margin="0,0,8,6" FontSize="12" Foreground="{DynamicResource Text.Secondary}"/>
+                                            <ItemsControl ItemsSource="{Binding Exclusions}" Focusable="False">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Height="26" CornerRadius="13" Background="{DynamicResource Excl.Bg}" BorderBrush="{DynamicResource Excl.Border}"
+                                                                BorderThickness="1" Padding="10,0,2,0" Margin="0,0,6,6">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="{DynamicResource Excl.Text}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                <TextBlock Text="{Binding Value}" FontSize="11" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                                                                <Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
+                                                                        ToolTip="Ausschluss entfernen" Foreground="{DynamicResource Excl.Text}">
+                                                                    <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
+                                                                </Button>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBox Text="{Binding NewExclusion, UpdateSourceTrigger=PropertyChanged}" Width="220" Height="28" MinHeight="28" Margin="0,0,6,6"
+                                                     Tag="z. B. Blah.ps1, *.exe, *\Archiv\*" FontSize="12"/>
+                                            <Button Style="{StaticResource Btn.Standard}" Content="+ Ausschluss" Command="{Binding AddExclusionCommand}" Height="28" MinHeight="28"
+                                                    FontSize="12" Margin="0,0,0,6"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                        <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Command="{Binding AddFolderCommand}" Margin="0,4,0,18">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,8,0"/>
+                            <TextBlock Text="Ordner hinzufügen"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBox DockPanel.Dock="Right" Width="300" Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="Standard-Dateiendungen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Gilt für Ordner ohne eigene Angabe. Durch Leerzeichen getrennt." Style="{StaticResource RowDesc}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBox DockPanel.Dock="Right" Width="300" Text="{Binding GlobalExcludes, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}"
+                                     VerticalAlignment="Center" Tag="z. B. *.bak.ps1; *\Old\*"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="Globale Ausschlüsse" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Gelten für alle Ordner, mit Semikolon getrennt. „Ausblenden“ im Panel legt Ausschlüsse beim jeweiligen Ordner an." Style="{StaticResource RowDesc}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AutoRescan}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                <TextBlock Text="Bei Änderungen automatisch neu einlesen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Neue, umbenannte oder gelöschte Dateien erscheinen sofort." Style="{StaticResource RowDesc}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Panel & Verhalten -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=panel}">
+                    <TextBlock Text="Panel &amp; Verhalten" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Wo das Panel sitzt und wie es ausfährt." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Edges}" SelectedValue="{Binding Edge}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Bildschirmrand" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="An welchem Rand die Hover-Zone liegt." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Monitors}" SelectedValue="{Binding MonitorChoice}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Monitor" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Bei „Alle Monitore“ öffnet das Tastenkürzel das Panel auf dem Monitor mit dem Mauszeiger." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Größe und Lage des Auslösebereichs am Rand." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="0" Maximum="1000" TickFrequency="50" Value="{Binding HoverDelayMs}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding HoverDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Verweilzeit bis zum Ausfahren" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Verhindert ungewolltes Öffnen beim Vorbeifahren." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="0" Maximum="2000" TickFrequency="100" Value="{Binding CollapseDelayMs}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding CollapseDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Einklappen nach Verlassen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Zeit, bis das Panel wieder einfährt." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="320" Maximum="640" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelbreite" Style="{StaticResource RowTitle}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Animation" Style="{StaticResource RowTitle}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBox x:Name="HotkeyBox" Width="200" IsReadOnly="True" Text="{Binding HotkeyDisplay, Mode=OneWay}"
+                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown" ToolTip="Klicken und die gewünschte Tastenkombination drücken"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Entfernen" Margin="8,0,0,0" Click="ClearHotkey_Click"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Tastenkürzel" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Öffnet das Panel und setzt den Cursor ins Suchfeld. Zum Ändern ins Feld klicken und die Kombination drücken." Style="{StaticResource RowDesc}"/>
+                                <TextBlock Text="{Binding HotkeyError}" Foreground="{DynamicResource Status.Error}" FontSize="12" Visibility="{Binding HotkeyError, Converter={StaticResource Vis}}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Design" Style="{StaticResource RowTitle}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartWithWindows}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Mit Windows starten" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Power-Exec startet nach der Anmeldung im Hintergrund." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Ausführung -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=exec}">
+                    <TextBlock Text="Ausführung" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Standardwerte für den Ausführen-Dialog und für Remote." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding EnginesList}" SelectedValue="{Binding DefaultEngine}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Standard-PowerShell (lokal)" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Im Dialog pro Start änderbar. Ist PowerShell 7 nicht installiert, wird 5.1 verwendet." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding RemoteEngines}" SelectedValue="{Binding RemoteEngine}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="PowerShell bei Remote" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Auf den meisten Servern ist nur 5.1 vorhanden. Scripte für Remote sollten unter 5.1 laufen." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Policies}" SelectedValue="{Binding ExecutionPolicy}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Execution Policy" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Wird nur an den gestarteten Prozess übergeben." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoProfile}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Ohne Profil starten (-NoProfile)" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Schnellerer Start, keine Seiteneffekte aus dem Profil." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoExit}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Konsole nach Ende offen lassen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Bei lokaler Ausführung von PowerShell- und Batch-Scripten." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="Immer UNC" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Netzwerkpfade" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Laufwerksbuchstaben werden vor dem Start in UNC-Pfade umgewandelt. Fehlt dem gewählten Konto der Zugriff, erscheint eine klare Fehlermeldung." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="Pro Start im Dialog" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Begleitdateien bei Remote" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="„Scriptordner mitsenden“ im Dialog, oder dauerhaft mit der Zeile „PowerExec: CopyFolder“ unter .NOTES im Script." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="Deaktiviert" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Delegation (CredSSP)" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Bewusst nicht unterstützt: Anmeldedaten würden an den Zielrechner weitergegeben." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="1" Maximum="64" TickFrequency="1" Value="{Binding ThrottleLimit}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ThrottleLimit}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Gleichzeitige Verbindungen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Für die Massenausführung." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="10" Maximum="300" TickFrequency="10" Value="{Binding RemoteTimeoutSeconds}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding RemoteTimeoutSeconds, StringFormat={}{0} s}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Verbindungs-Timeout pro Rechner" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Danach gilt der Rechner als nicht erreichbar." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Editors}" SelectedValue="{Binding Editor}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Editor für „Im Editor öffnen“" Style="{StaticResource RowTitle}"/></StackPanel>
+                            </DockPanel>
+                            <DockPanel Margin="0,8,0,0" Visibility="{Binding IsCustomEditor, Converter={StaticResource Vis}}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseEditorCommand}" Margin="8,0,0,0"/>
+                                <TextBox Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="Pfad zur EXE, z. B. C:\Program Files\Notepad++\notepad++.exe"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Style="{StaticResource Btn.Standard}" Content="Ändern …" Command="{Binding BrowseLogFolderCommand}"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Öffnen" Command="{Binding OpenLogFolderCommand}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Log-Ordner" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="{Binding LogFolderDisplay}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Liste leeren" Command="{Binding ClearMachinesCommand}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Zuletzt verwendete Rechner" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="{Binding MachinesText}" Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="Immer abfragen" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Anmeldedaten" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Werden bei jedem Start abgefragt und nie gespeichert." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Updates -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=updates}">
+                    <TextBlock Text="Updates" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Neue Versionen kommen aus den GitHub Releases." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentVersion}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Installierte Version" Style="{StaticResource RowTitle}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{Binding RepoText}" Command="{Binding OpenRepoCommand}" VerticalAlignment="Center"
+                                    Foreground="{DynamicResource Accent}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Quelle" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Öffentliches Repository, keine Anmeldung nötig." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CheckUpdatesOnStart}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Beim Start nach Updates suchen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Bei einer neuen Version erscheint ein Hinweis mit Bestätigung." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IncludePrereleases}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorabversionen einbeziehen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Auch Releases, die als Pre-release markiert sind." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Jetzt prüfen" Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Letzte Prüfung" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="Einstellungsdatei" Style="{StaticResource RowTitle}"/>
+                            <TextBlock Text="{Binding SettingsFile}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/></StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="Speichern" MinWidth="110" Height="34" Margin="8,0,0,0" Click="Save_Click"/>
+                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Abbrechen" MinWidth="96" Height="34" IsCancel="True" Click="Cancel_Click"/>
+                <TextBlock x:Name="SaveHint" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                           Text="Änderungen werden beim Speichern übernommen."/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>

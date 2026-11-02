@@ -1,0 +1,70 @@
+namespace PowerExec.Core.Config;
+
+/// <summary>Verwaltet die Liste der zuletzt verwendeten und favorisierten Rechner.</summary>
+public static class MachineList
+{
+    private static readonly char[] Separators = [',', ';', ' ', '\t', '\r', '\n'];
+
+    /// <summary>Zerlegt eine Eingabe wie "PC1, PC2; PC3" in einzelne Rechnernamen.</summary>
+    public static IReadOnlyList<string> ParseNames(string input) =>
+        input.Split(Separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+             .Select(n => n.ToUpperInvariant())
+             .Distinct(StringComparer.OrdinalIgnoreCase)
+             .ToList();
+
+    public static void MarkUsed(AppSettings settings, IEnumerable<string> names, DateTime? nowUtc = null)
+    {
+        var now = nowUtc ?? DateTime.UtcNow;
+        foreach (var raw in names)
+        {
+            var name = raw.Trim().ToUpperInvariant();
+            if (name.Length == 0) continue;
+            var entry = settings.Machines.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+            {
+                entry = new MachineEntry { Name = name };
+                settings.Machines.Add(entry);
+            }
+            entry.LastUsedUtc = now;
+        }
+        Prune(settings);
+    }
+
+    public static void SetFavorite(AppSettings settings, string name, bool favorite)
+    {
+        var entry = settings.Machines.FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (entry == null)
+        {
+            entry = new MachineEntry { Name = name.ToUpperInvariant(), LastUsedUtc = DateTime.UtcNow };
+            settings.Machines.Add(entry);
+        }
+        entry.Favorite = favorite;
+        Prune(settings);
+    }
+
+    /// <summary>Favoriten bleiben immer erhalten; von den übrigen nur die neuesten MaxRecentMachines.</summary>
+    public static void Prune(AppSettings settings)
+    {
+        var keep = settings.Machines.Where(m => m.Favorite)
+            .Concat(settings.Machines.Where(m => !m.Favorite)
+                .OrderByDescending(m => m.LastUsedUtc)
+                .Take(settings.MaxRecentMachines))
+            .ToList();
+        settings.Machines = keep;
+    }
+
+    public static void ClearRecent(AppSettings settings) =>
+        settings.Machines = settings.Machines.Where(m => m.Favorite).ToList();
+
+    public static string RelativeTime(DateTime utc, DateTime? nowUtc = null)
+    {
+        var now = (nowUtc ?? DateTime.UtcNow).ToLocalTime();
+        var t = utc.ToLocalTime();
+        if (t.Date == now.Date) return "heute";
+        if (t.Date == now.Date.AddDays(-1)) return "gestern";
+        var days = (now.Date - t.Date).Days;
+        if (days < 7) return $"vor {days} Tagen";
+        if (days < 14) return "letzte Woche";
+        return t.ToString("dd.MM.yyyy");
+    }
+}

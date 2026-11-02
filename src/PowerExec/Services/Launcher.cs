@@ -1,0 +1,186 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Security;
+using System.Windows;
+using PowerExec.Core.Config;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Models;
+using PowerExec.Views;
+
+namespace PowerExec.Services;
+
+/// <summary>Anmeldedaten für einen einzelnen Start. Werden nie gespeichert und nach Gebrauch verworfen.</summary>
+public sealed class RunCredential : IDisposable
+{
+    public required string Account { get; init; }
+    public required string UserName { get; init; }
+    public string? Domain { get; init; }
+    public required SecureString Password { get; init; }
+
+    public void Dispose() => Password.Dispose();
+
+    public static (string user, string? domain) Split(string account)
+    {
+        var a = account.Trim();
+        var bs = a.IndexOf('\\');
+        if (bs > 0) return (a[(bs + 1)..], a[..bs]);
+        if (a.Contains('@')) return (a, null);
+        return (a, ".");
+    }
+}
+
+/// <summary>Startet Scripte und Programme lokal.</summary>
+public sealed class Launcher
+{
+    private readonly Func<AppSettings> _settings;
+
+    public Launcher(Func<AppSettings> settings) => _settings = settings;
+
+    public static bool IsPwshInstalled
+    {
+        get
+        {
+            var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (File.Exists(Path.Combine(pf, "PowerShell", "7", "pwsh.exe"))) return true;
+            var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            return path.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                       .Any(p => { try { return File.Exists(Path.Combine(p.Trim(), "pwsh.exe")); } catch { return false; } });
+        }
+    }
+
+    public static PsEngine EffectiveEngine(PsEngine wanted) =>
+        wanted == PsEngine.PowerShell7 && !IsPwshInstalled ? PsEngine.WindowsPowerShell : wanted;
+
+    /// <summary>Erstellt eine Anfrage mit den Standardwerten aus den Einstellungen.</summary>
+    public ExecutionRequest DefaultRequest(LaunchItem item, ExecutionMode mode)
+    {
+        var s = _settings();
+        return new ExecutionRequest
+        {
+            Item = item,
+            Mode = mode,
+            Engine = EffectiveEngine(s.DefaultEngine),
+            NoExit = s.NoExit,
+            NoProfile = s.NoProfile,
+            ExecutionPolicy = s.ExecutionPolicy,
+            ResolvedPath = PathResolver.ToUnc(item.FullPath)
+        };
+    }
+
+    /// <returns>true, wenn der Prozess gestartet wurde.</returns>
+    public bool StartLocal(ExecutionRequest request, Window? owner)
+    {
+        var spec = CommandBuilder.BuildLocal(request);
+        RunCredential? cred = null;
+        if (spec.RequiresCredential)
+        {
+            cred = CredentialWindow.Prompt(owner, request.Item.DisplayName, remote: false);
+            if (cred == null) return false;
+        }
+
+        var psi = new ProcessStartInfo(spec.FileName, spec.Arguments)
+        {
+            UseShellExecute = spec.UseShellExecute,
+            WorkingDirectory = spec.WorkingDirectory ?? string.Empty
+        };
+        if (spec.Verb != null) psi.Verb = spec.Verb;
+        if (cred != null)
+        {
+            psi.UserName = cred.UserName;
+            psi.Domain = cred.Domain;
+            psi.Password = cred.Password;
+            psi.LoadUserProfile = true;
+            psi.WorkingDirectory = Environment.SystemDirectory;
+        }
+
+        try
+        {
+            Process.Start(psi)?.Dispose();
+            return true;
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            return false; // UAC-Abfrage abgebrochen
+        }
+        catch (Exception ex)
+        {
+            ShowStartError(owner, request, spec, cred, ex);
+            return false;
+        }
+        finally
+        {
+            cred?.Dispose();
+        }
+    }
+
+    private static void ShowStartError(Window? owner, ExecutionRequest r, LocalLaunchSpec spec, RunCredential? cred, Exception ex)
+    {
+        var path = r.EffectivePath;
+        string hint = ex is Win32Exception w ? w.NativeErrorCode switch
+        {
+            2 when spec.FileName.Equals("pwsh.exe", StringComparison.OrdinalIgnoreCase)
+                => "PowerShell 7 (pwsh.exe) ist nicht installiert. Wähle im Dialog Windows PowerShell 5.1.",
+            2 or 3 => $"Die Datei wurde nicht gefunden:\n{spec.FileName}",
+            1326 => "Benutzername oder Kennwort ist falsch.",
+            1327 or 1385 => "Das Konto darf sich auf diesem Rechner nicht anmelden.",
+            5 when cred != null && PathResolver.IsNetworkPath(path)
+                => $"Das Konto {cred.Account} hat keinen Zugriff auf {PathResolver.ServerShare(path)}.",
+            5 => "Zugriff verweigert.",
+            267 => "Das Arbeitsverzeichnis ist für dieses Konto nicht erreichbar.",
+            _ => ex.Message
+        } : ex.Message;
+
+        if (cred != null && PathResolver.IsNetworkPath(path) && !hint.Contains(PathResolver.ServerShare(path)))
+            hint += $"\n\nHinweis: Das Script liegt auf {PathResolver.ServerShare(path)}. Prüfe, ob {cred.Account} dort Leserechte hat.";
+
+        MessageBox.Show(owner ?? Application.Current.MainWindow!, hint, $"{r.Item.DisplayName} konnte nicht gestartet werden",
+            MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    public void OpenInEditor(LaunchItem item)
+    {
+        var s = _settings();
+        var path = item.FullPath;
+        try
+        {
+            switch (s.Editor)
+            {
+                case EditorKind.VSCode:
+                    Process.Start(new ProcessStartInfo("code", $"\"{path}\"") { UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden })?.Dispose();
+                    break;
+                case EditorKind.Ise:
+                    Process.Start(new ProcessStartInfo("powershell_ise.exe", $"-File \"{path}\"") { UseShellExecute = true })?.Dispose();
+                    break;
+                case EditorKind.Custom when !string.IsNullOrWhiteSpace(s.EditorPath):
+                    Process.Start(new ProcessStartInfo(s.EditorPath, $"\"{path}\"") { UseShellExecute = true })?.Dispose();
+                    break;
+                default:
+                    Process.Start(new ProcessStartInfo("notepad.exe", $"\"{path}\"") { UseShellExecute = true })?.Dispose();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Der Editor konnte nicht gestartet werden.\n\n{ex.Message}\n\nDen Editor stellst du in den Einstellungen unter „Ausführung“ ein.",
+                "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    public static void OpenLocation(string path, bool isFolder = false)
+    {
+        try
+        {
+            var args = isFolder ? $"\"{path}\"" : $"/select,\"{path}\"";
+            Process.Start(new ProcessStartInfo("explorer.exe", args) { UseShellExecute = true })?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    public static void OpenUrl(string url)
+    {
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose(); } catch { }
+    }
+}

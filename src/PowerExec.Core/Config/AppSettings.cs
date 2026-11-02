@@ -1,0 +1,99 @@
+namespace PowerExec.Core.Config;
+
+public enum ScreenEdge { Right, Left, Top, Bottom }
+
+public enum MonitorMode { Primary, Specific, All }
+
+public enum HotZoneMode { Middle, FirstHalf, Full }
+
+public enum AnimationMode { Smooth, Fast, Off }
+
+public enum ThemeMode { System, Dark, Light }
+
+public enum PsEngine { WindowsPowerShell, PowerShell7 }
+
+public enum RemoteEngineMode { WindowsPowerShell, PreferPowerShell7 }
+
+public enum EditorKind { VSCode, Ise, Notepad, Custom }
+
+public sealed class FolderConfig
+{
+    public string Path { get; set; } = string.Empty;
+    public bool Recursive { get; set; } = true;
+
+    /// <summary>Dateiendungen inkl. Punkt. Leer = Standard-Dateiendungen verwenden.</summary>
+    public List<string> Extensions { get; set; } = new();
+
+    /// <summary>Ausschlüsse: Dateiname, Typ (*.exe) oder Muster (*\Archiv\*).</summary>
+    public List<string> Excludes { get; set; } = new();
+
+    public FolderConfig Clone() => new()
+    {
+        Path = Path,
+        Recursive = Recursive,
+        Extensions = new List<string>(Extensions),
+        Excludes = new List<string>(Excludes)
+    };
+}
+
+public sealed class MachineEntry
+{
+    public string Name { get; set; } = string.Empty;
+    public bool Favorite { get; set; }
+    public DateTime LastUsedUtc { get; set; }
+}
+
+public sealed class AppSettings
+{
+    public static readonly string[] StandardExtensions = [".ps1", ".cmd", ".bat", ".exe", ".lnk", ".msc"];
+
+    // Ordner
+    public List<FolderConfig> Folders { get; set; } = new();
+    public List<string> DefaultExtensions { get; set; } = new(StandardExtensions);
+    public List<string> GlobalExcludes { get; set; } = new();
+    public bool AutoRescan { get; set; } = true;
+
+    // Panel
+    public ScreenEdge Edge { get; set; } = ScreenEdge.Right;
+    public MonitorMode MonitorMode { get; set; } = MonitorMode.Primary;
+    public int MonitorIndex { get; set; }
+    public HotZoneMode HotZone { get; set; } = HotZoneMode.Middle;
+    public int HoverDelayMs { get; set; } = 250;
+    public int CollapseDelayMs { get; set; } = 400;
+    public int PanelWidth { get; set; } = 400;
+    public AnimationMode Animation { get; set; } = AnimationMode.Smooth;
+    public ThemeMode Theme { get; set; } = ThemeMode.System;
+    public string Hotkey { get; set; } = "Ctrl+Alt+Space";
+    public bool StartWithWindows { get; set; }
+    public bool Pinned { get; set; }
+
+    // Panel-Zustand
+    public List<string> Favorites { get; set; } = new();
+    public List<string> CollapsedGroups { get; set; } = new();
+
+    // Ausführung
+    public PsEngine DefaultEngine { get; set; } = PsEngine.PowerShell7;
+    public RemoteEngineMode RemoteEngine { get; set; } = RemoteEngineMode.WindowsPowerShell;
+    public string ExecutionPolicy { get; set; } = "Bypass";
+    public bool NoProfile { get; set; } = true;
+    public bool NoExit { get; set; } = true;
+    public int ThrottleLimit { get; set; } = 16;
+    public int RemoteTimeoutSeconds { get; set; } = 60;
+    public string LogFolder { get; set; } = string.Empty;
+    public EditorKind Editor { get; set; } = EditorKind.VSCode;
+    public string EditorPath { get; set; } = string.Empty;
+    public List<MachineEntry> Machines { get; set; } = new();
+    public int MaxRecentMachines { get; set; } = 20;
+
+    // Updates
+    public bool CheckUpdatesOnStart { get; set; } = true;
+    public bool IncludePrereleases { get; set; }
+
+    public IReadOnlyList<string> ExtensionsFor(FolderConfig folder) =>
+        folder.Extensions.Count > 0 ? folder.Extensions : DefaultExtensions;
+
+    public string EffectiveLogFolder =>
+        string.IsNullOrWhiteSpace(LogFolder)
+            ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Logs")
+            : LogFolder;
+}

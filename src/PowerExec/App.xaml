@@ -1,0 +1,19 @@
+<Application x:Class="PowerExec.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:PowerExec.Infrastructure"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Index 0: Farbschema, wird vom ThemeService ausgetauscht -->
+                <ResourceDictionary Source="Themes/Dark.xaml"/>
+                <ResourceDictionary Source="Themes/Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <infra:VisibilityConverter x:Key="Vis"/>
+            <infra:EqualsConverter x:Key="Eq"/>
+            <infra:ExpandAngleConverter x:Key="ExpandAngle"/>
+            <infra:EqualsVisibilityConverter x:Key="EqVis"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

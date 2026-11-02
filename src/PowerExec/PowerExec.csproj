@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RootNamespace>PowerExec</RootNamespace>
+    <AssemblyName>PowerExec</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\PowerExec.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>de;en</SatelliteResourceLanguages>
+    <!-- WFAC010 betrifft WinForms-Apps; für WPF ist die DPI-Angabe im Manifest richtig. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+  <!-- Einzeldatei-Veröffentlichung (siehe .github/workflows/release.yml) -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\PowerExec.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+  </ItemGroup>
+</Project>
