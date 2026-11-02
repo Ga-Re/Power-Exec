@@ -1,13 +1,29 @@
 name: Release
 
-# Ein Tag wie v1.4.0 baut PowerExec.exe und den Installer PowerExec-Setup.exe und veröffentlicht beides als GitHub Release.
+# Erzeugt ein GitHub Release mit PowerExec-Setup.exe und PowerExec.exe (samt SHA-256-Prüfsummen).
 # Power-Exec prüft diese Releases beim Start und bietet das Update mit Bestätigung an.
+#
+# Auslöser:
+#  - neue <Version> in Directory.Build.props auf main  → Tag v<Version> und Release werden automatisch erstellt
+#  - ein manuell gepushter Tag v*                       → Release zu diesem Tag
+#  - „Run workflow“ in GitHub (Actions → Release)      → Release zur Version in Directory.Build.props
+# Existiert das Release zur Version schon, passiert nichts.
+# Versionen mit Bindestrich (z. B. 0.2.0-beta.1) werden als Vorabversion veröffentlicht.
 on:
   push:
+    branches: [main]
+    paths:
+      - Directory.Build.props
+      - .github/workflows/release.yml
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -15,24 +31,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Version bestimmen
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' Directory.Build.props | head -1)
+          fi
+          if [ -z "$VERSION" ]; then echo "Keine Version gefunden." >&2; exit 1; fi
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "fileversion=${VERSION%%-*}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$VERSION" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG existiert bereits – nichts zu tun."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-dotnet@v4
+        if: steps.version.outputs.skip == 'false'
         with:
           dotnet-version: 8.0.x
 
-      - name: Version aus dem Tag
-        id: version
-        shell: bash
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "fileversion=${VERSION%%-*}" >> "$GITHUB_OUTPUT"
-          if [[ "$VERSION" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
-
       - name: Tests
+        if: steps.version.outputs.skip == 'false'
         run: dotnet test tests/PowerExec.Core.Tests -c Release
 
       - name: Veröffentlichen (Einzeldatei, ohne .NET-Installation lauffähig)
+        if: steps.version.outputs.skip == 'false'
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
           --self-contained true
@@ -41,17 +74,17 @@ jobs:
           -o out
 
       - name: Installer bauen (Inno Setup)
+        if: steps.version.outputs.skip == 'false'
         shell: pwsh
         run: |
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
-          if (-not (Test-Path $iscc)) {
-            choco install innosetup --no-progress -y
-          }
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
           if (-not (Test-Path $iscc)) { throw "ISCC.exe nicht gefunden: $iscc" }
           & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "/DMyFileVersion=${{ steps.version.outputs.fileversion }}" "/DSourceDir=..\out" installer\PowerExec.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup ist mit Code $LASTEXITCODE fehlgeschlagen." }
 
       - name: Prüfsummen
+        if: steps.version.outputs.skip == 'false'
         shell: pwsh
         run: |
           foreach ($f in 'PowerExec.exe', 'PowerExec-Setup.exe') {
@@ -60,13 +93,23 @@ jobs:
           }
 
       - name: Release erstellen
+        if: steps.version.outputs.skip == 'false'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           FLAGS="--generate-notes"
           if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then FLAGS="$FLAGS --prerelease"; fi
-          gh release create "${GITHUB_REF_NAME}" \
+          cat > notes.md <<'NOTES'
+          ## Installation
+          **PowerExec-Setup.exe** herunterladen und starten – keine Adminrechte nötig.
+          Alternativ **PowerExec.exe** ohne Installation (portabel) verwenden.
+
+          Bereits installiert? Power-Exec zeigt das Update im Panel an und installiert es nach Bestätigung selbst.
+          NOTES
+          gh release create "${{ steps.version.outputs.tag }}" \
             out/PowerExec-Setup.exe out/PowerExec-Setup.exe.sha256 \
             out/PowerExec.exe out/PowerExec.exe.sha256 \
-            --title "Power-Exec ${{ steps.version.outputs.version }}" $FLAGS
+            --target "$GITHUB_SHA" \
+            --title "Power-Exec ${{ steps.version.outputs.version }}" \
+            --notes-file notes.md $FLAGS

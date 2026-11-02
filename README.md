@@ -121,16 +121,17 @@ Aufbau:
 - `tests/PowerExec.Core.Tests` – Tests für die Kernlogik
 - `installer/PowerExec.iss` – Installer (Inno Setup 6)
 
-Ein neues Release entsteht durch einen Tag:
+### Releases
 
-```bash
-git tag v0.1.0
+Ein Release entsteht automatisch, sobald auf `main` eine neue Versionsnummer in
+[`Directory.Build.props`](Directory.Build.props) landet:
+
+```xml
+<Version>0.2.0</Version>
 ```
 
-```bash
-git push origin v0.1.0
-```
-
-Die GitHub Action baut dann `PowerExec.exe` und den Installer `PowerExec-Setup.exe` (Inno Setup, `installer/PowerExec.iss`)
-samt Prüfsummen und veröffentlicht das Release. Jeder Push baut zur Kontrolle beides als Artefakt der CI.
-Tags mit Bindestrich (z. B. `v0.2.0-beta.1`) werden als Vorabversion markiert.
+Die GitHub Action legt dann den Tag `v0.2.0` an, baut `PowerExec.exe` und den Installer
+`PowerExec-Setup.exe` (Inno Setup, `installer/PowerExec.iss`) samt Prüfsummen und veröffentlicht das Release.
+Versionen mit Bindestrich (z. B. `0.2.0-beta.1`) werden als Vorabversion markiert.
+Alternativ startet „Run workflow“ unter *Actions → Release* oder ein manuell gepushter Tag `v*` den Build.
+Jeder Push baut zur Kontrolle beides außerdem als Artefakt der CI.
