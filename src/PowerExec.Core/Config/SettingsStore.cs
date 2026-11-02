@@ -71,6 +71,12 @@ public sealed class SettingsStore
         s.RecentRunsCount = Math.Clamp(s.RecentRunsCount, 0, 20);
         s.ScanTimeoutSeconds = Math.Clamp(s.ScanTimeoutSeconds, 2, 120);
         foreach (var f in s.Folders) FolderVisibility.MigrateLegacyExcludes(f);
+        if (s.Panels.Count == 0) s.Panels.Add(PanelConfig.FromLegacy(s));
+        foreach (var p in s.Panels) p.Normalize();
+        if (s.Panels.Select(p => p.Id).Distinct().Count() != s.Panels.Count)
+            foreach (var p in s.Panels) p.Id = Guid.NewGuid().ToString("N");
+        WorkspaceManager.EnsureInitialized(s);
+        s.MachineGroups.RemoveAll(g => string.IsNullOrWhiteSpace(g.Name));
         s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));
         foreach (var e in s.Entries)
         {

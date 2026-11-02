@@ -45,6 +45,7 @@ public sealed class GroupViewModel : ObservableObject
         "fav" => "\uE735",
         "recent" => "\uE81C",
         "category" => "\uE8EC",
+        "custom" => "\uE71B",
         _ => "\uE8B7"
     };
     public string? FolderPath { get; }

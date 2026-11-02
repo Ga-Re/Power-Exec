@@ -14,6 +14,9 @@ namespace PowerExec.Views;
 public partial class PanelWindow : Window
 {
     private readonly AppController _app;
+    private readonly PanelHost _host;
+    private ViewModels.PanelViewModel Vm => _host.ViewModel;
+    private PanelConfig Cfg => _host.Config;
     private readonly DispatcherTimer _poll;
     private IntPtr _hwnd;
     private MonitorInfo? _monitor;
@@ -24,11 +27,12 @@ public partial class PanelWindow : Window
     public bool IsOpen { get; private set; }
     public bool OpenedViaHotkey { get; private set; }
 
-    public PanelWindow(AppController app)
+    public PanelWindow(AppController app, PanelHost host)
     {
         _app = app;
+        _host = host;
         InitializeComponent();
-        DataContext = app.Panel;
+        DataContext = host.ViewModel;
         ApplyAppearance();
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
@@ -42,7 +46,7 @@ public partial class PanelWindow : Window
         {
             if (e.Key == Key.Escape)
             {
-                if (_app.Panel.IsSearching) _app.Panel.SearchText = string.Empty;
+                if (Vm.IsSearching) Vm.SearchText = string.Empty;
                 else HidePanel();
                 e.Handled = true;
             }
@@ -88,6 +92,17 @@ public partial class PanelWindow : Window
         SearchBox.SelectAll();
     }
 
+    private bool _closingForGood;
+
+    /// <summary>Fenster endgültig schließen (Panel entfernt oder Einstellungen neu angewendet).</summary>
+    public void CloseForGood()
+    {
+        _closingForGood = true;
+        _poll.Stop();
+        IsOpen = false;
+        Close();
+    }
+
     public void HidePanel()
     {
         if (!IsOpen || _hiding) return;
@@ -99,7 +114,7 @@ public partial class PanelWindow : Window
     /// <summary>Nach einer Aktion (Start, Dialog geöffnet) einfahren – außer das Panel ist angeheftet.</summary>
     public void HideAfterAction(bool force = false)
     {
-        if (!force && _app.Settings.Pinned) return;
+        if (!force && Cfg.Pinned) return;
         HidePanel();
     }
 
@@ -112,7 +127,7 @@ public partial class PanelWindow : Window
     /// </summary>
     public void ApplyAppearance()
     {
-        var s = _app.Settings;
+        var s = Cfg;
         Resources.MergedDictionaries.Clear();
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
@@ -151,11 +166,11 @@ public partial class PanelWindow : Window
     public void ApplySettings()
     {
         ApplyAppearance();
-        _app.Panel.ResetForNextOpen();
+        Vm.ResetForNextOpen();
         if (IsOpen && _monitor != null)
         {
             // Monitor kann sich geändert haben
-            _monitor = ScreenService.TriggerMonitors(_app.Settings)[0];
+            _monitor = ScreenService.TriggerMonitors(Cfg)[0];
             Place();
         }
     }
@@ -163,16 +178,16 @@ public partial class PanelWindow : Window
     private void Place()
     {
         if (_monitor == null) return;
-        _rect = ScreenService.PanelRect(_monitor, _app.Settings);
+        _rect = ScreenService.PanelRect(_monitor, Cfg);
         ScreenService.Place(_hwnd, _rect);
     }
 
     private void Animate(bool show)
     {
         var duration = AnimationDuration;
-        var edge = _app.Settings.Edge;
+        var edge = Cfg.Edge;
         double distance = edge is ScreenEdge.Left or ScreenEdge.Right
-            ? (ActualWidth > 0 ? ActualWidth : _app.Settings.PanelWidth) + 24
+            ? (ActualWidth > 0 ? ActualWidth : Cfg.PanelWidth) + 24
             : (ActualHeight > 0 ? ActualHeight : 600) + 24;
         double hiddenOffset = edge is ScreenEdge.Left or ScreenEdge.Top ? -distance : distance;
         var property = edge is ScreenEdge.Left or ScreenEdge.Right ? TranslateTransform.XProperty : TranslateTransform.YProperty;
@@ -208,18 +223,18 @@ public partial class PanelWindow : Window
         IsOpen = false;
         OpenedViaHotkey = false;
         Hide();
-        _app.Panel.ResetForNextOpen();
+        Vm.ResetForNextOpen();
         ListScroll.ScrollToTop();
     }
 
     private void CheckAutoHide()
     {
-        if (!IsOpen || _hiding || _app.Settings.Pinned) { _outsideSince = null; return; }
+        if (!IsOpen || _hiding || Cfg.Pinned) { _outsideSince = null; return; }
         if (AnyPopupOpen()) { _outsideSince = null; return; }
         // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
-        if (OpenedViaHotkey || (IsActive && _app.Panel.IsSearching)) { _outsideSince = null; return; }
+        if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
 
-        bool inside = ScreenService.CursorInside(_rect, 2) || _app.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2));
+        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2));
         if (inside)
         {
             _outsideSince = null;
@@ -232,7 +247,7 @@ public partial class PanelWindow : Window
 
     private void OnDeactivated()
     {
-        if (!IsOpen || _app.Settings.Pinned) return;
+        if (!IsOpen || Cfg.Pinned) return;
         Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
             if (!IsOpen || IsActive || AnyPopupOpen()) return;
@@ -270,7 +285,7 @@ public partial class PanelWindow : Window
 
     private void Row_PreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || _dragCandidate == null || _app.Panel.IsSearching) return;
+        if (e.LeftButton != MouseButtonState.Pressed || _dragCandidate == null || Vm.IsSearching) return;
         var pos = e.GetPosition(this);
         if (Math.Abs(pos.X - _dragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
             Math.Abs(pos.Y - _dragStart.Y) < SystemParameters.MinimumVerticalDragDistance * 2) return;
@@ -287,7 +302,7 @@ public partial class PanelWindow : Window
         if (sender is not Border row || !e.Data.GetDataPresent(DragFormat)) return;
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
         var target = row.DataContext as ViewModels.ItemViewModel;
-        bool sameGroup = target != null && _app.Panel.Groups.Any(g => g.AllowReorder && g.Items.Contains(source) && g.Items.Contains(target));
+        bool sameGroup = target != null && Vm.Groups.Any(g => g.AllowReorder && g.Items.Contains(source) && g.Items.Contains(target));
         e.Effects = sameGroup && !ReferenceEquals(source, target) ? DragDropEffects.Move : DragDropEffects.None;
         // Einfügemarke oben bzw. unten
         row.BorderThickness = e.Effects == DragDropEffects.Move
@@ -307,7 +322,7 @@ public partial class PanelWindow : Window
         row.BorderThickness = new Thickness(0);
         if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ViewModels.ItemViewModel target) return;
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
-        _app.Panel.MoveItem(source, target, InsertAfter(row, e));
+        Vm.MoveItem(source, target, InsertAfter(row, e));
         e.Handled = true;
     }
 
@@ -352,15 +367,15 @@ public partial class PanelWindow : Window
         switch (e.Key)
         {
             case Key.Down:
-                ScrollIntoView(_app.Panel.MoveSelection(1));
+                ScrollIntoView(Vm.MoveSelection(1));
                 e.Handled = true;
                 break;
             case Key.Up:
-                ScrollIntoView(_app.Panel.MoveSelection(-1));
+                ScrollIntoView(Vm.MoveSelection(-1));
                 e.Handled = true;
                 break;
             case Key.Enter:
-                _app.Panel.RunSelectedOrFirst();
+                Vm.RunSelectedOrFirst();
                 e.Handled = true;
                 break;
         }

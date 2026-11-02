@@ -49,6 +49,12 @@ public static class ScriptInfoReader
 
         item.Parameters = ReadParameters(ast.ParamBlock, help);
 
+        var req = ast.ScriptRequirements;
+        if (req != null)
+        {
+            item.RequiresAdmin = req.IsElevationRequired;
+            item.RequiredPsVersion = req.RequiredPSVersion?.ToString() ?? string.Empty;
+        }
         var modules = ast.ScriptRequirements?.RequiredModules;
         if (modules != null)
             item.RequiredModules = modules.Select(m => m.Name).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();

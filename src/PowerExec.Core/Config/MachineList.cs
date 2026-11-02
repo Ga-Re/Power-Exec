@@ -12,6 +12,42 @@ public static class MachineList
              .Distinct(StringComparer.OrdinalIgnoreCase)
              .ToList();
 
+    /// <summary>Löst „@Gruppe“ in die Rechner der Gruppe auf; doppelte Namen werden entfernt.</summary>
+    public static IReadOnlyList<string> Resolve(AppSettings settings, IEnumerable<string> names)
+    {
+        var result = new List<string>();
+        foreach (var raw in names)
+        {
+            var n = raw.Trim();
+            if (n.StartsWith('@'))
+            {
+                var g = settings.MachineGroups.FirstOrDefault(x => x.Name.Equals(n[1..].Trim(), StringComparison.CurrentCultureIgnoreCase));
+                if (g != null) result.AddRange(g.Machines);
+            }
+            else if (n.Length > 0) result.Add(n.ToUpperInvariant());
+        }
+        return result.Select(x => x.Trim().ToUpperInvariant()).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>
+    /// Rechnernamen aus einer Text- oder CSV-Datei: erste Spalte (Trennzeichen ; , oder Tab), Kopfzeile wie
+    /// „Name“/„Computer“/„ComputerName“/„DNSHostName“ wird übersprungen.
+    /// </summary>
+    public static IReadOnlyList<string> ParseImport(string text)
+    {
+        var headers = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "name", "computer", "computername", "dnshostname", "hostname", "rechner", "rechnername" };
+        var names = new List<string>();
+        foreach (var raw in text.Replace("\r", "").Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#')) continue;
+            var first = line.Split(new[] { ';', ',', '\t' }, StringSplitOptions.TrimEntries)[0].Trim('"', '\'', ' ');
+            if (first.Length == 0 || headers.Contains(first)) continue;
+            names.Add(first.ToUpperInvariant());
+        }
+        return names.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
     public static void MarkUsed(AppSettings settings, IEnumerable<string> names, DateTime? nowUtc = null)
     {
         var now = nowUtc ?? DateTime.UtcNow;

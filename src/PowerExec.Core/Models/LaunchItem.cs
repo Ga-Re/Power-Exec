@@ -54,6 +54,24 @@ public sealed class LaunchItem
 
     public DateTime LastWriteTimeUtc { get; set; }
 
+    /// <summary>Bei eigenen Einträgen: tatsächlich zu startendes Ziel (URL, Ordner, Programm).</summary>
+    public string? LaunchTarget { get; set; }
+
+    /// <summary>Bei eigenen Einträgen: feste Argumente.</summary>
+    public string LaunchArguments { get; set; } = string.Empty;
+
+    /// <summary>Art des eigenen Eintrags (null = Datei aus einem Ordner).</summary>
+    public Config.CustomEntryKind? CustomKind { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsCustom => CustomKind != null;
+
+    /// <summary>#Requires -RunAsAdministrator</summary>
+    public bool RequiresAdmin { get; set; }
+
+    /// <summary>#Requires -Version (z. B. „7.2“), leer = keine Angabe.</summary>
+    public string RequiredPsVersion { get; set; } = string.Empty;
+
     /// <summary>Zonen-Kennung (3 = Internet). Gesetzt, wenn die Datei als heruntergeladen markiert ist.</summary>
     public int? ZoneId { get; set; }
 

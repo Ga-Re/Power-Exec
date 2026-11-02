@@ -18,7 +18,7 @@ public static class ScreenService
     public static IReadOnlyList<MonitorInfo> GetMonitors() =>
         Forms.Screen.AllScreens.Select((s, i) => new MonitorInfo(i, s.Bounds, s.WorkingArea, s.Primary)).ToList();
 
-    public static IReadOnlyList<MonitorInfo> TriggerMonitors(AppSettings s)
+    public static IReadOnlyList<MonitorInfo> TriggerMonitors(PanelConfig s)
     {
         var all = GetMonitors();
         var primary = all.FirstOrDefault(m => m.IsPrimary) ?? all[0];
@@ -37,10 +37,10 @@ public static class ScreenService
         return all.FirstOrDefault(m => m.Bounds.Contains(p.X, p.Y)) ?? all.First(m => m.IsPrimary);
     }
 
-    public static Rectangle HotZone(MonitorInfo m, AppSettings s) =>
+    public static Rectangle HotZone(MonitorInfo m, PanelConfig s) =>
         PanelLayout.HotZone(m.Bounds, m.WorkArea, s, m.Scale);
 
-    public static Rectangle PanelRect(MonitorInfo m, AppSettings s) =>
+    public static Rectangle PanelRect(MonitorInfo m, PanelConfig s) =>
         PanelLayout.Panel(m.Bounds, m.WorkArea, s, m.Scale);
 
     public static void Place(IntPtr hwnd, Rectangle r) =>

@@ -163,6 +163,22 @@ public sealed class AppSettings
     /// <summary>Anzeigename, Beschreibung und Startprofile je Eintrag (Schlüssel: vollständiger Pfad).</summary>
     public List<EntryConfig> Entries { get; set; } = new();
 
+    /// <summary>Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle) des aktiven Arbeitsbereichs.</summary>
+    public List<CustomEntry> CustomEntries { get; set; } = new();
+
+    /// <summary>Panels (ab 0.7). Das erste ist das Hauptpanel.</summary>
+    public List<PanelConfig> Panels { get; set; } = new();
+
+    /// <summary>Arbeitsbereiche; die Daten des aktiven stehen direkt in diesen Einstellungen.</summary>
+    public List<Workspace> Workspaces { get; set; } = new();
+    public string ActiveWorkspace { get; set; } = "Standard";
+
+    /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
+    public List<MachineGroup> MachineGroups { get; set; } = new();
+
+    /// <summary>Zuletzt verwendete Parameterwerte (Schlüssel: Pfad|Parameter).</summary>
+    public Dictionary<string, List<string>> ParameterHistory { get; set; } = new();
+
     public EntryConfig? FindEntry(string fullPath) =>
         Entries.FirstOrDefault(e => string.Equals(e.Path, fullPath, StringComparison.OrdinalIgnoreCase));
 
@@ -177,4 +193,13 @@ public sealed class AppSettings
         string.IsNullOrWhiteSpace(LogFolder)
             ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Logs")
             : LogFolder;
+}
+
+/// <summary>Benannte Rechnerliste, z. B. „Druckserver“.</summary>
+public sealed class MachineGroup
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> Machines { get; set; } = new();
+
+    public MachineGroup Clone() => new() { Name = Name, Machines = new List<string>(Machines) };
 }

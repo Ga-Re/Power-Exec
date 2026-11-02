@@ -13,6 +13,7 @@ namespace PowerExec.ViewModels;
 public sealed class PanelViewModel : ObservableObject
 {
     private readonly AppController _app;
+    private readonly PanelHost _host;
     private string _searchText = string.Empty;
     private TypeFilter _filter = TypeFilter.All;
     private string? _selectedKey;
@@ -23,10 +24,13 @@ public sealed class PanelViewModel : ObservableObject
     private bool _updateBusy;
     private string? _folderWarning;
 
-    public PanelViewModel(AppController app)
+    public PanelViewModel(AppController app, PanelHost host)
     {
         _app = app;
-        _filter = app.Settings.DefaultFilter;
+        _host = host;
+        _filter = host.Config.DefaultFilter;
+        ToggleCompactCommand = new RelayCommand(() => IsCompact = !IsCompact);
+        SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
         RescanCommand = new RelayCommand(() => _ = _app.Repository.ScanAsync());
         UpdateNowCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => !UpdateBusy);
@@ -61,24 +65,49 @@ public sealed class PanelViewModel : ObservableObject
         }
     }
 
+    public PanelConfig Config => _host.Config;
+    public string PanelName => _host.Config.Name;
+    public bool IsMultiPanel => _app.Settings.Panels.Count > 1;
+
     public bool IsPinned
     {
-        get => _app.Settings.Pinned;
+        get => _host.Config.Pinned;
         set
         {
-            if (_app.Settings.Pinned == value) return;
-            _app.Settings.Pinned = value;
+            if (_host.Config.Pinned == value) return;
+            _host.Config.Pinned = value;
             _app.SaveSettings();
             OnPropertyChanged();
         }
     }
 
-    public string HotkeyHint => HotkeyService.Display(_app.Settings.Hotkey);
-    public bool HasHotkey => !string.IsNullOrWhiteSpace(_app.Settings.Hotkey);
+    /// <summary>Kompakte Ansicht: eine Zeile pro Eintrag.</summary>
+    public bool IsCompact
+    {
+        get => _host.Config.Compact;
+        set
+        {
+            if (_host.Config.Compact == value) return;
+            _host.Config.Compact = value;
+            _app.SaveSettings();
+            OnPropertyChanged();
+        }
+    }
+
+    public ICommand ToggleCompactCommand { get; }
+
+    // Arbeitsbereiche
+    public IReadOnlyList<string> Workspaces => _app.Settings.Workspaces.Select(w => w.Name).ToList();
+    public string ActiveWorkspace => _app.Settings.ActiveWorkspace;
+    public bool HasWorkspaces => _app.Settings.Workspaces.Count > 1;
+    public ICommand SwitchWorkspaceCommand { get; }
+
+    public string HotkeyHint => HotkeyService.Display(_host.Config.Hotkey);
+    public bool HasHotkey => !string.IsNullOrWhiteSpace(_host.Config.Hotkey);
 
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
-    public bool HasNoFolders => _app.Settings.Folders.Count == 0;
+    public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0;
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
@@ -108,13 +137,24 @@ public sealed class PanelViewModel : ObservableObject
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var pending = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var visible = new List<LaunchItem>();
+        var cfg = _host.Config;
+        bool CategoryOk(LaunchItem i) => cfg.Categories.Count == 0 || cfg.ShowsCategory(settings.FindEntry(i.FullPath)?.Category ?? string.Empty);
         foreach (var i in repo.Items)
         {
-            if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
+            if (!folderByPath.TryGetValue(i.RootFolder, out var folder) || !cfg.ShowsFolder(folder.Path)) continue;
             var state = FolderVisibility.State(folder, FolderVisibility.RelativePath(folder, i.FullPath));
-            if (state == EntryVisibility.Visible) visible.Add(i);
+            if (state == EntryVisibility.Visible) { if (CategoryOk(i)) visible.Add(i); }
             else if (state == EntryVisibility.Pending) pending[folder.Path] = pending.GetValueOrDefault(folder.Path) + 1;
         }
+        // Eigene Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle)
+        var customItems = new List<LaunchItem>();
+        if (cfg.ShowsFolder(PanelConfig.CustomEntriesKey))
+            foreach (var c in settings.CustomEntries)
+            {
+                var li = c.ToLaunchItem();
+                if (CategoryOk(li)) customItems.Add(li);
+            }
+        visible.AddRange(customItems);
         UpdatePending(pending);
 
         bool Matches(LaunchItem i)
@@ -122,7 +162,8 @@ public sealed class PanelViewModel : ObservableObject
             if (ItemFilter.MatchesQuery(i, query)) return true;
             var e = settings.FindEntry(i.FullPath);
             return e != null && query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .All(t => (e.DisplayName + " " + e.Description).Contains(t, StringComparison.CurrentCultureIgnoreCase));
+                .All(t => (i.SearchText + " " + e.DisplayName + " " + e.Description + " " + e.Notes + " " + e.Category)
+                    .Contains(t, StringComparison.CurrentCultureIgnoreCase));
         }
 
         var pool = visible
@@ -188,13 +229,15 @@ public sealed class PanelViewModel : ObservableObject
         }
         else
         {
-            foreach (var folder in settings.Folders)
+            foreach (var folder in settings.Folders.Where(f => cfg.ShowsFolder(f.Path)))
             {
                 var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
                 var items = pool.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (items.Count == 0 && (searching || _filter != TypeFilter.All || status?.Error == null)) continue;
                 groups.Add(MakeGroup("folder:" + folder.Path, folder.Path, "folder", folder.Path, items, status?.Error));
             }
+            var customVisible = pool.Where(i => i.IsCustom).ToList();
+            if (customVisible.Count > 0) groups.Add(MakeGroup("custom", "Eigene Einträge", "custom", null, customVisible));
         }
 
         Groups.Clear();
@@ -212,13 +255,19 @@ public sealed class PanelViewModel : ObservableObject
 
         if (repo.IsScanning && repo.Items.Count == 0) Footer = "Ordner werden eingelesen …";
         else if (searching) Footer = $"{pool.Count} Treffer für „{query}“";
-        else Footer = $"{visible.Count} Einträge aus {settings.Folders.Count} Ordnern · eingelesen {repo.LastScan:HH:mm}";
+        else Footer = $"{visible.Count} Einträge · eingelesen {repo.LastScan:HH:mm}" + (HasWorkspaces ? $" · {settings.ActiveWorkspace}" : string.Empty);
 
         OnPropertyChanged(nameof(HasNoFolders));
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(HotkeyHint));
         OnPropertyChanged(nameof(HasHotkey));
         OnPropertyChanged(nameof(IsPinned));
+        OnPropertyChanged(nameof(IsCompact));
+        OnPropertyChanged(nameof(Workspaces));
+        OnPropertyChanged(nameof(ActiveWorkspace));
+        OnPropertyChanged(nameof(HasWorkspaces));
+        OnPropertyChanged(nameof(PanelName));
+        OnPropertyChanged(nameof(IsMultiPanel));
     }
 
     // ---- Neue Einträge, die auf Freigabe warten -----------------------------
@@ -298,7 +347,7 @@ public sealed class PanelViewModel : ObservableObject
     public void ResetForNextOpen()
     {
         _searchText = string.Empty;
-        _filter = _app.Settings.DefaultFilter;
+        _filter = _host.Config.DefaultFilter;
         _selectedKey = null;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(IsSearching));

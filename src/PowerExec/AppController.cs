@@ -13,8 +13,7 @@ namespace PowerExec;
 /// <summary>Zentrale Steuerung: Einstellungen, Panel, Aktionen, Updates.</summary>
 public sealed class AppController : IDisposable
 {
-    private PanelWindow? _panelWindow;
-    private readonly List<EdgeTriggerWindow> _triggers = new();
+    private readonly List<PanelHost> _hosts = new();
     private HotkeyService? _hotkey;
     private TrayIcon? _tray;
     private SettingsWindow? _settingsWindow;
@@ -25,7 +24,10 @@ public sealed class AppController : IDisposable
     public Launcher Launcher { get; private set; } = null!;
     public UpdateService Updates { get; } = new();
     public IconService Icons { get; private set; } = null!;
-    public PanelViewModel Panel { get; private set; } = null!;
+    /// <summary>ViewModel des Hauptpanels (Update-Hinweis in den Einstellungen u. Ä.).</summary>
+    public PanelViewModel Panel => _hosts[0].ViewModel;
+
+    public IReadOnlyList<PanelHost> Hosts => _hosts;
 
     public void Start()
     {
@@ -42,21 +44,17 @@ public sealed class AppController : IDisposable
         Icons = new IconService(Application.Current.Dispatcher);
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
         Launcher = new Launcher(() => Settings);
-        Panel = new PanelViewModel(this);
         Repository.Changed += (_, _) =>
         {
             UpdateKnownFiles();
             _ = MaintainPathsAsync();
-            Panel.Rebuild();
+            RebuildPanels();
         };
 
-        _panelWindow = new PanelWindow(this);
-        CreateTriggers();
-
-        StartFullscreenWatch();
         _hotkey = new HotkeyService();
-        _hotkey.Pressed += (_, _) => ShowPanelFromHotkey();
-        var hotkeyError = _hotkey.Register(Settings.Hotkey);
+        _hotkey.Pressed += id => ShowPanelFromHotkey(_hosts.FirstOrDefault(h => h.HotkeyId == id));
+        var hotkeyError = CreateHosts();
+        StartFullscreenWatch();
 
         _tray = new TrayIcon(this);
 
@@ -98,14 +96,12 @@ public sealed class AppController : IDisposable
         SaveSettings();
         ThemeService.Apply(Settings.Theme);
         AutostartService.Apply(Settings.StartWithWindows);
-        var hotkeyError = _hotkey?.Register(Settings.Hotkey);
-        CreateTriggers();
-        _panelWindow?.ApplySettings();
+        var hotkeyError = CreateHosts();
         if (foldersChanged) Repository.UpdateSettings(Settings);
         else
         {
             Repository.SetupWatchers();
-            Panel.Rebuild();
+            RebuildPanels();
         }
         return hotkeyError;
     }
@@ -119,19 +115,45 @@ public sealed class AppController : IDisposable
 
     // ---- Panel ----------------------------------------------------------
 
-    private void CreateTriggers()
+    /// <summary>Erzeugt alle Panels neu (nach dem Start und nach geänderten Einstellungen).</summary>
+    /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
+    private string? CreateHosts()
     {
-        foreach (var t in _triggers) t.Close();
-        _triggers.Clear();
-        foreach (var m in ScreenService.TriggerMonitors(Settings))
+        foreach (var h in _hosts) h.Dispose();
+        _hosts.Clear();
+        _hotkey?.UnregisterAll();
+        if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig());
+        var errors = new List<string>();
+        int id = 0x5045; // "PE"
+        foreach (var config in Settings.Panels)
         {
-            var t = new EdgeTriggerWindow(this, m);
-            t.Show();
-            _triggers.Add(t);
+            var host = new PanelHost(this, config, id++);
+            host.CreateTriggers(this);
+            _hosts.Add(host);
+            var err = _hotkey?.Register(host.HotkeyId, config.Hotkey);
+            if (err != null) errors.Add($"{config.Name}: {err}");
         }
+        foreach (var h in _hosts) h.ViewModel.Rebuild();
+        return errors.Count == 0 ? null : string.Join("\n", errors);
     }
 
-    internal IEnumerable<EdgeTriggerWindow> Triggers => _triggers;
+    public void RebuildPanels()
+    {
+        foreach (var h in _hosts) h.ViewModel.Rebuild();
+    }
+
+    private void ForEachPanel(Action<PanelViewModel> action)
+    {
+        foreach (var h in _hosts) action(h.ViewModel);
+    }
+
+    /// <summary>Nach einer Aktion alle Panels einfahren (außer angeheftete, sofern nicht erzwungen).</summary>
+    public void HidePanels(bool force = false)
+    {
+        foreach (var h in _hosts) h.Window.HideAfterAction(force);
+    }
+
+    internal IEnumerable<EdgeTriggerWindow> AllTriggers => _hosts.SelectMany(h => h.Triggers);
 
     private System.Windows.Threading.DispatcherTimer? _fullscreenTimer;
 
@@ -150,7 +172,7 @@ public sealed class AppController : IDisposable
         {
             if (!Settings.HideHotZoneInFullscreen)
             {
-                foreach (var t in _triggers) t.SetSuspended(false);
+                foreach (var t in AllTriggers) t.SetSuspended(false);
                 return;
             }
             var hwnd = Interop.NativeMethods.GetForegroundWindow();
@@ -163,12 +185,13 @@ public sealed class AppController : IDisposable
                 rect = System.Drawing.Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
                 cls = Interop.NativeMethods.ClassNameOf(hwnd);
             }
-            foreach (var t in _triggers)
-            {
-                bool full = rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, t.Monitor.Bounds, cls);
-                if (full && !_panelWindowIsOpen) t.SetSuspended(true);
-                else if (!full) t.SetSuspended(false);
-            }
+            foreach (var h in _hosts)
+                foreach (var t in h.Triggers)
+                {
+                    bool full = rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, t.Monitor.Bounds, cls);
+                    if (full && !h.Window.IsOpen) t.SetSuspended(true);
+                    else if (!full) t.SetSuspended(false);
+                }
         }
         catch
         {
@@ -176,22 +199,37 @@ public sealed class AppController : IDisposable
         }
     }
 
-    private bool _panelWindowIsOpen => _panelWindow?.IsOpen == true;
+    // ---- Arbeitsbereiche -----------------------------------------------
 
-    public void ShowPanelFromTrigger(MonitorInfo monitor) => _panelWindow?.ShowPanel(monitor, viaHotkey: false);
-
-    public void ShowPanelFromHotkey()
+    /// <summary>Wechselt den Arbeitsbereich (gilt für alle Panels) und durchsucht die Ordner neu.</summary>
+    public void SwitchWorkspace(string name)
     {
-        if (_panelWindow == null) return;
-        if (_panelWindow.IsOpen && _panelWindow.OpenedViaHotkey)
+        if (name.Equals(Settings.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)) return;
+        if (!WorkspaceManager.Switch(Settings, name)) return;
+        SaveSettings();
+        AppLog.Info($"Arbeitsbereich gewechselt: {Settings.ActiveWorkspace}");
+        Repository.UpdateSettings(Settings);
+        RebuildPanels();
+        _settingsWindow?.Close(); // Einstellungen zeigen sonst noch den alten Arbeitsbereich
+    }
+
+    public void ShowPanelFromTrigger(PanelHost host, MonitorInfo monitor) => host.Window.ShowPanel(monitor, viaHotkey: false);
+
+    /// <summary>Tastenkürzel oder Tray: Panel öffnen bzw. wieder schließen.</summary>
+    public void ShowPanelFromHotkey(PanelHost? host = null)
+    {
+        host ??= _hosts.FirstOrDefault();
+        if (host == null) return;
+        var w = host.Window;
+        if (w.IsOpen && w.OpenedViaHotkey)
         {
-            _panelWindow.HidePanel();
+            w.HidePanel();
             return;
         }
-        var monitor = Settings.MonitorMode == MonitorMode.All
+        var monitor = host.Config.MonitorMode == MonitorMode.All
             ? ScreenService.MonitorAtCursor()
-            : ScreenService.TriggerMonitors(Settings)[0];
-        _panelWindow.ShowPanel(monitor, viaHotkey: true);
+            : ScreenService.TriggerMonitors(host.Config)[0];
+        w.ShowPanel(monitor, viaHotkey: true);
     }
 
     // ---- Aktionen -------------------------------------------------------
@@ -205,7 +243,7 @@ public sealed class AppController : IDisposable
         else
             Settings.Favorites.Add(item.FullPath);
         SaveSettings();
-        Panel.RefreshFavorites();
+        RebuildPanels();
     }
 
     public FolderConfig? FolderOf(LaunchItem item) =>
@@ -219,7 +257,7 @@ public sealed class AppController : IDisposable
         FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         SaveSettings();
-        Panel.Rebuild();
+        RebuildPanels();
         _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Ordner (Haken setzen).");
     }
 
@@ -296,7 +334,7 @@ public sealed class AppController : IDisposable
             SaveSettings();
             if (moves.Count > 0)
             {
-                Panel.Rebuild();
+                RebuildPanels();
                 _tray?.ShowBalloon("Datei wiedergefunden", moves.Count == 1
                     ? $"{Path.GetFileName(moves[0].OldPath)} heißt jetzt {Path.GetFileName(moves[0].NewPath)}. Profile und Favorit wurden übernommen."
                     : $"{moves.Count} umbenannte oder verschobene Dateien erkannt. Profile und Favoriten wurden übernommen.");
@@ -324,8 +362,14 @@ public sealed class AppController : IDisposable
     {
         if (item.IsPowerShell) item = Repository.Reload(item); // Parameter könnten sich geändert haben
         profile ??= ProfileResolver.GetDefault(Settings, item);
-        var mode = overrideMode ?? (profile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser);
         bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
+        var mode = Requirements.ModeFor(item, overrideMode ?? (profile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser), remote);
+        var targets = remote ? MachineList.Resolve(Settings, profile.Machines) : Array.Empty<string>();
+        if (remote && profile.Target == ProfileTarget.Fixed && targets.Count == 0)
+        {
+            OpenRunDialog(item, mode, remote, profile); // z. B. leere Rechnergruppe
+            return;
+        }
 
         if (item.IsPowerShell)
         {
@@ -337,19 +381,20 @@ public sealed class AppController : IDisposable
                 return;
             }
             var request = BuildRequest(item, profile, mode, values);
-            if (!ConfirmRun(item, profile, remote ? profile.Machines.Count : 0, null)) return;
-            _panelWindow?.HideAfterAction();
+            if (!ConfirmRun(item, profile, targets.Count, null)) return;
+            HidePanels();
             RecordRun(item, profile);
-            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name} · {(remote ? profile.Machines.Count + " Rechner" : "lokal")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name} · {(remote ? targets.Count + " Rechner" : "lokal")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             if (remote)
             {
-                MachineList.MarkUsed(Settings, profile.Machines);
+                // Gruppenmitglieder nicht in „Zuletzt verwendet“ übernehmen, nur direkt eingetragene Rechner.
+                MachineList.MarkUsed(Settings, profile.Machines.Where(n => !n.TrimStart().StartsWith('@')));
                 SaveSettings();
                 StartRemote(new ExecutionRequest
                 {
-                    Item = request.Item, Mode = request.Mode, Engine = profile.Engine, NoExit = request.NoExit, NoProfile = request.NoProfile,
+                    Item = request.Item, Mode = request.Mode, Engine = Requirements.EngineFor(item, profile.Engine), NoExit = request.NoExit, NoProfile = request.NoProfile,
                     ExecutionPolicy = request.ExecutionPolicy, Parameters = request.Parameters, ResolvedPath = request.ResolvedPath,
-                    Targets = profile.Machines.ToList(), CopyFolder = item.CopyFolderByDefault
+                    Targets = targets.ToList(), CopyFolder = item.CopyFolderByDefault
                 }, null);
             }
             else
@@ -360,11 +405,23 @@ public sealed class AppController : IDisposable
         }
 
         if (!ConfirmRun(item, profile, 0, null)) return;
-        _panelWindow?.HideAfterAction();
+        HidePanels();
         if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null))
         {
             RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+        }
+    }
+
+    /// <summary>Text-Parameterwerte für die Vorschläge im Ausführen-Dialog merken (nie geheime Werte).</summary>
+    public void RecordParameters(LaunchItem item, IReadOnlyDictionary<string, string?> raw)
+    {
+        foreach (var p in item.Parameters)
+        {
+            if (p.Kind is ParameterKind.Secure or ParameterKind.Switch or ParameterKind.Boolean or ParameterKind.Choice) continue;
+            if (p.IsSecure) continue;
+            if (raw.TryGetValue(p.Name, out var v) && !string.IsNullOrWhiteSpace(v) && v != p.DefaultValueLiteral)
+                ParameterHistory.Add(Settings, item.FullPath, p.Name, v);
         }
     }
 
@@ -403,26 +460,26 @@ public sealed class AppController : IDisposable
     {
         RecentRunList.Add(Settings, item.FullPath, profile.IsImplicit ? "Standard" : profile.Name);
         SaveSettings();
-        Panel.Rebuild();
+        RebuildPanels();
     }
 
     private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
     {
         Item = item,
         Mode = mode,
-        Engine = Launcher.EffectiveEngine(profile.Engine),
+        Engine = Launcher.EffectiveEngine(Requirements.EngineFor(item, profile.Engine)),
         NoExit = profile.NoExit,
         NoProfile = profile.NoProfile,
         ExecutionPolicy = Settings.ExecutionPolicy,
         Parameters = values,
-        ExtraArguments = profile.Arguments,
-        ResolvedPath = PathResolver.ToUnc(item.FullPath)
+        ExtraArguments = (item.LaunchArguments + " " + profile.Arguments).Trim(),
+        ResolvedPath = item.LaunchTarget ?? PathResolver.ToUnc(item.FullPath)
     };
 
     public void OpenRunDialog(LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
     {
         if (item.IsPowerShell) item = Repository.Reload(item);
-        _panelWindow?.HideAfterAction();
+        HidePanels();
         var vm = new RunViewModel(this, item, mode, remote, profile);
         var w = new RunWindow(vm);
         w.Show();
@@ -432,7 +489,7 @@ public sealed class AppController : IDisposable
     /// <summary>Profil-Dialog aus dem Panel: arbeitet direkt auf den Einstellungen und speichert sofort.</summary>
     public void ShowProfiles(LaunchItem item)
     {
-        _panelWindow?.HideAfterAction(force: true);
+        HidePanels(force: true);
         if (item.IsPowerShell) item = Repository.Reload(item);
         var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);
         var w = new ProfilesWindow(vm);
@@ -444,7 +501,7 @@ public sealed class AppController : IDisposable
     public void OnProfilesSaved()
     {
         SaveSettings();
-        Panel.Rebuild();
+        RebuildPanels();
     }
 
     /// <summary>Startet die Remote-/Massenausführung und öffnet die Ergebnisliste.</summary>
@@ -481,7 +538,7 @@ public sealed class AppController : IDisposable
 
     public void ShowSettings(string? folderPath = null)
     {
-        _panelWindow?.HideAfterAction(force: true);
+        HidePanels(force: true);
         if (_settingsWindow != null)
         {
             _settingsWindow.Activate();
@@ -500,9 +557,9 @@ public sealed class AppController : IDisposable
         var r = await Updates.CheckAsync(includePrereleases);
         if (r != null)
         {
-            Panel.UpdateTitle = $"Version {r.Version.ToString(3)} ist verfügbar";
-            Panel.UpdateSubtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases";
-            Panel.UpdateVisible = true;
+            ForEachPanel(p => p.UpdateTitle = $"Version {r.Version.ToString(3)} ist verfügbar");
+            ForEachPanel(p => p.UpdateSubtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases");
+            ForEachPanel(p => p.UpdateVisible = true);
             if (!manual) _tray?.ShowBalloon("Update verfügbar", $"Power-Exec {r.Version.ToString(3)} kann installiert werden. Öffne das Panel.");
         }
         return r;
@@ -512,24 +569,24 @@ public sealed class AppController : IDisposable
     {
         var r = Updates.Available;
         if (r == null) return;
-        Panel.UpdateBusy = true;
-        Panel.UpdateSubtitle = "Wird heruntergeladen …";
+        ForEachPanel(p => p.UpdateBusy = true);
+        ForEachPanel(p => p.UpdateSubtitle = "Wird heruntergeladen …");
         string? error;
         try
         {
-            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(p => Panel.UpdateSubtitle = $"Wird heruntergeladen … {p:P0}"));
+            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(q => ForEachPanel(p => p.UpdateSubtitle = $"Wird heruntergeladen … {q:P0}")));
         }
         catch (Exception ex)
         {
             error = ex.Message;
         }
-        Panel.UpdateBusy = false;
+        ForEachPanel(p => p.UpdateBusy = false);
         if (error == null)
         {
             Exit();
             return;
         }
-        Panel.UpdateSubtitle = "Update fehlgeschlagen";
+        ForEachPanel(p => p.UpdateSubtitle = "Update fehlgeschlagen");
         if (MessageBox.Show(error + "\n\nRelease-Seite im Browser öffnen?", "Update", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             Launcher.OpenUrl(r.HtmlUrl);
     }
@@ -548,7 +605,7 @@ public sealed class AppController : IDisposable
         Icons?.Dispose();
         _tray = null;
         Repository?.Dispose();
-        foreach (var t in _triggers) t.Close();
-        _triggers.Clear();
+        foreach (var h in _hosts) h.Dispose();
+        _hosts.Clear();
     }
 }

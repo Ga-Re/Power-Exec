@@ -9,7 +9,7 @@ namespace PowerExec.Core.Layout;
 /// </summary>
 public static class PanelLayout
 {
-    public static Rectangle HotZone(Rectangle bounds, Rectangle workArea, AppSettings s, double scale)
+    public static Rectangle HotZone(Rectangle bounds, Rectangle workArea, PanelConfig s, double scale)
     {
         int thickness = Math.Max(1, (int)Math.Round(s.HotZoneThickness * scale));
         bool vertical = s.Edge is ScreenEdge.Left or ScreenEdge.Right;
@@ -40,7 +40,7 @@ public static class PanelLayout
         };
     }
 
-    public static Rectangle Panel(Rectangle bounds, Rectangle workArea, AppSettings s, double scale)
+    public static Rectangle Panel(Rectangle bounds, Rectangle workArea, PanelConfig s, double scale)
     {
         var w = workArea;
         int margin = (int)Math.Round(8 * scale);

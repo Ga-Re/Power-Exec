@@ -65,6 +65,9 @@ public sealed class EntryConfig
     public string DisplayName { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 
+    /// <summary>Freitext-Notiz (z. B. Hinweise oder Link zur Doku).</summary>
+    public string Notes { get; set; } = string.Empty;
+
     /// <summary>Eigene Kategorie für die Gruppierung im Panel (leer = keine).</summary>
     public string Category { get; set; } = string.Empty;
 
@@ -76,6 +79,7 @@ public sealed class EntryConfig
         DisplayName = DisplayName,
         Description = Description,
         Category = Category,
+        Notes = Notes,
         Profiles = Profiles.Select(p => p.Clone()).ToList()
     };
 }

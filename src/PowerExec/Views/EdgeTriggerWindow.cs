@@ -15,13 +15,15 @@ namespace PowerExec.Views;
 public sealed class EdgeTriggerWindow : Window
 {
     private readonly AppController _app;
+    private readonly PanelHost _host;
     private readonly MonitorInfo _monitor;
     private readonly DispatcherTimer _hoverTimer;
     private IntPtr _hwnd;
 
-    public EdgeTriggerWindow(AppController app, MonitorInfo monitor)
+    public EdgeTriggerWindow(AppController app, PanelHost host, MonitorInfo monitor)
     {
         _app = app;
+        _host = host;
         _monitor = monitor;
 
         WindowStyle = WindowStyle.None;
@@ -37,7 +39,7 @@ public sealed class EdgeTriggerWindow : Window
 
         // Die sichtbare Leiste füllt die ganze Hover-Zone und nimmt die Panelfarbe an
         // (ohne eigene Farbe: Akzentfarbe des Designs).
-        var settings = app.Settings;
+        var settings = host.Config;
         Brush fill;
         Brush outline = Brushes.Transparent;
         if (PanelColors.TryParse(settings.PanelColor, out var rgb))
@@ -68,12 +70,12 @@ public sealed class EdgeTriggerWindow : Window
         _hoverTimer.Tick += (_, _) =>
         {
             _hoverTimer.Stop();
-            if (IsMouseOver || ScreenService.CursorInside(CurrentRect)) _app.ShowPanelFromTrigger(_monitor);
+            if (IsMouseOver || ScreenService.CursorInside(CurrentRect)) _app.ShowPanelFromTrigger(_host, _monitor);
         };
 
         MouseEnter += (_, _) =>
         {
-            if (_app.Settings.HoverDelayMs <= 0) _app.ShowPanelFromTrigger(_monitor);
+            if (_app.Settings.HoverDelayMs <= 0) _app.ShowPanelFromTrigger(_host, _monitor);
             else _hoverTimer.Start();
         };
         MouseLeave += (_, _) => _hoverTimer.Stop();
@@ -89,7 +91,7 @@ public sealed class EdgeTriggerWindow : Window
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(Place);
     }
 
-    public System.Drawing.Rectangle CurrentRect => ScreenService.HotZone(_monitor, _app.Settings);
+    public System.Drawing.Rectangle CurrentRect => ScreenService.HotZone(_monitor, _host.Config);
     public MonitorInfo Monitor => _monitor;
 
     private bool _suspended;

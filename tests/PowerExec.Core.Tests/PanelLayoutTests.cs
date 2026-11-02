@@ -13,7 +13,7 @@ public class PanelLayoutTests
     [Fact]
     public void HotZoneUsesThicknessAndLength()
     {
-        var s = new AppSettings { Edge = ScreenEdge.Right, HotZoneThickness = 10, HotZoneLength = 300 };
+        var s = new PanelConfig { Edge = ScreenEdge.Right, HotZoneThickness = 10, HotZoneLength = 300 };
         var z = PanelLayout.HotZone(Bounds, Work, s, 1.0);
         Assert.Equal(new Rectangle(1910, 366, 10, 300), z);
 
@@ -29,7 +29,7 @@ public class PanelLayoutTests
     [Fact]
     public void FullHeightPanel()
     {
-        var s = new AppSettings { Edge = ScreenEdge.Right, PanelWidth = 400 };
+        var s = new PanelConfig { Edge = ScreenEdge.Right, PanelWidth = 400 };
         Assert.Equal(new Rectangle(1512, 8, 400, 1016), PanelLayout.Panel(Bounds, Work, s, 1.0));
     }
 
@@ -40,7 +40,7 @@ public class PanelLayoutTests
     [InlineData(PanelAlignment.HotZone, 262)]  // Hover-Zone in der Mitte
     public void PartialHeightIsAligned(PanelAlignment alignment, int expectedTop)
     {
-        var s = new AppSettings { Edge = ScreenEdge.Left, PanelHeightPercent = 50, PanelAlignment = alignment };
+        var s = new PanelConfig { Edge = ScreenEdge.Left, PanelHeightPercent = 50, PanelAlignment = alignment };
         var r = PanelLayout.Panel(Bounds, Work, s, 1.0);
         Assert.Equal(508, r.Height);
         Assert.Equal(expectedTop, r.Top);
@@ -50,7 +50,7 @@ public class PanelLayoutTests
     [Fact]
     public void PanelFollowsHotZoneButStaysOnScreen()
     {
-        var s = new AppSettings
+        var s = new PanelConfig
         {
             Edge = ScreenEdge.Right, HotZone = HotZoneMode.FirstHalf, PanelHeightPercent = 40, PanelAlignment = PanelAlignment.HotZone
         };
@@ -68,7 +68,7 @@ public class PanelLayoutTests
     [Fact]
     public void TopEdgeUsesHeightPercentAndHorizontalAlignment()
     {
-        var s = new AppSettings { Edge = ScreenEdge.Top, PanelHeightPercent = 60, PanelWidth = 500, PanelAlignment = PanelAlignment.End };
+        var s = new PanelConfig { Edge = ScreenEdge.Top, PanelHeightPercent = 60, PanelWidth = 500, PanelAlignment = PanelAlignment.End };
         var r = PanelLayout.Panel(Bounds, Work, s, 1.0);
         Assert.Equal(8, r.Top);
         Assert.Equal((int)Math.Round(1016 * 0.6), r.Height);

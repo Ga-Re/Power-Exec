@@ -7,11 +7,11 @@ namespace PowerExec.Services;
 /// <summary>Globales Tastenkürzel über RegisterHotKey.</summary>
 public sealed class HotkeyService : IDisposable
 {
-    private const int HotkeyId = 0x5045; // "PE"
     private readonly HwndSource _source;
-    private bool _registered;
+    private readonly HashSet<int> _registered = new();
 
-    public event EventHandler? Pressed;
+    /// <summary>Ein registriertes Tastenkürzel wurde gedrückt (Parameter: Kennung).</summary>
+    public event Action<int>? Pressed;
 
     public HotkeyService()
     {
@@ -20,24 +20,29 @@ public sealed class HotkeyService : IDisposable
         _source.AddHook(WndProc);
     }
 
+    /// <summary>Registriert ein Tastenkürzel unter der Kennung <paramref name="id"/>.</summary>
     /// <returns>Fehlermeldung oder null bei Erfolg.</returns>
-    public string? Register(string hotkey)
+    public string? Register(int id, string hotkey)
     {
-        Unregister();
+        Unregister(id);
         if (string.IsNullOrWhiteSpace(hotkey)) return null;
         if (!TryParse(hotkey, out var mods, out var key))
             return $"Tastenkürzel \"{hotkey}\" wird nicht erkannt.";
         var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
-        if (!NativeMethods.RegisterHotKey(_source.Handle, HotkeyId, mods | NativeMethods.MOD_NOREPEAT, vk))
-            return $"Tastenkürzel \"{hotkey}\" ist bereits von einem anderen Programm belegt.";
-        _registered = true;
+        if (!NativeMethods.RegisterHotKey(_source.Handle, id, mods | NativeMethods.MOD_NOREPEAT, vk))
+            return $"Tastenkürzel \"{hotkey}\" ist bereits belegt (anderes Programm oder anderes Panel).";
+        _registered.Add(id);
         return null;
     }
 
-    public void Unregister()
+    public void Unregister(int id)
     {
-        if (_registered) NativeMethods.UnregisterHotKey(_source.Handle, HotkeyId);
-        _registered = false;
+        if (_registered.Remove(id)) NativeMethods.UnregisterHotKey(_source.Handle, id);
+    }
+
+    public void UnregisterAll()
+    {
+        foreach (var id in _registered.ToList()) Unregister(id);
     }
 
     public static bool TryParse(string text, out uint modifiers, out Key key)
@@ -90,9 +95,9 @@ public sealed class HotkeyService : IDisposable
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WM_HOTKEY && wParam.ToInt32() == HotkeyId)
+        if (msg == NativeMethods.WM_HOTKEY && _registered.Contains(wParam.ToInt32()))
         {
-            Pressed?.Invoke(this, EventArgs.Empty);
+            Pressed?.Invoke(wParam.ToInt32());
             handled = true;
         }
         return IntPtr.Zero;
@@ -100,7 +105,7 @@ public sealed class HotkeyService : IDisposable
 
     public void Dispose()
     {
-        Unregister();
+        UnregisterAll();
         _source.RemoveHook(WndProc);
         _source.Dispose();
     }
