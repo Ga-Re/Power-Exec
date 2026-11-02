@@ -15,7 +15,7 @@ public sealed class CustomEntryViewModel : ObservableObject
     {
         _e = entry.Clone();
         RemoveCommand = new RelayCommand(() => remove(this));
-        BrowseCommand = new RelayCommand(Browse, () => _e.Kind is CustomEntryKind.Folder or CustomEntryKind.Command);
+        BrowseCommand = new RelayCommand(Browse, () => _e.Kind is CustomEntryKind.Folder or CustomEntryKind.Command or CustomEntryKind.File);
         TestCommand = new RelayCommand(Test, () => _e.Target.Trim().Length > 0);
     }
 
@@ -42,22 +42,24 @@ public sealed class CustomEntryViewModel : ObservableObject
         new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.Url, "Webseite"),
         new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.Folder, "Ordner / Freigabe"),
         new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.Rdp, "Remotedesktop (RDP)"),
-        new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.Command, "Befehl / Programm")
+        new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.Command, "Befehl / Programm"),
+        new KeyValuePair<CustomEntryKind, string>(CustomEntryKind.File, "Datei (Script, Programm …)")
     };
     public IReadOnlyList<KeyValuePair<CustomEntryKind, string>> KindList => Kinds;
 
-    public string Target { get => _e.Target; set { _e.Target = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(Title)); } }
+    public string Target { get => _e.Target; set { _e.Target = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(Title)); OnPropertyChanged(nameof(Badge)); } }
     public string Arguments { get => _e.Arguments; set { _e.Arguments = value ?? string.Empty; OnPropertyChanged(); } }
     public string Description { get => _e.Description; set { _e.Description = value ?? string.Empty; OnPropertyChanged(); } }
 
     public bool HasArguments => _e.Kind is CustomEntryKind.Command or CustomEntryKind.Rdp;
-    public string Badge => PanelBadge(_e.Kind);
+    public string Badge => PanelBadge(_e.Kind, _e.Target);
 
-    public static string PanelBadge(CustomEntryKind kind) => kind switch
+    public static string PanelBadge(CustomEntryKind kind, string target = "") => kind switch
     {
         CustomEntryKind.Url => "URL",
         CustomEntryKind.Folder => "DIR",
         CustomEntryKind.Rdp => "RDP",
+        CustomEntryKind.File => Path.GetExtension(target).TrimStart('.').ToUpperInvariant() is { Length: > 0 } ext ? ext : "DAT",
         _ => "CMD"
     };
 
@@ -66,6 +68,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         CustomEntryKind.Url => "Adresse",
         CustomEntryKind.Folder => "Pfad",
         CustomEntryKind.Rdp => "Rechner",
+        CustomEntryKind.File => "Datei",
         _ => "Programm"
     };
 
@@ -74,6 +77,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         CustomEntryKind.Url => "https://intranet.firma.local",
         CustomEntryKind.Folder => @"\\server\freigabe\Ordner",
         CustomEntryKind.Rdp => "SRV-01 oder SRV-01:3390",
+        CustomEntryKind.File => @"\\server\tools\Skript.ps1",
         _ => "z. B. mmc.exe, wt.exe oder C:\\Tools\\tool.exe"
     };
 
@@ -90,7 +94,12 @@ public sealed class CustomEntryViewModel : ObservableObject
         }
         else
         {
-            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Programme (*.exe;*.cmd;*.bat;*.msc)|*.exe;*.cmd;*.bat;*.msc|Alle Dateien (*.*)|*.*" };
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = _e.Kind == CustomEntryKind.File
+                    ? "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
+                    : "Programme (*.exe;*.cmd;*.bat;*.msc)|*.exe;*.cmd;*.bat;*.msc|Alle Dateien (*.*)|*.*"
+            };
             if (dlg.ShowDialog() == true) Target = dlg.FileName;
         }
     }
@@ -100,6 +109,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         var item = ToEntry().ToLaunchItem();
         try
         {
+            if (item.CustomKind == CustomEntryKind.File) { Launcher.OpenLocation(item.FullPath); return; }
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(item.LaunchTarget!, item.LaunchArguments) { UseShellExecute = true })?.Dispose();
         }
         catch (Exception ex)

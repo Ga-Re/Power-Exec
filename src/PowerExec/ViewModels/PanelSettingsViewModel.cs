@@ -48,7 +48,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         foreach (var cat in categories)
             CategoryChoices.Add(new ContentChoiceViewModel(cat, cat, string.Empty,
                 _c.Categories.Count == 0 || _c.Categories.Contains(cat, StringComparer.CurrentCultureIgnoreCase)));
-        CategoryChoices.Add(new ContentChoiceViewModel(string.Empty, "Ohne Kategorie", string.Empty,
+        CategoryChoices.Add(new ContentChoiceViewModel(string.Empty, "Ohne Gruppe", string.Empty,
             _c.Categories.Count == 0 || _c.Categories.Contains(string.Empty)));
         ClearHotkeyCommand = new RelayCommand(() => Hotkey = string.Empty);
     }

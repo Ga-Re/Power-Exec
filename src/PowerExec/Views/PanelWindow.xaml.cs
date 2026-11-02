@@ -284,7 +284,7 @@ public partial class PanelWindow : Window
 
     private void CheckAutoHide()
     {
-        if (!IsOpen || _hiding || Cfg.Pinned || _resizing) { _outsideSince = null; return; }
+        if (!IsOpen || _hiding || Cfg.Pinned || _resizing || _app.IsDialogOpen) { _outsideSince = null; return; }
         if (AnyPopupOpen()) { _outsideSince = null; return; }
         // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
         if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
@@ -305,7 +305,7 @@ public partial class PanelWindow : Window
         if (!IsOpen || Cfg.Pinned) return;
         Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
-            if (!IsOpen || IsActive || AnyPopupOpen()) return;
+            if (!IsOpen || IsActive || AnyPopupOpen() || _app.IsDialogOpen) return;
             if (OpenedViaHotkey || !ScreenService.CursorInside(_rect)) HidePanel();
         });
     }
@@ -352,15 +352,21 @@ public partial class PanelWindow : Window
 
     private static bool InsertAfter(FrameworkElement row, DragEventArgs e) => e.GetPosition(row).Y > row.ActualHeight / 2;
 
+    private ViewModels.GroupViewModel? GroupOf(ViewModels.ItemViewModel item) => Vm.Groups.FirstOrDefault(g => g.Items.Contains(item));
+
     private void Row_DragOver(object sender, DragEventArgs e)
     {
-        if (sender is not Border row || !e.Data.GetDataPresent(DragFormat)) return;
+        if (sender is not Border row) return;
+        if (!e.Data.GetDataPresent(DragFormat)) return; // Dateien aus dem Explorer: übernimmt die Gruppe
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
         var target = row.DataContext as ViewModels.ItemViewModel;
-        bool sameGroup = target != null && Vm.Groups.Any(g => g.AllowReorder && g.Items.Contains(source) && g.Items.Contains(target));
-        e.Effects = sameGroup && !ReferenceEquals(source, target) ? DragDropEffects.Move : DragDropEffects.None;
-        // Einfügemarke oben bzw. unten
-        row.BorderThickness = e.Effects == DragDropEffects.Move
+        var group = target != null ? GroupOf(target) : null;
+        bool sameGroup = group != null && group.Items.Contains(source);
+        bool allowed = target != null && !ReferenceEquals(source, target) && group != null &&
+                       (sameGroup ? group.AllowReorder : group.AcceptsItems);
+        e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
+        // Einfügemarke oben bzw. unten (nicht bei Favoriten: dort wird nur markiert)
+        row.BorderThickness = allowed && group!.Kind != "fav"
             ? (InsertAfter(row, e) ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0))
             : new Thickness(0);
         e.Handled = true;
@@ -377,7 +383,72 @@ public partial class PanelWindow : Window
         row.BorderThickness = new Thickness(0);
         if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ViewModels.ItemViewModel target) return;
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
-        Vm.MoveItem(source, target, InsertAfter(row, e));
+        var group = GroupOf(target);
+        e.Handled = true;
+        if (group == null || ReferenceEquals(source, target)) return;
+        if (group.Items.Contains(source)) Vm.MoveItem(source, target, InsertAfter(row, e));
+        else Vm.MoveToGroup(source, group, group.Kind == "fav" ? null : target, InsertAfter(row, e));
+    }
+
+    // ---- Drag & Drop: Gruppen und Dateien aus dem Explorer ----------------------
+
+    private static DragDropEffects ExternalEffect(DragEventArgs e) =>
+        e.AllowedEffects.HasFlag(DragDropEffects.Link) ? DragDropEffects.Link
+        : e.AllowedEffects.HasFlag(DragDropEffects.Copy) ? DragDropEffects.Copy : DragDropEffects.None;
+
+    private void Group_DragOver(object sender, DragEventArgs e)
+    {
+        if (sender is not Border box || box.DataContext is not ViewModels.GroupViewModel group) return;
+        bool allowed;
+        if (e.Data.GetDataPresent(DragFormat))
+        {
+            var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
+            allowed = group.AcceptsItems && !group.Items.Contains(source);
+            e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
+        }
+        else
+        {
+            allowed = ExternalDrop.HasData(e.Data);
+            e.Effects = allowed ? ExternalEffect(e) : DragDropEffects.None;
+        }
+        box.BorderBrush = allowed ? (Brush)FindResource("Accent") : Brushes.Transparent;
+        box.Background = allowed ? (Brush)FindResource("Bg.Hover") : Brushes.Transparent;
+        e.Handled = true;
+    }
+
+    private void Group_DragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is not Border box) return;
+        box.BorderBrush = Brushes.Transparent;
+        box.Background = Brushes.Transparent;
+    }
+
+    private void Group_Drop(object sender, DragEventArgs e)
+    {
+        if (sender is not Border box || box.DataContext is not ViewModels.GroupViewModel group) return;
+        Group_DragLeave(sender, e);
+        e.Handled = true;
+        if (e.Data.GetDataPresent(DragFormat))
+        {
+            Vm.MoveToGroup((ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!, group);
+            return;
+        }
+        var targets = ExternalDrop.Read(e.Data);
+        if (targets.Count > 0) Vm.DropExternal(targets, group);
+    }
+
+    /// <summary>Außerhalb einer Gruppe abgelegt: als eigener Eintrag ohne Gruppe.</summary>
+    private void Panel_DragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = !e.Data.GetDataPresent(DragFormat) && ExternalDrop.HasData(e.Data) ? ExternalEffect(e) : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void Panel_Drop(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DragFormat)) return;
+        var targets = ExternalDrop.Read(e.Data);
+        if (targets.Count > 0) Vm.DropExternal(targets, null);
         e.Handled = true;
     }
 

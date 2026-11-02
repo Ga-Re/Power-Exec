@@ -51,10 +51,10 @@
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=machines}"/>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ausführung"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Diagnose &amp; Daten"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=diag}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
             </StackPanel>
         </DockPanel>
 
@@ -404,8 +404,8 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                                     <StackPanel Visibility="{Binding HasCategories, Converter={StaticResource Vis}}">
-                        <TextBlock Text="Kategorien" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4"/>
-                        <TextBlock Text="Zusätzlich nach eigener Kategorie einschränken (im Profil-Dialog ⚙ eines Eintrags festgelegt)." Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <TextBlock Text="Eigene Gruppen" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                        <TextBlock Text="Nur diese Gruppen zeigen; „Ohne Gruppe“ steht für alle übrigen Einträge." Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
                         <ItemsControl ItemsSource="{Binding CategoryChoices}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -622,10 +622,10 @@
                             <DockPanel>
                                 <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Groupings}" SelectedValue="{Binding Grouping}"/>
                                 <StackPanel VerticalAlignment="Center"><TextBlock Text="Gruppierung im Panel" Style="{StaticResource RowTitle}"/>
-                                    <TextBlock Text="Nach Ordner oder nach eigenen Kategorien. Die Kategorie legst du im Profil-Dialog (⚙) eines Eintrags fest. Reihenfolge der Einträge: per Drag &amp; Drop im Panel." Style="{StaticResource RowDesc}"/></StackPanel>
+                                    <TextBlock Text="Eigene Gruppen stehen immer oben; darunter die Ordner oder nur „Ohne Gruppe“. Gruppen legst du im Panel an (Rechtsklick auf eine Gruppe oder + unten) und ziehst Einträge per Drag &amp; Drop hinein." Style="{StaticResource RowDesc}"/></StackPanel>
                             </DockPanel>
-                            <StackPanel Visibility="{Binding IsCategoryGrouping, Converter={StaticResource Vis}}" Margin="0,12,0,0">
-                                <TextBlock Text="Reihenfolge der Kategorien" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <StackPanel Margin="0,12,0,0">
+                                <TextBlock Text="Eigene Gruppen (Reihenfolge)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -650,11 +650,11 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Kategorie"/>
+                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Gruppe"/>
                                     <Button Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Command="{Binding AddCategoryCommand}" Margin="8,0,0,0"/>
                                 </StackPanel>
                                 <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
-                                           Text="Einträge ohne Kategorie erscheinen in der Gruppe „Ohne Kategorie“."/>
+                                           Text="Entfernen löscht nur die Gruppe – ihre Einträge erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“."/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -678,8 +678,8 @@
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
                             <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowProgramIcons}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Programmsymbole anzeigen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Bei EXE-Dateien, Verknüpfungen und Snap-ins das Programmsymbol statt des Kürzels zeigen." Style="{StaticResource RowDesc}"/></StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Symbole anzeigen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Programmsymbole bei EXE, Verknüpfungen und Snap-ins, Ordnersymbol, Remotedesktop-Symbol und das Favicon von Webseiten (wird einmal von der Seite geladen und zwischengespeichert). Scripte behalten ihr Kürzel." Style="{StaticResource RowDesc}" TextWrapping="Wrap"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">
@@ -814,7 +814,7 @@
                 <!-- Arbeitsbereiche -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=workspaces}">
                     <TextBlock Text="Arbeitsbereiche" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Getrennte Sammlungen für verschiedene Aufgaben oder Kunden: Jeder Arbeitsbereich hat eigene Ordner, Profile, Kategorien, Favoriten, eigene Einträge und „Zuletzt ausgeführt“. Panels, Farben, Rechnergruppen und allgemeine Einstellungen gelten für alle. Wechseln geht auch im Panel-Kopf und im Tray-Menü." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <TextBlock Text="Getrennte Sammlungen für verschiedene Aufgaben oder Kunden: Jeder Arbeitsbereich hat eigene Ordner, Profile, Gruppen, Favoriten, eigene Einträge und „Zuletzt ausgeführt“. Panels, Farben, Rechnergruppen und allgemeine Einstellungen gelten für alle. Wechseln geht auch im Panel-Kopf und im Tray-Menü." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
                     <ItemsControl ItemsSource="{Binding Workspaces}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -846,7 +846,7 @@
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                 <TextBox Width="280" Text="{Binding NewWorkspace, UpdateSourceTrigger=PropertyChanged}" Tag="Name, z. B. Kunde A"/>
                                 <CheckBox Content="Aktuellen kopieren" IsChecked="{Binding CopyWorkspace}" Margin="12,0,0,0" VerticalAlignment="Center"
-                                          ToolTip="Ordner, Profile, Kategorien, Favoriten und eigene Einträge übernehmen"/>
+                                          ToolTip="Ordner, Profile, Gruppen, Favoriten und eigene Einträge übernehmen"/>
                                 <Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddWorkspaceCommand}" Margin="12,0,0,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -998,7 +998,7 @@
                                 <Button Style="{StaticResource Btn.Standard}" Content="Importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
                             </StackPanel>
                             <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Einstellungen sichern" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Ordner, Startprofile, Favoriten, Kategorien und Rechnerliste als Datei – zum Sichern oder für einen anderen PC. Kennwörter sind nie enthalten." Style="{StaticResource RowDesc}"/></StackPanel>
+                                <TextBlock Text="Ordner, Startprofile, Favoriten, Gruppen und Rechnerliste als Datei – zum Sichern oder für einen anderen PC. Kennwörter sind nie enthalten." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
 

@@ -654,8 +654,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool IsCategoryGrouping => _s.Grouping == GroupingMode.Category;
     public IReadOnlyList<KeyValuePair<GroupingMode, string>> Groupings { get; } = new[]
     {
-        new KeyValuePair<GroupingMode, string>(GroupingMode.Folder, "Nach Ordner"),
-        new KeyValuePair<GroupingMode, string>(GroupingMode.Category, "Nach eigener Kategorie")
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Folder, "Eigene Gruppen + Ordner"),
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Category, "Nur eigene Gruppen")
     };
     public ObservableCollection<CategoryItemViewModel> Categories { get; } = new();
     private string _newCategory = string.Empty;
@@ -926,6 +926,9 @@ public sealed class SettingsViewModel : ObservableObject
         _s.RecentRuns = _app.Settings.RecentRuns.ToList();
         _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
         _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
+        // In der Liste entfernte Gruppen löschen (Einträge kommen zurück in ihren Ordner)
+        foreach (var removed in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.CurrentCultureIgnoreCase))).ToList())
+            GroupManager.Delete(_s, removed);
         _s.CategoryOrder = Categories.Select(c => c.Name).ToList();
         _s.Machines = _app.Settings.Machines
             .Where(m => !_machinesCleared || m.Favorite)

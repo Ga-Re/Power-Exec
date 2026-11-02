@@ -1,0 +1,48 @@
+<Window x:Class="PowerExec.Views.CustomEntryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Eigener Eintrag" Style="{StaticResource AppWindow}"
+        Width="560" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True" Topmost="True">
+    <StackPanel Margin="24,20,24,20">
+        <TextBlock x:Name="Heading" Text="Neuer Eintrag" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock x:Name="GroupText" Style="{StaticResource Caption}" Margin="0,4,0,14"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Art" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+            <ComboBox Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding KindList}" SelectedValue="{Binding Kind}"
+                      DisplayMemberPath="Value" SelectedValuePath="Key" Margin="0,3"/>
+            <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Anzeigename im Panel" Margin="0,3"/>
+            <TextBlock Grid.Row="2" Text="{Binding TargetLabel}" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+            <DockPanel Grid.Row="2" Grid.Column="1" Margin="0,3">
+                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="8,0,0,0"/>
+                <TextBox x:Name="TargetBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+            </DockPanel>
+            <TextBlock Grid.Row="3" Text="Argumente" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"
+                       Visibility="{Binding HasArguments, Converter={StaticResource Vis}}"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="optional" Margin="0,3"
+                     FontFamily="{StaticResource MonoFont}" Visibility="{Binding HasArguments, Converter={StaticResource Vis}}"/>
+            <TextBlock Grid.Row="4" Text="Beschreibung" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="optional, erscheint als Info im Panel" Margin="0,3"/>
+        </Grid>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="110,8,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
+        <DockPanel Margin="0,20,0,0">
+            <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Subtle}" Content="Testen" Command="{Binding TestCommand}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96"/>
+                <Button Style="{StaticResource Btn.Accent}" Content="Speichern" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click"/>
+            </StackPanel>
+        </DockPanel>
+    </StackPanel>
+</Window>

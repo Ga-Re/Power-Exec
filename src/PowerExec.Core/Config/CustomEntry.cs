@@ -2,9 +2,12 @@ using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Config;
 
-public enum CustomEntryKind { Url, Folder, Rdp, Command }
+public enum CustomEntryKind { Url, Folder, Rdp, Command, File }
 
-/// <summary>Eintrag ohne Datei: Webseite, Ordner/Freigabe, RDP-Verbindung oder Befehl.</summary>
+/// <summary>
+/// Eigener Eintrag: Webseite, Ordner/Freigabe, RDP-Verbindung, Befehl oder eine einzelne Datei
+/// (z. B. per Drag &amp; Drop aus dem Explorer, außerhalb der durchsuchten Ordner).
+/// </summary>
 public sealed class CustomEntry
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
@@ -21,7 +24,8 @@ public sealed class CustomEntry
 
     public CustomEntry Clone() => new() { Id = Id, Name = Name, Kind = Kind, Target = Target, Arguments = Arguments, Description = Description };
 
-    public string Key => PanelConfig.CustomEntriesKey + Id;
+    /// <summary>Schlüssel für Favoriten, Profile, Verlauf: bei Dateien der Dateipfad, sonst „custom:Id“.</summary>
+    public string Key => Kind == CustomEntryKind.File ? Target.Trim() : PanelConfig.CustomEntriesKey + Id;
 
     public static bool IsCustomKey(string path) => path.StartsWith(PanelConfig.CustomEntriesKey, StringComparison.OrdinalIgnoreCase);
 
@@ -30,6 +34,7 @@ public sealed class CustomEntry
         CustomEntryKind.Url => "Webseite",
         CustomEntryKind.Folder => "Ordner",
         CustomEntryKind.Rdp => "Remotedesktop",
+        CustomEntryKind.File => "Datei",
         _ => "Befehl"
     };
 
@@ -37,6 +42,19 @@ public sealed class CustomEntry
     public LaunchItem ToLaunchItem()
     {
         var target = Target.Trim();
+        if (Kind == CustomEntryKind.File)
+        {
+            // Einzelne Datei: verhält sich wie eine gefundene Datei (Script-Dialog, Remote, Profile über den Dateipfad)
+            return new LaunchItem
+            {
+                FullPath = target,
+                RootFolder = PanelConfig.CustomEntriesKey,
+                Type = LaunchItem.TypeFromExtension(target),
+                DisplayName = string.IsNullOrWhiteSpace(Name) ? Path.GetFileName(target) : Name.Trim(),
+                Synopsis = Description.Trim(),
+                CustomKind = Kind
+            };
+        }
         var (type, launch, args) = Kind switch
         {
             CustomEntryKind.Rdp => (ItemType.Executable, "mstsc.exe", ($"/v:{target} " + Arguments).Trim()),

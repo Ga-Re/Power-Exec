@@ -33,8 +33,7 @@ public sealed class ItemViewModel : ObservableObject
             p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
             new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
 
-        if (app.Settings.ShowProgramIcons && !item.IsCustom && item.Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
-            _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => Icon = img);
+        if (app.Settings.ShowProgramIcons) _icon = LoadIcon(app, item);
 
         SelectCommand = new RelayCommand(() => _panel.Select(this));
         RunCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
@@ -44,11 +43,37 @@ public sealed class ItemViewModel : ObservableObject
             remote: true, DefaultProfile), () => Item.SupportsRemote);
         ManageProfilesCommand = new RelayCommand(() => _app.ShowProfiles(Item));
         EditCommand = new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
-        OpenLocationCommand = new RelayCommand(OpenLocation, () => !Item.IsCustom || Item.CustomKind == CustomEntryKind.Folder);
+        OpenLocationCommand = new RelayCommand(OpenLocation, () => Item.CustomKind is null or CustomEntryKind.Folder or CustomEntryKind.File);
         CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
         ToggleFavoriteCommand = new RelayCommand(() => _app.ToggleFavorite(Item));
         HideCommand = new RelayCommand(() => _app.HideItem(Item), () => !Item.IsCustom);
+        EditCustomCommand = new RelayCommand(() => _app.EditCustomEntry(Item), () => Item.IsCustom);
+        RemoveCustomCommand = new RelayCommand(() => _app.RemoveCustomEntry(Item), () => Item.IsCustom);
+        RemoveFromGroupCommand = new RelayCommand(() => _app.AssignGroup(Item.FullPath, null), () => IsInGroup);
+        NewGroupWithItemCommand = new RelayCommand(() =>
+        {
+            var name = _app.CreateGroup();
+            if (name != null) _app.AssignGroup(Item.FullPath, name);
+        });
         UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
+    }
+
+    /// <summary>
+    /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
+    /// EXE/Verknüpfung/Snap-in und sonstige Dateien = Shell-Symbol. Scripte behalten ihr Kürzel (PS1, CMD …).
+    /// </summary>
+    private ImageSource? LoadIcon(AppController app, LaunchItem item)
+    {
+        void Done(ImageSource img) => Icon = img;
+        switch (item.CustomKind)
+        {
+            case CustomEntryKind.Url: return app.Icons.GetFavicon(item.LaunchTarget ?? string.Empty, Done);
+            case CustomEntryKind.Folder: return app.Icons.GetFolder(Done);
+            case CustomEntryKind.Rdp: return app.Icons.GetProgram("mstsc.exe", Done);
+            case CustomEntryKind.Command: return app.Icons.GetProgram(item.LaunchTarget ?? string.Empty, Done);
+        }
+        if (item.Type is ItemType.PowerShell or ItemType.Batch) return null;
+        return app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, Done);
     }
 
     public LaunchItem Item { get; }
@@ -69,6 +94,7 @@ public sealed class ItemViewModel : ObservableObject
     {
         get
         {
+            if (Item.CustomKind == CustomEntryKind.File) return Item.FullPath;
             if (Item.IsCustom) return Item.LaunchTarget ?? string.Empty;
             try { return Path.GetRelativePath(Item.RootFolder, Item.FullPath); }
             catch { return Item.FileName; }
@@ -83,7 +109,7 @@ public sealed class ItemViewModel : ObservableObject
     public bool HasParseError => Item.ParseError != null;
     public string? ParseError => Item.ParseError;
 
-    public string BadgeText => Item.CustomKind is { } ck ? CustomEntryViewModel.PanelBadge(ck) : Item.Type switch
+    public string BadgeText => Item.CustomKind is { } ck and not CustomEntryKind.File ? CustomEntryViewModel.PanelBadge(ck) : Item.Type switch
     {
         ItemType.PowerShell => "PS1",
         ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
@@ -97,7 +123,7 @@ public sealed class ItemViewModel : ObservableObject
     {
         get
         {
-            if (Item.IsCustom) return Item.Description;
+            if (Item.IsCustom && Item.CustomKind != CustomEntryKind.File) return Item.Description;
             if (!Item.IsPowerShell) return Item.FullPath;
             var parts = new List<string> { Item.FullPath };
             parts.Add(Item.HasParameters ? $"{Item.Parameters.Count} Parameter" : "keine Parameter");
@@ -150,6 +176,24 @@ public sealed class ItemViewModel : ObservableObject
     /// <summary>Admin / anderer Benutzer ergibt nur bei Programmen und Scripten Sinn (nicht bei Webseiten und Ordnern).</summary>
     public bool CanElevate => Item.CustomKind is null or CustomEntryKind.Command or CustomEntryKind.Rdp;
     public bool CanHide => !Item.IsCustom;
+    public bool IsCustom => Item.IsCustom;
+
+    // ---- Eigene Gruppen ------------------------------------------------------
+
+    public string GroupName => GroupManager.GroupOf(_app.Settings, Item.FullPath);
+    public bool IsInGroup => GroupName.Length > 0;
+
+    /// <summary>Menü „In Gruppe verschieben“: alle eigenen Gruppen außer der aktuellen.</summary>
+    public IReadOnlyList<GroupChoice> GroupChoices => GroupManager.All(_app.Settings)
+        .Where(g => !g.Equals(GroupName, StringComparison.CurrentCultureIgnoreCase))
+        .Select(g => new GroupChoice(g, new RelayCommand(() => _app.AssignGroup(Item.FullPath, g))))
+        .ToList();
+    public bool HasGroupChoices => GroupChoices.Count > 0;
+
+    public ICommand EditCustomCommand { get; }
+    public ICommand RemoveCustomCommand { get; }
+    public ICommand RemoveFromGroupCommand { get; }
+    public ICommand NewGroupWithItemCommand { get; }
 
     private void OpenLocation()
     {
@@ -225,13 +269,16 @@ public sealed class ItemViewModel : ObservableObject
 
     private async void LoadSignature()
     {
-        if (_signatureText != null || Item.IsCustom || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
+        if (_signatureText != null || (Item.IsCustom && Item.CustomKind != CustomEntryKind.File) || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
         SignatureText = "Signatur wird geprüft …";
         var (text, valid) = await Task.Run(() => Services.SignatureService.Check(Item.FullPath));
         SignatureValid = valid;
         SignatureText = text;
     }
 }
+
+/// <summary>Ziel im Menü „In Gruppe verschieben“.</summary>
+public sealed record GroupChoice(string Name, ICommand Command);
 
 /// <summary>Eintrag im Profil-Menü am Ausführen-Knopf.</summary>
 public sealed record ProfileMenuItem(string Name, string Summary, bool IsDefault, bool IsAdmin, ICommand Command);

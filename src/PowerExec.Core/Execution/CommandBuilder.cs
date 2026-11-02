@@ -38,7 +38,7 @@ public static class CommandBuilder
         var path = r.EffectivePath;
         var item = r.Item;
         // Eigene Einträge (URL, Befehl …) haben kein sinnvolles Verzeichnis.
-        var dir = item.IsCustom ? null : Path.GetDirectoryName(path);
+        var dir = item.CustomKind is null or CustomEntryKind.File ? Path.GetDirectoryName(path) : null;
         // Andere Konten haben oft keinen Zugriff auf das Arbeitsverzeichnis (z. B. Netzfreigaben).
         var workDir = r.Mode == ExecutionMode.OtherUser ? null : dir;
 

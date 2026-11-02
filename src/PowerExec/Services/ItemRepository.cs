@@ -181,10 +181,58 @@ public sealed class ItemRepository : IDisposable
     }
 
     /// <summary>Lädt die Metadaten eines Eintrags neu (z. B. vor dem Öffnen des Dialogs).</summary>
+    private readonly ConcurrentDictionary<string, (DateTime Checked, LaunchItem Item)> _singles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _singleLoading = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Einzelne Datei außerhalb der durchsuchten Ordner (eigener Eintrag „Datei“): liefert die zwischengespeicherten
+    /// Metadaten (Synopsis, Parameter …) oder vorerst den einfachen Eintrag und lädt im Hintergrund nach.
+    /// </summary>
+    public LaunchItem DescribeSingle(LaunchItem basic)
+    {
+        if (_singles.TryGetValue(basic.FullPath, out var c) && DateTime.UtcNow - c.Checked < TimeSpan.FromMinutes(5))
+            return Merge(c.Item, basic);
+        if (_singleLoading.TryAdd(basic.FullPath, 0))
+        {
+            var path = basic.FullPath;
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    var loaded = _loader.Load(path, basic.RootFolder);
+                    loaded.ZoneId = WindowsMetadata.ReadZoneId(path);
+                    if (!File.Exists(path)) loaded.ParseError = "Datei nicht gefunden";
+                    _singles[path] = (DateTime.UtcNow, loaded);
+                }
+                catch { }
+                finally
+                {
+                    _singleLoading.TryRemove(path, out _);
+                }
+                _dispatcher.BeginInvoke(() => Changed?.Invoke(this, EventArgs.Empty));
+            });
+        }
+        return c.Item != null ? Merge(c.Item, basic) : basic;
+    }
+
+    private static LaunchItem Merge(LaunchItem loaded, LaunchItem basic)
+    {
+        loaded.CustomKind = basic.CustomKind;
+        if (basic.DisplayName.Length > 0 && !basic.DisplayName.Equals(Path.GetFileName(basic.FullPath), StringComparison.OrdinalIgnoreCase))
+            loaded.DisplayName = basic.DisplayName;
+        if (basic.Synopsis.Length > 0) loaded.Synopsis = basic.Synopsis;
+        return loaded;
+    }
+
     public LaunchItem Reload(LaunchItem item)
     {
         var fresh = _loader.Load(item.FullPath, item.RootFolder);
         fresh.ZoneId = WindowsMetadata.ReadZoneId(item.FullPath);
+        if (item.CustomKind != null)
+        {
+            _singles[item.FullPath] = (DateTime.UtcNow, fresh);
+            return Merge(fresh, item);
+        }
         _cache[item.FullPath] = fresh;
         return fresh;
     }

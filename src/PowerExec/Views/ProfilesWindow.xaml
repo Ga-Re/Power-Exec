@@ -62,9 +62,9 @@
                     <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding DescriptionPlaceholder}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="6">
-                    <TextBlock Text="Kategorie" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="Gruppe" Style="{StaticResource FieldLabel}"/>
                     <ComboBox IsEditable="True" ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=LostFocus}"
-                              ToolTip="Für die Gruppierung „Nach Kategorie“ (Einstellungen › Darstellung) und die Inhaltsauswahl der Panels. Neue Namen einfach eintippen."/>
+                              ToolTip="Eigene Gruppe im Panel (leer = im Ordner bzw. unter „Eigene Einträge“). Neue Namen einfach eintippen."/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="5" Margin="0,10,0,0">
                     <TextBlock Text="Notiz" Style="{StaticResource FieldLabel}"/>

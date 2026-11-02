@@ -107,7 +107,7 @@ public sealed class PanelViewModel : ObservableObject
 
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
-    public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0;
+    public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
@@ -149,11 +149,16 @@ public sealed class PanelViewModel : ObservableObject
         // Eigene Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle)
         var customItems = new List<LaunchItem>();
         if (cfg.ShowsFolder(PanelConfig.CustomEntriesKey))
+        {
+            var seen = new HashSet<string>(visible.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
             foreach (var c in settings.CustomEntries)
             {
-                var li = c.ToLaunchItem();
+                if (c.Target.Trim().Length == 0) continue;
+                var li = _app.DescribeCustom(c);
+                if (!seen.Add(li.FullPath)) continue; // Datei liegt bereits in einem durchsuchten Ordner
                 if (CategoryOk(li)) customItems.Add(li);
             }
+        }
         visible.AddRange(customItems);
         UpdatePending(pending);
 
@@ -214,29 +219,33 @@ public sealed class PanelViewModel : ObservableObject
             if (favs.Count > 0) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
         }
 
+        // Eigene Gruppen: gruppierte Einträge erscheinen in ihrer Gruppe statt in ihrem Ordner
+        string GroupOf(LaunchItem i) => GroupManager.GroupOf(settings, i.FullPath);
+        var groupNames = GroupManager.All(settings);
+        bool showEmpty = !searching && _filter == TypeFilter.All;
+        foreach (var name in groupNames)
+        {
+            if (cfg.Categories.Count > 0 && !cfg.ShowsCategory(name)) continue;
+            var items = pool.Where(i => GroupOf(i).Equals(name, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            if (items.Count == 0 && !showEmpty) continue;
+            groups.Add(MakeGroup(GroupManager.GroupKey(name), name, "group", null, items));
+        }
+        var rest = pool.Where(i => GroupOf(i).Length == 0).ToList();
+
         if (settings.Grouping == GroupingMode.Category)
         {
-            string CategoryOf(LaunchItem i) => settings.FindEntry(i.FullPath)?.Category?.Trim() ?? string.Empty;
-            var byCategory = pool.GroupBy(CategoryOf, StringComparer.CurrentCultureIgnoreCase).ToList();
-            var order = settings.CategoryOrder;
-            foreach (var g in byCategory
-                         .Where(g => g.Key.Length > 0)
-                         .OrderBy(g => { var i = order.FindIndex(c => c.Equals(g.Key, StringComparison.CurrentCultureIgnoreCase)); return i < 0 ? int.MaxValue : i; })
-                         .ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase))
-                groups.Add(MakeGroup("cat:" + g.Key, g.Key, "category", null, g));
-            var rest = byCategory.FirstOrDefault(g => g.Key.Length == 0);
-            if (rest != null) groups.Add(MakeGroup("cat:", "Ohne Kategorie", "category", null, rest));
+            if (rest.Count > 0) groups.Add(MakeGroup(GroupManager.KeyPrefix, "Ohne Gruppe", "ungrouped", null, rest));
         }
         else
         {
             foreach (var folder in settings.Folders.Where(f => cfg.ShowsFolder(f.Path)))
             {
                 var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
-                var items = pool.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
+                var items = rest.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (items.Count == 0 && (searching || _filter != TypeFilter.All || status?.Error == null)) continue;
                 groups.Add(MakeGroup("folder:" + folder.Path, folder.Path, "folder", folder.Path, items, status?.Error));
             }
-            var customVisible = pool.Where(i => i.IsCustom).ToList();
+            var customVisible = rest.Where(i => i.IsCustom).ToList();
             if (customVisible.Count > 0) groups.Add(MakeGroup("custom", "Eigene Einträge", "custom", null, customVisible));
         }
 
@@ -300,6 +309,31 @@ public sealed class PanelViewModel : ObservableObject
         _app.SaveSettings();
         Rebuild();
     }
+
+    /// <summary>
+    /// Drag &amp; Drop zwischen Gruppen: in eine eigene Gruppe schieben, zurück in Ordner/„Eigene Einträge“
+    /// (= aus der Gruppe nehmen) oder auf „Favoriten“ (= als Favorit markieren).
+    /// </summary>
+    public void MoveToGroup(ItemViewModel dragged, GroupViewModel target, ItemViewModel? near = null, bool after = false)
+    {
+        var path = dragged.Item.FullPath;
+        if (target.Kind == "fav")
+        {
+            if (!_app.IsFavorite(path)) _app.ToggleFavorite(dragged.Item);
+            return;
+        }
+        if (!target.AcceptsItems) return;
+        var current = GroupManager.GroupOf(_app.Settings, path);
+        var wanted = target.GroupName ?? string.Empty;
+        if (current.Equals(wanted, StringComparison.CurrentCultureIgnoreCase) && near == null) return;
+        _app.AssignGroup(path, wanted, target.Key, near?.Item.FullPath, after, target.Items.Select(i => i.Item.FullPath).ToList());
+    }
+
+    /// <summary>Aus dem Explorer/Browser auf eine Gruppe (oder ins Panel) gezogen.</summary>
+    public void DropExternal(IReadOnlyList<DroppedTarget> targets, GroupViewModel? group) =>
+        _app.AddDropped(targets, group?.GroupName);
+
+    public ICommand NewGroupCommand => new RelayCommand(() => _app.CreateGroup());
 
     /// <summary>Eigene Reihenfolge einer Gruppe verwerfen (wieder alphabetisch).</summary>
     public void ResetOrder(GroupViewModel group)

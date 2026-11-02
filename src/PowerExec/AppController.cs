@@ -3,6 +3,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
+using PowerExec.Core.Search;
 using PowerExec.Core.Updates;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -234,12 +235,158 @@ public sealed class AppController : IDisposable
 
     // ---- Aktionen -------------------------------------------------------
 
-    /// <summary>Eintrag zu einem Pfad (Datei aus einem Ordner oder eigener Eintrag „custom:…“).</summary>
+    /// <summary>Eintrag zu einem Pfad (Datei aus einem Ordner, eigener Eintrag „custom:…“ oder eigene Datei).</summary>
     public LaunchItem? FindItem(string path)
     {
-        if (CustomEntry.IsCustomKey(path))
-            return Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(path, StringComparison.OrdinalIgnoreCase))?.ToLaunchItem();
-        return Repository.Items.FirstOrDefault(i => i.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase));
+        var scanned = Repository.Items.FirstOrDefault(i => i.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase));
+        if (scanned != null) return scanned;
+        var custom = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(path, StringComparison.OrdinalIgnoreCase));
+        return custom == null ? null : DescribeCustom(custom);
+    }
+
+    /// <summary>Eigener Eintrag als <see cref="LaunchItem"/>; bei Dateien mit Metadaten (Synopsis, Parameter).</summary>
+    public LaunchItem DescribeCustom(CustomEntry entry)
+    {
+        var item = entry.ToLaunchItem();
+        return entry.Kind == CustomEntryKind.File ? Repository.DescribeSingle(item) : item;
+    }
+
+    // ---- Eigene Gruppen ---------------------------------------------------
+
+    private int _dialogs;
+
+    /// <summary>Solange ein Dialog aus dem Panel offen ist, fährt das Panel nicht ein.</summary>
+    public bool IsDialogOpen => _dialogs > 0;
+
+    /// <summary>Ja/Nein-Frage über dem offenen Panel (das Panel liegt sonst darüber).</summary>
+    private bool Confirm(string text, string title)
+    {
+        var owner = _hosts.FirstOrDefault(h => h.Window.IsOpen)?.Window;
+        return WithDialog(() => owner != null
+            ? MessageBox.Show(owner, text, title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)
+            : MessageBox.Show(text, title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)) == MessageBoxResult.Yes;
+    }
+
+    public T WithDialog<T>(Func<T> show)
+    {
+        _dialogs++;
+        try { return show(); }
+        finally { _dialogs--; }
+    }
+
+    private string? GroupNameError(string name, string? except = null) =>
+        GroupManager.Exists(Settings, name) && !name.Equals(except, StringComparison.CurrentCultureIgnoreCase)
+            ? "Eine Gruppe mit diesem Namen gibt es schon." : null;
+
+    /// <returns>Name der neuen Gruppe oder null bei Abbruch.</returns>
+    public string? CreateGroup()
+    {
+        var name = WithDialog(() => InputWindow.Ask("Neue Gruppe", "Einträge ziehst du anschließend per Drag & Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser.",
+            "Neue Gruppe", "Anlegen", n => GroupNameError(n)));
+        if (name == null) return null;
+        name = GroupManager.Create(Settings, name);
+        SaveSettings();
+        RebuildPanels();
+        return name;
+    }
+
+    public void RenameGroup(string name)
+    {
+        var newName = WithDialog(() => InputWindow.Ask("Gruppe umbenennen", string.Empty, name, "Umbenennen", n => GroupNameError(n, name)));
+        if (newName == null || newName == name) return;
+        if (GroupManager.Rename(Settings, name, newName))
+        {
+            SaveSettings();
+            RebuildPanels();
+        }
+    }
+
+    public void DeleteGroup(string name, int count)
+    {
+        var text = count == 0
+            ? $"Gruppe „{name}“ löschen?"
+            : $"Gruppe „{name}“ löschen?\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“.";
+        if (!Confirm(text, "Gruppe löschen")) return;
+        GroupManager.Delete(Settings, name);
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    public void MoveGroup(string name, int delta)
+    {
+        GroupManager.Move(Settings, name, delta);
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>
+    public void AssignGroup(string path, string? group, string? targetKey = null, string? beforeOrAfterPath = null, bool after = false, IReadOnlyList<string>? targetOrder = null)
+    {
+        GroupManager.Assign(Settings, path, group);
+        if (targetKey != null && beforeOrAfterPath != null && targetOrder != null)
+        {
+            var order = targetOrder.Where(p => !p.Equals(path, StringComparison.OrdinalIgnoreCase)).Append(path).ToList();
+            Settings.CustomOrder[targetKey] = ItemOrdering.Move(order, path, beforeOrAfterPath, after);
+        }
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    /// <summary>Aus dem Explorer oder Browser gezogene Ziele übernehmen.</summary>
+    public void AddDropped(IReadOnlyList<DroppedTarget> targets, string? group)
+    {
+        if (targets.Count == 0) return;
+        var scanned = new HashSet<string>(Repository.Items.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
+        var keys = DropClassifier.AddToSettings(Settings, targets, group, scanned.Contains);
+        SaveSettings();
+        RebuildPanels();
+        AppLog.Info($"Per Drag & Drop hinzugefügt{(group != null ? " (Gruppe " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
+        if (group == null && keys.Count > 0 && Hosts.Any(h => !h.Config.ShowsFolder(PanelConfig.CustomEntriesKey)))
+            _tray?.ShowBalloon("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
+    }
+
+    /// <summary>Neuen eigenen Eintrag in einer Gruppe anlegen (Dialog).</summary>
+    public void NewCustomEntry(CustomEntryKind kind, string? group)
+    {
+        var entry = WithDialog(() => CustomEntryWindow.Edit(new CustomEntry { Kind = kind }, isNew: true, group));
+        if (entry == null) return;
+        Settings.CustomEntries.Add(entry);
+        if (!string.IsNullOrEmpty(group)) GroupManager.Assign(Settings, entry.Key, group);
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    public void EditCustomEntry(LaunchItem item)
+    {
+        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
+        if (entry == null) return;
+        var oldKey = entry.Key;
+        var edited = WithDialog(() => CustomEntryWindow.Edit(entry, isNew: false, GroupManager.GroupOf(Settings, oldKey)));
+        if (edited == null) return;
+        var i = Settings.CustomEntries.IndexOf(entry);
+        Settings.CustomEntries[i] = edited;
+        if (!edited.Key.Equals(oldKey, StringComparison.OrdinalIgnoreCase))
+        {
+            // Datei-Eintrag mit neuem Pfad: Gruppe, Profile und Favorit mitnehmen
+            PathMigration.Apply(Settings, new PathMove(oldKey, edited.Key));
+        }
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    public void RemoveCustomEntry(LaunchItem item)
+    {
+        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
+        if (entry == null) return;
+        var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
+        if (!Confirm($"„{name}“ aus Power-Exec entfernen?" + (entry.Kind is CustomEntryKind.File or CustomEntryKind.Folder ? "\n\nDie Datei bzw. der Ordner selbst bleibt unverändert." : string.Empty),
+                "Eintrag entfernen")) return;
+        Settings.CustomEntries.Remove(entry);
+        Settings.Entries.RemoveAll(e => e.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
+        Settings.Favorites.RemoveAll(p => p.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
+        Settings.RecentRuns.RemoveAll(r => r.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
+        SaveSettings();
+        RebuildPanels();
     }
 
     public bool IsFavorite(string path) => Settings.Favorites.Contains(path, StringComparer.OrdinalIgnoreCase);

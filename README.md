@@ -17,13 +17,16 @@ oder remote auf einem oder vielen Rechnern.
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
-- Programmsymbole bei EXE-Dateien, Verknüpfungen und Snap-ins
+- Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
 - Suche über Dateiname, Synopsis und Beschreibung; Filter: Alle, Scripte, Programme, Favoriten
 - Gruppen (Favoriten und Ordner) einklappbar; Kontextmenü pro Gruppe (Im Explorer öffnen, Neu einlesen, Einklappen …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
-- Gruppierung **nach Ordner oder nach eigenen Kategorien**; Reihenfolge der Einträge per **Drag & Drop**
+- **Eigene Gruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, verschieben, löschen; Einträge per **Drag & Drop** hineinschieben, zurück in den Ordner ziehen oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
+- **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
+- Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, Befehl oder Dateien auswählen
+- Darstellung: eigene Gruppen oben, darunter die Ordner – oder nur eigene Gruppen und „Ohne Gruppe“
 - Doppelklick startet das Standardprofil; Split-Button für weitere Profile
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
 - **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panels öffnen, Arbeitsbereich wechseln

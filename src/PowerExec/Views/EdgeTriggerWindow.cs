@@ -80,6 +80,17 @@ public sealed class EdgeTriggerWindow : Window
         };
         MouseLeave += (_, _) => _hoverTimer.Stop();
 
+        // Dateien aus dem Explorer an den Rand ziehen: Panel fährt aus, damit man sie in eine Gruppe ablegen kann
+        AllowDrop = true;
+        DragEnter += (_, e) =>
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            _hoverTimer.Start();
+        };
+        DragOver += (_, e) => { e.Effects = DragDropEffects.None; e.Handled = true; };
+        DragLeave += (_, _) => _hoverTimer.Stop();
+
         SourceInitialized += (_, _) =>
         {
             _hwnd = new WindowInteropHelper(this).Handle;

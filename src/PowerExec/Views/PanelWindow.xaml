@@ -10,6 +10,40 @@
 
         <!-- Menü einer Gruppe (Ordner/Favoriten) -->
         <ContextMenu x:Key="GroupMenu" x:Shared="False">
+            <MenuItem Header="Neuer Eintrag" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <MenuItem Header="Webseite …" Command="{Binding NewEntryCommand}" CommandParameter="Url">
+                    <MenuItem.Icon><TextBlock Text="&#xE774;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Ordner …" Command="{Binding NewEntryCommand}" CommandParameter="Folder">
+                    <MenuItem.Icon><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Remotedesktop …" Command="{Binding NewEntryCommand}" CommandParameter="Rdp">
+                    <MenuItem.Icon><TextBlock Text="&#xE8AF;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Befehl …" Command="{Binding NewEntryCommand}" CommandParameter="Command">
+                    <MenuItem.Icon><TextBlock Text="&#xE756;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Dateien auswählen …" Command="{Binding AddFilesCommand}">
+                    <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Nach oben" Command="{Binding MoveUpCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE70E;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Nach unten" Command="{Binding MoveDownCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE70D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Gruppe löschen …" Command="{Binding DeleteCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Neue Gruppe …" Command="{Binding NewGroupCommand}">
+                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
             <MenuItem Header="Im Explorer öffnen" Command="{Binding OpenInExplorerCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE838;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -62,7 +96,30 @@
             <MenuItem Header="Aus Favoriten entfernen" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Star}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Ausblenden" Command="{Binding HideCommand}" ToolTip="Wird als Ausschluss beim Ordner gespeichert">
+            <MenuItem Header="In Gruppe verschieben" ItemsSource="{Binding GroupChoices}" Visibility="{Binding HasGroupChoices, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                        <Setter Property="Header" Value="{Binding Name}"/>
+                        <Setter Property="Command" Value="{Binding Command}"/>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
+            <MenuItem Header="In neue Gruppe …" Command="{Binding NewGroupWithItemCommand}">
+                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Aus Gruppe nehmen" Command="{Binding RemoveFromGroupCommand}" Visibility="{Binding IsInGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8E6;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="Bearbeiten …" Command="{Binding EditCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Entfernen …" Command="{Binding RemoveCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Ausblenden" Command="{Binding HideCommand}" ToolTip="Wird als Ausschluss beim Ordner gespeichert"
+                      Visibility="{Binding CanHide, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -271,7 +328,8 @@
     </Window.Resources>
 
     <Border x:Name="PanelBorder" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}"
-            BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+            BorderThickness="1" CornerRadius="8" ClipToBounds="True"
+            AllowDrop="True" DragOver="Panel_DragOver" Drop="Panel_Drop">
         <Border.RenderTransform>
             <TranslateTransform x:Name="Slide"/>
         </Border.RenderTransform>
@@ -406,8 +464,10 @@
                     <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
+                                <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Margin="0,2,0,0"
+                                        AllowDrop="True" DragOver="Group_DragOver" DragLeave="Group_DragLeave" Drop="Group_Drop">
                                 <StackPanel>
-                                    <Grid Margin="0,8,0,2">
+                                    <Grid Margin="0,6,0,2">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -453,7 +513,13 @@
                                                Foreground="{DynamicResource Status.Warning}" Margin="38,0,8,6" TextWrapping="Wrap"/>
                                     <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource ItemTemplate}" Focusable="False"
                                                   Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}"/>
+                                    <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
+                                            Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
+                                        <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Text.Tertiary}"
+                                                   Text="Einträge hierher ziehen – auch Dateien, Ordner oder Links aus dem Explorer und Browser. Rechtsklick: neuer Eintrag."/>
+                                    </Border>
                                 </StackPanel>
+                                </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -491,6 +557,9 @@
                 <DockPanel Margin="16,4,8,4">
                     <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="Ordner neu einlesen">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="13"/>
+                    </Button>
+                    <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="Neue Gruppe">
+                        <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="13"/>
                     </Button>
                     <TextBlock Text="{Binding Footer}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
