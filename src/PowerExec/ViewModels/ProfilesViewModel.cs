@@ -248,6 +248,7 @@ public sealed class ProfilesViewModel : ObservableObject
         _displayName = entry?.DisplayName ?? string.Empty;
         _description = entry?.Description ?? string.Empty;
         _category = entry?.Category ?? string.Empty;
+        _notes = entry?.Notes ?? string.Empty;
         Categories = target.CategoryOrder
             .Concat(target.Entries.Select(e => e.Category))
             .Where(c => !string.IsNullOrWhiteSpace(c))
@@ -288,6 +289,10 @@ public sealed class ProfilesViewModel : ObservableObject
 
     /// <summary>Eigene Kategorie (Gruppierung „Nach Kategorie“).</summary>
     public string Category { get => _category; set => Set(ref _category, value ?? string.Empty); }
+
+    private string _notes;
+    /// <summary>Eigene Notiz (z. B. „nur nach Rücksprache mit dem DBA“); erscheint im Panel und im Ausführen-Dialog.</summary>
+    public string Notes { get => _notes; set => Set(ref _notes, value ?? string.Empty); }
     public IReadOnlyList<string> Categories { get; }
 
     public ObservableCollection<ProfileEditViewModel> Profiles { get; } = new();
@@ -358,6 +363,7 @@ public sealed class ProfilesViewModel : ObservableObject
             DisplayName = DisplayName.Trim(),
             Description = Description.Trim(),
             Category = Category.Trim(),
+            Notes = Notes.Trim(),
             Profiles = Profiles.Select(p => p.ToProfile()).ToList()
         };
         if (entry.Category.Length > 0 && !_target.CategoryOrder.Contains(entry.Category, StringComparer.CurrentCultureIgnoreCase))

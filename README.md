@@ -10,6 +10,9 @@ oder remote auf einem oder vielen Rechnern.
 **Panel**
 - Hover-Zone am Bildschirmrand: Rand, Monitor, Lage, Länge und Breite einstellbar; sie übernimmt die Panelfarbe
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
+- **Mehrere Panels** an verschiedenen Rändern oder Monitoren, jedes mit eigener Hover-Zone, Farbe, Deckkraft, Größe, eigenem Tastenkürzel und eigenem Inhalt (Auswahl von Ordnern, Kategorien und „Eigene Einträge“)
+- **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
+- **Kompakte Ansicht** (eine Zeile pro Eintrag) per Knopf im Panel-Kopf, je Panel
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
@@ -23,6 +26,16 @@ oder remote auf einem oder vielen Rechnern.
 - Gruppierung **nach Ordner oder nach eigenen Kategorien**; Reihenfolge der Einträge per **Drag & Drop**
 - Doppelklick startet das Standardprofil; Split-Button für weitere Profile
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
+- **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panels öffnen, Arbeitsbereich wechseln
+
+**Arbeitsbereiche**
+- Getrennte Sammlungen, z. B. je Kunde oder Aufgabe: eigene Ordner, Profile, Kategorien, Favoriten, eigene Einträge und Verlauf
+- Wechsel im Panel-Kopf, im Tray-Menü oder in den Einstellungen; gilt für alle Panels. Panels, Farben, Rechnergruppen und allgemeine Einstellungen sind gemeinsam
+- Neuer Arbeitsbereich leer oder als Kopie des aktuellen
+
+**Eigene Einträge ohne Datei**
+- Webseiten, Ordner/Freigaben, Remotedesktop-Verbindungen (`mstsc /v:`) und beliebige Befehle mit Argumenten
+- Erscheinen in der Gruppe „Eigene Einträge“, lassen sich favorisieren, kategorisieren, mit Profilen und Notizen versehen
 
 **Ordner**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
@@ -40,6 +53,7 @@ oder remote auf einem oder vielen Rechnern.
 - Bei EXE, Verknüpfungen, Batch und Snap-ins: zusätzliche Argumente
 - Parameter vom Typ `PSCredential`/`SecureString` oder mit „Password“ im Namen werden nie gespeichert
 - Optionale **Sicherheitsabfrage** vor dem Start und eigene **Kategorie** je Eintrag
+- **Notiz** je Eintrag (z. B. „nur nach Rücksprache“) – sichtbar im Panel, im Tooltip und im Ausführen-Dialog, durchsuchbar
 
 | Dateityp | Lokal | Admin | Anderer Benutzer | Remote / Masse | Info im Panel |
 |---|---|---|---|---|---|
@@ -56,11 +70,13 @@ oder remote auf einem oder vielen Rechnern.
 - Ausführen als: aktueller Benutzer, Administrator (UAC) oder anderer Benutzer
 - PowerShell 7 oder Windows PowerShell 5.1, `-NoExit`, `-NoProfile`
 - Befehlsvorschau zeigt, was tatsächlich gestartet wird
-- Parameterwerte werden nur gespeichert, wenn du sie in einem Startprofil festlegst
+- **Parameter-Verlauf:** die zuletzt verwendeten Werte je Script und Parameter stehen im Dialog als Vorschläge bereit (nie bei Kennwörtern, `PSCredential` oder `SecureString`)
+- **`#Requires` wird ausgewertet:** `-RunAsAdministrator` startet lokal automatisch als Administrator, `-Version 7` verwendet PowerShell 7, fehlende Module aus `-Modules` werden beim Aufklappen gemeldet
 
 **Remote und Massenausführung**
 - Ziel „Remote“: Rechner aus *Zuletzt verwendet* oder *Favoriten* wählen, mehrere Namen auf einmal per Komma einfügen
 - Mehrere Rechner = parallele Ausführung (gleichzeitige Verbindungen einstellbar)
+- **Rechnergruppen** (Einstellungen › Rechnergruppen): im Dialog per Klick auswählen, in Startprofilen als `@Gruppe` eintragen; befüllen per Text/CSV-Import oder **AD-Suche** (Name mit `*`, OU oder LDAP-Filter, mit dem angemeldeten Konto)
 - Vorabprüfung pro Rechner: erreichbar, PowerShell-Version, Module aus `#Requires -Modules`
 - Remote wird standardmäßig Windows PowerShell 5.1 verwendet; PowerShell 7 nur, wenn der Endpunkt `PowerShell.7` existiert
 - **Scriptordner mitsenden:** kopiert Begleitdateien und Module über die Remote-Sitzung in einen Temp-Ordner auf dem Ziel und löscht ihn danach. Das vermeidet das Double-Hop-Problem, weil der Zielrechner nicht selbst auf die Freigabe zugreifen muss. Dauerhaft aktivierbar mit der Zeile `PowerExec: CopyFolder` unter `.NOTES`.

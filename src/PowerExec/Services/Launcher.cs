@@ -133,8 +133,9 @@ public sealed class Launcher
         if (cred != null && PathResolver.IsNetworkPath(path) && !hint.Contains(PathResolver.ServerShare(path)))
             hint += $"\n\nHinweis: Das Script liegt auf {PathResolver.ServerShare(path)}. Prüfe, ob {cred.Account} dort Leserechte hat.";
 
-        MessageBox.Show(owner ?? Application.Current.MainWindow!, hint, $"{r.Item.DisplayName} konnte nicht gestartet werden",
-            MessageBoxButton.OK, MessageBoxImage.Warning);
+        var title = $"{r.Item.DisplayName} konnte nicht gestartet werden";
+        if (owner is { IsLoaded: true }) MessageBox.Show(owner, hint, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        else MessageBox.Show(hint, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     public void OpenInEditor(LaunchItem item)

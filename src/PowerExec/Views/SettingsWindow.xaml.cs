@@ -23,6 +23,14 @@ public partial class SettingsWindow : Window
             Close();
             _app.ShowSettings();
         };
+        vm.SwitchWorkspaceRequested += name =>
+        {
+            FocusManager.SetFocusedElement(this, this);
+            _app.ApplySettings(_vm.Build());
+            Close();
+            _app.SwitchWorkspace(name);
+            _app.ShowSettings(section: "workspaces");
+        };
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -33,7 +41,7 @@ public partial class SettingsWindow : Window
         if (hotkeyError != null)
         {
             _vm.HotkeyError = hotkeyError;
-            _vm.Section = "panel";
+            _vm.Section = "panels";
             SaveHint.Text = "Gespeichert – aber das Tastenkürzel konnte nicht registriert werden.";
             return;
         }
@@ -48,16 +56,15 @@ public partial class SettingsWindow : Window
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key is Key.Back or Key.Delete && Keyboard.Modifiers == ModifierKeys.None)
         {
-            _vm.Hotkey = string.Empty;
+            if (_vm.SelectedPanel != null) _vm.SelectedPanel.Hotkey = string.Empty;
             return;
         }
         var text = HotkeyService.Format(Keyboard.Modifiers, key);
         if (text != null)
         {
-            _vm.Hotkey = text;
+            if (_vm.SelectedPanel != null) _vm.SelectedPanel.Hotkey = text;
             _vm.HotkeyError = null;
         }
     }
 
-    private void ClearHotkey_Click(object sender, RoutedEventArgs e) => _vm.Hotkey = string.Empty;
 }

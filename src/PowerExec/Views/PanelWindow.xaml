@@ -130,12 +130,12 @@
                 <StackPanel>
                     <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}" MouseDoubleClick="Row_DoubleClick"
                             ContextMenu="{StaticResource ItemMenu}" ToolTipService.InitialShowDelay="900">
-                        <Grid Margin="8">
+                        <Grid x:Name="RowGrid" Margin="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Grid Width="36" VerticalAlignment="Top" Margin="0,1,0,0">
+                            <Grid x:Name="BadgeBox" Width="36" VerticalAlignment="Top" Margin="0,1,0,0">
                                 <Border Style="{StaticResource Badge}" Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                     <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -145,13 +145,17 @@
                             </Grid>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <DockPanel LastChildFill="False">
-                                    <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                                    <TextBlock x:Name="NameText" Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                                     <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Star}"
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
                                                Visibility="{Binding HasParseError, Converter={StaticResource Vis}}" ToolTip="{Binding ParseError}"/>
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
                                                Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}" ToolTip="{Binding BlockedText}"/>
+                                    <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                               Visibility="{Binding RequiresAdmin, Converter={StaticResource Vis}}" ToolTip="Benötigt Administratorrechte (#Requires)"/>
+                                    <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                               Visibility="{Binding HasNotes, Converter={StaticResource Vis}}" ToolTip="{Binding Notes}"/>
                                 </DockPanel>
                                 <TextBlock x:Name="Syn" Text="{Binding Synopsis}" FontSize="12" Margin="0,2,0,0" Foreground="{DynamicResource Text.Secondary}"
                                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
@@ -163,6 +167,14 @@
                         <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"
                                    Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <Border Background="{DynamicResource Bg.Chip}" CornerRadius="4" Padding="8,6" Margin="0,0,0,8" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
+                            <DockPanel>
+                                <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="0,2,8,0" VerticalAlignment="Top" Foreground="{DynamicResource Text.Secondary}"/>
+                                <TextBlock Text="{Binding Notes}" FontSize="12" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </Border>
+                        <TextBlock x:Name="Req" Text="{Binding RequirementsText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                   Visibility="{Binding RequirementsText, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                    Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
                         <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
@@ -197,13 +209,15 @@
                                     <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
                                 </Button>
                             </StackPanel>
-                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)">
+                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)"
+                                    Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                     <TextBlock Text="Admin"/>
                                 </StackPanel>
                             </Button>
-                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen">
+                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen"
+                                    Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                     <TextBlock Text="Als …"/>
@@ -231,6 +245,23 @@
                 <DataTrigger Binding="{Binding SignatureValid}" Value="True">
                     <Setter TargetName="Sig" Property="Foreground" Value="{DynamicResource Status.Success}"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding RequirementsWarn}" Value="True">
+                    <Setter TargetName="Req" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
+                        <Condition Binding="{Binding IsSelected}" Value="False"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="Syn" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="RowGrid" Property="Margin" Value="8,4"/>
+                    <Setter TargetName="NameText" Property="FontSize" Value="13"/>
+                    <Setter TargetName="NameText" Property="FontWeight" Value="Normal"/>
+                    <Setter TargetName="NameText" Property="MaxWidth" Value="320"/>
+                    <Setter TargetName="BadgeBox" Property="LayoutTransform">
+                        <Setter.Value><ScaleTransform ScaleX="0.82" ScaleY="0.82"/></Setter.Value>
+                    </Setter>
+                </MultiDataTrigger>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
                     <Setter TargetName="Syn" Property="TextWrapping" Value="Wrap"/>
@@ -267,7 +298,18 @@
                               ToolTip="Anheften: Panel bleibt offen">
                     <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="16"/>
                 </ToggleButton>
-                <TextBlock Text="Power-Exec" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                <ToggleButton Style="{StaticResource Toggle.Icon}" DockPanel.Dock="Right" IsChecked="{Binding IsCompact}"
+                              ToolTip="Kompakte Ansicht: eine Zeile pro Eintrag">
+                    <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="16"/>
+                </ToggleButton>
+                <ComboBox DockPanel.Dock="Right" Width="130" Margin="0,0,6,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28"
+                          ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
+                          ToolTip="Arbeitsbereich wechseln (gilt für alle Panels)" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <TextBlock Text="Power-Exec" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding PanelName}" FontSize="12" VerticalAlignment="Center" Margin="8,1,0,0" Foreground="{DynamicResource Text.Secondary}"
+                               TextTrimming="CharacterEllipsis" MaxWidth="120" Visibility="{Binding IsMultiPanel, Converter={StaticResource Vis}}"/>
+                </StackPanel>
             </DockPanel>
 
             <!-- Update-Hinweis -->
@@ -417,6 +459,32 @@
                     </ItemsControl>
                 </StackPanel>
             </ScrollViewer>
+
+            <!-- Größe per Ziehen: Griffe am Innenrand (Lage setzt PlaceGrips) -->
+            <Thumb x:Name="WidthGrip" Grid.RowSpan="7" Width="6" HorizontalAlignment="Left" Cursor="SizeWE" Panel.ZIndex="10"
+                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="Breite ändern">
+                <Thumb.Template>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="Line" Background="Transparent"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Line" Property="Background" Value="{DynamicResource Accent}"/><Setter TargetName="Line" Property="Opacity" Value="0.5"/></Trigger>
+                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="Line" Property="Background" Value="{DynamicResource Accent}"/><Setter TargetName="Line" Property="Opacity" Value="0.8"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
+            <Thumb x:Name="HeightGrip" Grid.RowSpan="7" Height="6" VerticalAlignment="Bottom" Cursor="SizeNS" Panel.ZIndex="10"
+                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="Höhe ändern">
+                <Thumb.Template>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="Line" Background="Transparent"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Line" Property="Background" Value="{DynamicResource Accent}"/><Setter TargetName="Line" Property="Opacity" Value="0.5"/></Trigger>
+                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="Line" Property="Background" Value="{DynamicResource Accent}"/><Setter TargetName="Line" Property="Opacity" Value="0.8"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Thumb.Template>
+            </Thumb>
 
             <!-- Fußzeile -->
             <Border Grid.Row="6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}">

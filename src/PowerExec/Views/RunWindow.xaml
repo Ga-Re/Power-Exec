@@ -81,6 +81,14 @@
                         <TextBlock Text="{Binding Synopsis}" FontSize="14" Margin="0,8,0,0" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding ProfileText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,6,0,0"
                                    Visibility="{Binding HasProfile, Converter={StaticResource Vis}}"/>
+                        <Border Background="{DynamicResource Bg.CardAlt}" CornerRadius="4" Padding="8,6" Margin="0,8,0,0" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
+                            <DockPanel>
+                                <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="0,2,8,0" VerticalAlignment="Top" Foreground="{DynamicResource Text.Secondary}"/>
+                                <TextBlock Text="{Binding Notes}" FontSize="12" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </Border>
+                        <TextBlock Text="{Binding RequirementsInfo}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,6,0,0"
+                                   Visibility="{Binding RequirementsInfo, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,4,0,0"
                                    Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding ParseError, StringFormat=Hinweis: Das Script enthält einen Fehler ({0})}" FontSize="12" Foreground="{DynamicResource Status.Warning}"
@@ -112,7 +120,10 @@
                                                            Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
                                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}" IsEnabled="{Binding IsEditable}"
-                                                     Visibility="{Binding IsText, Converter={StaticResource Vis}}"/>
+                                                     Visibility="{Binding IsPlainText, Converter={StaticResource Vis}}"/>
+                                            <ComboBox IsEditable="True" ItemsSource="{Binding Suggestions}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEnabled="{Binding IsEditable}" ToolTip="Zuletzt verwendete Werte über den Pfeil auswählen"
+                                                      Visibility="{Binding IsTextWithSuggestions, Converter={StaticResource Vis}}"/>
                                             <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}"/>
                                             <CheckBox IsChecked="{Binding BoolValue}" Content="Aktivieren" Margin="0,6,0,0" IsEnabled="{Binding IsEditable}"
@@ -185,6 +196,26 @@
 
                     <DockPanel Visibility="{Binding IsRemote, Converter={StaticResource Vis}}" Margin="0,12,0,0">
                         <StackPanel DockPanel.Dock="Top">
+                            <StackPanel Visibility="{Binding HasGroups, Converter={StaticResource Vis}}" Margin="0,0,0,6">
+                                <TextBlock Text="Gruppen" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+                                <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource Btn.Standard}" Command="{Binding Command}" Height="28" MinHeight="28" Padding="10,0" Margin="0,0,6,6"
+                                                    FontSize="12" ToolTip="{Binding Members}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE902;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding CountText}" Foreground="{DynamicResource Text.Secondary}" Margin="6,0,0,0"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
                             <ItemsControl ItemsSource="{Binding SelectedMachines}" Focusable="False" Margin="0,0,0,8">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>

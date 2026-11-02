@@ -18,8 +18,18 @@ public sealed class TrayIcon : IDisposable
             Visible = true
         };
 
+        _app = app;
         var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("Panel öffnen", null, (_, _) => app.ShowPanelFromHotkey());
+        _panels = new Forms.ToolStripMenuItem("Panel öffnen", null, (_, _) => app.ShowPanelFromHotkey());
+        _favorites = new Forms.ToolStripMenuItem("Favoriten");
+        _recent = new Forms.ToolStripMenuItem("Zuletzt ausgeführt");
+        _workspaces = new Forms.ToolStripMenuItem("Arbeitsbereich");
+        menu.Items.Add(_panels);
+        menu.Items.Add(_favorites);
+        menu.Items.Add(_recent);
+        menu.Items.Add(_workspaces);
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Opening += (_, _) => RebuildQuickMenus();
         menu.Items.Add("Ordner neu einlesen", null, (_, _) => _ = app.Repository.ScanAsync());
         menu.Items.Add("Einstellungen", null, (_, _) => app.ShowSettings());
         menu.Items.Add("Nach Updates suchen", null, async (_, _) =>
@@ -45,6 +55,71 @@ public sealed class TrayIcon : IDisposable
             if (e.Button == Forms.MouseButtons.Left) app.ShowPanelFromHotkey();
         };
     }
+
+    private readonly AppController _app;
+    private readonly Forms.ToolStripMenuItem _panels;
+    private readonly Forms.ToolStripMenuItem _favorites;
+    private readonly Forms.ToolStripMenuItem _recent;
+    private readonly Forms.ToolStripMenuItem _workspaces;
+
+    /// <summary>Schnellstart: Favoriten, zuletzt ausgeführte Einträge und Arbeitsbereiche direkt aus dem Tray.</summary>
+    private void RebuildQuickMenus()
+    {
+        var s = _app.Settings;
+
+        _panels.DropDownItems.Clear();
+        if (_app.Hosts.Count > 1)
+            foreach (var h in _app.Hosts)
+            {
+                var host = h;
+                _panels.DropDownItems.Add(new Forms.ToolStripMenuItem(host.Config.Name.Replace("&", "&&"), null, (_, _) => Run(() => _app.ShowPanelFromHotkey(host)))
+                {
+                    ShortcutKeyDisplayString = string.IsNullOrWhiteSpace(host.Config.Hotkey) ? null : HotkeyService.Display(host.Config.Hotkey)
+                });
+            }
+
+        _favorites.DropDownItems.Clear();
+        foreach (var path in s.Favorites)
+        {
+            var item = _app.FindItem(path);
+            if (item == null) continue;
+            _favorites.DropDownItems.Add(Label(item), null, (_, _) => Run(() => _app.RunProfile(item, null)));
+        }
+        _favorites.Enabled = _favorites.DropDownItems.Count > 0;
+
+        _recent.DropDownItems.Clear();
+        foreach (var r in s.RecentRuns.Take(Math.Max(5, s.RecentRunsCount)))
+        {
+            var item = _app.FindItem(r.Path);
+            if (item == null) continue;
+            var profile = Core.Profiles.ProfileResolver.GetProfiles(s, item)
+                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.CurrentCultureIgnoreCase) || (p.IsImplicit && r.ProfileName == "Standard"));
+            var text = Label(item) + (profile != null && !profile.IsImplicit ? $"  ·  {profile.Name}" : string.Empty);
+            _recent.DropDownItems.Add(text, null, (_, _) => Run(() => _app.RunProfile(item, profile)));
+        }
+        _recent.Enabled = _recent.DropDownItems.Count > 0;
+
+        _workspaces.DropDownItems.Clear();
+        foreach (var w in s.Workspaces)
+        {
+            var name = w.Name;
+            var mi = new Forms.ToolStripMenuItem(name, null, (_, _) => Run(() => _app.SwitchWorkspace(name)))
+            {
+                Checked = name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)
+            };
+            _workspaces.DropDownItems.Add(mi);
+        }
+        _workspaces.Visible = s.Workspaces.Count > 1;
+    }
+
+    private string Label(Core.Models.LaunchItem item)
+    {
+        var dn = _app.Settings.FindEntry(item.FullPath)?.DisplayName;
+        var text = string.IsNullOrWhiteSpace(dn) ? item.DisplayName : dn!;
+        return text.Replace("&", "&&");
+    }
+
+    private static void Run(Action action) => Application.Current.Dispatcher.BeginInvoke(action);
 
     private static Drawing.Icon LoadIcon()
     {

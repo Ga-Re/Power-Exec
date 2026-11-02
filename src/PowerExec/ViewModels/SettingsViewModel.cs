@@ -356,9 +356,9 @@ public sealed class FolderViewModel : ObservableObject
 
 public sealed class ColorPresetViewModel : ObservableObject
 {
-    private readonly SettingsViewModel _owner;
+    private readonly PanelSettingsViewModel _owner;
 
-    public ColorPresetViewModel(SettingsViewModel owner, ColorPreset preset)
+    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset)
     {
         _owner = owner;
         Name = preset.Name;
@@ -421,7 +421,7 @@ public sealed class SettingsViewModel : ObservableObject
             if (focusFolder != null && f.Path.Equals(focusFolder, StringComparison.OrdinalIgnoreCase)) vm.IsHighlighted = true;
             Folders.Add(vm);
         }
-        Monitors = new[] { new KeyValuePair<int, string>(-1, "Hauptmonitor"), new KeyValuePair<int, string>(-2, "Alle Monitore") }
+        _monitors = new[] { new KeyValuePair<int, string>(-1, "Hauptmonitor"), new KeyValuePair<int, string>(-2, "Alle Monitore") }
             .Concat(ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)))
             .ToList();
 
@@ -443,6 +443,17 @@ public sealed class SettingsViewModel : ObservableObject
             Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory));
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
+        foreach (var pc in _s.Panels) Panels.Add(CreatePanelVm(pc));
+        SelectedPanel = Panels.FirstOrDefault();
+        AddPanelCommand = new RelayCommand(AddPanel);
+        RemovePanelCommand = new RelayCommand(RemovePanel, () => Panels.Count > 1 && SelectedPanel != null);
+        foreach (var c in _s.CustomEntries) CustomEntries.Add(new CustomEntryViewModel(c, RemoveCustomEntry));
+        AddCustomEntryCommand = new RelayCommand(AddCustomEntry);
+        foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(g, RemoveGroup));
+        AddGroupCommand = new RelayCommand(AddGroup);
+        AddWorkspaceCommand = new RelayCommand(AddWorkspace);
+        LoadWorkspaces();
+
         CopyLogCommand = new RelayCommand(() => { try { Clipboard.SetText(DiagnosticsText()); } catch { } });
         OpenAppLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(System.IO.Path.GetDirectoryName(AppLog.FilePath)!, isFolder: true));
         RefreshLogCommand = new RelayCommand(() => OnPropertyChanged(nameof(LogText)));
@@ -454,7 +465,16 @@ public sealed class SettingsViewModel : ObservableObject
         if (focusFolder != null) _section = "folders";
     }
 
-    public string Section { get => _section; set => Set(ref _section, value); }
+    public string Section
+    {
+        get => _section;
+        set
+        {
+            if (!Set(ref _section, value)) return;
+            if (value == "panels") RefreshPanelChoices(); // neu hinzugefügte Ordner/Kategorien anbieten
+            if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
+        }
+    }
 
     // Ordner
     public ObservableCollection<FolderViewModel> Folders { get; } = new();
@@ -463,60 +483,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool AutoRescan { get => _s.AutoRescan; set { _s.AutoRescan = value; OnPropertyChanged(); } }
     public int ScanTimeoutSeconds { get => _s.ScanTimeoutSeconds; set { _s.ScanTimeoutSeconds = value; OnPropertyChanged(); } }
 
-    // Panel
-    public ScreenEdge Edge { get => _s.Edge; set { _s.Edge = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<ScreenEdge, string>> Edges { get; } = new[]
-    {
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Right, "Rechts"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Left, "Links"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Top, "Oben"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Bottom, "Unten")
-    };
-
-    public IReadOnlyList<KeyValuePair<int, string>> Monitors { get; }
-    public int MonitorChoice
-    {
-        get => _s.MonitorMode switch { MonitorMode.All => -2, MonitorMode.Specific => _s.MonitorIndex, _ => -1 };
-        set
-        {
-            if (value == -2) _s.MonitorMode = MonitorMode.All;
-            else if (value == -1) _s.MonitorMode = MonitorMode.Primary;
-            else { _s.MonitorMode = MonitorMode.Specific; _s.MonitorIndex = value; }
-            OnPropertyChanged();
-        }
-    }
-
-    public HotZoneMode HotZone { get => _s.HotZone; set { _s.HotZone = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsHotZoneMiddle)); } }
-    public bool IsHotZoneMiddle => _s.HotZone == HotZoneMode.Middle;
-    public int HotZoneThickness { get => _s.HotZoneThickness; set { _s.HotZoneThickness = value; OnPropertyChanged(); } }
-    public int HotZoneLength { get => _s.HotZoneLength; set { _s.HotZoneLength = value; OnPropertyChanged(); } }
-
-    public int PanelHeightPercent
-    {
-        get => _s.PanelHeightPercent;
-        set { _s.PanelHeightPercent = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsPartialHeight)); }
-    }
-
-    public bool IsPartialHeight => _s.PanelHeightPercent < 100;
-    public PanelAlignment PanelAlignment { get => _s.PanelAlignment; set { _s.PanelAlignment = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<PanelAlignment, string>> PanelAlignments { get; } = new[]
-    {
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.HotZone, "An der Hover-Zone"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Start, "Oben bzw. links"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Center, "Mittig"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.End, "Unten bzw. rechts")
-    };
-
-    public IReadOnlyList<KeyValuePair<HotZoneMode, string>> HotZones { get; } = new[]
-    {
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, "Mitte · eigene Länge"),
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.FirstHalf, "Erste Hälfte (oben bzw. links)"),
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Full, "Ganze Kante")
-    };
-
     public int HoverDelayMs { get => _s.HoverDelayMs; set { _s.HoverDelayMs = value; OnPropertyChanged(); } }
     public int CollapseDelayMs { get => _s.CollapseDelayMs; set { _s.CollapseDelayMs = value; OnPropertyChanged(); } }
-    public int PanelWidth { get => _s.PanelWidth; set { _s.PanelWidth = value; OnPropertyChanged(); } }
 
     public AnimationMode Animation { get => _s.Animation; set { _s.Animation = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<AnimationMode, string>> Animations { get; } = new[]
@@ -534,75 +502,146 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<ThemeMode, string>(ThemeMode.Light, "Hell")
     };
 
-    public string Hotkey { get => _s.Hotkey; set { _s.Hotkey = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(HotkeyDisplay)); } }
-    public string HotkeyDisplay => string.IsNullOrWhiteSpace(_s.Hotkey) ? "Kein Tastenkürzel" : HotkeyService.Display(_s.Hotkey);
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
 
-    public TypeFilter DefaultFilter { get => _s.DefaultFilter; set { _s.DefaultFilter = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<TypeFilter, string>> Filters { get; } = new[]
+    // ---- Panels ------------------------------------------------------------
+
+    private readonly IReadOnlyList<KeyValuePair<int, string>> _monitors;
+    private PanelSettingsViewModel? _selectedPanel;
+
+    public ObservableCollection<PanelSettingsViewModel> Panels { get; } = new();
+    public PanelSettingsViewModel? SelectedPanel { get => _selectedPanel; set { if (Set(ref _selectedPanel, value)) CommandManager.InvalidateRequerySuggested(); } }
+    public bool IsMultiPanel => Panels.Count > 1;
+    public ICommand AddPanelCommand { get; }
+    public ICommand RemovePanelCommand { get; }
+
+    private PanelSettingsViewModel CreatePanelVm(PanelConfig c) =>
+        new(c, _monitors, Folders.Select(f => f.Path).Where(p => p.Length > 0), Categories.Select(x => x.Name));
+
+    private void AddPanel()
     {
-        new KeyValuePair<TypeFilter, string>(TypeFilter.All, "Alle"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Scripts, "Scripte"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Programs, "Programme"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Favorites, "Favoriten")
-    };
+        var used = Panels.Select(p => p.Edge).ToHashSet();
+        var edge = new[] { ScreenEdge.Left, ScreenEdge.Right, ScreenEdge.Top, ScreenEdge.Bottom }.FirstOrDefault(e => !used.Contains(e));
+        var vm = CreatePanelVm(new PanelConfig { Name = $"Panel {Panels.Count + 1}", Edge = edge });
+        Panels.Add(vm);
+        SelectedPanel = vm;
+        OnPropertyChanged(nameof(IsMultiPanel));
+    }
 
-    // Panelfarbe
-    private IReadOnlyList<ColorPresetViewModel>? _presets;
-    private string _customColor = string.Empty;
-    private string? _colorError;
-
-    public IReadOnlyList<ColorPresetViewModel> ColorPresets =>
-        _presets ??= PanelColors.Presets.Select(p => new ColorPresetViewModel(this, p)).ToList();
-
-    /// <summary>#RRGGBB oder leer (= Farbe des Designs).</summary>
-    public string PanelColor
+    private void RemovePanel()
     {
-        get => _s.PanelColor;
-        set
+        if (SelectedPanel == null || Panels.Count <= 1) return;
+        if (MessageBox.Show($"Panel „{SelectedPanel.Name}“ entfernen?", "Panel entfernen", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        var i = Panels.IndexOf(SelectedPanel);
+        Panels.Remove(SelectedPanel);
+        SelectedPanel = Panels[Math.Clamp(i, 0, Panels.Count - 1)];
+        OnPropertyChanged(nameof(IsMultiPanel));
+    }
+
+    /// <summary>Ordner/Kategorien haben sich geändert: Auswahl der Panels neu aufbauen (Haken bleiben erhalten).</summary>
+    public void RefreshPanelChoices()
+    {
+        var sel = SelectedPanel?.Id;
+        var configs = Panels.Select(p => p.ToConfig()).ToList();
+        Panels.Clear();
+        foreach (var c in configs) Panels.Add(CreatePanelVm(c));
+        SelectedPanel = Panels.FirstOrDefault(p => p.Id == sel) ?? Panels.FirstOrDefault();
+    }
+
+    // ---- Eigene Einträge ------------------------------------------------------
+
+    public ObservableCollection<CustomEntryViewModel> CustomEntries { get; } = new();
+    public ICommand AddCustomEntryCommand { get; }
+    public bool HasNoCustomEntries => CustomEntries.Count == 0;
+
+    private void AddCustomEntry(object? kind)
+    {
+        var k = kind is CustomEntryKind ck ? ck : Enum.TryParse<CustomEntryKind>(kind?.ToString(), out var parsed) ? parsed : CustomEntryKind.Url;
+        CustomEntries.Add(new CustomEntryViewModel(new CustomEntry { Kind = k }, RemoveCustomEntry));
+        OnPropertyChanged(nameof(HasNoCustomEntries));
+    }
+
+    private void RemoveCustomEntry(CustomEntryViewModel e)
+    {
+        CustomEntries.Remove(e);
+        OnPropertyChanged(nameof(HasNoCustomEntries));
+    }
+
+    // ---- Rechnergruppen -------------------------------------------------------
+
+    public ObservableCollection<MachineGroupViewModel> MachineGroups { get; } = new();
+    public ICommand AddGroupCommand { get; }
+    public bool HasNoGroups => MachineGroups.Count == 0;
+
+    private void AddGroup()
+    {
+        var name = "Gruppe";
+        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Gruppe {i}";
+        MachineGroups.Add(new MachineGroupViewModel(new MachineGroup { Name = name }, RemoveGroup));
+        OnPropertyChanged(nameof(HasNoGroups));
+    }
+
+    private void RemoveGroup(MachineGroupViewModel g)
+    {
+        MachineGroups.Remove(g);
+        OnPropertyChanged(nameof(HasNoGroups));
+    }
+
+    // ---- Arbeitsbereiche ------------------------------------------------------
+
+    public ObservableCollection<WorkspaceRowViewModel> Workspaces { get; } = new();
+    public string ActiveWorkspace => _s.ActiveWorkspace;
+    private string _newWorkspace = string.Empty;
+    private bool _copyWorkspace = true;
+    public string NewWorkspace { get => _newWorkspace; set => Set(ref _newWorkspace, value ?? string.Empty); }
+    public bool CopyWorkspace { get => _copyWorkspace; set => Set(ref _copyWorkspace, value); }
+    public ICommand AddWorkspaceCommand { get; }
+
+    /// <summary>Speichern, Fenster schließen und den Arbeitsbereich wechseln (übernimmt das Fenster).</summary>
+    public event Action<string>? SwitchWorkspaceRequested;
+
+    private void LoadWorkspaces()
+    {
+        Workspaces.Clear();
+        foreach (var w in _s.Workspaces)
         {
-            var v = value ?? string.Empty;
-            if (v.Length > 0 && PanelColors.TryParse(v, out var c)) v = c.Hex;
-            _s.PanelColor = v;
-            _customColor = v;
-            _colorError = null;
-            OnPropertyChanged();
-            OnPropertyChanged(nameof(CustomColor));
-            OnPropertyChanged(nameof(ColorError));
-            OnPropertyChanged(nameof(PreviewBrush));
-            OnPropertyChanged(nameof(PreviewText));
-            foreach (var p in ColorPresets) p.Refresh();
+            bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
+            int folders = active ? Folders.Count : w.Folders.Count;
+            int entries = active ? CustomEntries.Count : w.CustomEntries.Count;
+            int favs = active ? _app.Settings.Favorites.Count : w.Favorites.Count;
+            var summary = $"{folders} Ordner · {favs} Favoriten · {entries} eigene Einträge" + (active ? " · aktiv" : string.Empty);
+            Workspaces.Add(new WorkspaceRowViewModel(w.Name, active, summary,
+                r => SwitchWorkspaceRequested?.Invoke(r.OriginalName),
+                RemoveWorkspace));
         }
     }
 
-    /// <summary>Eingabefeld für eine eigene Farbe; wird übernommen, sobald sie gültig ist.</summary>
-    public string CustomColor
+    private void AddWorkspace()
     {
-        get => _customColor.Length > 0 ? _customColor : _s.PanelColor;
-        set
-        {
-            _customColor = value ?? string.Empty;
-            if (_customColor.Trim().Length == 0) { PanelColor = string.Empty; return; }
-            if (PanelColors.TryParse(_customColor, out _)) PanelColor = _customColor;
-            else { _colorError = "Bitte als #RRGGBB angeben, z. B. #1B2A3D."; OnPropertyChanged(nameof(ColorError)); }
-        }
+        ApplyWorkspaceRenames();
+        // Aktuelle Formularwerte als Grundlage für eine Kopie verwenden
+        _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
+        _s.CustomEntries = CustomEntries.Select(c => c.ToEntry()).ToList();
+        _s.Favorites = new List<string>(_app.Settings.Favorites);
+        WorkspaceManager.Create(_s, NewWorkspace, CopyWorkspace);
+        NewWorkspace = string.Empty;
+        LoadWorkspaces();
     }
 
-    public string? ColorError => _colorError;
-
-    public Brush PreviewBrush => PanelColors.TryParse(_s.PanelColor, out var c)
-        ? new SolidColorBrush(Color.FromArgb((byte)(255 * _s.PanelOpacity / 100), c.R, c.G, c.B))
-        : Application.Current.Resources["Bg.Panel"] as Brush ?? Brushes.Gray;
-
-    public string PreviewText => PanelColors.TryParse(_s.PanelColor, out var c)
-        ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
-        : "Farbe des Designs";
-
-    public int PanelOpacity
+    private void RemoveWorkspace(WorkspaceRowViewModel w)
     {
-        get => _s.PanelOpacity;
-        set { _s.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); }
+        if (MessageBox.Show($"Arbeitsbereich „{w.OriginalName}“ mit seinen Ordnern, Profilen und Favoriten löschen?", "Arbeitsbereich löschen",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        ApplyWorkspaceRenames();
+        WorkspaceManager.Delete(_s, w.Name);
+        LoadWorkspaces();
+    }
+
+    private void ApplyWorkspaceRenames()
+    {
+        foreach (var w in Workspaces.Where(w => w.Name.Trim().Length > 0 && w.Name.Trim() != w.OriginalName))
+            WorkspaceManager.Rename(_s, w.OriginalName, w.Name);
     }
 
     public bool ShowProgramIcons { get => _s.ShowProgramIcons; set { _s.ShowProgramIcons = value; OnPropertyChanged(); } }
@@ -872,7 +911,18 @@ public sealed class SettingsViewModel : ObservableObject
         // Laufzeitzustand aus den aktuellen Einstellungen übernehmen (kann sich währenddessen geändert haben)
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
-        _s.Pinned = _app.Settings.Pinned;
+        // Panels: Formular, aber „angeheftet“ und „kompakt“ aus dem laufenden Zustand übernehmen
+        _s.Panels = Panels.Select(p =>
+        {
+            var c = p.ToConfig();
+            if (_app.Settings.Panels.FirstOrDefault(x => x.Id == c.Id) is { } live) { c.Pinned = live.Pinned; c.Compact = live.Compact; }
+            return c;
+        }).ToList();
+        _s.CustomEntries = CustomEntries.Select(c => c.ToEntry()).Where(c => c.Target.Trim().Length > 0).ToList();
+        _s.MachineGroups = MachineGroups.Select(g => g.ToGroup()).Where(g => g.Name.Length > 0)
+            .GroupBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).Select(g => g.First()).ToList();
+        _s.ParameterHistory = _app.Settings.ParameterHistory.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));
+        ApplyWorkspaceRenames();
         _s.RecentRuns = _app.Settings.RecentRuns.ToList();
         _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
         _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);

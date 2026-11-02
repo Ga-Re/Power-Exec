@@ -15,10 +15,11 @@ public sealed class ParameterViewModel : ObservableObject
     private string _value = string.Empty;
     private bool _boolValue;
 
-    public ParameterViewModel(ScriptParameter p, string? initial = null, bool isFixed = false)
+    public ParameterViewModel(ScriptParameter p, string? initial = null, bool isFixed = false, IReadOnlyList<string>? suggestions = null)
     {
         Parameter = p;
         IsFixed = isFixed;
+        Suggestions = suggestions ?? Array.Empty<string>();
         var def = initial ?? p.DefaultValueLiteral;
         if (p.Kind is ParameterKind.Switch or ParameterKind.Boolean)
             _boolValue = def != null && def.Equals("true", StringComparison.OrdinalIgnoreCase);
@@ -42,6 +43,11 @@ public sealed class ParameterViewModel : ObservableObject
     public bool IsCheck => Parameter.Kind is ParameterKind.Switch or ParameterKind.Boolean;
     public bool IsChoice => Parameter.Kind == ParameterKind.Choice;
     public bool IsText => !IsCheck && !IsChoice && !IsSecure;
+
+    /// <summary>Zuletzt verwendete Werte (Parameter-Verlauf); nie bei geheimen Parametern.</summary>
+    public IReadOnlyList<string> Suggestions { get; }
+    public bool IsPlainText => IsText && Suggestions.Count == 0;
+    public bool IsTextWithSuggestions => IsText && Suggestions.Count > 0;
     public IReadOnlyList<string> Choices => Parameter.IsMandatory ? Parameter.ValidValues : new[] { string.Empty }.Concat(Parameter.ValidValues).ToList();
 
     public string Placeholder => Parameter.Kind switch
@@ -101,6 +107,9 @@ public sealed class MachineViewModel : ObservableObject
     public bool HasTest => _testText != null;
 }
 
+/// <summary>Rechnergruppe als Schaltfläche im Ausführen-Dialog.</summary>
+public sealed record MachineGroupChip(string Name, string CountText, string Members, ICommand Command);
+
 public sealed class RunViewModel : ObservableObject
 {
     private readonly AppController _app;
@@ -120,26 +129,31 @@ public sealed class RunViewModel : ObservableObject
         Item = item;
         var s = app.Settings;
         Profile = profile ?? ProfileResolver.GetDefault(s, item);
-        _mode = mode;
         _remote = remote && item.SupportsRemote;
+        _mode = Requirements.ModeFor(item, mode, _remote);
         _noExit = Profile.NoExit;
         _noProfile = Profile.NoProfile;
         _copyFolder = item.CopyFolderByDefault;
         _engine = _remote && Profile.IsImplicit
             ? (s.RemoteEngine == RemoteEngineMode.PreferPowerShell7 ? PsEngine.PowerShell7 : PsEngine.WindowsPowerShell)
             : _remote ? Profile.Engine : Launcher.EffectiveEngine(Profile.Engine);
+        if (Requirements.NeedsPowerShell7(item)) _engine = PsEngine.PowerShell7;
 
         var initial = ProfileResolver.InitialValues(Profile, item);
         foreach (var p in item.Parameters)
         {
-            var vm = new ParameterViewModel(p, initial.GetValueOrDefault(p.Name), ProfileResolver.IsFixed(Profile, p));
+            var history = p.IsSecure ? Array.Empty<string>() : ParameterHistory.Get(s, item.FullPath, p.Name);
+            var vm = new ParameterViewModel(p, initial.GetValueOrDefault(p.Name), ProfileResolver.IsFixed(Profile, p), history);
             vm.PropertyChanged += (_, _) => UpdatePreview();
             Parameters.Add(vm);
         }
 
         var preselect = Profile.Target == ProfileTarget.Fixed
-            ? new HashSet<string>(Profile.Machines, StringComparer.OrdinalIgnoreCase)
+            ? new HashSet<string>(MachineList.Resolve(s, Profile.Machines), StringComparer.OrdinalIgnoreCase)
             : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in Profile.Machines.Where(n => n.TrimStart().StartsWith('@'))
+                     .SelectMany(n => MachineList.Resolve(s, new[] { n })))
+            _fromGroup.Add(g);
         foreach (var m in s.Machines.OrderByDescending(m => m.LastUsedUtc))
         {
             var vm = new MachineViewModel(this, m.Name, m.Favorite, MachineList.RelativeTime(m.LastUsedUtc), preselect.Remove(m.Name));
@@ -148,6 +162,13 @@ public sealed class RunViewModel : ObservableObject
         foreach (var name in preselect)
             RecentMachines.Insert(0, new MachineViewModel(this, name, false, "aus Profil", true));
 
+        foreach (var g in s.MachineGroups.Where(g => g.Machines.Count > 0))
+        {
+            var members = g.Machines.ToList();
+            Groups.Add(new MachineGroupChip("@" + g.Name, members.Count == 1 ? "1 Rechner" : $"{members.Count} Rechner",
+                string.Join(", ", members.Take(30)) + (members.Count > 30 ? " …" : string.Empty),
+                new RelayCommand(() => SelectGroup(members))));
+        }
         AddMachineCommand = new RelayCommand(AddMachines, () => !string.IsNullOrWhiteSpace(NewMachine));
         TestConnectionCommand = new RelayCommand(() => _ = TestConnectionsAsync(), () => _remote && !_testing && SelectedMachines.Any());
         RunCommand = new RelayCommand(Execute, () => CanRun);
@@ -169,6 +190,37 @@ public sealed class RunViewModel : ObservableObject
     public string? ParseError => Item.ParseError;
 
     public ObservableCollection<ParameterViewModel> Parameters { get; } = new();
+    public ObservableCollection<MachineGroupChip> Groups { get; } = new();
+    public bool HasGroups => Groups.Count > 0;
+    private readonly HashSet<string> _fromGroup = new(StringComparer.OrdinalIgnoreCase);
+
+    public string Notes => _app.Settings.FindEntry(Item.FullPath)?.Notes ?? string.Empty;
+    public bool HasNotes => Notes.Trim().Length > 0;
+
+    public string? RequirementsInfo
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (Item.RequiresAdmin && !_remote) parts.Add("Das Script verlangt Administratorrechte (#Requires -RunAsAdministrator).");
+            if (Requirements.NeedsPowerShell7(Item))
+                parts.Add($"Das Script verlangt PowerShell {Item.RequiredPsVersion} (#Requires -Version)" +
+                          (!_remote && !Launcher.IsPwshInstalled ? " – PowerShell 7 ist hier nicht installiert." : "."));
+            return parts.Count > 0 ? string.Join(" ", parts) : null;
+        }
+    }
+
+    private void SelectGroup(IReadOnlyList<string> members)
+    {
+        foreach (var name in members)
+        {
+            var existing = FavoriteMachines.Concat(RecentMachines).FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (existing != null) { existing.IsSelected = true; continue; }
+            _fromGroup.Add(name);
+            RecentMachines.Add(new MachineViewModel(this, name, false, "aus Gruppe", true));
+        }
+        OnMachinesChanged();
+    }
     public ObservableCollection<MachineViewModel> FavoriteMachines { get; } = new();
     public ObservableCollection<MachineViewModel> RecentMachines { get; } = new();
     public IEnumerable<MachineViewModel> SelectedMachines => FavoriteMachines.Concat(RecentMachines).Where(m => m.IsSelected);
@@ -201,6 +253,7 @@ public sealed class RunViewModel : ObservableObject
             OnPropertyChanged(nameof(ModeInfo));
             OnPropertyChanged(nameof(ReadHostWarning));
             OnPropertyChanged(nameof(EngineWarning));
+            OnPropertyChanged(nameof(RequirementsInfo));
             UpdatePreview();
         }
     }
@@ -368,7 +421,8 @@ public sealed class RunViewModel : ObservableObject
         Parameters = values,
         Targets = _remote ? SelectedMachines.Select(m => m.Name).ToList() : Array.Empty<string>(),
         CopyFolder = _remote && _copyFolder,
-        ResolvedPath = PathResolver.ToUnc(Item.FullPath)
+        ExtraArguments = (Item.LaunchArguments + " " + Profile.Arguments).Trim(),
+        ResolvedPath = Item.LaunchTarget ?? PathResolver.ToUnc(Item.FullPath)
     };
 
     private void Execute()
@@ -385,10 +439,13 @@ public sealed class RunViewModel : ObservableObject
 
         if (_remote)
         {
-            MachineList.MarkUsed(_app.Settings, req.Targets);
+            // Rechner, die nur über eine Gruppe kamen, nicht in „Zuletzt verwendet“ übernehmen
+            MachineList.MarkUsed(_app.Settings, req.Targets.Where(t => !_fromGroup.Contains(t) ||
+                _app.Settings.Machines.Any(m => m.Name.Equals(t, StringComparison.OrdinalIgnoreCase))));
             _app.SaveSettings();
             if (_app.StartRemote(req, OwnerWindow?.Invoke()))
             {
+                _app.RecordParameters(Item, RawValues());
                 _app.RecordRun(Item, Profile);
                 AppLog.Info($"Start (Dialog): {Item.FullPath} · {req.Targets.Count} Rechner");
                 CloseRequested?.Invoke();
@@ -396,6 +453,7 @@ public sealed class RunViewModel : ObservableObject
         }
         else if (_app.Launcher.StartLocal(req, OwnerWindow?.Invoke()))
         {
+            _app.RecordParameters(Item, RawValues());
             _app.RecordRun(Item, Profile);
             AppLog.Info($"Start (Dialog): {Item.FullPath} · lokal{(req.Mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             CloseRequested?.Invoke();

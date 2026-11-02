@@ -39,8 +39,16 @@
             <StackPanel>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ordner"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=folders}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Panel &amp; Verhalten"
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Eigene Einträge"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=custom}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Panels"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panels}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Darstellung &amp; Verhalten"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Arbeitsbereiche"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=workspaces}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Rechnergruppen"
+                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=machines}"/>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ausführung"
                              IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}"/>
                 <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
@@ -349,52 +357,233 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Panels -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=panels}">
+                    <TextBlock Text="Panels" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Mehrere Panels an verschiedenen Rändern oder Monitoren – jedes mit eigener Farbe, Größe, eigenem Tastenkürzel und eigenem Inhalt." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddPanelCommand}" Margin="8,0,0,0">
+                                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Panel hinzufügen"/></StackPanel>
+                                    </Button>
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Entfernen" Command="{Binding RemovePanelCommand}" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <ComboBox Width="260" HorizontalAlignment="Left" ItemsSource="{Binding Panels}" SelectedItem="{Binding SelectedPanel}" DisplayMemberPath="Name"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,10,0,0" DataContext="{Binding SelectedPanel}">
+                                <TextBlock Text="Name" VerticalAlignment="Center" Width="60" Foreground="{DynamicResource Text.Secondary}"/>
+                                <TextBox Width="260" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="z. B. Admin-Tools"/>
+                                <TextBlock Text="{Binding Summary}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel DataContext="{Binding SelectedPanel}">
+                        <TextBlock Text="Inhalt" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
+                        <Border Style="{StaticResource Card}" Padding="16,12">
+                            <StackPanel>
+                                <TextBlock Text="Was dieses Panel zeigt" Style="{StaticResource RowTitle}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <RadioButton Style="{StaticResource Segment}" Content="Alles" IsChecked="{Binding ShowAll}" GroupName="{Binding Id}"/>
+                                    <RadioButton Style="{StaticResource Segment}" Content="Auswahl" IsChecked="{Binding ShowSelection}" GroupName="{Binding Id}"/>
+                                </StackPanel>
+                                <StackPanel Visibility="{Binding ShowSelection, Converter={StaticResource Vis}}">
+                        <TextBlock Text="Ordner" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                        <TextBlock Text="Einträge aus diesen Ordnern erscheinen im Panel. Neue Ordner musst du hier ggf. nachträglich anhaken." Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding FolderChoices}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsChecked}" Margin="0,3">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Label}"/>
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" FontSize="11" Margin="10,1,0,0" TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                                    <StackPanel Visibility="{Binding HasCategories, Converter={StaticResource Vis}}">
+                        <TextBlock Text="Kategorien" FontSize="12" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                        <TextBlock Text="Zusätzlich nach eigener Kategorie einschränken (im Profil-Dialog ⚙ eines Eintrags festgelegt)." Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding CategoryChoices}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsChecked}" Margin="0,3">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Label}"/>
+                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" FontSize="11" Margin="10,1,0,0" TextTrimming="CharacterEllipsis" MaxWidth="420"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock Text="Position, Größe &amp; Aussehen" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding EdgeList}" SelectedValue="{Binding Edge}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Bildschirmrand" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="An welchem Rand die Hover-Zone liegt." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Monitors}" SelectedValue="{Binding MonitorChoice}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Monitor" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Bei „Alle Monitore“ öffnet das Tastenkürzel das Panel auf dem Monitor mit dem Mauszeiger." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Lage des Auslösebereichs am Rand. Die Hover-Zone hat die Panelfarbe (ohne eigene Farbe: Akzentfarbe)." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Visibility="{Binding IsHotZoneMiddle, Converter={StaticResource Vis}}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Width="180" Minimum="50" Maximum="1200" TickFrequency="25" Value="{Binding HotZoneLength}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding HotZoneLength, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Länge der Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Ausdehnung entlang der Kante, mittig ausgerichtet." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Width="180" Minimum="1" Maximum="30" TickFrequency="1" Value="{Binding HotZoneThickness}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding HotZoneThickness, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Breite der Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Wie weit der Auslösebereich vom Rand nach innen reicht. Breiter = leichter zu treffen, aber auffälliger." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Width="180" Minimum="280" Maximum="900" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelbreite" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Breite und Höhe lassen sich auch direkt am Panel per Ziehen am Innenrand ändern." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Width="180" Minimum="30" Maximum="100" TickFrequency="5" Value="{Binding PanelHeightPercent}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PanelHeightPercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelhöhe" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Anteil der Bildschirmhöhe (ohne Taskleiste). 100 % = ganze Höhe." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding PanelAlignments}" SelectedValue="{Binding PanelAlignment}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Lage des Panels" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Wo das kleinere Panel entlang der Kante erscheint. „An der Hover-Zone“ öffnet es auf Höhe des Auslösebereichs." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBox x:Name="HotkeyBox" Width="200" IsReadOnly="True" Text="{Binding HotkeyDisplay, Mode=OneWay}"
+                                             PreviewKeyDown="HotkeyBox_PreviewKeyDown" ToolTip="Klicken und die gewünschte Tastenkombination drücken"/>
+                                    <Button Style="{StaticResource Btn.Standard}" Content="Entfernen" Margin="8,0,0,0" Command="{Binding ClearHotkeyCommand}"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Tastenkürzel" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Öffnet dieses Panel und setzt den Cursor ins Suchfeld. Zum Ändern ins Feld klicken und die Kombination drücken. Jedes Panel braucht ein eigenes Kürzel." Style="{StaticResource RowDesc}"/>
+                                    <TextBlock Text="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Error}" FontSize="12" Visibility="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="16,12">
+                            <StackPanel>
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewBrush}"
+                                            BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <ItemsControl ItemsSource="{Binding ColorPresets}" Focusable="False" Margin="0,12,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
+                                                    AutomationProperties.Name="{Binding Name}" FocusVisualStyle="{StaticResource FocusVisual}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <StackPanel Width="76">
+                                                            <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
+                                                                <Border CornerRadius="15" Background="{Binding Swatch}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
+                                                                    <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                               Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
+                                                                </Border>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding Name}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                                                       Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Hex}" Value="">
+                                                                <Setter TargetName="DesignMark" Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Ring" Property="Opacity" Value="0.85"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <TextBlock Text="Eigene Farbe:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                    <TextBox Width="120" Text="{Binding CustomColor, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="#RRGGBB"
+                                             FontFamily="{StaticResource MonoFont}"/>
+                                    <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
+                                               Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Deckkraft des Panels" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}">
+                            <DockPanel>
+                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Filters}" SelectedValue="{Binding DefaultFilter}"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorausgewählter Filter" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Dieser Filter ist ausgewählt, wenn das Panel aufgeht." Style="{StaticResource RowDesc}"/></StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- Panel & Verhalten -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=panel}">
-                    <TextBlock Text="Panel &amp; Verhalten" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Wo das Panel sitzt und wie es ausfährt." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+                    <TextBlock Text="Darstellung &amp; Verhalten" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Einstellungen für alle Panels. Lage, Farbe, Größe und Tastenkürzel stellst du je Panel unter „Panels“ ein." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
 
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Edges}" SelectedValue="{Binding Edge}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Bildschirmrand" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="An welchem Rand die Hover-Zone liegt." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Monitors}" SelectedValue="{Binding MonitorChoice}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Monitor" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Bei „Alle Monitore“ öffnet das Tastenkürzel das Panel auf dem Monitor mit dem Mauszeiger." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Hover-Zone" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Lage des Auslösebereichs am Rand. Die Hover-Zone hat die Panelfarbe (ohne eigene Farbe: Akzentfarbe)." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}" Visibility="{Binding IsHotZoneMiddle, Converter={StaticResource Vis}}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="50" Maximum="1200" TickFrequency="25" Value="{Binding HotZoneLength}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding HotZoneLength, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Länge der Hover-Zone" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Ausdehnung entlang der Kante, mittig ausgerichtet." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="1" Maximum="30" TickFrequency="1" Value="{Binding HotZoneThickness}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding HotZoneThickness, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Breite der Hover-Zone" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Wie weit der Auslösebereich vom Rand nach innen reicht. Breiter = leichter zu treffen, aber auffälliger." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -417,46 +606,8 @@
                     </Border>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="320" Maximum="640" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelbreite" Style="{StaticResource RowTitle}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="30" Maximum="100" TickFrequency="5" Value="{Binding PanelHeightPercent}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelHeightPercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelhöhe" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Anteil der Bildschirmhöhe (ohne Taskleiste). 100 % = ganze Höhe." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}" Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding PanelAlignments}" SelectedValue="{Binding PanelAlignment}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Lage des Panels" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Wo das kleinere Panel entlang der Kante erscheint. „An der Hover-Zone“ öffnet es auf Höhe des Auslösebereichs." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
                             <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Animation" Style="{StaticResource RowTitle}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBox x:Name="HotkeyBox" Width="200" IsReadOnly="True" Text="{Binding HotkeyDisplay, Mode=OneWay}"
-                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown" ToolTip="Klicken und die gewünschte Tastenkombination drücken"/>
-                                <Button Style="{StaticResource Btn.Standard}" Content="Entfernen" Margin="8,0,0,0" Click="ClearHotkey_Click"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Tastenkürzel" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Öffnet das Panel und setzt den Cursor ins Suchfeld. Zum Ändern ins Feld klicken und die Kombination drücken." Style="{StaticResource RowDesc}"/>
-                                <TextBlock Text="{Binding HotkeyError}" Foreground="{DynamicResource Status.Error}" FontSize="12" Visibility="{Binding HotkeyError, Converter={StaticResource Vis}}"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">
@@ -464,79 +615,6 @@
                             <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Design" Style="{StaticResource RowTitle}"/>
                                 <TextBlock Text="Hell oder dunkel für alle Fenster." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}" Padding="16,12">
-                        <StackPanel>
-                            <DockPanel>
-                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewBrush}"
-                                        BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
-                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
-                                    <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
-                                </StackPanel>
-                            </DockPanel>
-                            <ItemsControl ItemsSource="{Binding ColorPresets}" Focusable="False" Margin="0,12,0,0">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
-                                                AutomationProperties.Name="{Binding Name}" FocusVisualStyle="{StaticResource FocusVisual}">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <StackPanel Width="76">
-                                                        <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
-                                                            <Border CornerRadius="15" Background="{Binding Swatch}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
-                                                                <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                           Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
-                                                            </Border>
-                                                        </Border>
-                                                        <TextBlock Text="{Binding Name}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
-                                                                   Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-                                                    <ControlTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Hex}" Value="">
-                                                            <Setter TargetName="DesignMark" Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Ring" Property="Opacity" Value="0.85"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                <TextBlock Text="Eigene Farbe:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Text.Secondary}"/>
-                                <TextBox Width="120" Text="{Binding CustomColor, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="#RRGGBB"
-                                         FontFamily="{StaticResource MonoFont}"/>
-                                <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Deckkraft des Panels" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Filters}" SelectedValue="{Binding DefaultFilter}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorausgewählter Filter" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Dieser Filter ist ausgewählt, wenn das Panel aufgeht." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}" Padding="16,12">
@@ -610,6 +688,168 @@
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Mit Windows starten" Style="{StaticResource RowTitle}"/>
                                 <TextBlock Text="Power-Exec startet nach der Anmeldung im Hintergrund." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Eigene Einträge -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
+                    <TextBlock Text="Eigene Einträge" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Einträge ohne Datei: Webseiten, Ordner und Freigaben, Remotedesktop-Verbindungen und Befehle. Sie erscheinen im Panel in der Gruppe „Eigene Einträge“ und lassen sich wie andere Einträge favorisieren, kategorisieren und mit Profilen versehen." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Url" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE774;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Webseite"/></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Folder" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Ordner"/></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Rdp" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8AF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Remotedesktop"/></StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Command">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE756;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Befehl"/></StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="Noch keine eigenen Einträge." Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="{Binding HasNoCustomEntries, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding CustomEntries}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Card}" Padding="16,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,8">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource Btn.Subtle}" Content="Testen" Command="{Binding TestCommand}" Margin="0,0,4,0"/>
+                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Entfernen">
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </Button>
+                                            </StackPanel>
+                                            <Border Background="{DynamicResource Badge.Other.Bg}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Badge.Other.Fg}"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                        <TextBlock Grid.Row="1" Text="Art" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding KindList}" SelectedValue="{Binding Kind}"
+                                                  DisplayMemberPath="Value" SelectedValuePath="Key" Margin="0,2"/>
+                                        <TextBlock Grid.Row="2" Text="Name" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Anzeigename im Panel" Margin="0,2"/>
+                                        <TextBlock Grid.Row="3" Text="{Binding TargetLabel}" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <DockPanel Grid.Row="3" Grid.Column="1" Margin="0,2">
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="8,0,0,0"/>
+                                            <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                                        </DockPanel>
+                                        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,2,0,0">
+                                            <Grid Visibility="{Binding HasArguments, Converter={StaticResource Vis}}" Margin="0,0,0,2">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Argumente" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                                                <TextBox Grid.Column="1" Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="optional, z. B. /f oder /admin" FontFamily="{StaticResource MonoFont}"/>
+                                            </Grid>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <TextBlock Text="Beschreibung" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                                                <TextBox Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="optional, erscheint als Info im Panel"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Rechnergruppen -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
+                    <TextBlock Text="Rechnergruppen" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Gruppen fassen Rechner zusammen. Im Ausführen-Dialog wählst du eine Gruppe mit einem Klick aus; in Startprofilen trägst du sie als @Name ein (z. B. @Webserver). Gruppen werden beim Start aufgelöst – Änderungen gelten sofort für alle Profile." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Left" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Gruppe hinzufügen"/></StackPanel>
+                    </Button>
+                    <TextBlock Text="Noch keine Gruppen." Style="{StaticResource Caption}" Visibility="{Binding HasNoGroups, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding MachineGroups}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Card}" Padding="16,12">
+                                    <StackPanel>
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Gruppe löschen">
+                                                <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                            </Button>
+                                            <TextBlock Text="@" FontSize="16" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                            <TextBox Width="240" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Name der Gruppe"/>
+                                            <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                        </DockPanel>
+                                        <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
+                                                 MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
+                                                 FontFamily="{StaticResource MonoFont}" Margin="0,8,0,0" Tag="Ein Rechner pro Zeile (oder durch Komma getrennt)"/>
+                                        <DockPanel Margin="0,8,0,0">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                <Button Style="{StaticResource Btn.Standard}" Content="Sortieren" Command="{Binding SortCommand}" Margin="8,0,0,0"/>
+                                                <Button Style="{StaticResource Btn.Standard}" Content="CSV/Text importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
+                                            </StackPanel>
+                                            <TextBox Text="{Binding AdQuery, UpdateSourceTrigger=PropertyChanged}" Tag="AD: SRV-*  ·  OU=Server,DC=firma,DC=local  ·  (operatingSystem=*Server*)"
+                                                     Width="380" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                                            <Button Style="{StaticResource Btn.Standard}" Content="Aus AD hinzufügen" Command="{Binding AdSearchCommand}" Margin="8,0,0,0" HorizontalAlignment="Left"/>
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
+                                                   Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
+                               Text="Die AD-Suche läuft mit deinem angemeldeten Konto. Name mit * als Platzhalter, eine OU (alle Computer darin) oder ein eigener LDAP-Filter in Klammern."/>
+                </StackPanel>
+
+                <!-- Arbeitsbereiche -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=workspaces}">
+                    <TextBlock Text="Arbeitsbereiche" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Getrennte Sammlungen für verschiedene Aufgaben oder Kunden: Jeder Arbeitsbereich hat eigene Ordner, Profile, Kategorien, Favoriten, eigene Einträge und „Zuletzt ausgeführt“. Panels, Farben, Rechnergruppen und allgemeine Einstellungen gelten für alle. Wechseln geht auch im Panel-Kopf und im Tray-Menü." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                    <ItemsControl ItemsSource="{Binding Workspaces}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Card}">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Background="{DynamicResource Info.Bg}" CornerRadius="4" Padding="8,2" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                    Visibility="{Binding IsActive, Converter={StaticResource Vis}}">
+                                                <TextBlock Text="Aktiv" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                            </Border>
+                                            <Button Style="{StaticResource Btn.Standard}" Content="Wechseln" Command="{Binding ActivateCommand}" Margin="0,0,8,0"
+                                                    ToolTip="Speichert die Einstellungen und wechselt den Arbeitsbereich"/>
+                                            <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Löschen">
+                                                <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                            </Button>
+                                        </StackPanel>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBox Width="280" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="{Binding Summary}" Style="{StaticResource RowDesc}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <TextBlock Text="Neuer Arbeitsbereich" Style="{StaticResource RowTitle}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBox Width="280" Text="{Binding NewWorkspace, UpdateSourceTrigger=PropertyChanged}" Tag="Name, z. B. Kunde A"/>
+                                <CheckBox Content="Aktuellen kopieren" IsChecked="{Binding CopyWorkspace}" Margin="12,0,0,0" VerticalAlignment="Center"
+                                          ToolTip="Ordner, Profile, Kategorien, Favoriten und eigene Einträge übernehmen"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddWorkspaceCommand}" Margin="12,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 

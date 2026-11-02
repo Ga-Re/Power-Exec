@@ -33,21 +33,21 @@ public sealed class ItemViewModel : ObservableObject
             p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
             new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
 
-        if (app.Settings.ShowProgramIcons && item.Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
+        if (app.Settings.ShowProgramIcons && !item.IsCustom && item.Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
             _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => Icon = img);
 
         SelectCommand = new RelayCommand(() => _panel.Select(this));
         RunCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
-        RunAdminCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator));
-        RunAsUserCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser));
+        RunAdminCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator), () => CanElevate);
+        RunAsUserCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser), () => CanElevate);
         RunRemoteCommand = new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
             remote: true, DefaultProfile), () => Item.SupportsRemote);
         ManageProfilesCommand = new RelayCommand(() => _app.ShowProfiles(Item));
         EditCommand = new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
-        OpenLocationCommand = new RelayCommand(() => Services.Launcher.OpenLocation(Item.FullPath));
-        CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.FullPath); } catch { } });
+        OpenLocationCommand = new RelayCommand(OpenLocation, () => !Item.IsCustom || Item.CustomKind == CustomEntryKind.Folder);
+        CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
         ToggleFavoriteCommand = new RelayCommand(() => _app.ToggleFavorite(Item));
-        HideCommand = new RelayCommand(() => _app.HideItem(Item));
+        HideCommand = new RelayCommand(() => _app.HideItem(Item), () => !Item.IsCustom);
         UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
     }
 
@@ -69,6 +69,7 @@ public sealed class ItemViewModel : ObservableObject
     {
         get
         {
+            if (Item.IsCustom) return Item.LaunchTarget ?? string.Empty;
             try { return Path.GetRelativePath(Item.RootFolder, Item.FullPath); }
             catch { return Item.FileName; }
         }
@@ -82,7 +83,7 @@ public sealed class ItemViewModel : ObservableObject
     public bool HasParseError => Item.ParseError != null;
     public string? ParseError => Item.ParseError;
 
-    public string BadgeText => Item.Type switch
+    public string BadgeText => Item.CustomKind is { } ck ? CustomEntryViewModel.PanelBadge(ck) : Item.Type switch
     {
         ItemType.PowerShell => "PS1",
         ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
@@ -96,6 +97,7 @@ public sealed class ItemViewModel : ObservableObject
     {
         get
         {
+            if (Item.IsCustom) return Item.Description;
             if (!Item.IsPowerShell) return Item.FullPath;
             var parts = new List<string> { Item.FullPath };
             parts.Add(Item.HasParameters ? $"{Item.Parameters.Count} Parameter" : "keine Parameter");
@@ -119,7 +121,8 @@ public sealed class ItemViewModel : ObservableObject
         }
     }
 
-    public string ToolTipText => string.IsNullOrWhiteSpace(Item.Description) ? Synopsis : Item.Description;
+    public string ToolTipText => (string.IsNullOrWhiteSpace(Item.Description) ? Synopsis : Item.Description) +
+                                 (HasNotes ? "\n\nNotiz: " + Notes : string.Empty);
 
     /// <summary>Programmsymbol (EXE, Verknüpfung, Snap-in); null = Typ-Kürzel anzeigen.</summary>
     public ImageSource? Icon
@@ -138,11 +141,62 @@ public sealed class ItemViewModel : ObservableObject
         get => _isSelected;
         set
         {
-            if (Set(ref _isSelected, value) && value) LoadSignature();
+            if (Set(ref _isSelected, value) && value) { LoadSignature(); LoadRequirements(); }
         }
     }
 
     public void RefreshFavorite() => OnPropertyChanged(nameof(IsFavorite));
+
+    /// <summary>Admin / anderer Benutzer ergibt nur bei Programmen und Scripten Sinn (nicht bei Webseiten und Ordnern).</summary>
+    public bool CanElevate => Item.CustomKind is null or CustomEntryKind.Command or CustomEntryKind.Rdp;
+    public bool CanHide => !Item.IsCustom;
+
+    private void OpenLocation()
+    {
+        if (Item.CustomKind == CustomEntryKind.Folder) Services.Launcher.OpenLocation(Item.LaunchTarget ?? string.Empty, isFolder: true);
+        else Services.Launcher.OpenLocation(Item.FullPath);
+    }
+
+    // ---- Notizen ------------------------------------------------------------
+
+    public string Notes => _entry?.Notes ?? string.Empty;
+    public bool HasNotes => !string.IsNullOrWhiteSpace(_entry?.Notes);
+
+    // ---- #Requires ---------------------------------------------------------
+
+    private string? _requirementsText;
+    private bool _requirementsWarn;
+
+    /// <summary>Hinweise aus #Requires (Admin, PowerShell-Version, fehlende Module); wird beim Aufklappen ermittelt.</summary>
+    public string? RequirementsText { get => _requirementsText; private set => Set(ref _requirementsText, value); }
+    public bool RequirementsWarn { get => _requirementsWarn; private set => Set(ref _requirementsWarn, value); }
+    public bool RequiresAdmin => Item.RequiresAdmin;
+
+    private async void LoadRequirements()
+    {
+        if (_requirementsText != null || !Item.IsPowerShell) return;
+        var parts = new List<string>();
+        bool warn = false;
+        if (Item.RequiresAdmin) parts.Add("#Requires -RunAsAdministrator: startet lokal automatisch als Administrator.");
+        if (Item.RequiredPsVersion.Length > 0)
+        {
+            if (Requirements.NeedsPowerShell7(Item))
+            {
+                if (Services.Launcher.IsPwshInstalled) parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}: wird mit pwsh.exe gestartet.");
+                else { parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}, aber PowerShell 7 ist nicht installiert."); warn = true; }
+            }
+            else parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}.");
+        }
+        if (Item.RequiredModules.Count > 0)
+        {
+            var missing = await Task.Run(() => Core.Metadata.ModuleLocator.FindMissing(Item.RequiredModules,
+                Core.Metadata.ModuleLocator.DefaultSearchPaths(), Item.Directory));
+            if (missing.Count > 0) { parts.Add("Lokal nicht gefunden: " + string.Join(", ", missing) + " (remote wird vor dem Start geprüft)."); warn = true; }
+            else parts.Add("Module vorhanden: " + string.Join(", ", Item.RequiredModules) + ".");
+        }
+        RequirementsWarn = warn;
+        RequirementsText = parts.Count > 0 ? string.Join("\n", parts) : string.Empty;
+    }
 
     public ICommand SelectCommand { get; }
     public ICommand RunCommand { get; }
@@ -171,7 +225,7 @@ public sealed class ItemViewModel : ObservableObject
 
     private async void LoadSignature()
     {
-        if (_signatureText != null || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
+        if (_signatureText != null || Item.IsCustom || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
         SignatureText = "Signatur wird geprüft …";
         var (text, valid) = await Task.Run(() => Services.SignatureService.Check(Item.FullPath));
         SignatureValid = valid;

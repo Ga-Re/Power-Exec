@@ -234,6 +234,14 @@ public sealed class AppController : IDisposable
 
     // ---- Aktionen -------------------------------------------------------
 
+    /// <summary>Eintrag zu einem Pfad (Datei aus einem Ordner oder eigener Eintrag „custom:…“).</summary>
+    public LaunchItem? FindItem(string path)
+    {
+        if (CustomEntry.IsCustomKey(path))
+            return Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(path, StringComparison.OrdinalIgnoreCase))?.ToLaunchItem();
+        return Repository.Items.FirstOrDefault(i => i.FullPath.Equals(path, StringComparison.OrdinalIgnoreCase));
+    }
+
     public bool IsFavorite(string path) => Settings.Favorites.Contains(path, StringComparer.OrdinalIgnoreCase);
 
     public void ToggleFavorite(LaunchItem item)
@@ -536,7 +544,7 @@ public sealed class AppController : IDisposable
         return true;
     }
 
-    public void ShowSettings(string? folderPath = null)
+    public void ShowSettings(string? folderPath = null, string? section = null)
     {
         HidePanels(force: true);
         if (_settingsWindow != null)
@@ -544,7 +552,9 @@ public sealed class AppController : IDisposable
             _settingsWindow.Activate();
             return;
         }
-        _settingsWindow = new SettingsWindow(new SettingsViewModel(this, folderPath), this);
+        var vm = new SettingsViewModel(this, folderPath);
+        if (section != null) vm.Section = section;
+        _settingsWindow = new SettingsWindow(vm, this);
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
         _settingsWindow.Activate();

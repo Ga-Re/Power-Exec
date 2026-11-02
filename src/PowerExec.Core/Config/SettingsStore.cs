@@ -54,7 +54,7 @@ public sealed class SettingsStore
     public static AppSettings Clone(AppSettings s) =>
         JsonSerializer.Deserialize<AppSettings>(JsonSerializer.Serialize(s, Options), Options)!;
 
-    private static AppSettings Normalize(AppSettings s)
+    internal static AppSettings Normalize(AppSettings s)
     {
         if (s.DefaultExtensions.Count == 0) s.DefaultExtensions = new(AppSettings.StandardExtensions);
         s.HoverDelayMs = Math.Clamp(s.HoverDelayMs, 0, 3000);

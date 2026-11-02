@@ -1,0 +1,51 @@
+using System.DirectoryServices;
+
+namespace PowerExec.Services;
+
+/// <summary>Sucht Computerkonten im Active Directory (mit dem angemeldeten Konto, ohne gespeicherte Anmeldedaten).</summary>
+public static class AdSearch
+{
+    public const int MaxResults = 5000;
+
+    /// <summary>
+    /// Eingabe: Name mit Platzhaltern (z. B. „SRV-*“), eine OU („OU=Server,DC=firma,DC=local“)
+    /// oder ein eigener LDAP-Filter in Klammern („(operatingSystem=*Server*)“).
+    /// </summary>
+    public static Task<IReadOnlyList<string>> FindComputersAsync(string query, CancellationToken token = default) =>
+        Task.Run<IReadOnlyList<string>>(() =>
+        {
+            query = query.Trim();
+            if (query.Length == 0) return Array.Empty<string>();
+            DirectoryEntry root;
+            string filter;
+            if (query.Contains("OU=", StringComparison.OrdinalIgnoreCase) || query.Contains("DC=", StringComparison.OrdinalIgnoreCase))
+            {
+                root = new DirectoryEntry("LDAP://" + query);
+                filter = "(objectCategory=computer)";
+            }
+            else
+            {
+                root = new DirectoryEntry();
+                filter = query.StartsWith('(')
+                    ? $"(&(objectCategory=computer){query})"
+                    : $"(&(objectCategory=computer)(name={Escape(query)}))";
+            }
+            using (root)
+            using (var searcher = new DirectorySearcher(root, filter, new[] { "name", "dNSHostName" })
+                   { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree })
+            using (var results = searcher.FindAll())
+            {
+                var names = new List<string>();
+                foreach (SearchResult r in results)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (r.Properties["name"] is { Count: > 0 } p && p[0] is string n) names.Add(n.ToUpperInvariant());
+                }
+                return names.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+            }
+        }, token);
+
+    /// <summary>Maskiert LDAP-Sonderzeichen, lässt aber * als Platzhalter stehen.</summary>
+    private static string Escape(string s) =>
+        s.Replace("\\", "\\5c").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");
+}

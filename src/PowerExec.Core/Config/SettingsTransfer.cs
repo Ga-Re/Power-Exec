@@ -24,9 +24,10 @@ public static class SettingsTransfer
     public static AppSettings Parse(string json)
     {
         var env = JsonSerializer.Deserialize<ExportFile>(json, Options);
-        if (env?.Settings != null) return env.Settings;
+        if (env?.Settings != null) return SettingsStore.Normalize(env.Settings);
         // Auch eine nackte settings.json akzeptieren
-        return JsonSerializer.Deserialize<AppSettings>(json, Options) ?? throw new InvalidDataException("Die Datei enthält keine Power-Exec-Einstellungen.");
+        var s = JsonSerializer.Deserialize<AppSettings>(json, Options) ?? throw new InvalidDataException("Die Datei enthält keine Power-Exec-Einstellungen.");
+        return SettingsStore.Normalize(s);
     }
 
     /// <summary>
@@ -58,6 +59,21 @@ public static class SettingsTransfer
             if (!result.CategoryOrder.Contains(c, StringComparer.CurrentCultureIgnoreCase)) result.CategoryOrder.Add(c);
         foreach (var g in imported.GlobalExcludes)
             if (!result.GlobalExcludes.Contains(g, StringComparer.OrdinalIgnoreCase)) result.GlobalExcludes.Add(g);
+        foreach (var c in imported.CustomEntries)
+        {
+            result.CustomEntries.RemoveAll(x => x.Id == c.Id);
+            result.CustomEntries.Add(c.Clone());
+        }
+        foreach (var g in imported.MachineGroups)
+        {
+            result.MachineGroups.RemoveAll(x => x.Name.Equals(g.Name, StringComparison.CurrentCultureIgnoreCase));
+            result.MachineGroups.Add(g.Clone());
+        }
+        // Arbeitsbereiche: nur neue übernehmen (der aktive Stand steht bereits oben in Ordnern, Einträgen …)
+        WorkspaceManager.EnsureInitialized(result);
+        foreach (var w in imported.Workspaces.Where(w => !w.Name.Equals(imported.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)))
+            if (WorkspaceManager.Find(result, w.Name) == null) result.Workspaces.Add(w);
+        // Panels bleiben wie sie sind (Lage und Monitore sind rechnerbezogen)
         return result;
     }
 

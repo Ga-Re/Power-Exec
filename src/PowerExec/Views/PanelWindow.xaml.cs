@@ -92,12 +92,9 @@ public partial class PanelWindow : Window
         SearchBox.SelectAll();
     }
 
-    private bool _closingForGood;
-
     /// <summary>Fenster endgültig schließen (Panel entfernt oder Einstellungen neu angewendet).</summary>
     public void CloseForGood()
     {
-        _closingForGood = true;
         _poll.Stop();
         IsOpen = false;
         Close();
@@ -180,6 +177,64 @@ public partial class PanelWindow : Window
         if (_monitor == null) return;
         _rect = ScreenService.PanelRect(_monitor, Cfg);
         ScreenService.Place(_hwnd, _rect);
+        PlaceGrips();
+    }
+
+    // ---- Größe per Ziehen am Innenrand ----------------------------------------
+
+    private System.Drawing.Point _dragOrigin;
+    private int _dragStartWidth;
+    private int _dragStartHeightPx;
+    private bool _resizing;
+
+    /// <summary>Breiten-Griff an der inneren Kante, Höhen-Griff an der freien Kante (je nach Bildschirmrand).</summary>
+    private void PlaceGrips()
+    {
+        WidthGrip.HorizontalAlignment = Cfg.Edge == ScreenEdge.Right ? HorizontalAlignment.Left : HorizontalAlignment.Right;
+        HeightGrip.VerticalAlignment = Cfg.Edge == ScreenEdge.Bottom ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+    }
+
+    private void Grip_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
+    {
+        _dragOrigin = System.Windows.Forms.Cursor.Position;
+        _dragStartWidth = Cfg.PanelWidth;
+        _dragStartHeightPx = _rect.Height;
+        _resizing = true;
+    }
+
+    private void Grip_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+    {
+        if (_monitor == null) return;
+        var now = System.Windows.Forms.Cursor.Position;
+        double scale = _monitor.Scale;
+        if (sender == WidthGrip)
+        {
+            int dx = now.X - _dragOrigin.X;
+            if (WidthGrip.HorizontalAlignment == HorizontalAlignment.Left) dx = -dx;
+            Cfg.PanelWidth = Math.Clamp(_dragStartWidth + (int)Math.Round(dx / scale), 280, 900);
+        }
+        else
+        {
+            int dy = now.Y - _dragOrigin.Y;
+            if (HeightGrip.VerticalAlignment == VerticalAlignment.Top) dy = -dy;
+            int available = _monitor.WorkArea.Height - 2 * (int)Math.Round(8 * scale);
+            if (available <= 0) return;
+            Cfg.PanelHeightPercent = Math.Clamp((int)Math.Round((_dragStartHeightPx + dy) * 100.0 / available), 30, 100);
+        }
+        Place();
+    }
+
+    private void Grip_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+    {
+        _resizing = false;
+        _app.SaveSettings();
+    }
+
+    private void Workspace_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.AddedItems.Count == 1 && e.AddedItems[0] is string name &&
+            !name.Equals(Vm.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase))
+            Dispatcher.BeginInvoke(() => Vm.SwitchWorkspaceCommand.Execute(name));
     }
 
     private void Animate(bool show)
@@ -229,7 +284,7 @@ public partial class PanelWindow : Window
 
     private void CheckAutoHide()
     {
-        if (!IsOpen || _hiding || Cfg.Pinned) { _outsideSince = null; return; }
+        if (!IsOpen || _hiding || Cfg.Pinned || _resizing) { _outsideSince = null; return; }
         if (AnyPopupOpen()) { _outsideSince = null; return; }
         // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
         if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
