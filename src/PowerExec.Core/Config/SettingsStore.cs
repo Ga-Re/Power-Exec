@@ -21,6 +21,8 @@ public sealed class SettingsStore
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Power-Exec", "settings.json");
     }
 
+    public bool Exists => File.Exists(FilePath);
+
     public AppSettings Load()
     {
         try

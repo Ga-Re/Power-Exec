@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
 
 permissions:
@@ -21,5 +21,23 @@ jobs:
       - name: Tests
         run: dotnet test tests/PowerExec.Core.Tests -c Release
 
-      - name: Build
-        run: dotnet build src/PowerExec/PowerExec.csproj -c Release
+      - name: Veröffentlichen
+        run: >
+          dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
+          --self-contained true -p:PublishSingleFile=true -p:Version=0.0.0-ci -o out
+
+      - name: Installer bauen (Prüfung)
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          & $iscc "/DMyAppVersion=0.0.0-ci" "/DMyFileVersion=0.0.0" "/DSourceDir=..\out" installer\PowerExec.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup ist mit Code $LASTEXITCODE fehlgeschlagen." }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PowerExec-ci
+          path: |
+            out/PowerExec.exe
+            out/PowerExec-Setup.exe
+          retention-days: 7

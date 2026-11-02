@@ -184,7 +184,8 @@ public class ExecutionTests
         [
           {"tag_name":"v1.5.0-beta.1","prerelease":true,"draft":false,"name":"1.5 beta","html_url":"h","body":"","assets":[]},
           {"tag_name":"v1.4.0","prerelease":false,"draft":false,"name":"1.4","html_url":"h14","body":"Neu",
-           "assets":[{"name":"PowerExec.exe","browser_download_url":"https://x/PowerExec.exe"},{"name":"PowerExec.exe.sha256","browser_download_url":"https://x/sum"}]},
+           "assets":[{"name":"PowerExec.exe","browser_download_url":"https://x/PowerExec.exe"},{"name":"PowerExec.exe.sha256","browser_download_url":"https://x/sum"},
+                      {"name":"PowerExec-Setup.exe","browser_download_url":"https://x/setup"},{"name":"PowerExec-Setup.exe.sha256","browser_download_url":"https://x/setupsum"}]},
           {"tag_name":"v1.3.2","prerelease":false,"draft":false,"name":"1.3.2","html_url":"h","body":"","assets":[]}
         ]
         """;
@@ -193,6 +194,8 @@ public class ExecutionTests
         Assert.Equal(new Version(1, 4, 0), r!.Version);
         Assert.Equal("https://x/PowerExec.exe", r.ExeUrl);
         Assert.Equal("https://x/sum", r.ChecksumUrl);
+        Assert.Equal("https://x/setup", r.SetupUrl);
+        Assert.Equal("https://x/setupsum", r.SetupChecksumUrl);
 
         Assert.Equal(new Version(1, 5, 0), UpdateChecker.FindNewer(json, new Version(1, 3, 2), true)!.Version);
         Assert.Null(UpdateChecker.FindNewer(json, new Version(1, 4, 0, 0), false));

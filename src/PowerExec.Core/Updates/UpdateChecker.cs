@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace PowerExec.Core.Updates;
 
 public sealed record ReleaseInfo(Version Version, string Tag, string Name, bool IsPrerelease, string HtmlUrl,
-    string? ExeUrl, string? ChecksumUrl, string Notes);
+    string? ExeUrl, string? ChecksumUrl, string Notes, string? SetupUrl = null, string? SetupChecksumUrl = null);
 
 /// <summary>Prüft die GitHub Releases von Ga-Re/Power-Exec auf neuere Versionen.</summary>
 public static class UpdateChecker
@@ -13,6 +13,11 @@ public static class UpdateChecker
     public const string Repo = "Power-Exec";
     public const string ExeAssetName = "PowerExec.exe";
     public const string ChecksumAssetName = "PowerExec.exe.sha256";
+    public const string SetupAssetName = "PowerExec-Setup.exe";
+    public const string SetupChecksumAssetName = "PowerExec-Setup.exe.sha256";
+
+    /// <summary>AppId des Installers (installer/PowerExec.iss).</summary>
+    public const string InstallerAppId = "{8F2B6C1E-4A7D-4E1B-9C3F-5D6A7B8C9E0F}";
     public static string ReleasesPage => $"https://github.com/{Owner}/{Repo}/releases";
 
     public static async Task<ReleaseInfo?> CheckAsync(Version current, bool includePrereleases, HttpClient http, CancellationToken ct = default)
@@ -43,7 +48,7 @@ public static class UpdateChecker
             if (version <= Normalize(current)) continue;
             if (best != null && version <= best.Version) continue;
 
-            string? exe = null, sum = null;
+            string? exe = null, sum = null, setup = null, setupSum = null;
             if (rel.TryGetProperty("assets", out var assets))
             {
                 foreach (var a in assets.EnumerateArray())
@@ -52,6 +57,8 @@ public static class UpdateChecker
                     var url = a.GetProperty("browser_download_url").GetString();
                     if (string.Equals(name, ExeAssetName, StringComparison.OrdinalIgnoreCase)) exe = url;
                     else if (string.Equals(name, ChecksumAssetName, StringComparison.OrdinalIgnoreCase)) sum = url;
+                    else if (string.Equals(name, SetupAssetName, StringComparison.OrdinalIgnoreCase)) setup = url;
+                    else if (string.Equals(name, SetupChecksumAssetName, StringComparison.OrdinalIgnoreCase)) setupSum = url;
                 }
             }
             best = new ReleaseInfo(version, tag,
@@ -59,7 +66,8 @@ public static class UpdateChecker
                 pre,
                 rel.TryGetProperty("html_url", out var h) ? h.GetString() ?? ReleasesPage : ReleasesPage,
                 exe, sum,
-                rel.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "");
+                rel.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "",
+                setup, setupSum);
         }
         return best;
     }

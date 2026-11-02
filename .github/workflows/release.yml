@@ -1,6 +1,6 @@
 name: Release
 
-# Ein Tag wie v1.4.0 baut PowerExec.exe und veröffentlicht sie als GitHub Release.
+# Ein Tag wie v1.4.0 baut PowerExec.exe und den Installer PowerExec-Setup.exe und veröffentlicht beides als GitHub Release.
 # Power-Exec prüft diese Releases beim Start und bietet das Update mit Bestätigung an.
 on:
   push:
@@ -26,6 +26,7 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "fileversion=${VERSION%%-*}" >> "$GITHUB_OUTPUT"
           if [[ "$VERSION" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Tests
@@ -39,11 +40,24 @@ jobs:
           -p:Version=${{ steps.version.outputs.version }}
           -o out
 
-      - name: Prüfsumme
+      - name: Installer bauen (Inno Setup)
         shell: pwsh
         run: |
-          $hash = (Get-FileHash out/PowerExec.exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  PowerExec.exe" | Set-Content -Path out/PowerExec.exe.sha256 -NoNewline -Encoding ascii
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe nicht gefunden: $iscc" }
+          & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "/DMyFileVersion=${{ steps.version.outputs.fileversion }}" "/DSourceDir=..\out" installer\PowerExec.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup ist mit Code $LASTEXITCODE fehlgeschlagen." }
+
+      - name: Prüfsummen
+        shell: pwsh
+        run: |
+          foreach ($f in 'PowerExec.exe', 'PowerExec-Setup.exe') {
+            $hash = (Get-FileHash "out/$f" -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $f" | Set-Content -Path "out/$f.sha256" -NoNewline -Encoding ascii
+          }
 
       - name: Release erstellen
         shell: bash
@@ -52,5 +66,7 @@ jobs:
         run: |
           FLAGS="--generate-notes"
           if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then FLAGS="$FLAGS --prerelease"; fi
-          gh release create "${GITHUB_REF_NAME}" out/PowerExec.exe out/PowerExec.exe.sha256 \
+          gh release create "${GITHUB_REF_NAME}" \
+            out/PowerExec-Setup.exe out/PowerExec-Setup.exe.sha256 \
+            out/PowerExec.exe out/PowerExec.exe.sha256 \
             --title "Power-Exec ${{ steps.version.outputs.version }}" $FLAGS

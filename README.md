@@ -59,11 +59,19 @@ oder remote auf einem oder vielen Rechnern.
 
 ## Installation
 
-1. `PowerExec.exe` aus dem neuesten [Release](https://github.com/Ga-Re/Power-Exec/releases) herunterladen
-2. In einen Ordner mit Schreibrechten legen, z. B. `%LOCALAPPDATA%\Programs\Power-Exec\` (nötig für das automatische Update)
-3. Starten. Beim ersten Start öffnen sich die Einstellungen, um Ordner hinzuzufügen.
+1. `PowerExec-Setup.exe` aus dem neuesten [Release](https://github.com/Ga-Re/Power-Exec/releases) herunterladen und starten.
+2. Optional „Verknüpfung auf dem Desktop“ und „Mit Windows starten“ wählen.
+3. Fertig. Beim ersten Start öffnen sich die Einstellungen, um Ordner hinzuzufügen.
 
-Die EXE ist eigenständig, eine .NET-Installation ist nicht nötig. Voraussetzung: Windows 10 oder 11 (x64).
+Der Installer braucht **keine Adminrechte**: Er installiert für den angemeldeten Benutzer nach
+`%LOCALAPPDATA%\Programs\Power-Exec` und legt einen Startmenü-Eintrag sowie einen Eintrag unter
+„Apps & Features“ an. Updates installiert Power-Exec nach Bestätigung selbst über den Installer (still im Hintergrund).
+Beim Deinstallieren wird gefragt, ob auch die Einstellungen gelöscht werden sollen.
+
+Ohne Installation: `PowerExec.exe` aus dem Release in einen Ordner mit Schreibrechten legen und starten (portable Nutzung).
+
+Beide Varianten sind eigenständig, eine .NET-Installation ist nicht nötig. Voraussetzung: Windows 10 oder 11 (x64).
+Da die Dateien nicht signiert sind, kann Windows SmartScreen beim ersten Start warnen („Weitere Informationen“ → „Trotzdem ausführen“).
 
 Einstellungen: `%APPDATA%\Power-Exec\settings.json`
 Logs der Remote-Ausführung: `%LOCALAPPDATA%\Power-Exec\Logs` (einstellbar)
@@ -111,6 +119,7 @@ Aufbau:
 - `src/PowerExec.Core` – plattformunabhängige Logik: Ordnersuche, Ausschlüsse, Script-Hilfe und Parameter (über den PowerShell-Parser), Befehlsaufbau, Remote-Runner, Update-Prüfung
 - `src/PowerExec` – WPF-Anwendung: Panel, Dialoge, Einstellungen, Windows-Integration
 - `tests/PowerExec.Core.Tests` – Tests für die Kernlogik
+- `installer/PowerExec.iss` – Installer (Inno Setup 6)
 
 Ein neues Release entsteht durch einen Tag:
 
@@ -122,5 +131,6 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Die GitHub Action baut dann `PowerExec.exe` samt Prüfsumme und veröffentlicht das Release.
+Die GitHub Action baut dann `PowerExec.exe` und den Installer `PowerExec-Setup.exe` (Inno Setup, `installer/PowerExec.iss`)
+samt Prüfsummen und veröffentlicht das Release. Jeder Push baut zur Kontrolle beides als Artefakt der CI.
 Tags mit Bindestrich (z. B. `v0.2.0-beta.1`) werden als Vorabversion markiert.

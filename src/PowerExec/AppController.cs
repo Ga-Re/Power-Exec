@@ -27,7 +27,14 @@ public sealed class AppController : IDisposable
 
     public void Start()
     {
+        var firstStart = !Store.Exists;
         Settings = Store.Load();
+        if (firstStart)
+        {
+            // Der Installer legt den Autostart-Eintrag an; beim ersten Start übernehmen.
+            Settings.StartWithWindows = AutostartService.IsEnabled();
+            SaveSettings();
+        }
         ThemeService.Apply(Settings.Theme);
 
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
