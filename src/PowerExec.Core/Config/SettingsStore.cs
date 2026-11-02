@@ -60,6 +60,8 @@ public sealed class SettingsStore
         s.HoverDelayMs = Math.Clamp(s.HoverDelayMs, 0, 3000);
         s.CollapseDelayMs = Math.Clamp(s.CollapseDelayMs, 0, 5000);
         s.PanelWidth = Math.Clamp(s.PanelWidth, 280, 900);
+        s.PanelOpacity = Math.Clamp(s.PanelOpacity, 50, 100);
+        if (!PanelColors.TryParse(s.PanelColor, out _)) s.PanelColor = string.Empty;
         s.ThrottleLimit = Math.Clamp(s.ThrottleLimit, 1, 128);
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
         s.MaxRecentMachines = Math.Clamp(s.MaxRecentMachines, 1, 200);

@@ -24,6 +24,7 @@ public sealed class PanelViewModel : ObservableObject
     public PanelViewModel(AppController app)
     {
         _app = app;
+        _filter = app.Settings.DefaultFilter;
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
         RescanCommand = new RelayCommand(() => _ = _app.Repository.ScanAsync());
         UpdateNowCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => !UpdateBusy);
@@ -187,6 +188,18 @@ public sealed class PanelViewModel : ObservableObject
     {
         var item = SelectedItem ?? VisibleItems.FirstOrDefault();
         item?.RunCommand.Execute(null);
+    }
+
+    /// <summary>Beim Schließen: Suche leeren und den voreingestellten Filter wiederherstellen.</summary>
+    public void ResetForNextOpen()
+    {
+        _searchText = string.Empty;
+        _filter = _app.Settings.DefaultFilter;
+        _selectedKey = null;
+        OnPropertyChanged(nameof(SearchText));
+        OnPropertyChanged(nameof(IsSearching));
+        OnPropertyChanged(nameof(Filter));
+        Rebuild();
     }
 
     public void ClearSelection()

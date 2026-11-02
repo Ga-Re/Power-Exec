@@ -1,3 +1,5 @@
+using PowerExec.Core.Search;
+
 namespace PowerExec.Core.Config;
 
 public enum ScreenEdge { Right, Left, Top, Bottom }
@@ -66,6 +68,18 @@ public sealed class AppSettings
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";
     public bool StartWithWindows { get; set; }
     public bool Pinned { get; set; }
+
+    /// <summary>Filter, der beim Öffnen des Panels ausgewählt ist.</summary>
+    public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
+
+    /// <summary>Hintergrundfarbe des Panels als #RRGGBB. Leer = Farbe des Designs.</summary>
+    public string PanelColor { get; set; } = string.Empty;
+
+    /// <summary>Deckkraft des Panels in Prozent (50–100).</summary>
+    public int PanelOpacity { get; set; } = 100;
+
+    /// <summary>Programmsymbole für EXE, Verknüpfungen und Snap-ins anzeigen.</summary>
+    public bool ShowProgramIcons { get; set; } = true;
 
     // Panel-Zustand
     public List<string> Favorites { get; set; } = new();

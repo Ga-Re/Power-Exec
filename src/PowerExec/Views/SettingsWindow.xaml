@@ -228,7 +228,88 @@
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
                             <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Design" Style="{StaticResource RowTitle}"/></StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Design" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Hell oder dunkel für alle Fenster." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Padding="16,12">
+                        <StackPanel>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewBrush}"
+                                        BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
+                                    <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <ItemsControl ItemsSource="{Binding ColorPresets}" Focusable="False" Margin="0,12,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
+                                                AutomationProperties.Name="{Binding Name}" FocusVisualStyle="{StaticResource FocusVisual}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <StackPanel Width="76">
+                                                        <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
+                                                            <Border CornerRadius="15" Background="{Binding Swatch}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
+                                                                <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                           Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
+                                                            </Border>
+                                                        </Border>
+                                                        <TextBlock Text="{Binding Name}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                                                   Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                    <ControlTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Hex}" Value="">
+                                                            <Setter TargetName="DesignMark" Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Ring" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="Eigene Farbe:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                <TextBox Width="120" Text="{Binding CustomColor, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="#RRGGBB"
+                                         FontFamily="{StaticResource MonoFont}"/>
+                                <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
+                                           Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Deckkraft des Panels" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Filters}" SelectedValue="{Binding DefaultFilter}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorausgewählter Filter" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Dieser Filter ist ausgewählt, wenn das Panel aufgeht." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowProgramIcons}" VerticalAlignment="Center"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Programmsymbole anzeigen" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Bei EXE-Dateien, Verknüpfungen und Snap-ins das Programmsymbol statt des Kürzels zeigen." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">

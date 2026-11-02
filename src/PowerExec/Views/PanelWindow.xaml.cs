@@ -29,6 +29,7 @@ public partial class PanelWindow : Window
         _app = app;
         InitializeComponent();
         DataContext = app.Panel;
+        ApplyAppearance();
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
@@ -102,8 +103,55 @@ public partial class PanelWindow : Window
         HidePanel();
     }
 
+    private static readonly string[] AppearanceKeys =
+        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
+
+    /// <summary>
+    /// Panelfarbe und Deckkraft anwenden. Bei einer hellen Farbe im dunklen Design (oder umgekehrt)
+    /// wird für das Panel das passende Farbschema für Schrift und Symbole verwendet.
+    /// </summary>
+    public void ApplyAppearance()
+    {
+        var s = _app.Settings;
+        Resources.MergedDictionaries.Clear();
+        foreach (var key in AppearanceKeys) Resources.Remove(key);
+        double opacity = s.PanelOpacity / 100.0;
+
+        if (PanelColors.TryParse(s.PanelColor, out var rgb))
+        {
+            bool light = PanelColors.IsLight(rgb);
+            if (light == ThemeService.IsDark)
+                Resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri(light ? "pack://application:,,,/Themes/Light.xaml" : "pack://application:,,,/Themes/Dark.xaml")
+                });
+            var d = PanelColors.Derive(rgb);
+            Resources["Bg.Panel"] = Solid(rgb, opacity);
+            Resources["Bg.Hover"] = Solid(d.Hover, Math.Max(opacity, 0.85));
+            Resources["Bg.Selected"] = Solid(d.Selected, Math.Max(opacity, 0.9));
+            Resources["Bg.Chip"] = Solid(d.Selected, 1);
+            Resources["Bg.Input"] = Solid(d.Input, 1);
+            Resources["Border.Panel"] = Solid(d.Border, 1);
+            Resources["Border.Default"] = Solid(d.Border, 1);
+        }
+        else if (opacity < 1 && Application.Current.Resources["Bg.Panel"] is SolidColorBrush themeBrush)
+        {
+            var c = themeBrush.Color;
+            Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
+        }
+    }
+
+    private static SolidColorBrush Solid(Rgb c, double opacity)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(255 * Math.Clamp(opacity, 0, 1)), c.R, c.G, c.B));
+        brush.Freeze();
+        return brush;
+    }
+
     public void ApplySettings()
     {
+        ApplyAppearance();
+        _app.Panel.ResetForNextOpen();
         if (IsOpen && _monitor != null)
         {
             // Monitor kann sich geändert haben
@@ -160,8 +208,7 @@ public partial class PanelWindow : Window
         IsOpen = false;
         OpenedViaHotkey = false;
         Hide();
-        _app.Panel.SearchText = string.Empty;
-        _app.Panel.ClearSelection();
+        _app.Panel.ResetForNextOpen();
         ListScroll.ScrollToTop();
     }
 

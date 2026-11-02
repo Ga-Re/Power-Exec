@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using PowerExec.Core.Config;
+using PowerExec.Core.Search;
 using PowerExec.Core.Scanning;
 using PowerExec.Core.Updates;
 using PowerExec.Infrastructure;
@@ -84,6 +87,31 @@ public sealed class FolderViewModel : ObservableObject
         Extensions = SettingsViewModel.ParseExtensions(Extensions),
         Excludes = Exclusions.Select(e => e.Value).ToList()
     };
+}
+
+public sealed class ColorPresetViewModel : ObservableObject
+{
+    private readonly SettingsViewModel _owner;
+
+    public ColorPresetViewModel(SettingsViewModel owner, ColorPreset preset)
+    {
+        _owner = owner;
+        Name = preset.Name;
+        Hex = preset.Hex;
+        if (PanelColors.TryParse(preset.Hex, out var c))
+            Swatch = new SolidColorBrush(Color.FromRgb(c.R, c.G, c.B));
+        else
+            Swatch = Application.Current.Resources["Bg.Panel"] as Brush ?? Brushes.Gray;
+        SelectCommand = new RelayCommand(() => _owner.PanelColor = Hex);
+    }
+
+    public string Name { get; }
+    public string Hex { get; }
+    public Brush Swatch { get; }
+    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : $"{Name} ({Hex})";
+    public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
+    public ICommand SelectCommand { get; }
+    public void Refresh() => OnPropertyChanged(nameof(IsSelected));
 }
 
 public sealed class SettingsViewModel : ObservableObject
@@ -191,6 +219,74 @@ public sealed class SettingsViewModel : ObservableObject
     public string HotkeyDisplay => string.IsNullOrWhiteSpace(_s.Hotkey) ? "Kein Tastenkürzel" : HotkeyService.Display(_s.Hotkey);
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
+
+    public TypeFilter DefaultFilter { get => _s.DefaultFilter; set { _s.DefaultFilter = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<TypeFilter, string>> Filters { get; } = new[]
+    {
+        new KeyValuePair<TypeFilter, string>(TypeFilter.All, "Alle"),
+        new KeyValuePair<TypeFilter, string>(TypeFilter.Scripts, "Scripte"),
+        new KeyValuePair<TypeFilter, string>(TypeFilter.Programs, "Programme"),
+        new KeyValuePair<TypeFilter, string>(TypeFilter.Favorites, "Favoriten")
+    };
+
+    // Panelfarbe
+    private IReadOnlyList<ColorPresetViewModel>? _presets;
+    private string _customColor = string.Empty;
+    private string? _colorError;
+
+    public IReadOnlyList<ColorPresetViewModel> ColorPresets =>
+        _presets ??= PanelColors.Presets.Select(p => new ColorPresetViewModel(this, p)).ToList();
+
+    /// <summary>#RRGGBB oder leer (= Farbe des Designs).</summary>
+    public string PanelColor
+    {
+        get => _s.PanelColor;
+        set
+        {
+            var v = value ?? string.Empty;
+            if (v.Length > 0 && PanelColors.TryParse(v, out var c)) v = c.Hex;
+            _s.PanelColor = v;
+            _customColor = v;
+            _colorError = null;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CustomColor));
+            OnPropertyChanged(nameof(ColorError));
+            OnPropertyChanged(nameof(PreviewBrush));
+            OnPropertyChanged(nameof(PreviewText));
+            foreach (var p in ColorPresets) p.Refresh();
+        }
+    }
+
+    /// <summary>Eingabefeld für eine eigene Farbe; wird übernommen, sobald sie gültig ist.</summary>
+    public string CustomColor
+    {
+        get => _customColor.Length > 0 ? _customColor : _s.PanelColor;
+        set
+        {
+            _customColor = value ?? string.Empty;
+            if (_customColor.Trim().Length == 0) { PanelColor = string.Empty; return; }
+            if (PanelColors.TryParse(_customColor, out _)) PanelColor = _customColor;
+            else { _colorError = "Bitte als #RRGGBB angeben, z. B. #1B2A3D."; OnPropertyChanged(nameof(ColorError)); }
+        }
+    }
+
+    public string? ColorError => _colorError;
+
+    public Brush PreviewBrush => PanelColors.TryParse(_s.PanelColor, out var c)
+        ? new SolidColorBrush(Color.FromArgb((byte)(255 * _s.PanelOpacity / 100), c.R, c.G, c.B))
+        : Application.Current.Resources["Bg.Panel"] as Brush ?? Brushes.Gray;
+
+    public string PreviewText => PanelColors.TryParse(_s.PanelColor, out var c)
+        ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
+        : "Farbe des Designs";
+
+    public int PanelOpacity
+    {
+        get => _s.PanelOpacity;
+        set { _s.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); }
+    }
+
+    public bool ShowProgramIcons { get => _s.ShowProgramIcons; set { _s.ShowProgramIcons = value; OnPropertyChanged(); } }
 
     // Ausführung
     public PsEngine DefaultEngine { get => _s.DefaultEngine; set { _s.DefaultEngine = value; OnPropertyChanged(); } }

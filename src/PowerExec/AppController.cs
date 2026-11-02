@@ -23,6 +23,7 @@ public sealed class AppController : IDisposable
     public ItemRepository Repository { get; private set; } = null!;
     public Launcher Launcher { get; private set; } = null!;
     public UpdateService Updates { get; } = new();
+    public IconService Icons { get; private set; } = null!;
     public PanelViewModel Panel { get; private set; } = null!;
 
     public void Start()
@@ -37,6 +38,7 @@ public sealed class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
 
+        Icons = new IconService(Application.Current.Dispatcher);
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
         Launcher = new Launcher(() => Settings);
         Panel = new PanelViewModel(this);
@@ -275,6 +277,7 @@ public sealed class AppController : IDisposable
         _hotkey?.Dispose();
         _hotkey = null;
         _tray?.Dispose();
+        Icons?.Dispose();
         _tray = null;
         Repository?.Dispose();
         foreach (var t in _triggers) t.Close();

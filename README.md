@@ -11,6 +11,9 @@ oder remote auf einem oder vielen Rechnern.
 - Hover-Zone am Bildschirmrand (Rand, Monitor, Größe, Verweilzeit, Einklappzeit, Breite und Animation einstellbar)
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
+- Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
+- Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
+- Programmsymbole bei EXE-Dateien, Verknüpfungen und Snap-ins
 - Suche über Dateiname, Synopsis und Beschreibung; Filter: Alle, Scripte, Programme, Favoriten
 - Gruppen (Favoriten und Ordner) einklappbar; Kontextmenü pro Gruppe (Im Explorer öffnen, Neu einlesen, Einklappen …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden

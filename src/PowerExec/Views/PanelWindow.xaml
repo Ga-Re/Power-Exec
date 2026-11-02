@@ -131,9 +131,14 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Border Style="{StaticResource Badge}" VerticalAlignment="Top" Margin="0,1,0,0">
-                                <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
+                            <Grid Width="36" VerticalAlignment="Top" Margin="0,1,0,0">
+                                <Border Style="{StaticResource Badge}" Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                    <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <Image Source="{Binding Icon}" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,-1,0,0"
+                                       RenderOptions.BitmapScalingMode="HighQuality" ToolTip="{Binding BadgeText}"
+                                       Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
+                            </Grid>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <DockPanel LastChildFill="False">
                                     <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>

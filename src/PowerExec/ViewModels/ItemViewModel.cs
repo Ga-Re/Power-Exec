@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
@@ -11,6 +12,7 @@ public sealed class ItemViewModel : ObservableObject
     private readonly AppController _app;
     private readonly PanelViewModel _panel;
     private bool _isSelected;
+    private ImageSource? _icon;
 
     public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey)
     {
@@ -18,6 +20,9 @@ public sealed class ItemViewModel : ObservableObject
         _panel = panel;
         Item = item;
         Key = groupKey + "|" + item.FullPath;
+
+        if (app.Settings.ShowProgramIcons && item.Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
+            _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => Icon = img);
 
         SelectCommand = new RelayCommand(() => _panel.Select(this));
         RunCommand = new RelayCommand(() => _app.Run(Item, ExecutionMode.CurrentUser));
@@ -81,6 +86,18 @@ public sealed class ItemViewModel : ObservableObject
     public string RunLabel => Item.IsPowerShell && Item.HasParameters ? "Ausführen …" : "Ausführen";
 
     public string ToolTipText => string.IsNullOrWhiteSpace(Item.Description) ? Synopsis : Item.Description;
+
+    /// <summary>Programmsymbol (EXE, Verknüpfung, Snap-in); null = Typ-Kürzel anzeigen.</summary>
+    public ImageSource? Icon
+    {
+        get => _icon;
+        private set
+        {
+            if (Set(ref _icon, value)) OnPropertyChanged(nameof(HasIcon));
+        }
+    }
+
+    public bool HasIcon => _icon != null;
 
     public bool IsSelected
     {
