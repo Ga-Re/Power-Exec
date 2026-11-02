@@ -58,6 +58,7 @@ oder remote auf einem oder vielen Rechnern.
 - Netzlaufwerke werden vor dem Start in UNC-Pfade umgewandelt (erhöhte Prozesse und andere Konten sehen keine verbundenen Laufwerke). Fehlt dem gewählten Konto der Zugriff, erscheint ein klarer Hinweis.
 
 **Updates**
+- „Nach Updates suchen“ auch direkt in den Einstellungen; eine gefundene Version erscheint dort als Hinweis mit „Jetzt aktualisieren“
 - Beim Start Prüfung der [GitHub Releases](https://github.com/Ga-Re/Power-Exec/releases); bei neuer Version erscheint ein Hinweis im Panel, installiert wird erst nach Bestätigung
 - Die heruntergeladene Datei wird per SHA-256-Prüfsumme kontrolliert
 

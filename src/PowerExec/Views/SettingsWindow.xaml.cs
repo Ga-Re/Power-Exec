@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
+        Closed += (_, _) => vm.Detach();
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

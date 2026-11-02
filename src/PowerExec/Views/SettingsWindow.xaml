@@ -48,7 +48,25 @@
             </StackPanel>
         </DockPanel>
 
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <DockPanel Grid.Column="1">
+        <!-- Update-Hinweis: erscheint in allen Bereichen, sobald eine neue Version gefunden wurde -->
+        <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="14,12" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+                BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding HasUpdate, Converter={StaticResource Vis}}">
+            <DockPanel>
+                <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="18" VerticalAlignment="Top" Margin="0,1,12,0"/>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                    <Button Style="{StaticResource Btn.Standard}" Content="Versionshinweise" Command="{Binding ReleaseNotesCommand}" Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource Btn.Accent}" Content="Jetzt aktualisieren" Command="{Binding InstallUpdateCommand}"/>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding UpdateBannerTitle}" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock Text="{Binding Panel.UpdateSubtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Power-Exec wird dabei beendet und neu gestartet; nicht gespeicherte Änderungen hier gehen verloren."
+                               FontSize="11" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <Grid Margin="16,8,28,24">
 
                 <!-- Ordner -->
@@ -512,7 +530,7 @@
                     </Border>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Jetzt prüfen" Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Nach Updates suchen" Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center"/>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Letzte Prüfung" Style="{StaticResource RowTitle}"/>
                                 <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
@@ -524,6 +542,7 @@
                 </StackPanel>
             </Grid>
         </ScrollViewer>
+        </DockPanel>
 
         <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
             <DockPanel>

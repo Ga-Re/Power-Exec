@@ -144,7 +144,10 @@ public sealed class SettingsViewModel : ObservableObject
 
         AddFolderCommand = new RelayCommand(AddFolder);
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
-        CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync());
+        CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
+        InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Panel.UpdateBusy);
+        ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
+        _app.Panel.PropertyChanged += OnPanelChanged;
         OpenLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
         OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
         BrowseEditorCommand = new RelayCommand(BrowseEditor);
@@ -398,13 +401,42 @@ public sealed class SettingsViewModel : ObservableObject
         if (dlg.ShowDialog() == true) LogFolder = dlg.FolderName;
     }
 
+    // ---- Update-Hinweis in den Einstellungen ----------------------------
+
+    private bool _isChecking;
+
+    public PanelViewModel Panel => _app.Panel;
+    public bool HasUpdate => _app.Updates.Available != null;
+    public string UpdateBannerTitle => _app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar" : string.Empty;
+    public bool IsChecking { get => _isChecking; private set { if (Set(ref _isChecking, value)) CommandManager.InvalidateRequerySuggested(); } }
+
+    public ICommand InstallUpdateCommand { get; }
+    public ICommand ReleaseNotesCommand { get; }
+
+    private void OnPanelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(PanelViewModel.UpdateVisible) or nameof(PanelViewModel.UpdateTitle) or nameof(PanelViewModel.UpdateBusy))
+        {
+            OnPropertyChanged(nameof(HasUpdate));
+            OnPropertyChanged(nameof(UpdateBannerTitle));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    /// <summary>Vom Fenster beim Schließen aufgerufen.</summary>
+    public void Detach() => _app.Panel.PropertyChanged -= OnPanelChanged;
+
     private async Task CheckUpdatesAsync()
     {
+        IsChecking = true;
         UpdateStatus = "Suche nach Updates …";
         var r = await _app.CheckUpdatesAsync(manual: true, includePrereleases: _s.IncludePrereleases);
+        IsChecking = false;
         UpdateStatus = _app.Updates.LastError != null
             ? "Prüfung fehlgeschlagen: " + _app.Updates.LastError
-            : r != null ? $"Version {r.Version.ToString(3)} ist verfügbar. Der Hinweis erscheint im Panel." : "Du verwendest die aktuelle Version.";
+            : r != null ? $"Version {r.Version.ToString(3)} ist verfügbar – siehe Hinweis oben." : $"Du verwendest die aktuelle Version ({UpdateService.CurrentVersionText}).";
+        OnPropertyChanged(nameof(HasUpdate));
+        OnPropertyChanged(nameof(UpdateBannerTitle));
     }
 
     internal static List<string> ParseExtensions(string text) =>
