@@ -35,27 +35,32 @@ public sealed class EdgeTriggerWindow : Window
         Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
         Title = "Power-Exec Hover-Zone";
 
-        var vertical = app.Settings.Edge is ScreenEdge.Left or ScreenEdge.Right;
+        // Die sichtbare Leiste füllt die ganze Hover-Zone und nimmt die Panelfarbe an
+        // (ohne eigene Farbe: Akzentfarbe des Designs).
+        var settings = app.Settings;
+        Brush fill;
+        Brush outline = Brushes.Transparent;
+        if (PanelColors.TryParse(settings.PanelColor, out var rgb))
+        {
+            fill = new SolidColorBrush(Color.FromRgb(rgb.R, rgb.G, rgb.B));
+            // Feiner Rand, damit auch sehr dunkle oder sehr helle Farben auf dem Desktop sichtbar bleiben
+            var border = PanelColors.Blend(rgb, PanelColors.IsLight(rgb) ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), 0.35);
+            outline = new SolidColorBrush(Color.FromRgb(border.R, border.G, border.B));
+        }
+        else
+        {
+            fill = (Brush)Application.Current.Resources["Accent"];
+        }
+        double thicknessDip = Math.Max(1, settings.HotZoneThickness);
         var strip = new Border
         {
-            Background = (Brush)Application.Current.Resources["Accent"],
-            Opacity = 0.55,
-            CornerRadius = new CornerRadius(2),
-            Width = vertical ? 3 : double.NaN,
-            Height = vertical ? double.NaN : 3,
-            HorizontalAlignment = app.Settings.Edge switch
-            {
-                ScreenEdge.Left => HorizontalAlignment.Left,
-                ScreenEdge.Right => HorizontalAlignment.Right,
-                _ => HorizontalAlignment.Stretch
-            },
-            VerticalAlignment = app.Settings.Edge switch
-            {
-                ScreenEdge.Top => VerticalAlignment.Top,
-                ScreenEdge.Bottom => VerticalAlignment.Bottom,
-                _ => VerticalAlignment.Stretch
-            },
-            Margin = vertical ? new Thickness(0, 24, 0, 24) : new Thickness(24, 0, 24, 0)
+            Background = fill,
+            BorderBrush = outline,
+            BorderThickness = new Thickness(thicknessDip >= 4 ? 1 : 0),
+            Opacity = Math.Max(0.55, settings.PanelOpacity / 100.0 * 0.85),
+            CornerRadius = new CornerRadius(Math.Min(4, thicknessDip / 2)),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch
         };
         Content = strip;
 

@@ -1,5 +1,6 @@
 using System.Drawing;
 using PowerExec.Core.Config;
+using PowerExec.Core.Layout;
 using PowerExec.Interop;
 using Forms = System.Windows.Forms;
 
@@ -36,66 +37,11 @@ public static class ScreenService
         return all.FirstOrDefault(m => m.Bounds.Contains(p.X, p.Y)) ?? all.First(m => m.IsPrimary);
     }
 
-    public static Rectangle HotZone(MonitorInfo m, AppSettings s)
-    {
-        var scale = m.Scale;
-        int thickness = Math.Max(2, (int)Math.Round(3 * scale));
-        bool vertical = s.Edge is ScreenEdge.Left or ScreenEdge.Right;
-        var b = m.Bounds;
-        var w = m.WorkArea;
+    public static Rectangle HotZone(MonitorInfo m, AppSettings s) =>
+        PanelLayout.HotZone(m.Bounds, m.WorkArea, s, m.Scale);
 
-        // Länge entlang der Kante
-        int start = vertical ? w.Top : w.Left;
-        int full = vertical ? w.Height : w.Width;
-        int length, offset;
-        switch (s.HotZone)
-        {
-            case HotZoneMode.Full:
-                length = full; offset = 0;
-                break;
-            case HotZoneMode.FirstHalf:
-                length = full / 2; offset = 0;
-                break;
-            default:
-                length = Math.Min(full, (int)Math.Round(200 * scale));
-                offset = (full - length) / 2;
-                break;
-        }
-
-        return s.Edge switch
-        {
-            ScreenEdge.Left => new Rectangle(b.Left, start + offset, thickness, length),
-            ScreenEdge.Top => new Rectangle(start + offset, b.Top, length, thickness),
-            ScreenEdge.Bottom => new Rectangle(start + offset, b.Bottom - thickness, length, thickness),
-            _ => new Rectangle(b.Right - thickness, start + offset, thickness, length)
-        };
-    }
-
-    public static Rectangle PanelRect(MonitorInfo m, AppSettings s)
-    {
-        var scale = m.Scale;
-        var w = m.WorkArea;
-        int margin = (int)Math.Round(8 * scale);
-        int width = Math.Min(w.Width - 2 * margin, (int)Math.Round(s.PanelWidth * scale));
-
-        switch (s.Edge)
-        {
-            case ScreenEdge.Left:
-                return new Rectangle(w.Left + margin, w.Top + margin, width, w.Height - 2 * margin);
-            case ScreenEdge.Top:
-            case ScreenEdge.Bottom:
-            {
-                int height = Math.Min(w.Height - 2 * margin, (int)Math.Round(Math.Max(480, w.Height * 0.7 / scale) * scale));
-                var zone = HotZone(m, s);
-                int x = zone.Left + zone.Width / 2 - width / 2;
-                x = Math.Clamp(x, w.Left + margin, w.Right - margin - width);
-                int y = s.Edge == ScreenEdge.Top ? w.Top + margin : w.Bottom - margin - height;
-                return new Rectangle(x, y, width, height);
-            }
-            default:
-                return new Rectangle(w.Right - margin - width, w.Top + margin, width, w.Height - 2 * margin);
-        }
-    }
+    public static Rectangle PanelRect(MonitorInfo m, AppSettings s) =>
+        PanelLayout.Panel(m.Bounds, m.WorkArea, s, m.Scale);
 
     public static void Place(IntPtr hwnd, Rectangle r) =>
         NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOPMOST, r.Left, r.Top, r.Width, r.Height, NativeMethods.SWP_NOACTIVATE);

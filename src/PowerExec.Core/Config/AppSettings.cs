@@ -8,6 +8,9 @@ public enum MonitorMode { Primary, Specific, All }
 
 public enum HotZoneMode { Middle, FirstHalf, Full }
 
+/// <summary>Lage des Panels entlang der Kante, wenn es nicht die volle Höhe hat.</summary>
+public enum PanelAlignment { HotZone, Start, Center, End }
+
 public enum AnimationMode { Smooth, Fast, Off }
 
 public enum ThemeMode { System, Dark, Light }
@@ -60,6 +63,17 @@ public sealed class AppSettings
     public MonitorMode MonitorMode { get; set; } = MonitorMode.Primary;
     public int MonitorIndex { get; set; }
     public HotZoneMode HotZone { get; set; } = HotZoneMode.Middle;
+
+    /// <summary>Breite (Dicke) der Hover-Zone in px.</summary>
+    public int HotZoneThickness { get; set; } = 4;
+
+    /// <summary>Länge der Hover-Zone in px bei <see cref="HotZoneMode.Middle"/>.</summary>
+    public int HotZoneLength { get; set; } = 200;
+
+    /// <summary>Höhe des Panels in Prozent des Arbeitsbereichs (30–100).</summary>
+    public int PanelHeightPercent { get; set; } = 100;
+
+    public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
     public int HoverDelayMs { get; set; } = 250;
     public int CollapseDelayMs { get; set; } = 400;
     public int PanelWidth { get; set; } = 400;

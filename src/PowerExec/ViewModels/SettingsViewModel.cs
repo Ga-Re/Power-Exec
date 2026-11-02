@@ -187,10 +187,30 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
-    public HotZoneMode HotZone { get => _s.HotZone; set { _s.HotZone = value; OnPropertyChanged(); } }
+    public HotZoneMode HotZone { get => _s.HotZone; set { _s.HotZone = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsHotZoneMiddle)); } }
+    public bool IsHotZoneMiddle => _s.HotZone == HotZoneMode.Middle;
+    public int HotZoneThickness { get => _s.HotZoneThickness; set { _s.HotZoneThickness = value; OnPropertyChanged(); } }
+    public int HotZoneLength { get => _s.HotZoneLength; set { _s.HotZoneLength = value; OnPropertyChanged(); } }
+
+    public int PanelHeightPercent
+    {
+        get => _s.PanelHeightPercent;
+        set { _s.PanelHeightPercent = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsPartialHeight)); }
+    }
+
+    public bool IsPartialHeight => _s.PanelHeightPercent < 100;
+    public PanelAlignment PanelAlignment { get => _s.PanelAlignment; set { _s.PanelAlignment = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<PanelAlignment, string>> PanelAlignments { get; } = new[]
+    {
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.HotZone, "An der Hover-Zone"),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Start, "Oben bzw. links"),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Center, "Mittig"),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.End, "Unten bzw. rechts")
+    };
+
     public IReadOnlyList<KeyValuePair<HotZoneMode, string>> HotZones { get; } = new[]
     {
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, "Mitte · 200 px"),
+        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, "Mitte · eigene Länge"),
         new KeyValuePair<HotZoneMode, string>(HotZoneMode.FirstHalf, "Erste Hälfte (oben bzw. links)"),
         new KeyValuePair<HotZoneMode, string>(HotZoneMode.Full, "Ganze Kante")
     };

@@ -175,7 +175,27 @@
                         <DockPanel>
                             <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"/>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Hover-Zone" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Größe und Lage des Auslösebereichs am Rand." Style="{StaticResource RowDesc}"/></StackPanel>
+                                <TextBlock Text="Lage des Auslösebereichs am Rand. Die Hover-Zone hat die Panelfarbe (ohne eigene Farbe: Akzentfarbe)." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Visibility="{Binding IsHotZoneMiddle, Converter={StaticResource Vis}}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="50" Maximum="1200" TickFrequency="25" Value="{Binding HotZoneLength}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding HotZoneLength, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Länge der Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Ausdehnung entlang der Kante, mittig ausgerichtet." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="1" Maximum="30" TickFrequency="1" Value="{Binding HotZoneThickness}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding HotZoneThickness, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Breite der Hover-Zone" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Wie weit der Auslösebereich vom Rand nach innen reicht. Breiter = leichter zu treffen, aber auffälliger." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">
@@ -205,6 +225,23 @@
                                 <TextBlock Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelbreite" Style="{StaticResource RowTitle}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Slider Width="180" Minimum="30" Maximum="100" TickFrequency="5" Value="{Binding PanelHeightPercent}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PanelHeightPercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Panelhöhe" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Anteil der Bildschirmhöhe (ohne Taskleiste). 100 % = ganze Höhe." Style="{StaticResource RowDesc}"/></StackPanel>
+                        </DockPanel>
+                    </Border>
+                    <Border Style="{StaticResource Card}" Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
+                        <DockPanel>
+                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding PanelAlignments}" SelectedValue="{Binding PanelAlignment}"/>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Lage des Panels" Style="{StaticResource RowTitle}"/>
+                                <TextBlock Text="Wo das kleinere Panel entlang der Kante erscheint. „An der Hover-Zone“ öffnet es auf Höhe des Auslösebereichs." Style="{StaticResource RowDesc}"/></StackPanel>
                         </DockPanel>
                     </Border>
                     <Border Style="{StaticResource Card}">

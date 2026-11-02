@@ -61,6 +61,9 @@ public sealed class SettingsStore
         s.CollapseDelayMs = Math.Clamp(s.CollapseDelayMs, 0, 5000);
         s.PanelWidth = Math.Clamp(s.PanelWidth, 280, 900);
         s.PanelOpacity = Math.Clamp(s.PanelOpacity, 50, 100);
+        s.PanelHeightPercent = Math.Clamp(s.PanelHeightPercent, 30, 100);
+        s.HotZoneThickness = Math.Clamp(s.HotZoneThickness, 1, 40);
+        s.HotZoneLength = Math.Clamp(s.HotZoneLength, 40, 4000);
         if (!PanelColors.TryParse(s.PanelColor, out _)) s.PanelColor = string.Empty;
         s.ThrottleLimit = Math.Clamp(s.ThrottleLimit, 1, 128);
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
