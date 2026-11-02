@@ -100,19 +100,19 @@ public sealed class ItemViewModel : ObservableObject
     }
 
     /// <summary>Text für den Ausführen-Knopf: Scripte mit Parametern öffnen den Dialog.</summary>
-    public string RunLabel
+    public string RunLabel => "Ausführen";
+
+    public string RunToolTip
     {
         get
         {
             var dialog = Item.IsPowerShell && ProfileResolver.NeedsDialog(DefaultProfile, Item);
-            var name = DefaultProfile.IsImplicit ? "Ausführen" : DefaultProfile.Name;
-            return dialog ? name + " …" : name;
+            var what = dialog ? "öffnet den Ausführen-Dialog" : "startet sofort";
+            return DefaultProfile.IsImplicit
+                ? $"Ausführen – {what} (auch per Doppelklick)"
+                : $"Standardprofil „{DefaultProfile.Name}“ – {ProfileResolver.Summary(DefaultProfile, Item)} (auch per Doppelklick)";
         }
     }
-
-    public string RunToolTip => DefaultProfile.IsImplicit
-        ? (Item.IsPowerShell && Item.HasParameters ? "Öffnet den Dialog für die Parameter" : "Startet sofort")
-        : $"Startprofil „{DefaultProfile.Name}“: {ProfileResolver.Summary(DefaultProfile, Item)}";
 
     public string ToolTipText => string.IsNullOrWhiteSpace(Item.Description) ? Synopsis : Item.Description;
 

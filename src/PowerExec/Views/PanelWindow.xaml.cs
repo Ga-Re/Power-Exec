@@ -256,6 +256,17 @@ public partial class PanelWindow : Window
         }
     }
 
+    /// <summary>Doppelklick auf einen Eintrag: wie der Ausführen-Knopf (Standardprofil).</summary>
+    private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left) return;
+        if (sender is FrameworkElement { DataContext: ViewModels.ItemViewModel item })
+        {
+            e.Handled = true;
+            item.RunCommand.Execute(null);
+        }
+    }
+
     /// <summary>Pfeil am Ausführen-Knopf: Menü mit allen Startprofilen.</summary>
     private void ProfileMenuButton_Click(object sender, RoutedEventArgs e)
     {

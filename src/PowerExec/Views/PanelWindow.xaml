@@ -124,11 +124,8 @@
         <DataTemplate x:Key="ItemTemplate">
             <Border x:Name="Row" CornerRadius="6" Background="Transparent" Margin="0,1">
                 <StackPanel>
-                    <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}"
+                    <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}" MouseDoubleClick="Row_DoubleClick"
                             ContextMenu="{StaticResource ItemMenu}" ToolTipService.InitialShowDelay="900">
-                        <Button.InputBindings>
-                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding RunCommand}"/>
-                        </Button.InputBindings>
                         <Grid Margin="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -164,15 +161,25 @@
                                    Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
                         <WrapPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
+                                <!-- Ein Profil: normaler Button -->
                                 <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
-                                        ToolTip="{Binding RunToolTip}">
+                                        ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
                                         <TextBlock Text="{Binding RunLabel}"/>
                                     </StackPanel>
                                 </Button>
-                                <Button Style="{StaticResource Btn.Accent}" Height="30" MinHeight="30" Width="28" Padding="0" Margin="1,0,0,0"
-                                        Click="ProfileMenuButton_Click" ToolTip="Anderes Startprofil wählen"
+                                <!-- Mehrere Profile: Split-Button (links Standardprofil, rechts Auswahl) -->
+                                <Button Style="{StaticResource Btn.SplitLeft}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
+                                        ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding RunLabel}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource Btn.SplitRight}" Height="30" MinHeight="30" Width="30" Padding="0"
+                                        Click="ProfileMenuButton_Click" ToolTip="Anderes Startprofil ausführen"
+                                        AutomationProperties.Name="Startprofil wählen"
                                         Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
                                     <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
                                 </Button>
