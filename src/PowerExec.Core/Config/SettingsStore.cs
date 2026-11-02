@@ -68,6 +68,17 @@ public sealed class SettingsStore
         s.ThrottleLimit = Math.Clamp(s.ThrottleLimit, 1, 128);
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
         s.MaxRecentMachines = Math.Clamp(s.MaxRecentMachines, 1, 200);
+        foreach (var f in s.Folders) FolderVisibility.MigrateLegacyExcludes(f);
+        s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));
+        foreach (var e in s.Entries)
+        {
+            e.Profiles.RemoveAll(p => p == null);
+            if (e.Profiles.Count > 0 && e.Profiles.Count(p => p.IsDefault) != 1)
+            {
+                var first = e.Profiles.FirstOrDefault(p => p.IsDefault) ?? e.Profiles[0];
+                foreach (var p in e.Profiles) p.IsDefault = ReferenceEquals(p, first);
+            }
+        }
         return s;
     }
 }

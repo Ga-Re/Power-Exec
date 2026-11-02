@@ -21,6 +21,9 @@ public enum RemoteEngineMode { WindowsPowerShell, PreferPowerShell7 }
 
 public enum EditorKind { VSCode, Ise, Notepad, Custom }
 
+/// <summary>Wie neue Dateien in einem Ordner behandelt werden.</summary>
+public enum NewFilesMode { AutoShow, RequireApproval }
+
 public sealed class FolderConfig
 {
     public string Path { get; set; } = string.Empty;
@@ -29,15 +32,26 @@ public sealed class FolderConfig
     /// <summary>Dateiendungen inkl. Punkt. Leer = Standard-Dateiendungen verwenden.</summary>
     public List<string> Extensions { get; set; } = new();
 
-    /// <summary>Ausschlüsse: Dateiname, Typ (*.exe) oder Muster (*\Archiv\*).</summary>
+    /// <summary>Muster-Ausschlüsse: Typ (*.exe) oder Muster (*\Archiv\*). Einzelne Dateien stehen in <see cref="Hidden"/>.</summary>
     public List<string> Excludes { get; set; } = new();
+
+    /// <summary>Einzeln ausgeblendete Dateien (Pfad relativ zum Ordner; ohne \ = Dateiname in allen Unterordnern).</summary>
+    public List<string> Hidden { get; set; } = new();
+
+    /// <summary>Bereits bekannte Dateien (relativ). Im Freigabe-Modus ist alles andere „neu“.</summary>
+    public List<string> KnownFiles { get; set; } = new();
+
+    public NewFilesMode NewFiles { get; set; } = NewFilesMode.AutoShow;
 
     public FolderConfig Clone() => new()
     {
         Path = Path,
         Recursive = Recursive,
         Extensions = new List<string>(Extensions),
-        Excludes = new List<string>(Excludes)
+        Excludes = new List<string>(Excludes),
+        Hidden = new List<string>(Hidden),
+        KnownFiles = new List<string>(KnownFiles),
+        NewFiles = NewFiles
     };
 }
 
@@ -112,6 +126,12 @@ public sealed class AppSettings
     public string EditorPath { get; set; } = string.Empty;
     public List<MachineEntry> Machines { get; set; } = new();
     public int MaxRecentMachines { get; set; } = 20;
+
+    /// <summary>Anzeigename, Beschreibung und Startprofile je Eintrag (Schlüssel: vollständiger Pfad).</summary>
+    public List<EntryConfig> Entries { get; set; } = new();
+
+    public EntryConfig? FindEntry(string fullPath) =>
+        Entries.FirstOrDefault(e => string.Equals(e.Path, fullPath, StringComparison.OrdinalIgnoreCase));
 
     // Updates
     public bool CheckUpdatesOnStart { get; set; } = true;

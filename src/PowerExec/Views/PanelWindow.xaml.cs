@@ -256,6 +256,31 @@ public partial class PanelWindow : Window
         }
     }
 
+    /// <summary>Pfeil am Ausführen-Knopf: Menü mit allen Startprofilen.</summary>
+    private void ProfileMenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: ViewModels.ItemViewModel item } button) return;
+        var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        foreach (var p in item.ProfileMenu)
+        {
+            var header = new StackPanel { Margin = new Thickness(0, 4, 0, 4) };
+            var title = new StackPanel { Orientation = Orientation.Horizontal };
+            title.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeights.SemiBold });
+            if (p.IsDefault)
+                title.Children.Add(new TextBlock { Text = "Standard", FontSize = 11, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Text.Tertiary") });
+            if (p.IsAdmin)
+                title.Children.Add(new TextBlock { Text = "\uE7EF", FontFamily = (FontFamily)FindResource("IconFont"), FontSize = 12, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Status.Warning") });
+            header.Children.Add(title);
+            header.Children.Add(new TextBlock { Text = p.Summary, FontSize = 11, Foreground = (Brush)FindResource("Text.Secondary") });
+            var mi = new MenuItem { Header = header, Command = p.Command };
+            mi.Height = double.NaN;
+            menu.Items.Add(mi);
+        }
+        menu.Items.Add(new Separator());
+        menu.Items.Add(new MenuItem { Header = "Profile verwalten …", Command = item.ManageProfilesCommand });
+        menu.IsOpen = true;
+    }
+
     private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         switch (e.Key)

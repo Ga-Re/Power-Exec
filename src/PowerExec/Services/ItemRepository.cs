@@ -7,7 +7,10 @@ using PowerExec.Core.Scanning;
 
 namespace PowerExec.Services;
 
-public sealed record FolderStatus(string Path, int Count, int Excluded, string? Error);
+public sealed record FolderStatus(string Path, int Count, IReadOnlyList<ExcludedFile> ExcludedFiles, string? Error)
+{
+    public int Excluded => ExcludedFiles.Count;
+}
 
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
 public sealed class ItemRepository : IDisposable
@@ -73,7 +76,7 @@ public sealed class ItemRepository : IDisposable
         foreach (var folder in settings.Folders)
         {
             var result = FolderScanner.Scan(folder, settings);
-            statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.ExcludedCount, result.Error));
+            statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.Excluded, result.Error));
 
             var loaded = new LaunchItem?[result.Files.Count];
             Parallel.For(0, result.Files.Count, new ParallelOptions { MaxDegreeOfParallelism = 4 }, i =>

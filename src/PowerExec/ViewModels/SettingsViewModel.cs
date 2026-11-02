@@ -4,6 +4,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
+using PowerExec.Core.Profiles;
+using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 using PowerExec.Core.Updates;
 using PowerExec.Infrastructure;
@@ -29,16 +31,139 @@ public sealed class ExclusionViewModel
     public ICommand RemoveCommand { get; }
 }
 
+/// <summary>Eine Zeile der Eintragstabelle eines Ordners.</summary>
+public sealed class EntryRowViewModel : ObservableObject
+{
+    private readonly FolderViewModel _folder;
+    private readonly AppSettings _settings;
+    private ImageSource? _icon;
+
+    public EntryRowViewModel(FolderViewModel folder, AppController app, AppSettings settings, LaunchItem? item, string fullPath, string relativePath, string? pattern)
+    {
+        _folder = folder;
+        _settings = settings;
+        Item = item;
+        FullPath = fullPath;
+        RelativePath = relativePath;
+        Pattern = pattern;
+        Type = item?.Type ?? LaunchItem.TypeFromExtension(fullPath);
+        ToggleCommand = new RelayCommand(() => IsVisibleInPanel = !IsVisibleInPanel, () => !IsLocked);
+        ConfigureCommand = new RelayCommand(() => _folder.Configure(this), () => Item != null && !IsLocked);
+        if (item != null && settings.ShowProgramIcons && Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
+            _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => { _icon = img; OnPropertyChanged(nameof(Icon)); OnPropertyChanged(nameof(HasIcon)); });
+    }
+
+    public LaunchItem? Item { get; }
+    public string FullPath { get; }
+    public string RelativePath { get; }
+    public string? Pattern { get; }
+    public ItemType Type { get; }
+    public bool IsLocked => Pattern != null;
+    public bool CanToggle => !IsLocked;
+    public ImageSource? Icon => _icon;
+    public bool HasIcon => _icon != null;
+
+    public string Badge => Type switch
+    {
+        ItemType.PowerShell => "PS1",
+        ItemType.Executable => "EXE",
+        ItemType.Shortcut => "LNK",
+        ItemType.ConsoleSnapIn => "MSC",
+        _ => System.IO.Path.GetExtension(FullPath).TrimStart('.').ToUpperInvariant()
+    };
+
+    public string Name
+    {
+        get
+        {
+            var e = _settings.FindEntry(FullPath);
+            if (!string.IsNullOrWhiteSpace(e?.DisplayName)) return e!.DisplayName;
+            return Item != null && Item.Type is not (ItemType.PowerShell or ItemType.Batch) ? Item.DisplayName : RelativePath;
+        }
+    }
+
+    public string Info
+    {
+        get
+        {
+            if (IsLocked) return $"Ausgeblendet durch Muster {Pattern}";
+            var e = _settings.FindEntry(FullPath);
+            if (!string.IsNullOrWhiteSpace(e?.Description)) return e!.Description;
+            if (Item == null) return string.Empty;
+            return string.IsNullOrWhiteSpace(Item.Synopsis) ? (Item.Type is ItemType.PowerShell or ItemType.Batch ? "Keine Synopsis" : Item.FileName) : Item.Synopsis;
+        }
+    }
+
+    public EntryVisibility State => IsLocked ? EntryVisibility.Hidden : FolderVisibility.State(_folder.Config, RelativePath);
+    public bool IsNew => State == EntryVisibility.Pending;
+
+    public bool IsVisibleInPanel
+    {
+        get => !IsLocked && State == EntryVisibility.Visible;
+        set
+        {
+            if (IsLocked) return;
+            FolderVisibility.SetVisible(_folder.Config, RelativePath, value);
+            Refresh();
+            _folder.OnRowsChanged();
+        }
+    }
+
+    public string ProfilesText
+    {
+        get
+        {
+            if (Item == null || IsLocked) return "–";
+            var profiles = ProfileResolver.GetProfiles(_settings, Item);
+            if (profiles[0].IsImplicit) return "Standard (automatisch)";
+            var def = profiles.FirstOrDefault(p => p.IsDefault) ?? profiles[0];
+            return profiles.Count == 1 ? def.Name : $"{profiles.Count} Profile · Standard: {def.Name}";
+        }
+    }
+
+    public string ProfileDetail
+    {
+        get
+        {
+            if (Item == null || IsLocked) return string.Empty;
+            var profiles = ProfileResolver.GetProfiles(_settings, Item);
+            return profiles.Count > 1
+                ? string.Join(" · ", profiles.Select(p => p.Name))
+                : ProfileResolver.Summary(profiles[0], Item);
+        }
+    }
+
+    public bool IsAdmin => Item != null && !IsLocked && ProfileResolver.GetDefault(_settings, Item).RunAsAdmin;
+
+    public ICommand ToggleCommand { get; }
+    public ICommand ConfigureCommand { get; }
+
+    public void Refresh()
+    {
+        foreach (var p in new[] { nameof(Name), nameof(Info), nameof(State), nameof(IsNew), nameof(IsVisibleInPanel), nameof(ProfilesText), nameof(ProfileDetail), nameof(IsAdmin) })
+            OnPropertyChanged(p);
+    }
+}
+
 public sealed class FolderViewModel : ObservableObject
 {
+    private readonly AppController _app;
+    private readonly AppSettings _settings;
     private string _path;
     private bool _recursive;
     private string _extensions;
     private string _newExclusion = string.Empty;
     private bool _isHighlighted;
+    private bool _isExpanded;
+    private bool _showOptions;
+    private string _query = string.Empty;
+    private string _typeFilter = "all";
 
-    public FolderViewModel(FolderConfig f, string status, Action<FolderViewModel> remove)
+    public FolderViewModel(AppController app, AppSettings settings, FolderConfig f, string status, Action<FolderViewModel> remove)
     {
+        _app = app;
+        _settings = settings;
+        Config = f.Clone();
         _path = f.Path;
         _recursive = f.Recursive;
         _extensions = string.Join(" ", f.Extensions);
@@ -47,7 +172,30 @@ public sealed class FolderViewModel : ObservableObject
         RemoveCommand = new RelayCommand(() => remove(this));
         BrowseCommand = new RelayCommand(Browse);
         AddExclusionCommand = new RelayCommand(AddExclusion, () => !string.IsNullOrWhiteSpace(NewExclusion));
+        ToggleExpandedCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
+        ToggleOptionsCommand = new RelayCommand(() => ShowOptions = !ShowOptions);
+        AllOnCommand = new RelayCommand(() => SetAll(true));
+        AllOffCommand = new RelayCommand(() => SetAll(false));
+        ApproveAllCommand = new RelayCommand(() => ResolvePending(true));
+        DismissPendingCommand = new RelayCommand(() => ResolvePending(false));
+        SetTypeFilterCommand = new RelayCommand(p => TypeFilter = p?.ToString() ?? "all");
+
+        // Gefundene Einträge (auch ausgeblendete) und per Muster ausgeschlossene Dateien
+        foreach (var item in app.Repository.Items.Where(i => i.RootFolder.Equals(f.Path, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(i => FolderVisibility.RelativePath(f, i.FullPath), StringComparer.CurrentCultureIgnoreCase))
+            Rows.Add(new EntryRowViewModel(this, app, settings, item, item.FullPath, FolderVisibility.RelativePath(f, item.FullPath), null));
+        var status2 = app.Repository.FolderStatuses.FirstOrDefault(st => st.Path.Equals(f.Path, StringComparison.OrdinalIgnoreCase));
+        if (status2 != null)
+            foreach (var ex in status2.ExcludedFiles.OrderBy(x => x.RelativePath, StringComparer.CurrentCultureIgnoreCase))
+                Rows.Add(new EntryRowViewModel(this, app, settings, null, ex.FullPath, ex.RelativePath, ex.Pattern));
+
+        RowsView = System.Windows.Data.CollectionViewSource.GetDefaultView(Rows);
+        RowsView.Filter = o => o is EntryRowViewModel r && Matches(r);
+        _isExpanded = Rows.Any(r => r.IsNew);
     }
+
+    /// <summary>Arbeitskopie der Ordner-Einstellungen (Haken, bekannte Dateien, Modus).</summary>
+    public FolderConfig Config { get; }
 
     public string Path { get => _path; set => Set(ref _path, value?.Trim() ?? string.Empty); }
     public bool Recursive { get => _recursive; set => Set(ref _recursive, value); }
@@ -56,12 +204,126 @@ public sealed class FolderViewModel : ObservableObject
     public string Extensions { get => _extensions; set => Set(ref _extensions, value ?? string.Empty); }
     public string NewExclusion { get => _newExclusion; set => Set(ref _newExclusion, value ?? string.Empty); }
     public string Status { get; }
-    public bool IsHighlighted { get => _isHighlighted; set => Set(ref _isHighlighted, value); }
+    public bool IsHighlighted { get => _isHighlighted; set { if (Set(ref _isHighlighted, value) && value) IsExpanded = true; } }
     public ObservableCollection<ExclusionViewModel> Exclusions { get; } = new();
+
+    public ObservableCollection<EntryRowViewModel> Rows { get; } = new();
+    public System.ComponentModel.ICollectionView RowsView { get; }
+
+    public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
+    public bool ShowOptions { get => _showOptions; set => Set(ref _showOptions, value); }
+
+    public string Query
+    {
+        get => _query;
+        set { if (Set(ref _query, value ?? string.Empty)) { RowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
+    }
+
+    public string TypeFilter
+    {
+        get => _typeFilter;
+        set { if (Set(ref _typeFilter, value)) { RowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
+    }
+
+    public bool NoRows => Rows.Count > 0 && !Rows.Any(Matches);
+    public bool HasNoEntries => Rows.Count == 0;
+
+    public bool RequireApproval
+    {
+        get => Config.NewFiles == NewFilesMode.RequireApproval;
+        set
+        {
+            Config.NewFiles = value ? NewFilesMode.RequireApproval : NewFilesMode.AutoShow;
+            if (value)
+                foreach (var r in Rows.Where(r => !r.IsLocked)) FolderVisibility.MarkKnown(Config, r.RelativePath); // Vorhandenes gilt als bekannt
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AutoShow));
+            OnPropertyChanged(nameof(ModeHint));
+            OnRowsChanged();
+        }
+    }
+
+    public bool AutoShow { get => !RequireApproval; set => RequireApproval = !value; }
+
+    public string ModeHint => RequireApproval
+        ? "Neue Dateien bleiben ausgeblendet; im Panel und hier erscheint ein Hinweis."
+        : "Neue Scripte und Programme erscheinen sofort im Panel.";
+
+    public int PendingCount => Rows.Count(r => r.IsNew);
+    public bool HasPending => PendingCount > 0;
+    public string PendingText => PendingCount == 1 ? "1 neuer Eintrag wartet auf Freigabe." : $"{PendingCount} neue Einträge warten auf Freigabe.";
+
+    public string Summary
+    {
+        get
+        {
+            var visible = Rows.Count(r => r.IsVisibleInPanel);
+            var selectable = Rows.Count(r => !r.IsLocked);
+            return $"{(Recursive ? "Mit Unterordnern" : "Nur oberste Ebene")} · {selectable} gefunden · {visible} im Panel · neue Dateien: " +
+                   (RequireApproval ? "nach Freigabe" : "automatisch");
+        }
+    }
+
+    public string CountText => $"{Rows.Count(r => r.IsVisibleInPanel)} von {Rows.Count(r => !r.IsLocked)} im Panel";
 
     public ICommand RemoveCommand { get; }
     public ICommand BrowseCommand { get; }
     public ICommand AddExclusionCommand { get; }
+    public ICommand ToggleExpandedCommand { get; }
+    public ICommand ToggleOptionsCommand { get; }
+    public ICommand AllOnCommand { get; }
+    public ICommand AllOffCommand { get; }
+    public ICommand ApproveAllCommand { get; }
+    public ICommand DismissPendingCommand { get; }
+    public ICommand SetTypeFilterCommand { get; }
+
+    private bool Matches(EntryRowViewModel r)
+    {
+        bool typeOk = _typeFilter switch
+        {
+            "scripts" => r.Type is ItemType.PowerShell or ItemType.Batch,
+            "programs" => r.Type is not (ItemType.PowerShell or ItemType.Batch),
+            _ => true
+        };
+        if (!typeOk) return false;
+        if (_query.Trim().Length == 0) return true;
+        var text = r.Name + " " + r.Info + " " + r.RelativePath;
+        return _query.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(t => text.Contains(t, StringComparison.CurrentCultureIgnoreCase));
+    }
+
+    internal void OnRowsChanged()
+    {
+        foreach (var p in new[] { nameof(PendingCount), nameof(HasPending), nameof(PendingText), nameof(Summary), nameof(CountText) })
+            OnPropertyChanged(p);
+    }
+
+    private void SetAll(bool visible)
+    {
+        foreach (var r in Rows.Where(r => !r.IsLocked && Matches(r)))
+            FolderVisibility.SetVisible(Config, r.RelativePath, visible);
+        foreach (var r in Rows) r.Refresh();
+        OnRowsChanged();
+    }
+
+    private void ResolvePending(bool show)
+    {
+        foreach (var r in Rows.Where(r => r.IsNew))
+            FolderVisibility.SetVisible(Config, r.RelativePath, show);
+        foreach (var r in Rows) r.Refresh();
+        OnRowsChanged();
+    }
+
+    /// <summary>⚙: Startprofile des Eintrags bearbeiten (wird mit „Speichern“ der Einstellungen übernommen).</summary>
+    internal void Configure(EntryRowViewModel row)
+    {
+        if (row.Item == null) return;
+        var item = row.Item.IsPowerShell ? _app.Repository.Reload(row.Item) : row.Item;
+        var vm = new ProfilesViewModel(_app, item, _settings, saveImmediately: false);
+        vm.Saved += row.Refresh;
+        var w = new Views.ProfilesWindow(vm);
+        w.Owner = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+        w.ShowDialog();
+    }
 
     private void Browse()
     {
@@ -80,13 +342,15 @@ public sealed class FolderViewModel : ObservableObject
 
     private void RemoveExclusion(ExclusionViewModel e) => Exclusions.Remove(e);
 
-    public FolderConfig ToConfig() => new()
+    public FolderConfig ToConfig()
     {
-        Path = Path,
-        Recursive = Recursive,
-        Extensions = SettingsViewModel.ParseExtensions(Extensions),
-        Excludes = Exclusions.Select(e => e.Value).ToList()
-    };
+        var c = Config.Clone();
+        c.Path = Path;
+        c.Recursive = Recursive;
+        c.Extensions = SettingsViewModel.ParseExtensions(Extensions);
+        c.Excludes = Exclusions.Select(e => e.Value).ToList();
+        return c;
+    }
 }
 
 public sealed class ColorPresetViewModel : ObservableObject
@@ -134,7 +398,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         foreach (var f in _s.Folders)
         {
-            var vm = new FolderViewModel(f, FolderStatusText(f.Path), RemoveFolder);
+            var vm = new FolderViewModel(app, _s, f, FolderStatusText(f.Path), RemoveFolder);
             if (focusFolder != null && f.Path.Equals(focusFolder, StringComparison.OrdinalIgnoreCase)) vm.IsHighlighted = true;
             Folders.Add(vm);
         }
@@ -384,7 +648,7 @@ public sealed class SettingsViewModel : ObservableObject
         var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner mit Scripten oder Programmen auswählen" };
         if (dlg.ShowDialog() != true) return;
         if (Folders.Any(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase))) return;
-        Folders.Add(new FolderViewModel(new FolderConfig { Path = dlg.FolderName }, "Wird nach dem Speichern eingelesen", RemoveFolder));
+        Folders.Add(new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName }, "Wird nach dem Speichern eingelesen", RemoveFolder) { IsExpanded = true, ShowOptions = true });
     }
 
     private void RemoveFolder(FolderViewModel f) => Folders.Remove(f);

@@ -25,6 +25,9 @@ public sealed class ExecutionRequest
 
     public bool CopyFolder { get; init; }
 
+    /// <summary>Zusätzliche Argumente für EXE, Verknüpfungen, Batch und Snap-ins (aus dem Startprofil).</summary>
+    public string ExtraArguments { get; init; } = string.Empty;
+
     /// <summary>Pfad, der tatsächlich gestartet wird (bei Netzlaufwerken bereits als UNC-Pfad).</summary>
     public string? ResolvedPath { get; init; }
 

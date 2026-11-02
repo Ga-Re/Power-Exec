@@ -4,6 +4,7 @@ using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
+using PowerExec.Core.Profiles;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 
@@ -14,10 +15,11 @@ public sealed class ParameterViewModel : ObservableObject
     private string _value = string.Empty;
     private bool _boolValue;
 
-    public ParameterViewModel(ScriptParameter p)
+    public ParameterViewModel(ScriptParameter p, string? initial = null, bool isFixed = false)
     {
         Parameter = p;
-        var def = p.DefaultValueLiteral;
+        IsFixed = isFixed;
+        var def = initial ?? p.DefaultValueLiteral;
         if (p.Kind is ParameterKind.Switch or ParameterKind.Boolean)
             _boolValue = def != null && def.Equals("true", StringComparison.OrdinalIgnoreCase);
         else if (def != null)
@@ -25,6 +27,11 @@ public sealed class ParameterViewModel : ObservableObject
         else if (p.Kind == ParameterKind.Choice && p.IsMandatory && p.ValidValues.Count > 0)
             _value = p.ValidValues[0];
     }
+
+    /// <summary>Im Startprofil fest hinterlegt – im Dialog nicht änderbar.</summary>
+    public bool IsFixed { get; }
+    public bool IsEditable => !IsFixed;
+    public bool IsSecure => Parameter.Kind == ParameterKind.Secure;
 
     public ScriptParameter Parameter { get; }
     public string Name => Parameter.Name;
@@ -34,7 +41,7 @@ public sealed class ParameterViewModel : ObservableObject
     public bool IsMandatory => Parameter.IsMandatory;
     public bool IsCheck => Parameter.Kind is ParameterKind.Switch or ParameterKind.Boolean;
     public bool IsChoice => Parameter.Kind == ParameterKind.Choice;
-    public bool IsText => !IsCheck && !IsChoice;
+    public bool IsText => !IsCheck && !IsChoice && !IsSecure;
     public IReadOnlyList<string> Choices => Parameter.IsMandatory ? Parameter.ValidValues : new[] { string.Empty }.Concat(Parameter.ValidValues).ToList();
 
     public string Placeholder => Parameter.Kind switch
@@ -99,32 +106,39 @@ public sealed class RunViewModel : ObservableObject
     private string _preview = string.Empty;
     private string _validation = string.Empty;
 
-    public RunViewModel(AppController app, LaunchItem item, ExecutionMode mode, bool remote)
+    public RunViewModel(AppController app, LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
     {
         _app = app;
         Item = item;
         var s = app.Settings;
+        Profile = profile ?? ProfileResolver.GetDefault(s, item);
         _mode = mode;
         _remote = remote && item.SupportsRemote;
-        _noExit = s.NoExit;
-        _noProfile = s.NoProfile;
+        _noExit = Profile.NoExit;
+        _noProfile = Profile.NoProfile;
         _copyFolder = item.CopyFolderByDefault;
-        _engine = _remote
+        _engine = _remote && Profile.IsImplicit
             ? (s.RemoteEngine == RemoteEngineMode.PreferPowerShell7 ? PsEngine.PowerShell7 : PsEngine.WindowsPowerShell)
-            : Launcher.EffectiveEngine(s.DefaultEngine);
+            : _remote ? Profile.Engine : Launcher.EffectiveEngine(Profile.Engine);
 
+        var initial = ProfileResolver.InitialValues(Profile, item);
         foreach (var p in item.Parameters)
         {
-            var vm = new ParameterViewModel(p);
+            var vm = new ParameterViewModel(p, initial.GetValueOrDefault(p.Name), ProfileResolver.IsFixed(Profile, p));
             vm.PropertyChanged += (_, _) => UpdatePreview();
             Parameters.Add(vm);
         }
 
+        var preselect = Profile.Target == ProfileTarget.Fixed
+            ? new HashSet<string>(Profile.Machines, StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var m in s.Machines.OrderByDescending(m => m.LastUsedUtc))
         {
-            var vm = new MachineViewModel(this, m.Name, m.Favorite, MachineList.RelativeTime(m.LastUsedUtc), false);
+            var vm = new MachineViewModel(this, m.Name, m.Favorite, MachineList.RelativeTime(m.LastUsedUtc), preselect.Remove(m.Name));
             (m.Favorite ? FavoriteMachines : RecentMachines).Add(vm);
         }
+        foreach (var name in preselect)
+            RecentMachines.Insert(0, new MachineViewModel(this, name, false, "aus Profil", true));
 
         AddMachineCommand = new RelayCommand(AddMachines, () => !string.IsNullOrWhiteSpace(NewMachine));
         RunCommand = new RelayCommand(Execute, () => CanRun);
@@ -132,6 +146,9 @@ public sealed class RunViewModel : ObservableObject
     }
 
     public LaunchItem Item { get; }
+    public LaunchProfile Profile { get; }
+    public string ProfileText => Profile.IsImplicit ? string.Empty : $"Startprofil: {Profile.Name}";
+    public bool HasProfile => !Profile.IsImplicit;
     public string Title => Item.DisplayName;
     public string PathText => Item.FullPath;
     public string Synopsis => Item.Synopsis;

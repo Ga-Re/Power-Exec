@@ -69,6 +69,8 @@
                         </StackPanel>
                         <TextBlock Text="{Binding PathText}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Tertiary}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding Synopsis}" FontSize="14" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ProfileText}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,6,0,0"
+                                   Visibility="{Binding HasProfile, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,4,0,0"
                                    Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding ParseError, StringFormat=Hinweis: Das Script enthält einen Fehler ({0})}" FontSize="12" Foreground="{DynamicResource Status.Warning}"
@@ -96,13 +98,17 @@
                                                 <TextBlock Text="{Binding TypeLabel}" FontSize="12" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="6,0,0,0"/>
                                                 <TextBlock Text="Pflicht" FontSize="12" Foreground="{DynamicResource Status.Error}" Margin="6,0,0,0"
                                                            Visibility="{Binding IsMandatory, Converter={StaticResource Vis}}"/>
+                                                <TextBlock Text="fest im Profil" FontSize="12" Foreground="{DynamicResource Accent}" Margin="6,0,0,0"
+                                                           Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
-                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}"
+                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}" IsEnabled="{Binding IsEditable}"
                                                      Visibility="{Binding IsText, Converter={StaticResource Vis}}"/>
-                                            <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}"
+                                            <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}"/>
-                                            <CheckBox IsChecked="{Binding BoolValue}" Content="Aktivieren" Margin="0,6,0,0"
+                                            <CheckBox IsChecked="{Binding BoolValue}" Content="Aktivieren" Margin="0,6,0,0" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsCheck, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Text="Wird nicht gespeichert oder übergeben – das Script fragt bei Bedarf selbst." Style="{StaticResource Caption}"
+                                                       Visibility="{Binding IsSecure, Converter={StaticResource Vis}}"/>
                                             <TextBlock Text="{Binding HelpText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,4,0,0"
                                                        Visibility="{Binding HasHelp, Converter={StaticResource Vis}}"/>
                                         </StackPanel>

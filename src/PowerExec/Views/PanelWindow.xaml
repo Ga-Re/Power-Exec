@@ -40,6 +40,9 @@
             <MenuItem Header="Remote …" Command="{Binding RunRemoteCommand}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="Profile verwalten …" Command="{Binding ManageProfilesCommand}">
+                <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
             <Separator/>
             <MenuItem Header="Im Editor öffnen" Command="{Binding EditCommand}" Visibility="{Binding CanEdit, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -160,12 +163,20 @@
                         <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                    Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
                         <WrapPanel>
-                            <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" Margin="0,0,6,6" FontSize="12">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding RunLabel}"/>
-                                </StackPanel>
-                            </Button>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
+                                <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
+                                        ToolTip="{Binding RunToolTip}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding RunLabel}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource Btn.Accent}" Height="30" MinHeight="30" Width="28" Padding="0" Margin="1,0,0,0"
+                                        Click="ProfileMenuButton_Click" ToolTip="Anderes Startprofil wählen"
+                                        Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
+                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
+                                </Button>
+                            </StackPanel>
                             <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
@@ -237,7 +248,8 @@
             </DockPanel>
 
             <!-- Update-Hinweis -->
-            <Border Grid.Row="1" Margin="16,0,16,10" Padding="12,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+            <StackPanel Grid.Row="1">
+            <Border Margin="16,0,16,10" Padding="12,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding UpdateVisible, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="16" VerticalAlignment="Top" Margin="0,1,10,0"/>
@@ -251,6 +263,16 @@
                     </StackPanel>
                 </DockPanel>
             </Border>
+            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding PendingText, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Prüfen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                            Command="{Binding ReviewPendingCommand}" MinHeight="26" Height="26" Padding="8,0"/>
+                    <TextBlock Text="{Binding PendingText}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+            </StackPanel>
 
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">

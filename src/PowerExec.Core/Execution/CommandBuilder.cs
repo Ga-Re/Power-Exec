@@ -63,7 +63,8 @@ public static class CommandBuilder
             case ItemType.Batch:
             {
                 // cmd /k ""C:\Pfad mit Leerzeichen\x.cmd"" – die äußeren Anführungszeichen entfernt cmd selbst.
-                var cmdArgs = (r.NoExit ? "/k " : "/c ") + "\"\"" + path + "\"\"";
+                var extra = r.ExtraArguments.Trim();
+                var cmdArgs = (r.NoExit ? "/k " : "/c ") + "\"\"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) + "\"";
                 return new LocalLaunchSpec
                 {
                     FileName = "cmd.exe",
@@ -76,22 +77,22 @@ public static class CommandBuilder
                 };
             }
             case ItemType.Executable:
-                return Program(r, path, string.Empty, workDir);
+                return Program(r, path, r.ExtraArguments.Trim(), workDir);
             case ItemType.ConsoleSnapIn:
                 if (r.Mode == ExecutionMode.OtherUser)
-                    return Program(r, "mmc.exe", Quoted(path), workDir);
-                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, Quoted(path));
+                    return Program(r, "mmc.exe", Join(Quoted(path), r.ExtraArguments), workDir);
+                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, r.ExtraArguments);
             case ItemType.Shortcut:
                 if (r.Mode == ExecutionMode.OtherUser && item.Shortcut != null && item.Shortcut.TargetPath.Length > 0)
                 {
                     var wd = string.IsNullOrWhiteSpace(item.Shortcut.WorkingDirectory) ? null : item.Shortcut.WorkingDirectory;
-                    return Program(r, item.Shortcut.TargetPath, item.Shortcut.Arguments, wd);
+                    return Program(r, item.Shortcut.TargetPath, Join(item.Shortcut.Arguments, r.ExtraArguments), wd);
                 }
-                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, Quoted(path));
+                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, r.ExtraArguments);
             default:
                 if (r.Mode == ExecutionMode.OtherUser)
-                    return Program(r, "cmd.exe", "/c start \"\" " + Quoted(path), null);
-                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, Quoted(path));
+                    return Program(r, "cmd.exe", Join("/c start \"\" " + Quoted(path), r.ExtraArguments), null);
+                return Shell(path, r.Mode == ExecutionMode.Administrator ? "runas" : null, workDir, r.ExtraArguments);
         }
     }
 
@@ -136,14 +137,17 @@ public static class CommandBuilder
         Preview = (Quoted(exe) + " " + args).Trim()
     };
 
-    private static LocalLaunchSpec Shell(string path, string? verb, string? workDir, string preview) => new()
+    private static LocalLaunchSpec Shell(string path, string? verb, string? workDir, string arguments) => new()
     {
         FileName = path,
+        Arguments = arguments.Trim(),
         UseShellExecute = true,
         Verb = verb,
         WorkingDirectory = workDir,
-        Preview = preview
+        Preview = Join(Quoted(path), arguments)
     };
+
+    private static string Join(string a, string b) => (a.Trim() + " " + b.Trim()).Trim();
 
     private static string Quoted(string s) => s.Contains(' ') ? "\"" + s + "\"" : s;
 }

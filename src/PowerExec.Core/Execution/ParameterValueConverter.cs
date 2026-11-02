@@ -25,6 +25,9 @@ public static class ParameterValueConverter
             input.TryGetValue(p.Name, out var raw);
             raw = raw?.Trim();
 
+            if (p.Kind == ParameterKind.Secure)
+                continue; // nie übergeben – das Script fragt bei Bedarf selbst
+
             if (p.Kind == ParameterKind.Switch)
             {
                 if (IsTrueText(raw)) values[p.Name] = true;

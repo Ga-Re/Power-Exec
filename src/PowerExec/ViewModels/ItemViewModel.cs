@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Execution;
+using PowerExec.Core.Config;
 using PowerExec.Core.Models;
+using PowerExec.Core.Profiles;
 using PowerExec.Infrastructure;
 
 namespace PowerExec.ViewModels;
@@ -13,6 +15,7 @@ public sealed class ItemViewModel : ObservableObject
     private readonly PanelViewModel _panel;
     private bool _isSelected;
     private ImageSource? _icon;
+    private readonly EntryConfig? _entry;
 
     public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey)
     {
@@ -20,15 +23,23 @@ public sealed class ItemViewModel : ObservableObject
         _panel = panel;
         Item = item;
         Key = groupKey + "|" + item.FullPath;
+        _entry = app.Settings.FindEntry(item.FullPath);
+        Profiles = ProfileResolver.GetProfiles(app.Settings, item);
+        DefaultProfile = Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
+        ProfileMenu = Profiles.Select(p => new ProfileMenuItem(
+            p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
+            new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
 
         if (app.Settings.ShowProgramIcons && item.Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
             _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => Icon = img);
 
         SelectCommand = new RelayCommand(() => _panel.Select(this));
-        RunCommand = new RelayCommand(() => _app.Run(Item, ExecutionMode.CurrentUser));
-        RunAdminCommand = new RelayCommand(() => _app.Run(Item, ExecutionMode.Administrator));
-        RunAsUserCommand = new RelayCommand(() => _app.Run(Item, ExecutionMode.OtherUser));
-        RunRemoteCommand = new RelayCommand(() => _app.OpenRunDialog(Item, ExecutionMode.CurrentUser, remote: true), () => Item.SupportsRemote);
+        RunCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
+        RunAdminCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator));
+        RunAsUserCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser));
+        RunRemoteCommand = new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
+            remote: true, DefaultProfile), () => Item.SupportsRemote);
+        ManageProfilesCommand = new RelayCommand(() => _app.ShowProfiles(Item));
         EditCommand = new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
         OpenLocationCommand = new RelayCommand(() => Services.Launcher.OpenLocation(Item.FullPath));
         CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.FullPath); } catch { } });
@@ -39,9 +50,15 @@ public sealed class ItemViewModel : ObservableObject
     public LaunchItem Item { get; }
     public string Key { get; }
 
-    public string DisplayName => Item.DisplayName;
+    public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
+
+    public IReadOnlyList<LaunchProfile> Profiles { get; }
+    public LaunchProfile DefaultProfile { get; }
+    public IReadOnlyList<ProfileMenuItem> ProfileMenu { get; }
+    public bool HasProfileMenu => Profiles.Count > 1;
     /// <summary>Info-Zeile; ohne Synopsis der Pfad relativ zum Ordner (unterscheidet gleichnamige Dateien).</summary>
-    public string Synopsis => string.IsNullOrWhiteSpace(Item.Synopsis) ? RelativePath : Item.Synopsis;
+    public string Synopsis => !string.IsNullOrWhiteSpace(_entry?.Description) ? _entry!.Description
+        : string.IsNullOrWhiteSpace(Item.Synopsis) ? RelativePath : Item.Synopsis;
 
     public string RelativePath
     {
@@ -83,7 +100,19 @@ public sealed class ItemViewModel : ObservableObject
     }
 
     /// <summary>Text für den Ausführen-Knopf: Scripte mit Parametern öffnen den Dialog.</summary>
-    public string RunLabel => Item.IsPowerShell && Item.HasParameters ? "Ausführen …" : "Ausführen";
+    public string RunLabel
+    {
+        get
+        {
+            var dialog = Item.IsPowerShell && ProfileResolver.NeedsDialog(DefaultProfile, Item);
+            var name = DefaultProfile.IsImplicit ? "Ausführen" : DefaultProfile.Name;
+            return dialog ? name + " …" : name;
+        }
+    }
+
+    public string RunToolTip => DefaultProfile.IsImplicit
+        ? (Item.IsPowerShell && Item.HasParameters ? "Öffnet den Dialog für die Parameter" : "Startet sofort")
+        : $"Startprofil „{DefaultProfile.Name}“: {ProfileResolver.Summary(DefaultProfile, Item)}";
 
     public string ToolTipText => string.IsNullOrWhiteSpace(Item.Description) ? Synopsis : Item.Description;
 
@@ -117,4 +146,8 @@ public sealed class ItemViewModel : ObservableObject
     public ICommand CopyPathCommand { get; }
     public ICommand ToggleFavoriteCommand { get; }
     public ICommand HideCommand { get; }
+    public ICommand ManageProfilesCommand { get; }
 }
+
+/// <summary>Eintrag im Profil-Menü am Ausführen-Knopf.</summary>
+public sealed record ProfileMenuItem(string Name, string Summary, bool IsDefault, bool IsAdmin, ICommand Command);

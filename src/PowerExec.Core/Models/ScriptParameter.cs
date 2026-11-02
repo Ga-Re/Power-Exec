@@ -8,7 +8,9 @@ public enum ParameterKind
     Switch,
     Boolean,
     Choice,
-    List
+    List,
+    /// <summary>PSCredential/SecureString/Kennwort: wird nie gespeichert oder übergeben, das Script fragt selbst.</summary>
+    Secure
 }
 
 /// <summary>Ein Parameter aus dem param()-Block eines PowerShell-Scripts.</summary>
@@ -35,12 +37,25 @@ public sealed class ScriptParameter
         get
         {
             var t = NormalizedType;
+            if (IsSecure) return ParameterKind.Secure;
             if (t is "switch" or "switchparameter") return ParameterKind.Switch;
             if (ValidValues.Count > 0 && !t.EndsWith("[]")) return ParameterKind.Choice;
             if (t.EndsWith("[]")) return ParameterKind.List;
             if (t is "bool" or "boolean") return ParameterKind.Boolean;
             if (IsNumericType(t)) return ParameterKind.Number;
             return ParameterKind.Text;
+        }
+    }
+
+    /// <summary>Parameter für Anmeldedaten oder Kennwörter – werden nie gespeichert.</summary>
+    public bool IsSecure
+    {
+        get
+        {
+            var t = NormalizedType;
+            if (t is "pscredential" or "securestring" or "management.automation.pscredential" or "security.securestring") return true;
+            var n = Name.ToLowerInvariant();
+            return n.Contains("password") || n.Contains("passwort") || n.Contains("kennwort") || n.Contains("secret") || n == "credential";
         }
     }
 

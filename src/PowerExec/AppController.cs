@@ -2,6 +2,7 @@ using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
+using PowerExec.Core.Profiles;
 using PowerExec.Core.Updates;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -42,7 +43,11 @@ public sealed class AppController : IDisposable
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
         Launcher = new Launcher(() => Settings);
         Panel = new PanelViewModel(this);
-        Repository.Changed += (_, _) => Panel.Rebuild();
+        Repository.Changed += (_, _) =>
+        {
+            UpdateKnownFiles();
+            Panel.Rebuild();
+        };
 
         _panelWindow = new PanelWindow(this);
         CreateTriggers();
@@ -154,43 +159,128 @@ public sealed class AppController : IDisposable
         Panel.RefreshFavorites();
     }
 
-    /// <summary>Blendet einen Eintrag aus, indem er als Ausschluss beim Ordner gespeichert wird.</summary>
+    public FolderConfig? FolderOf(LaunchItem item) =>
+        Settings.Folders.FirstOrDefault(f => f.Path.Equals(item.RootFolder, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Blendet einen Eintrag aus (entfernt den Haken in den Ordner-Einstellungen).</summary>
     public void HideItem(LaunchItem item)
     {
-        var folder = Settings.Folders.FirstOrDefault(f => f.Path.Equals(item.RootFolder, StringComparison.OrdinalIgnoreCase));
+        var folder = FolderOf(item);
         if (folder == null) return;
-        var rel = Path.GetRelativePath(folder.Path, item.FullPath);
-        if (!folder.Excludes.Contains(rel, StringComparer.OrdinalIgnoreCase)) folder.Excludes.Add(rel);
+        FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         SaveSettings();
-        _ = Repository.ScanAsync();
-        _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Rückgängig in den Einstellungen unter „Ordner“.");
+        Panel.Rebuild();
+        _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Ordner (Haken setzen).");
     }
 
-    /// <summary>Standardaktion: ohne Parameter direkt starten, mit Parametern den Dialog öffnen.</summary>
-    public void Run(LaunchItem item, ExecutionMode mode)
+    /// <summary>
+    /// Nach jedem Scan: im Modus „Automatisch anzeigen“ neue Dateien als bekannt merken,
+    /// verschwundene vergessen. Ordner mit Fehler (z. B. Freigabe nicht erreichbar) bleiben unverändert.
+    /// </summary>
+    private void UpdateKnownFiles()
     {
+        if (Repository.IsScanning) return;
+        bool changed = false;
+        foreach (var folder in Settings.Folders)
+        {
+            var status = Repository.FolderStatuses.FirstOrDefault(s => s.Path.Equals(folder.Path, StringComparison.OrdinalIgnoreCase));
+            if (status == null || status.Error != null) continue;
+            var found = Repository.Items
+                .Where(i => i.RootFolder.Equals(folder.Path, StringComparison.OrdinalIgnoreCase))
+                .Select(i => FolderVisibility.RelativePath(folder, i.FullPath));
+            changed |= FolderVisibility.UpdateKnown(folder, found);
+        }
+        if (changed) SaveSettings();
+    }
+
+    /// <summary>Standardaktion im Panel: Standardprofil des Eintrags ausführen.</summary>
+    public void Run(LaunchItem item, ExecutionMode mode) =>
+        RunProfile(item, null, mode == ExecutionMode.CurrentUser ? null : mode);
+
+    /// <summary>
+    /// Startet ein Profil. <paramref name="overrideMode"/> erzwingt einmalig Admin oder anderes Konto
+    /// (Knöpfe „Admin“ und „Als …“ im Panel).
+    /// </summary>
+    public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null)
+    {
+        if (item.IsPowerShell) item = Repository.Reload(item); // Parameter könnten sich geändert haben
+        profile ??= ProfileResolver.GetDefault(Settings, item);
+        var mode = overrideMode ?? (profile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser);
+        bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
+
         if (item.IsPowerShell)
         {
-            item = Repository.Reload(item); // Parameter könnten sich geändert haben
-            if (item.HasParameters)
+            Dictionary<string, object> values = new();
+            var errors = ParameterValueConverter.TryConvert(item.Parameters, ProfileResolver.InitialValues(profile, item), out values);
+            if (ProfileResolver.NeedsDialog(profile, item) || errors.Count > 0)
             {
-                OpenRunDialog(item, mode, remote: false);
+                OpenRunDialog(item, mode, remote, profile);
                 return;
             }
+            var request = BuildRequest(item, profile, mode, values);
+            _panelWindow?.HideAfterAction();
+            if (remote)
+            {
+                MachineList.MarkUsed(Settings, profile.Machines);
+                SaveSettings();
+                StartRemote(new ExecutionRequest
+                {
+                    Item = request.Item, Mode = request.Mode, Engine = profile.Engine, NoExit = request.NoExit, NoProfile = request.NoProfile,
+                    ExecutionPolicy = request.ExecutionPolicy, Parameters = request.Parameters, ResolvedPath = request.ResolvedPath,
+                    Targets = profile.Machines.ToList(), CopyFolder = item.CopyFolderByDefault
+                }, null);
+            }
+            else
+            {
+                Launcher.StartLocal(request, null);
+            }
+            return;
         }
+
         _panelWindow?.HideAfterAction();
-        Launcher.StartLocal(Launcher.DefaultRequest(item, mode), null);
+        Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null);
     }
 
-    public void OpenRunDialog(LaunchItem item, ExecutionMode mode, bool remote)
+    private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
+    {
+        Item = item,
+        Mode = mode,
+        Engine = Launcher.EffectiveEngine(profile.Engine),
+        NoExit = profile.NoExit,
+        NoProfile = profile.NoProfile,
+        ExecutionPolicy = Settings.ExecutionPolicy,
+        Parameters = values,
+        ExtraArguments = profile.Arguments,
+        ResolvedPath = PathResolver.ToUnc(item.FullPath)
+    };
+
+    public void OpenRunDialog(LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
     {
         if (item.IsPowerShell) item = Repository.Reload(item);
         _panelWindow?.HideAfterAction();
-        var vm = new RunViewModel(this, item, mode, remote);
+        var vm = new RunViewModel(this, item, mode, remote, profile);
         var w = new RunWindow(vm);
         w.Show();
         w.Activate();
+    }
+
+    /// <summary>Profil-Dialog aus dem Panel: arbeitet direkt auf den Einstellungen und speichert sofort.</summary>
+    public void ShowProfiles(LaunchItem item)
+    {
+        _panelWindow?.HideAfterAction(force: true);
+        if (item.IsPowerShell) item = Repository.Reload(item);
+        var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);
+        var w = new ProfilesWindow(vm);
+        w.Show();
+        w.Activate();
+    }
+
+    /// <summary>Wird vom Profil-Dialog nach dem Speichern aufgerufen.</summary>
+    public void OnProfilesSaved()
+    {
+        SaveSettings();
+        Panel.Rebuild();
     }
 
     /// <summary>Startet die Remote-/Massenausführung und öffnet die Ergebnisliste.</summary>

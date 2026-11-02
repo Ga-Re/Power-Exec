@@ -22,9 +22,17 @@ oder remote auf einem oder vielen Rechnern.
 
 **Ordner**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
-- Pro Ordner: Unterordner ja/nein, Dateiendungen, Ausschlüsse
-- Ausschlüsse als Datei (`Blah.ps1`), Typ (`*.exe`) oder Muster (`*\Archiv\*`, `_*`), zusätzlich globale Ausschlüsse
+- Die Einstellungen zeigen pro Ordner **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
+- **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
+- Ordner-Optionen: Unterordner ja/nein, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
 - Dateiwächter: Änderungen erscheinen automatisch
+
+**Startprofile je Eintrag (⚙)**
+- Eigener Anzeigename und eigene Beschreibung im Panel
+- Beliebig viele Profile, eines davon ist Standard (Klick im Panel); die übrigen stehen im Menü am Ausführen-Knopf
+- Pro Profil: als Administrator ausführen; bei PowerShell jeder Parameter **fest**, **vorbelegt** oder **fragen**, Ziel (dieser PC, feste Rechner, beim Start wählen), Ausführen-Dialog (immer, nur wenn nötig, nie), PowerShell-Version, -NoExit, -NoProfile
+- Bei EXE, Verknüpfungen, Batch und Snap-ins: zusätzliche Argumente
+- Parameter vom Typ `PSCredential`/`SecureString` oder mit „Password“ im Namen werden nie gespeichert
 
 | Dateityp | Lokal | Admin | Anderer Benutzer | Remote / Masse | Info im Panel |
 |---|---|---|---|---|---|
@@ -35,13 +43,13 @@ oder remote auf einem oder vielen Rechnern.
 | `.msc` | ✔ | ✔ | ✔ | – | Snap-in-Name |
 
 **PowerShell-Scripte**
-- Ohne Parameter startet ein Klick sofort (lokal, aktueller Benutzer)
-- Mit Parametern öffnet sich der Dialog; das Formular entsteht aus dem `param()`-Block:
+- Ein Klick startet das Standardprofil; ohne eigene Profile gilt: ohne Parameter sofort starten, mit Parametern den Dialog öffnen
+- Das Formular im Dialog entsteht aus dem `param()`-Block:
   Pflichtfelder, `[ValidateSet()]` als Auswahl, `[switch]` als Kontrollkästchen, Standardwerte, Hilfetexte aus `.PARAMETER`
 - Ausführen als: aktueller Benutzer, Administrator (UAC) oder anderer Benutzer
 - PowerShell 7 oder Windows PowerShell 5.1, `-NoExit`, `-NoProfile`
 - Befehlsvorschau zeigt, was tatsächlich gestartet wird
-- Parameterwerte werden nicht gespeichert
+- Parameterwerte werden nur gespeichert, wenn du sie in einem Startprofil festlegst
 
 **Remote und Massenausführung**
 - Ziel „Remote“: Rechner aus *Zuletzt verwendet* oder *Favoriten* wählen, mehrere Namen auf einmal per Komma einfügen

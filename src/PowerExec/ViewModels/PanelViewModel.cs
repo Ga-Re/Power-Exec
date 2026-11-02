@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Search;
@@ -101,8 +102,30 @@ public sealed class PanelViewModel : ObservableObject
         bool searching = query.Length > 0;
         var collapsed = new HashSet<string>(settings.CollapsedGroups, StringComparer.OrdinalIgnoreCase);
 
-        var pool = repo.Items
-            .Where(i => ItemFilter.MatchesType(i, _filter, _app.IsFavorite(i.FullPath)) && ItemFilter.MatchesQuery(i, query))
+        // Nur sichtbare Einträge (Haken in den Ordner-Einstellungen, neue Dateien ggf. erst nach Freigabe)
+        var folderByPath = settings.Folders.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var pending = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var visible = new List<LaunchItem>();
+        foreach (var i in repo.Items)
+        {
+            if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
+            var state = FolderVisibility.State(folder, FolderVisibility.RelativePath(folder, i.FullPath));
+            if (state == EntryVisibility.Visible) visible.Add(i);
+            else if (state == EntryVisibility.Pending) pending[folder.Path] = pending.GetValueOrDefault(folder.Path) + 1;
+        }
+        UpdatePending(pending);
+
+        bool Matches(LaunchItem i)
+        {
+            if (ItemFilter.MatchesQuery(i, query)) return true;
+            var e = settings.FindEntry(i.FullPath);
+            return e != null && query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .All(t => (e.DisplayName + " " + e.Description).Contains(t, StringComparison.CurrentCultureIgnoreCase));
+        }
+
+        var pool = visible
+            .Where(i => ItemFilter.MatchesType(i, _filter, _app.IsFavorite(i.FullPath)) && (query.Length == 0 || Matches(i)))
             .ToList();
 
         IEnumerable<LaunchItem> Order(IEnumerable<LaunchItem> items) => searching
@@ -147,13 +170,31 @@ public sealed class PanelViewModel : ObservableObject
 
         if (repo.IsScanning && repo.Items.Count == 0) Footer = "Ordner werden eingelesen …";
         else if (searching) Footer = $"{pool.Count} Treffer für „{query}“";
-        else Footer = $"{repo.Items.Count} Einträge aus {settings.Folders.Count} Ordnern · eingelesen {repo.LastScan:HH:mm}";
+        else Footer = $"{visible.Count} Einträge aus {settings.Folders.Count} Ordnern · eingelesen {repo.LastScan:HH:mm}";
 
         OnPropertyChanged(nameof(HasNoFolders));
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(HotkeyHint));
         OnPropertyChanged(nameof(HasHotkey));
         OnPropertyChanged(nameof(IsPinned));
+    }
+
+    // ---- Neue Einträge, die auf Freigabe warten -----------------------------
+
+    private string? _pendingText;
+    private string? _pendingFolder;
+
+    public string? PendingText { get => _pendingText; private set => Set(ref _pendingText, value); }
+    public ICommand ReviewPendingCommand => new RelayCommand(() => _app.ShowSettings(_pendingFolder));
+
+    private void UpdatePending(Dictionary<string, int> pending)
+    {
+        var total = pending.Values.Sum();
+        _pendingFolder = pending.Keys.FirstOrDefault();
+        PendingText = total == 0 ? null
+            : pending.Count == 1
+                ? $"{total} {(total == 1 ? "neuer Eintrag" : "neue Einträge")} in {_pendingFolder} {(total == 1 ? "wartet" : "warten")} auf Freigabe"
+                : $"{total} neue Einträge in {pending.Count} Ordnern warten auf Freigabe";
     }
 
     public IEnumerable<ItemViewModel> AllItems => Groups.SelectMany(g => g.Items);

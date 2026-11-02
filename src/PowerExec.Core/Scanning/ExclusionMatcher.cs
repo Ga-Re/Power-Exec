@@ -15,8 +15,8 @@ public enum ExclusionKind { File, Type, Pattern }
 /// </summary>
 public sealed class ExclusionMatcher
 {
-    private readonly List<Regex> _patterns = new();
-    private readonly HashSet<string> _exact = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<(Regex Regex, string Source)> _patterns = new();
+    private readonly Dictionary<string, string> _exact = new(StringComparer.OrdinalIgnoreCase);
 
     public ExclusionMatcher(IEnumerable<string> exclusions)
     {
@@ -25,25 +25,30 @@ public sealed class ExclusionMatcher
             var e = Normalize(raw);
             if (e.Length == 0) continue;
             if (e.IndexOfAny(['*', '?']) < 0)
-                _exact.Add(e.TrimStart('\\'));
+                _exact[e.TrimStart('\\')] = raw.Trim();
             else
-                _patterns.Add(new Regex("^" + Regex.Escape(e).Replace(@"\*", ".*").Replace(@"\?", ".") + "$",
-                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));
+                _patterns.Add((new Regex("^" + Regex.Escape(e).Replace(@"\*", ".*").Replace(@"\?", ".") + "$",
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant), raw.Trim()));
         }
     }
 
     public bool IsEmpty => _exact.Count == 0 && _patterns.Count == 0;
 
+
     /// <param name="relativePath">Pfad relativ zum Stammordner, z. B. <c>Archiv\alt.ps1</c>.</param>
-    public bool IsExcluded(string relativePath)
+    public bool IsExcluded(string relativePath) => Match(relativePath) != null;
+
+    /// <summary>Der Ausschluss, der auf die Datei zutrifft, oder null.</summary>
+    public string? Match(string relativePath)
     {
         var rel = Normalize(relativePath).TrimStart('\\');
         var name = rel.Contains('\\') ? rel[(rel.LastIndexOf('\\') + 1)..] : rel;
-        if (_exact.Contains(name) || _exact.Contains(rel)) return true;
+        if (_exact.TryGetValue(name, out var e1)) return e1;
+        if (_exact.TryGetValue(rel, out var e2)) return e2;
         var withSlash = "\\" + rel;
-        foreach (var p in _patterns)
-            if (p.IsMatch(name) || p.IsMatch(withSlash)) return true;
-        return false;
+        foreach (var (regex, source) in _patterns)
+            if (regex.IsMatch(name) || regex.IsMatch(withSlash)) return source;
+        return null;
     }
 
     public static ExclusionKind KindOf(string exclusion)
