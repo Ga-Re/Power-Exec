@@ -22,7 +22,8 @@
 #define MyAppPublisher "Ga-Re"
 #define MyAppURL "https://github.com/Ga-Re/Power-Exec"
 ; Muss zum Mutex in App.xaml.cs passen, damit Setup eine laufende Instanz erkennt.
-#define MyAppMutex "PowerExec.SingleInstance.{6C1D3E4B-8B0F-4C1A-9E2D-3A5B7C9D1E2F}"
+; "{{" ist in Inno Setup ein einzelnes "{".
+#define MyAppMutex "PowerExec.SingleInstance.{{6C1D3E4B-8B0F-4C1A-9E2D-3A5B7C9D1E2F}"
 
 [Setup]
 AppId={{8F2B6C1E-4A7D-4E1B-9C3F-5D6A7B8C9E0F}
