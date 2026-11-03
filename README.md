@@ -109,6 +109,8 @@ oder remote auf einem oder vielen Rechnern.
 - **Blockierte Dateien** (aus dem Internet heruntergeladen) werden markiert und lassen sich mit „Entsperren“ freigeben; beim Aufklappen eines Eintrags wird die **digitale Signatur** angezeigt
 
 **Einstellungen**
+- Gegliedert wie PowerToys: Navigation mit Symbolen (Allgemein · Inhalte · Panel · Ausführung · Hilfe), **Suche** „Nach Einstellungen suchen“, Karten mit Symbol und Beschreibung, aufklappbare Karten für Unteroptionen
+- Schlagworte als **Chips** mit Vorschlägen (Enter/Komma fügt hinzu, × oder Rücktaste entfernt)
 - Änderungen werden **sofort übernommen** (Panels werden nur neu aufgebaut, wenn sich an ihnen etwas ändert); „Änderungen verwerfen“ stellt den Stand beim Öffnen wieder her
 - Änderungen im Panel (z. B. ein Eintrag in eine Gruppe gezogen) erscheinen direkt im offenen Einstellungsfenster
 - Eigene Einträge lassen sich aus der Einstellungsliste **direkt ins Panel ziehen** (an den Bildschirmrand – das Panel fährt aus – und auf eine Gruppe)
