@@ -15,7 +15,10 @@ public sealed class GroupViewModel : ObservableObject
         AllowReorder = allowReorder;
         _panel = panel;
         Key = key;
-        Title = title;
+        // Eigene Gruppe: „title“ ist der Pfad („Server/Exchange“), angezeigt wird der letzte Teil
+        GroupPath = kind == "group" ? title : null;
+        Title = kind == "group" ? Core.Config.GroupManager.LeafOf(title) : title;
+        Depth = kind == "group" ? Core.Config.GroupManager.DepthOf(title) : 0;
         IsFavorites = isFavorites;
         FolderPath = folderPath;
         Items = items;
@@ -32,15 +35,17 @@ public sealed class GroupViewModel : ObservableObject
         ResetOrderCommand = new RelayCommand(() => _panel.ResetOrder(this), () => AllowReorder && app.Settings.CustomOrder.ContainsKey(Key));
 
         // Eigene Gruppen
-        RenameCommand = new RelayCommand(() => app.RenameGroup(Title), () => IsUserGroup);
-        DeleteCommand = new RelayCommand(() => app.DeleteGroup(Title, Items.Count), () => IsUserGroup);
-        MoveUpCommand = new RelayCommand(() => app.MoveGroup(Title, -1), () => IsUserGroup);
-        MoveDownCommand = new RelayCommand(() => app.MoveGroup(Title, 1), () => IsUserGroup);
+        RenameCommand = new RelayCommand(() => app.RenameGroup(GroupPath!), () => IsUserGroup);
+        DeleteCommand = new RelayCommand(() => app.DeleteGroup(GroupPath!, TotalCount), () => IsUserGroup);
+        MoveUpCommand = new RelayCommand(() => app.MoveGroup(GroupPath!, -1), () => IsUserGroup);
+        MoveDownCommand = new RelayCommand(() => app.MoveGroup(GroupPath!, 1), () => IsUserGroup);
         NewGroupCommand = new RelayCommand(() => app.CreateGroup());
+        NewSubgroupCommand = new RelayCommand(() => app.CreateGroup(GroupPath), () => IsUserGroup);
+        HideFolderCommand = new RelayCommand(() => app.SetFolderGroupVisible(FolderPath!, false), () => FolderPath != null);
         NewEntryCommand = new RelayCommand(p =>
         {
             var kind = Enum.TryParse<Core.Config.CustomEntryKind>(p?.ToString(), out var k) ? k : Core.Config.CustomEntryKind.Url;
-            app.NewCustomEntry(kind, IsUserGroup ? Title : null);
+            app.NewCustomEntry(kind, GroupPath);
         });
         AddFilesCommand = new RelayCommand(() =>
         {
@@ -52,7 +57,7 @@ public sealed class GroupViewModel : ObservableObject
             };
             if (app.WithDialog(() => dlg.ShowDialog()) != true) return;
             app.AddDropped(dlg.FileNames.Select(f => new Core.Config.DroppedTarget(Core.Config.CustomEntryKind.File, f, Path.GetFileName(f))).ToList(),
-                IsUserGroup ? Title : null);
+                GroupPath);
         });
     }
 
@@ -62,10 +67,26 @@ public sealed class GroupViewModel : ObservableObject
     /// <summary>Gruppen, in die man Einträge ziehen kann (eigene Gruppen, Ordner, „Eigene Einträge“, „Ohne Gruppe“, Favoriten).</summary>
     public bool AcceptsItems => Kind is "group" or "folder" or "custom" or "ungrouped" or "fav";
 
-    /// <summary>Gruppenname für Zuordnungen: eigene Gruppe = ihr Name, sonst leer (= aus der Gruppe nehmen).</summary>
-    public string? GroupName => IsUserGroup ? Title : null;
+    /// <summary>Gruppe für Zuordnungen: eigene Gruppe = ihr Pfad, sonst null (= aus der Gruppe nehmen).</summary>
+    public string? GroupName => GroupPath;
 
-    public bool IsEmptyUserGroup => IsUserGroup && Items.Count == 0;
+    /// <summary>Pfad einer eigenen Gruppe („Server/Exchange“), sonst null.</summary>
+    public string? GroupPath { get; }
+
+    /// <summary>Ebene (0 = oberste Ebene).</summary>
+    public int Depth { get; }
+
+    /// <summary>Untergruppen (nur bei eigenen Gruppen).</summary>
+    public List<GroupViewModel> Children { get; } = new();
+    public bool HasChildren => Children.Count > 0;
+
+    /// <summary>Einträge dieser Gruppe und aller Untergruppen.</summary>
+    public int TotalCount => Items.Count + Children.Sum(c => c.TotalCount);
+
+    /// <summary>Diese Gruppe und alle Untergruppen (für Auswahl, Tastatur, Drag &amp; Drop).</summary>
+    public IEnumerable<GroupViewModel> SelfAndDescendants => new[] { this }.Concat(Children.SelectMany(c => c.SelfAndDescendants));
+
+    public bool IsEmptyUserGroup => IsUserGroup && Items.Count == 0 && Children.Count == 0;
     public bool ShowDropHint => IsEmptyUserGroup && IsExpanded;
     public bool IsUserGroupOrCustom => IsUserGroup || Kind == "custom";
 
@@ -74,6 +95,8 @@ public sealed class GroupViewModel : ObservableObject
     public ICommand MoveUpCommand { get; }
     public ICommand MoveDownCommand { get; }
     public ICommand NewGroupCommand { get; }
+    public ICommand NewSubgroupCommand { get; }
+    public ICommand HideFolderCommand { get; }
     public ICommand NewEntryCommand { get; }
     public ICommand AddFilesCommand { get; }
 
@@ -96,7 +119,7 @@ public sealed class GroupViewModel : ObservableObject
     };
     public string? FolderPath { get; }
     public IReadOnlyList<ItemViewModel> Items { get; }
-    public string CountText => Items.Count.ToString();
+    public string CountText => TotalCount.ToString();
     public string? Error { get; }
     public bool HasError => !string.IsNullOrEmpty(Error);
 

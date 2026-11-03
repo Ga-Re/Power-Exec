@@ -38,5 +38,6 @@ public sealed class PanelHost : IDisposable
         foreach (var t in Triggers) t.Close();
         Triggers.Clear();
         Window.CloseForGood();
+        ViewModel.Detach();
     }
 }

@@ -2,6 +2,9 @@ using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Config;
 
+/// <summary>Darstellung der Einträge: Liste (mit Info-Zeile), kompakte Liste oder Raster (Kacheln).</summary>
+public enum ItemLayout { List, Compact, Grid }
+
 /// <summary>Einstellungen eines einzelnen Panels (Position, Hover-Zone, Aussehen, Inhalt).</summary>
 public sealed class PanelConfig
 {
@@ -26,8 +29,16 @@ public sealed class PanelConfig
     public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
     public bool Pinned { get; set; }
 
-    /// <summary>Kompakte Ansicht: eine Zeile pro Eintrag.</summary>
+    /// <summary>Veraltet (bis 0.8): kompakte Ansicht. Wird in <see cref="Layout"/> übernommen.</summary>
     public bool Compact { get; set; }
+
+    public ItemLayout Layout { get; set; } = ItemLayout.List;
+
+    /// <summary>Gruppe „Zuletzt ausgeführt“ in diesem Panel zeigen.</summary>
+    public bool ShowRecent { get; set; } = true;
+
+    /// <summary>Gruppe „Favoriten“ in diesem Panel zeigen.</summary>
+    public bool ShowFavorites { get; set; } = true;
 
     /// <summary>Angezeigte Ordner (Pfade, dazu ggf. <see cref="CustomEntriesKey"/>). Leer = alle.</summary>
     public List<string> Folders { get; set; } = new();
@@ -47,6 +58,7 @@ public sealed class PanelConfig
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
         PanelOpacity = PanelOpacity, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
+        Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
     };
 
@@ -64,6 +76,8 @@ public sealed class PanelConfig
     {
         if (string.IsNullOrWhiteSpace(Id)) Id = Guid.NewGuid().ToString("N");
         if (string.IsNullOrWhiteSpace(Name)) Name = "Panel";
+        if (Compact && Layout == ItemLayout.List) Layout = ItemLayout.Compact;
+        Compact = false;
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);

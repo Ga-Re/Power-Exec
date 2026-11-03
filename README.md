@@ -12,7 +12,8 @@ oder remote auf einem oder vielen Rechnern.
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
 - **Mehrere Panels** an verschiedenen Rändern oder Monitoren, jedes mit eigener Hover-Zone, Farbe, Deckkraft, Größe, eigenem Tastenkürzel und eigenem Inhalt (Auswahl von Ordnern, Kategorien und „Eigene Einträge“)
 - **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
-- **Kompakte Ansicht** (eine Zeile pro Eintrag) per Knopf im Panel-Kopf, je Panel
+- **Darstellung je Panel:** Liste, kompakte Liste oder **Raster** (Kacheln mit großem Symbol; Details des ausgewählten Eintrags unten im Panel) – per Knopf im Panel-Kopf oder in den Einstellungen
+- „Zuletzt ausgeführt“ und „Favoriten“ je Panel ein- oder ausblendbar
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
@@ -23,7 +24,7 @@ oder remote auf einem oder vielen Rechnern.
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
-- **Eigene Gruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, verschieben, löschen; Einträge per **Drag & Drop** hineinschieben, zurück in den Ordner ziehen oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
+- **Eigene Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** hineinschieben, zurück in den Ordner ziehen oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
 - **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
 - Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, Befehl oder Dateien auswählen
 - Darstellung: eigene Gruppen oben, darunter die Ordner – oder nur eigene Gruppen und „Ohne Gruppe“
@@ -42,6 +43,7 @@ oder remote auf einem oder vielen Rechnern.
 
 **Ordner**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
+- Pro Ordner einstellbar, ob er **als Gruppe im Panel erscheint** – ausgeblendet bleiben seine Einträge in eigenen Gruppen, Favoriten, „Zuletzt ausgeführt“ und in der Suche
 - Die Einstellungen zeigen pro Ordner **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
 - **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
 - Ordner-Optionen: Unterordner ja/nein, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse

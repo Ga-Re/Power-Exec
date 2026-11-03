@@ -25,8 +25,8 @@ public sealed class AppController : IDisposable
     public Launcher Launcher { get; private set; } = null!;
     public UpdateService Updates { get; } = new();
     public IconService Icons { get; private set; } = null!;
-    /// <summary>ViewModel des Hauptpanels (Update-Hinweis in den Einstellungen u. Ä.).</summary>
-    public PanelViewModel Panel => _hosts[0].ViewModel;
+    /// <summary>Update-Hinweis für alle Panels und das Einstellungsfenster.</summary>
+    public UpdateState Update { get; } = new();
 
     public IReadOnlyList<PanelHost> Hosts => _hosts;
 
@@ -274,49 +274,86 @@ public sealed class AppController : IDisposable
         finally { _dialogs--; }
     }
 
-    private string? GroupNameError(string name, string? except = null) =>
-        GroupManager.Exists(Settings, name) && !name.Equals(except, StringComparison.CurrentCultureIgnoreCase)
-            ? "Eine Gruppe mit diesem Namen gibt es schon." : null;
-
-    /// <returns>Name der neuen Gruppe oder null bei Abbruch.</returns>
-    public string? CreateGroup()
+    private string? GroupNameError(string name, string? parent, string? exceptPath = null)
     {
-        var name = WithDialog(() => InputWindow.Ask("Neue Gruppe", "Einträge ziehst du anschließend per Drag & Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser.",
-            "Neue Gruppe", "Anlegen", n => GroupNameError(n)));
-        if (name == null) return null;
-        name = GroupManager.Create(Settings, name);
-        SaveSettings();
-        RebuildPanels();
-        return name;
+        var clean = GroupManager.CleanName(name);
+        var path = parent == null ? clean : parent + GroupManager.Separator + clean;
+        return GroupManager.Exists(Settings, path) && !path.Equals(exceptPath, StringComparison.CurrentCultureIgnoreCase)
+            ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null;
     }
 
-    public void RenameGroup(string name)
+    /// <param name="parent">Pfad der übergeordneten Gruppe (Untergruppe) oder null.</param>
+    /// <returns>Pfad der neuen Gruppe oder null bei Abbruch.</returns>
+    public string? CreateGroup(string? parent = null)
     {
-        var newName = WithDialog(() => InputWindow.Ask("Gruppe umbenennen", string.Empty, name, "Umbenennen", n => GroupNameError(n, name)));
-        if (newName == null || newName == name) return;
-        if (GroupManager.Rename(Settings, name, newName))
+        var heading = parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“";
+        var name = WithDialog(() => InputWindow.Ask(heading, "Einträge ziehst du anschließend per Drag & Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser. Gruppen lassen sich ebenfalls per Drag & Drop verschieben und ineinander ziehen.",
+            parent == null ? "Neue Gruppe" : "Neue Untergruppe", "Anlegen", n => GroupNameError(n, parent)));
+        if (name == null) return null;
+        var path = GroupManager.Create(Settings, name, parent);
+        if (parent != null)
+            Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(parent), StringComparison.OrdinalIgnoreCase));
+        SaveSettings();
+        RebuildPanels();
+        return path;
+    }
+
+    public void RenameGroup(string path)
+    {
+        var parent = GroupManager.ParentOf(path);
+        var newName = WithDialog(() => InputWindow.Ask("Gruppe umbenennen", string.Empty, GroupManager.LeafOf(path), "Umbenennen", n => GroupNameError(n, parent, path)));
+        if (newName == null || newName == GroupManager.LeafOf(path)) return;
+        if (GroupManager.Rename(Settings, path, newName))
         {
             SaveSettings();
             RebuildPanels();
         }
     }
 
-    public void DeleteGroup(string name, int count)
+    public void DeleteGroup(string path, int count)
     {
-        var text = count == 0
-            ? $"Gruppe „{name}“ löschen?"
-            : $"Gruppe „{name}“ löschen?\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“.";
+        var name = GroupManager.LeafOf(path);
+        var subs = GroupManager.DescendantCount(Settings, path);
+        var text = $"Gruppe „{name}“" + (subs > 0 ? $" mit {subs} {(subs == 1 ? "Untergruppe" : "Untergruppen")}" : string.Empty) + " löschen?" +
+                   (count > 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“." : string.Empty);
         if (!Confirm(text, "Gruppe löschen")) return;
-        GroupManager.Delete(Settings, name);
+        GroupManager.Delete(Settings, path);
         SaveSettings();
         RebuildPanels();
     }
 
-    public void MoveGroup(string name, int delta)
+    public void MoveGroup(string path, int delta)
     {
-        GroupManager.Move(Settings, name, delta);
+        GroupManager.Move(Settings, path, delta);
         SaveSettings();
         RebuildPanels();
+    }
+
+    /// <summary>Drag &amp; Drop einer Gruppe auf eine andere: davor, dahinter oder hinein (Untergruppe).</summary>
+    public void MoveGroupTo(string path, string target, GroupDropPosition position)
+    {
+        var result = GroupManager.MoveGroup(Settings, path, target, position);
+        if (result == null)
+        {
+            _tray?.ShowBalloon("Verschieben nicht möglich", "Am Ziel gibt es bereits eine Gruppe mit diesem Namen, oder die Gruppe würde in ihre eigene Untergruppe verschoben.");
+            return;
+        }
+        if (position == GroupDropPosition.Into)
+            Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(target), StringComparison.OrdinalIgnoreCase));
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    /// <summary>Ordner als Gruppe im Panel zeigen oder ausblenden (Einträge bleiben in Gruppen, Favoriten und Suche).</summary>
+    public void SetFolderGroupVisible(string folderPath, bool visible)
+    {
+        var folder = Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase));
+        if (folder == null) return;
+        folder.ShowGroup = visible;
+        SaveSettings();
+        RebuildPanels();
+        if (!visible)
+            _tray?.ShowBalloon("Ordner ausgeblendet", $"{folderPath} erscheint nicht mehr als Gruppe. Seine Einträge findest du weiter über die Suche, in eigenen Gruppen und Favoriten. Wieder einblenden: Einstellungen › Ordner.");
     }
 
     /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>
@@ -714,9 +751,9 @@ public sealed class AppController : IDisposable
         var r = await Updates.CheckAsync(includePrereleases);
         if (r != null)
         {
-            ForEachPanel(p => p.UpdateTitle = $"Version {r.Version.ToString(3)} ist verfügbar");
-            ForEachPanel(p => p.UpdateSubtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases");
-            ForEachPanel(p => p.UpdateVisible = true);
+            Update.Title = $"Version {r.Version.ToString(3)} ist verfügbar";
+            Update.Subtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases";
+            Update.Available = true;
             if (!manual) _tray?.ShowBalloon("Update verfügbar", $"Power-Exec {r.Version.ToString(3)} kann installiert werden. Öffne das Panel.");
         }
         return r;
@@ -726,30 +763,36 @@ public sealed class AppController : IDisposable
     {
         var r = Updates.Available;
         if (r == null) return;
-        ForEachPanel(p => p.UpdateBusy = true);
-        ForEachPanel(p => p.UpdateSubtitle = "Wird heruntergeladen …");
+        Update.Busy = true;
+        Update.Subtitle = "Wird heruntergeladen …";
         string? error;
         try
         {
-            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(q => ForEachPanel(p => p.UpdateSubtitle = $"Wird heruntergeladen … {q:P0}")));
+            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(q => Update.Subtitle = $"Wird heruntergeladen … {q:P0}"));
         }
         catch (Exception ex)
         {
             error = ex.Message;
         }
-        ForEachPanel(p => p.UpdateBusy = false);
+        Update.Busy = false;
         if (error == null)
         {
             Exit();
             return;
         }
-        ForEachPanel(p => p.UpdateSubtitle = "Update fehlgeschlagen");
+        Update.Subtitle = "Update fehlgeschlagen";
         if (MessageBox.Show(error + "\n\nRelease-Seite im Browser öffnen?", "Update", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             Launcher.OpenUrl(r.HtmlUrl);
     }
 
+    /// <summary>Power-Exec wird gerade beendet (z. B. für ein Update).</summary>
+    public bool IsExiting { get; private set; }
+
     public void Exit()
     {
+        IsExiting = true;
+        // Offene Fenster (Einstellungen, Dialoge) zuerst schließen, solange die Panels noch existieren
+        _settingsWindow?.Close();
         Dispose();
         Application.Current.Shutdown();
     }

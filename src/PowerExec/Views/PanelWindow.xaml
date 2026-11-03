@@ -28,6 +28,9 @@
                     <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="Neue Untergruppe …" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -57,6 +60,10 @@
             <MenuItem Header="Reihenfolge zurücksetzen (alphabetisch)" Command="{Binding ResetOrderCommand}"
                       Visibility="{Binding AllowReorder, Converter={StaticResource Vis}}"/>
             <Separator Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"/>
+            <MenuItem Header="Ordner im Panel ausblenden" Command="{Binding HideFolderCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"
+                      ToolTip="Die Einträge bleiben in eigenen Gruppen, Favoriten und der Suche">
+                <MenuItem.Icon><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Ordner-Einstellungen …" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -180,6 +187,128 @@
             <Setter Property="FontSize" Value="12"/>
         </Style>
 
+        <!-- Details eines ausgewählten Eintrags (in der Liste aufgeklappt, im Raster unten im Panel) -->
+        <DataTemplate x:Key="ItemDetails">
+            <StackPanel>
+                    <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"
+                               Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <Border Background="{DynamicResource Bg.Chip}" CornerRadius="4" Padding="8,6" Margin="0,0,0,8" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
+                        <DockPanel>
+                            <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="0,2,8,0" VerticalAlignment="Top" Foreground="{DynamicResource Text.Secondary}"/>
+                            <TextBlock Text="{Binding Notes}" FontSize="12" TextWrapping="Wrap"/>
+                        </DockPanel>
+                    </Border>
+                    <TextBlock x:Name="Req" Text="{Binding RequirementsText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Visibility="{Binding RequirementsText, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
+                               Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
+                    <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Entsperren" Command="{Binding UnblockCommand}"
+                                Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top"/>
+                        <TextBlock Text="{Binding BlockedText}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap"/>
+                    </DockPanel>
+                    <TextBlock x:Name="Sig" Text="{Binding SignatureText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,0,8"
+                               Visibility="{Binding SignatureText, Converter={StaticResource Vis}}"/>
+                    <WrapPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
+                            <!-- Ein Profil: normaler Button -->
+                            <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
+                                    ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding RunLabel}"/>
+                                </StackPanel>
+                            </Button>
+                            <!-- Mehrere Profile: Split-Button (links Standardprofil, rechts Auswahl) -->
+                            <Button Style="{StaticResource Btn.SplitLeft}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
+                                    ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding RunLabel}"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource Btn.SplitRight}" Height="30" MinHeight="30" Width="30" Padding="0"
+                                    Click="ProfileMenuButton_Click" ToolTip="Anderes Startprofil ausführen"
+                                    AutomationProperties.Name="Startprofil wählen"
+                                    Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
+                                <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
+                            </Button>
+                        </StackPanel>
+                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)"
+                                Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="Admin"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen"
+                                Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="Als …"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="Auf einem oder mehreren Remote-Rechnern ausführen"
+                                Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="Remote"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="Weitere Aktionen"
+                                ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
+                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
+                        </Button>
+                    </WrapPanel>
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding SignatureValid}" Value="True">
+                    <Setter TargetName="Sig" Property="Foreground" Value="{DynamicResource Status.Success}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RequirementsWarn}" Value="True">
+                    <Setter TargetName="Req" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Kachel für die Rasteransicht -->
+        <DataTemplate x:Key="TileTemplate">
+            <Border x:Name="Row" CornerRadius="6" Background="Transparent" Margin="2" Width="88" BorderBrush="{DynamicResource Accent}" BorderThickness="0"
+                    AllowDrop="True" PreviewMouseLeftButtonDown="Row_PreviewMouseLeftButtonDown" PreviewMouseMove="Row_PreviewMouseMove"
+                    DragOver="Row_DragOver" DragLeave="Row_DragLeave" Drop="Row_Drop">
+                <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}" MouseDoubleClick="Row_DoubleClick"
+                        ContextMenu="{StaticResource ItemMenu}" ToolTipService.InitialShowDelay="700">
+                    <Grid Margin="4,8,4,6" Height="76">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="36"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Style="{StaticResource Badge}" Width="40" Height="26" Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                <TextBlock Text="{Binding BadgeText}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <Image Source="{Binding Icon}" Width="32" Height="32" RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
+                        </Grid>
+                        <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="10" Foreground="{DynamicResource Star}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,2,0"
+                                   Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
+                        <TextBlock Grid.Row="1" Text="{Binding DisplayName}" FontSize="12" TextAlignment="Center" TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis" MaxHeight="34" Margin="0,4,0,0" VerticalAlignment="Top"/>
+                    </Grid>
+                </Button>
+            </Border>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <DataTemplate x:Key="ItemTemplate">
             <Border x:Name="Row" CornerRadius="6" Background="Transparent" Margin="0,1" BorderBrush="{DynamicResource Accent}" BorderThickness="0"
                     AllowDrop="True" PreviewMouseLeftButtonDown="Row_PreviewMouseLeftButtonDown" PreviewMouseMove="Row_PreviewMouseMove"
@@ -220,91 +349,14 @@
                         </Grid>
                     </Button>
 
-                    <StackPanel Visibility="{Binding IsSelected, Converter={StaticResource Vis}}" Margin="54,0,8,4">
-                        <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"
-                                   Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
-                        <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                        <Border Background="{DynamicResource Bg.Chip}" CornerRadius="4" Padding="8,6" Margin="0,0,0,8" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
-                            <DockPanel>
-                                <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="0,2,8,0" VerticalAlignment="Top" Foreground="{DynamicResource Text.Secondary}"/>
-                                <TextBlock Text="{Binding Notes}" FontSize="12" TextWrapping="Wrap"/>
-                            </DockPanel>
-                        </Border>
-                        <TextBlock x:Name="Req" Text="{Binding RequirementsText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,8"
-                                   Visibility="{Binding RequirementsText, Converter={StaticResource Vis}}"/>
-                        <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
-                                   Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
-                        <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Entsperren" Command="{Binding UnblockCommand}"
-                                    Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top"/>
-                            <TextBlock Text="{Binding BlockedText}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap"/>
-                        </DockPanel>
-                        <TextBlock x:Name="Sig" Text="{Binding SignatureText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,0,8"
-                                   Visibility="{Binding SignatureText, Converter={StaticResource Vis}}"/>
-                        <WrapPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
-                                <!-- Ein Profil: normaler Button -->
-                                <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
-                                        ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}, ConverterParameter=invert}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
-                                        <TextBlock Text="{Binding RunLabel}"/>
-                                    </StackPanel>
-                                </Button>
-                                <!-- Mehrere Profile: Split-Button (links Standardprofil, rechts Auswahl) -->
-                                <Button Style="{StaticResource Btn.SplitLeft}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
-                                        ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
-                                        <TextBlock Text="{Binding RunLabel}"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Style="{StaticResource Btn.SplitRight}" Height="30" MinHeight="30" Width="30" Padding="0"
-                                        Click="ProfileMenuButton_Click" ToolTip="Anderes Startprofil ausführen"
-                                        AutomationProperties.Name="Startprofil wählen"
-                                        Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
-                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
-                                </Button>
-                            </StackPanel>
-                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)"
-                                    Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
-                                    <TextBlock Text="Admin"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen"
-                                    Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
-                                    <TextBlock Text="Als …"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="Auf einem oder mehreren Remote-Rechnern ausführen"
-                                    Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
-                                    <TextBlock Text="Remote"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="Weitere Aktionen"
-                                    ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
-                                <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
-                            </Button>
-                        </WrapPanel>
-                    </StackPanel>
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ItemDetails}" Focusable="False" Margin="54,0,8,4"
+                                    Visibility="{Binding IsSelected, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
-                <DataTrigger Binding="{Binding SignatureValid}" Value="True">
-                    <Setter TargetName="Sig" Property="Foreground" Value="{DynamicResource Status.Success}"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding RequirementsWarn}" Value="True">
-                    <Setter TargetName="Req" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
-                </DataTrigger>
                 <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
@@ -325,6 +377,89 @@
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+        <!-- Gruppe (Ordner, Favoriten, eigene Gruppe mit Untergruppen) -->
+        <DataTemplate x:Key="GroupTemplate">
+                <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Margin="0,2,0,0"
+                        AllowDrop="True" DragOver="Group_DragOver" DragLeave="Group_DragLeave" Drop="Group_Drop">
+                <StackPanel>
+                    <Border x:Name="GroupHeader" CornerRadius="6" BorderBrush="{DynamicResource Accent}" BorderThickness="0" Background="Transparent" AllowDrop="True"
+                            PreviewMouseLeftButtonDown="GroupHeader_PreviewMouseLeftButtonDown" PreviewMouseMove="GroupHeader_PreviewMouseMove"
+                            DragOver="GroupHeader_DragOver" DragLeave="GroupHeader_DragLeave" Drop="GroupHeader_Drop">
+                    <Grid Margin="0,6,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding ToggleCommand}" HorizontalContentAlignment="Stretch"
+                                Padding="8,0" Height="32" ContextMenu="{StaticResource GroupMenu}" Foreground="{DynamicResource Text.Secondary}"
+                                ToolTip="Klick: ein-/ausklappen · Rechtsklick: Menü" ToolTipService.InitialShowDelay="1200">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="10" RenderTransformOrigin="0.5,0.5">
+                                    <TextBlock.RenderTransform>
+                                        <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
+                                <Grid Grid.Column="1" Margin="8,0">
+                                    <TextBlock Text="{Binding IconGlyph}" FontSize="13">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFavorites}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource Star}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                                <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{Binding CountText}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
+                                ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
+                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
+                        </Button>
+                    </Grid>
+                    </Border>
+                    <TextBlock Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Vis}}" FontSize="12"
+                               Foreground="{DynamicResource Status.Warning}" Margin="38,0,8,6" TextWrapping="Wrap"/>
+                    <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}">
+                        <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                            <ItemsControl.Style>
+                                <Style TargetType="ItemsControl">
+                                    <Setter Property="ItemTemplate" Value="{StaticResource ItemTemplate}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DataContext.IsGrid, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                            <Setter Property="ItemTemplate" Value="{StaticResource TileTemplate}"/>
+                                            <Setter Property="ItemsPanel">
+                                                <Setter.Value>
+                                                    <ItemsPanelTemplate><WrapPanel Margin="4,0,0,0"/></ItemsPanelTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ItemsControl.Style>
+                        </ItemsControl>
+                        <!-- Untergruppen -->
+                        <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource GroupTemplate}" Focusable="False" Margin="14,0,0,0"/>
+                    </StackPanel>
+                    <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
+                            Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
+                        <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Text.Tertiary}"
+                                   Text="Einträge hierher ziehen – auch Dateien, Ordner oder Links aus dem Explorer und Browser. Rechtsklick: neuer Eintrag."/>
+                    </Border>
+                </StackPanel>
+                </Border>
+        </DataTemplate>
+
     </Window.Resources>
 
     <Border x:Name="PanelBorder" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}"
@@ -342,6 +477,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Kopfzeile -->
@@ -356,10 +492,22 @@
                               ToolTip="Anheften: Panel bleibt offen">
                     <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="16"/>
                 </ToggleButton>
-                <ToggleButton Style="{StaticResource Toggle.Icon}" DockPanel.Dock="Right" IsChecked="{Binding IsCompact}"
-                              ToolTip="Kompakte Ansicht: eine Zeile pro Eintrag">
-                    <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="16"/>
-                </ToggleButton>
+                <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" ToolTip="Darstellung: Liste, kompakt oder Raster" Click="MenuButton_Click">
+                    <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="16"/>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Liste" Command="{Binding SetLayoutCommand}" CommandParameter="List">
+                                <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding Layout, Converter={StaticResource EqVis}, ConverterParameter=List}"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Kompakt" Command="{Binding SetLayoutCommand}" CommandParameter="Compact">
+                                <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding Layout, Converter={StaticResource EqVis}, ConverterParameter=Compact}"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Raster" Command="{Binding SetLayoutCommand}" CommandParameter="Grid">
+                                <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding Layout, Converter={StaticResource EqVis}, ConverterParameter=Grid}"/></MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
                 <ComboBox DockPanel.Dock="Right" Width="130" Margin="0,0,6,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28"
                           ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
                           ToolTip="Arbeitsbereich wechseln (gilt für alle Panels)" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
@@ -461,73 +609,12 @@
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
                                Style="{StaticResource Caption}" Text="Keine Treffer. Die Suche umfasst Name, Synopsis und Beschreibung."/>
 
-                    <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Margin="0,2,0,0"
-                                        AllowDrop="True" DragOver="Group_DragOver" DragLeave="Group_DragLeave" Drop="Group_Drop">
-                                <StackPanel>
-                                    <Grid Margin="0,6,0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding ToggleCommand}" HorizontalContentAlignment="Stretch"
-                                                Padding="8,0" Height="32" ContextMenu="{StaticResource GroupMenu}" Foreground="{DynamicResource Text.Secondary}"
-                                                ToolTip="Klick: ein-/ausklappen · Rechtsklick: Menü" ToolTipService.InitialShowDelay="1200">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="10" RenderTransformOrigin="0.5,0.5">
-                                                    <TextBlock.RenderTransform>
-                                                        <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
-                                                    </TextBlock.RenderTransform>
-                                                </TextBlock>
-                                                <Grid Grid.Column="1" Margin="8,0">
-                                                    <TextBlock Text="{Binding IconGlyph}" FontSize="13">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsFavorites}" Value="True">
-                                                                        <Setter Property="Foreground" Value="{DynamicResource Star}"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Grid>
-                                                <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding CountText}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                            </Grid>
-                                        </Button>
-                                        <Button Grid.Column="1" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
-                                                ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
-                                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
-                                        </Button>
-                                    </Grid>
-                                    <TextBlock Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Vis}}" FontSize="12"
-                                               Foreground="{DynamicResource Status.Warning}" Margin="38,0,8,6" TextWrapping="Wrap"/>
-                                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource ItemTemplate}" Focusable="False"
-                                                  Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}"/>
-                                    <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
-                                            Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
-                                        <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Text.Tertiary}"
-                                                   Text="Einträge hierher ziehen – auch Dateien, Ordner oder Links aus dem Explorer und Browser. Rechtsklick: neuer Eintrag."/>
-                                    </Border>
-                                </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}" Focusable="False"/>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Größe per Ziehen: Griffe am Innenrand (Lage setzt PlaceGrips) -->
-            <Thumb x:Name="WidthGrip" Grid.RowSpan="7" Width="6" HorizontalAlignment="Left" Cursor="SizeWE" Panel.ZIndex="10"
+            <Thumb x:Name="WidthGrip" Grid.RowSpan="8" Width="6" HorizontalAlignment="Left" Cursor="SizeWE" Panel.ZIndex="10"
                    DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="Breite ändern">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
@@ -539,7 +626,7 @@
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
-            <Thumb x:Name="HeightGrip" Grid.RowSpan="7" Height="6" VerticalAlignment="Bottom" Cursor="SizeNS" Panel.ZIndex="10"
+            <Thumb x:Name="HeightGrip" Grid.RowSpan="8" Height="6" VerticalAlignment="Bottom" Cursor="SizeNS" Panel.ZIndex="10"
                    DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="Höhe ändern">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
@@ -552,8 +639,38 @@
                 </Thumb.Template>
             </Thumb>
 
+            <!-- Raster: Details des ausgewählten Eintrags -->
+            <Border Grid.Row="6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="16,10,12,4" MaxHeight="320">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsGrid}" Value="True"/>
+                                    <Condition Binding="{Binding HasSelection}" Value="True"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel DataContext="{Binding SelectedItem}">
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="Auswahl aufheben" Click="ClearSelection_Click">
+                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                            </Button>
+                            <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding Synopsis}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ItemDetails}" Focusable="False"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
             <!-- Fußzeile -->
-            <Border Grid.Row="6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}">
+            <Border Grid.Row="7" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}">
                 <DockPanel Margin="16,4,8,4">
                     <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="Ordner neu einlesen">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="13"/>

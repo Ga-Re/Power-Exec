@@ -125,3 +125,87 @@ public class GroupTests
         Assert.Equal(Path.GetDirectoryName(@"C:\Tools\Reset.ps1"), spec.WorkingDirectory);
     }
 }
+
+public class SubgroupTests
+{
+    private static AppSettings Sample()
+    {
+        var s = new AppSettings();
+        GroupManager.Create(s, "Server");
+        GroupManager.Create(s, "Exchange", "Server");
+        GroupManager.Create(s, "Clients");
+        GroupManager.Assign(s, @"C:\a.ps1", "Server/Exchange");
+        return s;
+    }
+
+    [Fact]
+    public void AllListsParentsBeforeChildren()
+    {
+        var s = new AppSettings();
+        s.Entries.Add(new EntryConfig { Path = "x", Category = " A // B " });
+        Assert.Equal(new[] { "A", "A/B" }, GroupManager.All(s));
+        Assert.Equal("A/B", GroupManager.GroupOf(s, "x"));
+    }
+
+    [Fact]
+    public void CreateSubgroupPlacesItAfterSiblings()
+    {
+        var s = Sample();
+        Assert.Equal("Server/Mail", GroupManager.Create(s, "Mail", "Server"));
+        Assert.Equal(new[] { "Server", "Server/Exchange", "Server/Mail", "Clients" }, GroupManager.All(s));
+        Assert.Equal(new[] { "Server/Exchange", "Server/Mail" }, GroupManager.ChildrenOf(s, "Server"));
+        Assert.Equal("a-b", GroupManager.Create(s, "a/b")); // kein Trenner im Namen
+    }
+
+    [Fact]
+    public void RenameParentMovesChildren()
+    {
+        var s = Sample();
+        s.CollapsedGroups.Add("cat:Server/Exchange");
+        Assert.True(GroupManager.Rename(s, "Server", "Srv"));
+        Assert.Equal("Srv/Exchange", GroupManager.GroupOf(s, @"C:\a.ps1"));
+        Assert.Contains("cat:Srv/Exchange", s.CollapsedGroups);
+        Assert.Equal(new[] { "Srv", "Srv/Exchange", "Clients" }, GroupManager.All(s));
+    }
+
+    [Fact]
+    public void DeleteRemovesSubtree()
+    {
+        var s = Sample();
+        Assert.Equal(1, GroupManager.DescendantCount(s, "Server"));
+        GroupManager.Delete(s, "Server");
+        Assert.Equal(new[] { "Clients" }, GroupManager.All(s));
+        Assert.Equal(string.Empty, GroupManager.GroupOf(s, @"C:\a.ps1"));
+    }
+
+    [Fact]
+    public void MoveGroupIntoBeforeAfter()
+    {
+        var s = Sample();
+        // Clients in Server hinein
+        Assert.Equal("Server/Clients", GroupManager.MoveGroup(s, "Clients", "Server", GroupDropPosition.Into));
+        Assert.Equal(new[] { "Server", "Server/Exchange", "Server/Clients" }, GroupManager.All(s));
+
+        // Exchange (mit Eintrag) vor Server auf die oberste Ebene
+        Assert.Equal("Exchange", GroupManager.MoveGroup(s, "Server/Exchange", "Server", GroupDropPosition.Before));
+        Assert.Equal(new[] { "Exchange", "Server", "Server/Clients" }, GroupManager.All(s));
+        Assert.Equal("Exchange", GroupManager.GroupOf(s, @"C:\a.ps1"));
+
+        // Nicht in die eigene Untergruppe
+        Assert.Null(GroupManager.MoveGroup(s, "Server", "Server/Clients", GroupDropPosition.Into));
+
+        // Reihenfolge unter Geschwistern
+        GroupManager.Move(s, "Exchange", 1);
+        Assert.Equal(new[] { "Server", "Server/Clients", "Exchange" }, GroupManager.All(s));
+    }
+
+    [Fact]
+    public void LayoutMigratesFromCompact()
+    {
+        var p = new PanelConfig { Compact = true };
+        p.Normalize();
+        Assert.Equal(ItemLayout.Compact, p.Layout);
+        Assert.False(p.Compact);
+        Assert.True(p.ShowRecent && p.ShowFavorites);
+    }
+}

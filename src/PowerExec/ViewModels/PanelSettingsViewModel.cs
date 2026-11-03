@@ -46,7 +46,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         FolderChoices.Add(new ContentChoiceViewModel(PanelConfig.CustomEntriesKey, "Eigene Einträge", "Webseiten, Ordner, RDP, Befehle",
             _c.Folders.Count == 0 || _c.Folders.Contains(PanelConfig.CustomEntriesKey, StringComparer.OrdinalIgnoreCase)));
         foreach (var cat in categories)
-            CategoryChoices.Add(new ContentChoiceViewModel(cat, cat, string.Empty,
+            CategoryChoices.Add(new ContentChoiceViewModel(cat, GroupManager.Display(cat), string.Empty,
                 _c.Categories.Count == 0 || _c.Categories.Contains(cat, StringComparer.CurrentCultureIgnoreCase)));
         CategoryChoices.Add(new ContentChoiceViewModel(string.Empty, "Ohne Gruppe", string.Empty,
             _c.Categories.Count == 0 || _c.Categories.Contains(string.Empty)));
@@ -126,7 +126,15 @@ public sealed class PanelSettingsViewModel : ObservableObject
         new KeyValuePair<PanelAlignment, string>(PanelAlignment.Center, "Mittig"),
         new KeyValuePair<PanelAlignment, string>(PanelAlignment.End, "Unten bzw. rechts")
     };
-    public bool Compact { get => _c.Compact; set { _c.Compact = value; OnPropertyChanged(); } }
+    public ItemLayout Layout { get => _c.Layout; set { _c.Layout = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<ItemLayout, string>> Layouts { get; } = new[]
+    {
+        new KeyValuePair<ItemLayout, string>(ItemLayout.List, "Liste"),
+        new KeyValuePair<ItemLayout, string>(ItemLayout.Compact, "Kompakt"),
+        new KeyValuePair<ItemLayout, string>(ItemLayout.Grid, "Raster (Kacheln)")
+    };
+    public bool ShowRecent { get => _c.ShowRecent; set { _c.ShowRecent = value; OnPropertyChanged(); } }
+    public bool ShowFavorites { get => _c.ShowFavorites; set { _c.ShowFavorites = value; OnPropertyChanged(); } }
 
     // ---- Tastenkürzel & Filter ----------------------------------------------
 

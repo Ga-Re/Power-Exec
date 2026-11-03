@@ -54,8 +54,15 @@ public sealed class FolderConfig
         Excludes = new List<string>(Excludes),
         Hidden = new List<string>(Hidden),
         KnownFiles = new List<string>(KnownFiles),
-        NewFiles = NewFiles
+        NewFiles = NewFiles,
+        ShowGroup = ShowGroup
     };
+
+    /// <summary>
+    /// Ordner als eigene Gruppe im Panel zeigen. Ausgeblendet erscheinen seine Einträge nur noch in eigenen Gruppen,
+    /// Favoriten, „Zuletzt ausgeführt“ und in der Suche.
+    /// </summary>
+    public bool ShowGroup { get; set; } = true;
 }
 
 public sealed class MachineEntry

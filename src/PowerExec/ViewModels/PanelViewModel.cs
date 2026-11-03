@@ -18,10 +18,7 @@ public sealed class PanelViewModel : ObservableObject
     private TypeFilter _filter = TypeFilter.All;
     private string? _selectedKey;
     private string _footer = string.Empty;
-    private string _updateTitle = string.Empty;
-    private string _updateSubtitle = string.Empty;
-    private bool _updateVisible;
-    private bool _updateBusy;
+    private bool _updateDismissed;
     private string? _folderWarning;
 
     public PanelViewModel(AppController app, PanelHost host)
@@ -29,12 +26,13 @@ public sealed class PanelViewModel : ObservableObject
         _app = app;
         _host = host;
         _filter = host.Config.DefaultFilter;
-        ToggleCompactCommand = new RelayCommand(() => IsCompact = !IsCompact);
+        SetLayoutCommand = new RelayCommand(p => { if (Enum.TryParse<ItemLayout>(p?.ToString(), out var l)) Layout = l; });
         SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
         RescanCommand = new RelayCommand(() => _ = _app.Repository.ScanAsync());
         UpdateNowCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => !UpdateBusy);
-        UpdateLaterCommand = new RelayCommand(() => UpdateVisible = false);
+        UpdateLaterCommand = new RelayCommand(() => { _updateDismissed = true; OnPropertyChanged(nameof(UpdateVisible)); });
+        _app.Update.PropertyChanged += OnUpdateChanged;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
         AddFolderCommand = new RelayCommand(() => _app.ShowSettings());
     }
@@ -81,20 +79,32 @@ public sealed class PanelViewModel : ObservableObject
         }
     }
 
-    /// <summary>Kompakte Ansicht: eine Zeile pro Eintrag.</summary>
-    public bool IsCompact
+    /// <summary>Darstellung: Liste, kompakte Liste oder Raster.</summary>
+    public ItemLayout Layout
     {
-        get => _host.Config.Compact;
+        get => _host.Config.Layout;
         set
         {
-            if (_host.Config.Compact == value) return;
-            _host.Config.Compact = value;
+            if (_host.Config.Layout == value) return;
+            _host.Config.Layout = value;
             _app.SaveSettings();
-            OnPropertyChanged();
+            foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph) }) OnPropertyChanged(p);
         }
     }
 
-    public ICommand ToggleCompactCommand { get; }
+    public bool IsCompact => Layout == ItemLayout.Compact;
+    public bool IsGrid => Layout == ItemLayout.Grid;
+    public bool IsList => Layout != ItemLayout.Grid;
+
+    /// <summary>Symbol des Darstellungs-Knopfs im Panel-Kopf.</summary>
+    public string LayoutGlyph => Layout switch
+    {
+        ItemLayout.Grid => "\uE8A9",
+        ItemLayout.Compact => "\uE76F",
+        _ => "\uE8FD"
+    };
+
+    public ICommand SetLayoutCommand { get; }
 
     // Arbeitsbereiche
     public IReadOnlyList<string> Workspaces => _app.Settings.Workspaces.Select(w => w.Name).ToList();
@@ -111,10 +121,19 @@ public sealed class PanelViewModel : ObservableObject
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
-    public bool UpdateVisible { get => _updateVisible; set => Set(ref _updateVisible, value); }
-    public string UpdateTitle { get => _updateTitle; set => Set(ref _updateTitle, value); }
-    public string UpdateSubtitle { get => _updateSubtitle; set => Set(ref _updateSubtitle, value); }
-    public bool UpdateBusy { get => _updateBusy; set => Set(ref _updateBusy, value); }
+    public bool UpdateVisible => _app.Update.Available && !_updateDismissed;
+    public string UpdateTitle => _app.Update.Title;
+    public string UpdateSubtitle => _app.Update.Subtitle;
+    public bool UpdateBusy => _app.Update.Busy;
+
+    private void OnUpdateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(UpdateState.Available)) _updateDismissed = false;
+        foreach (var p in new[] { nameof(UpdateVisible), nameof(UpdateTitle), nameof(UpdateSubtitle), nameof(UpdateBusy) }) OnPropertyChanged(p);
+    }
+
+    /// <summary>Beim Entfernen des Panels: Ereignisse abmelden.</summary>
+    public void Detach() => _app.Update.PropertyChanged -= OnUpdateChanged;
 
     public ICommand SettingsCommand { get; }
     public ICommand RescanCommand { get; }
@@ -138,7 +157,10 @@ public sealed class PanelViewModel : ObservableObject
         var pending = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var visible = new List<LaunchItem>();
         var cfg = _host.Config;
-        bool CategoryOk(LaunchItem i) => cfg.Categories.Count == 0 || cfg.ShowsCategory(settings.FindEntry(i.FullPath)?.Category ?? string.Empty);
+        // Inhaltsauswahl des Panels: eine angehakte Gruppe umfasst auch ihre Untergruppen
+        bool GroupSelected(string path) => cfg.Categories.Count == 0 ||
+            (path.Length == 0 ? cfg.ShowsCategory(string.Empty) : cfg.Categories.Any(c => c.Length > 0 && GroupManager.IsSameOrBelow(path, GroupManager.Normalize(c))));
+        bool CategoryOk(LaunchItem i) => GroupSelected(GroupManager.GroupOf(settings, i.FullPath));
         foreach (var i in repo.Items)
         {
             if (!folderByPath.TryGetValue(i.RootFolder, out var folder) || !cfg.ShowsFolder(folder.Path)) continue;
@@ -195,7 +217,7 @@ public sealed class PanelViewModel : ObservableObject
         if (!searching && _filter == TypeFilter.All)
         {
             // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
-            if (settings.RecentRunsCount > 0)
+            if (settings.RecentRunsCount > 0 && cfg.ShowRecent)
             {
                 var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
                 var recent = settings.RecentRuns
@@ -216,20 +238,31 @@ public sealed class PanelViewModel : ObservableObject
             }
 
             var favs = pool.Where(i => _app.IsFavorite(i.FullPath)).ToList();
-            if (favs.Count > 0) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
+            if (favs.Count > 0 && cfg.ShowFavorites) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
         }
 
         // Eigene Gruppen: gruppierte Einträge erscheinen in ihrer Gruppe statt in ihrem Ordner
         string GroupOf(LaunchItem i) => GroupManager.GroupOf(settings, i.FullPath);
-        var groupNames = GroupManager.All(settings);
         bool showEmpty = !searching && _filter == TypeFilter.All;
-        foreach (var name in groupNames)
+        // Baum: jede Gruppe mit ihren Einträgen, Untergruppen darunter (Reihenfolge wie in den Einstellungen)
+        var nodes = new Dictionary<string, GroupViewModel>(StringComparer.CurrentCultureIgnoreCase);
+        foreach (var path in GroupManager.All(settings))
         {
-            if (cfg.Categories.Count > 0 && !cfg.ShowsCategory(name)) continue;
-            var items = pool.Where(i => GroupOf(i).Equals(name, StringComparison.CurrentCultureIgnoreCase)).ToList();
-            if (items.Count == 0 && !showEmpty) continue;
-            groups.Add(MakeGroup(GroupManager.GroupKey(name), name, "group", null, items));
+            bool visibleGroup = GroupSelected(path) || cfg.Categories.Any(c => GroupManager.IsSameOrBelow(GroupManager.Normalize(c), path));
+            if (!visibleGroup) continue;
+            var items = GroupSelected(path) ? pool.Where(i => GroupOf(i).Equals(path, StringComparison.CurrentCultureIgnoreCase)).ToList() : new List<LaunchItem>();
+            var node = MakeGroup(GroupManager.GroupKey(path), path, "group", null, items);
+            nodes[path] = node;
+            if (GroupManager.ParentOf(path) is { } parent && nodes.TryGetValue(parent, out var p)) p.Children.Add(node);
+            else if (GroupManager.ParentOf(path) == null) groups.Add(node);
         }
+        // Leere Zweige bei Suche/Filter weglassen
+        bool Prune(GroupViewModel g)
+        {
+            g.Children.RemoveAll(c => !Prune(c));
+            return showEmpty || g.TotalCount > 0;
+        }
+        groups.RemoveAll(g => g.IsUserGroup && !Prune(g));
         var rest = pool.Where(i => GroupOf(i).Length == 0).ToList();
 
         if (settings.Grouping == GroupingMode.Category)
@@ -238,7 +271,7 @@ public sealed class PanelViewModel : ObservableObject
         }
         else
         {
-            foreach (var folder in settings.Folders.Where(f => cfg.ShowsFolder(f.Path)))
+            foreach (var folder in settings.Folders.Where(f => cfg.ShowsFolder(f.Path) && (f.ShowGroup || searching)))
             {
                 var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
                 var items = rest.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -251,6 +284,7 @@ public sealed class PanelViewModel : ObservableObject
 
         Groups.Clear();
         foreach (var g in groups) Groups.Add(g);
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
 
         // Auswahl wiederherstellen
         var selected = AllItems.FirstOrDefault(i => i.Key == _selectedKey);
@@ -271,7 +305,7 @@ public sealed class PanelViewModel : ObservableObject
         OnPropertyChanged(nameof(HotkeyHint));
         OnPropertyChanged(nameof(HasHotkey));
         OnPropertyChanged(nameof(IsPinned));
-        OnPropertyChanged(nameof(IsCompact));
+        foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph) }) OnPropertyChanged(p);
         OnPropertyChanged(nameof(Workspaces));
         OnPropertyChanged(nameof(ActiveWorkspace));
         OnPropertyChanged(nameof(HasWorkspaces));
@@ -297,12 +331,15 @@ public sealed class PanelViewModel : ObservableObject
                 : $"{total} neue Einträge in {pending.Count} Ordnern warten auf Freigabe";
     }
 
-    public IEnumerable<ItemViewModel> AllItems => Groups.SelectMany(g => g.Items);
+    /// <summary>Alle Gruppen einschließlich Untergruppen.</summary>
+    public IEnumerable<GroupViewModel> AllGroups => Groups.SelectMany(g => g.SelfAndDescendants);
+
+    public IEnumerable<ItemViewModel> AllItems => AllGroups.SelectMany(g => g.Items);
 
     /// <summary>Drag &amp; Drop: Eintrag innerhalb seiner Gruppe vor bzw. hinter einen anderen schieben.</summary>
     public void MoveItem(ItemViewModel dragged, ItemViewModel target, bool after)
     {
-        var group = Groups.FirstOrDefault(g => g.Items.Contains(dragged));
+        var group = AllGroups.FirstOrDefault(g => g.Items.Contains(dragged));
         if (group == null || !group.AllowReorder || !group.Items.Contains(target) || ReferenceEquals(dragged, target)) return;
         var current = group.Items.Select(i => i.Item.FullPath).ToList();
         _app.Settings.CustomOrder[group.Key] = ItemOrdering.Move(current, dragged.Item.FullPath, target.Item.FullPath, after);
@@ -335,6 +372,13 @@ public sealed class PanelViewModel : ObservableObject
 
     public ICommand NewGroupCommand => new RelayCommand(() => _app.CreateGroup());
 
+    /// <summary>Drag &amp; Drop einer Gruppe auf eine andere.</summary>
+    public void MoveGroup(GroupViewModel dragged, GroupViewModel target, GroupDropPosition position)
+    {
+        if (dragged.GroupPath == null || target.GroupPath == null || ReferenceEquals(dragged, target)) return;
+        _app.MoveGroupTo(dragged.GroupPath, target.GroupPath, position);
+    }
+
     /// <summary>Eigene Reihenfolge einer Gruppe verwerfen (wieder alphabetisch).</summary>
     public void ResetOrder(GroupViewModel group)
     {
@@ -345,9 +389,14 @@ public sealed class PanelViewModel : ObservableObject
         }
     }
 
-    public IEnumerable<ItemViewModel> VisibleItems => Groups.Where(g => g.IsExpanded).SelectMany(g => g.Items);
+    /// <summary>Sichtbare Einträge in Anzeigereihenfolge (eingeklappte Gruppen samt Untergruppen ausgenommen).</summary>
+    public IEnumerable<ItemViewModel> VisibleItems => Groups.SelectMany(VisibleIn);
+
+    private static IEnumerable<ItemViewModel> VisibleIn(GroupViewModel g) =>
+        g.IsExpanded ? g.Items.Concat(g.Children.SelectMany(VisibleIn)) : Enumerable.Empty<ItemViewModel>();
 
     public ItemViewModel? SelectedItem => AllItems.FirstOrDefault(i => i.IsSelected);
+    public bool HasSelection => SelectedItem != null;
 
     public void Select(ItemViewModel item)
     {
@@ -355,6 +404,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var i in AllItems) i.IsSelected = false;
         item.IsSelected = !wasSelected;
         _selectedKey = item.IsSelected ? item.Key : null;
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
     }
 
     /// <summary>Pfeiltasten im Suchfeld: Auswahl verschieben.</summary>
@@ -367,6 +417,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var i in AllItems) i.IsSelected = false;
         list[next].IsSelected = true;
         _selectedKey = list[next].Key;
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
         return list[next];
     }
 
@@ -393,6 +444,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         foreach (var i in AllItems) i.IsSelected = false;
         _selectedKey = null;
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
     }
 
     internal void OnGroupExpandedChanged(GroupViewModel group)
@@ -406,20 +458,24 @@ public sealed class PanelViewModel : ObservableObject
 
     internal void CollapseAllExcept(GroupViewModel keep)
     {
-        foreach (var g in Groups) g.SetExpandedSilently(g == keep);
+        // Die Gruppe selbst, ihre Vorfahren und ihre Untergruppen bleiben offen
+        var keepPath = keep.GroupPath;
+        foreach (var g in AllGroups)
+            g.SetExpandedSilently(g == keep || (keepPath != null && g.GroupPath != null &&
+                (GroupManager.IsSameOrBelow(keepPath, g.GroupPath) || GroupManager.IsSameOrBelow(g.GroupPath, keepPath))));
         PersistAll();
     }
 
     internal void SetAllExpanded(bool expanded)
     {
-        foreach (var g in Groups) g.SetExpandedSilently(expanded);
+        foreach (var g in AllGroups) g.SetExpandedSilently(expanded);
         PersistAll();
     }
 
     private void PersistAll()
     {
         if (IsSearching) return;
-        _app.Settings.CollapsedGroups = Groups.Where(g => !g.IsExpanded).Select(g => g.Key).ToList();
+        _app.Settings.CollapsedGroups = AllGroups.Where(g => !g.IsExpanded).Select(g => g.Key).ToList();
         _app.SaveSettings();
     }
 

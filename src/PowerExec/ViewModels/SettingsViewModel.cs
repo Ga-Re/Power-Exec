@@ -246,6 +246,14 @@ public sealed class FolderViewModel : ObservableObject
 
     public bool AutoShow { get => !RequireApproval; set => RequireApproval = !value; }
 
+    /// <summary>Ordner als Gruppe im Panel anzeigen.</summary>
+    public bool ShowGroup
+    {
+        get => Config.ShowGroup;
+        set { Config.ShowGroup = value; OnPropertyChanged(); OnPropertyChanged(nameof(ShowGroupText)); }
+    }
+    public string ShowGroupText => Config.ShowGroup ? "im Panel" : "ausgeblendet";
+
     public string ModeHint => RequireApproval
         ? "Neue Dateien bleiben ausgeblendet; im Panel und hier erscheint ein Hinweis."
         : "Neue Scripte und Programme erscheinen sofort im Panel.";
@@ -390,6 +398,8 @@ public sealed class CategoryItemViewModel
     }
 
     public string Name { get; }
+    public string Display => GroupManager.LeafOf(Name);
+    public Thickness Indent => new(GroupManager.DepthOf(Name) * 18, 0, 0, 0);
     public ICommand UpCommand { get; }
     public ICommand DownCommand { get; }
     public ICommand RemoveCommand { get; }
@@ -428,9 +438,9 @@ public sealed class SettingsViewModel : ObservableObject
         AddFolderCommand = new RelayCommand(AddFolder);
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
         CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
-        InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Panel.UpdateBusy);
+        InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
-        _app.Panel.PropertyChanged += OnPanelChanged;
+        _app.Update.PropertyChanged += OnUpdateChanged;
         AppLog.Changed += OnLogChanged;
         OpenLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
         OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
@@ -438,8 +448,7 @@ public sealed class SettingsViewModel : ObservableObject
         BrowseLogFolderCommand = new RelayCommand(BrowseLogFolder);
         SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "folders");
 
-        foreach (var c in _s.CategoryOrder.Concat(_s.Entries.Select(e => e.Category))
-                     .Where(c => !string.IsNullOrWhiteSpace(c)).Distinct(StringComparer.CurrentCultureIgnoreCase))
+        foreach (var c in GroupManager.All(_s))
             Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory));
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
@@ -662,19 +671,28 @@ public sealed class SettingsViewModel : ObservableObject
     public string NewCategory { get => _newCategory; set => Set(ref _newCategory, value ?? string.Empty); }
     public ICommand AddCategoryCommand { get; }
 
+    /// <summary>Unter den Geschwistern verschieben (Untergruppen wandern mit).</summary>
     private void MoveCategory(CategoryItemViewModel c, int delta)
     {
-        var i = Categories.IndexOf(c);
-        var j = i + delta;
-        if (i < 0 || j < 0 || j >= Categories.Count) return;
-        Categories.Move(i, j);
+        var tmp = new AppSettings { CategoryOrder = Categories.Select(x => x.Name).ToList() };
+        GroupManager.Move(tmp, c.Name, delta);
+        var order = GroupManager.All(tmp);
+        for (int target = 0; target < order.Count; target++)
+        {
+            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.CurrentCultureIgnoreCase));
+            if (current >= 0 && current != target) Categories.Move(current, target);
+        }
     }
 
-    private void RemoveCategory(CategoryItemViewModel c) => Categories.Remove(c);
+    /// <summary>Entfernt die Gruppe samt Untergruppen aus der Liste (wird beim Speichern gelöscht).</summary>
+    private void RemoveCategory(CategoryItemViewModel c)
+    {
+        foreach (var x in Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name)).ToList()) Categories.Remove(x);
+    }
 
     private void AddCategory()
     {
-        var name = NewCategory.Trim();
+        var name = GroupManager.Normalize(NewCategory);
         if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
             Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory));
         NewCategory = string.Empty;
@@ -776,7 +794,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private bool _isChecking;
 
-    public PanelViewModel Panel => _app.Panel;
+    public UpdateState Update => _app.Update;
     public bool HasUpdate => _app.Updates.Available != null;
     public string UpdateBannerTitle => _app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar" : string.Empty;
     public bool IsChecking { get => _isChecking; private set { if (Set(ref _isChecking, value)) CommandManager.InvalidateRequerySuggested(); } }
@@ -784,20 +802,17 @@ public sealed class SettingsViewModel : ObservableObject
     public ICommand InstallUpdateCommand { get; }
     public ICommand ReleaseNotesCommand { get; }
 
-    private void OnPanelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnUpdateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(PanelViewModel.UpdateVisible) or nameof(PanelViewModel.UpdateTitle) or nameof(PanelViewModel.UpdateBusy))
-        {
-            OnPropertyChanged(nameof(HasUpdate));
-            OnPropertyChanged(nameof(UpdateBannerTitle));
-            CommandManager.InvalidateRequerySuggested();
-        }
+        OnPropertyChanged(nameof(HasUpdate));
+        OnPropertyChanged(nameof(UpdateBannerTitle));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>Vom Fenster beim Schließen aufgerufen.</summary>
     public void Detach()
     {
-        _app.Panel.PropertyChanged -= OnPanelChanged;
+        _app.Update.PropertyChanged -= OnUpdateChanged;
         AppLog.Changed -= OnLogChanged;
     }
 
@@ -915,7 +930,7 @@ public sealed class SettingsViewModel : ObservableObject
         _s.Panels = Panels.Select(p =>
         {
             var c = p.ToConfig();
-            if (_app.Settings.Panels.FirstOrDefault(x => x.Id == c.Id) is { } live) { c.Pinned = live.Pinned; c.Compact = live.Compact; }
+            if (_app.Settings.Panels.FirstOrDefault(x => x.Id == c.Id) is { } live) { c.Pinned = live.Pinned; }
             return c;
         }).ToList();
         _s.CustomEntries = CustomEntries.Select(c => c.ToEntry()).Where(c => c.Target.Trim().Length > 0).ToList();

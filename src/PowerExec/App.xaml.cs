@@ -48,6 +48,9 @@ public partial class App : Application
             Services.AppLog.Error("Unerwarteter Fehler", e.Exception);
         }
         catch { }
+        e.Handled = true;
+        // Beim Beenden (z. B. für ein Update) nur protokollieren – keine Meldung, die das Update aufhält
+        if (_controller?.IsExiting == true) return;
         MessageBox.Show("Ein unerwarteter Fehler ist aufgetreten:\n\n" + e.Exception.Message, "Power-Exec",
             MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;

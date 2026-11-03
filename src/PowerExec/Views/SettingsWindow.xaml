@@ -70,7 +70,7 @@
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding UpdateBannerTitle}" FontWeight="SemiBold" FontSize="14"/>
-                    <TextBlock Text="{Binding Panel.UpdateSubtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Update.Subtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                     <TextBlock Text="Power-Exec wird dabei beendet und neu gestartet; nicht gespeicherte Änderungen hier gehen verloren."
                                FontSize="11" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
@@ -105,6 +105,9 @@
                                                         BorderThickness="1" Margin="0,0,8,0" Visibility="{Binding HasPending, Converter={StaticResource Vis}}">
                                                     <TextBlock Text="{Binding PendingCount, StringFormat={}{0} neu}" FontSize="12" Foreground="{DynamicResource Status.Warning}" VerticalAlignment="Center"/>
                                                 </Border>
+                                                <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowGroup}" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                          ToolTip="Ordner als Gruppe im Panel anzeigen. Aus: Seine Einträge erscheinen nur noch in eigenen Gruppen, Favoriten, „Zuletzt ausgeführt“ und in der Suche."/>
+                                                <TextBlock Text="{Binding ShowGroupText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="0,0,12,0" Width="82"/>
                                                 <Button Style="{StaticResource Btn.Standard}" Content="Ordner-Optionen …" Command="{Binding ToggleOptionsCommand}" FontSize="12"/>
                                                 <Button Style="{StaticResource Btn.Icon}" Command="{Binding RemoveCommand}" ToolTip="Ordner entfernen" Margin="4,0,0,0">
                                                     <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/>
@@ -383,6 +386,21 @@
                         <TextBlock Text="Inhalt" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
                         <Border Style="{StaticResource Card}" Padding="16,12">
                             <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Layouts}" SelectedValue="{Binding Layout}"/>
+                                    <StackPanel VerticalAlignment="Center"><TextBlock Text="Darstellung" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Text="Liste mit Info-Zeile, kompakte Liste oder Raster (Kacheln). Auch über den Knopf im Panel-Kopf umschaltbar." Style="{StaticResource RowDesc}" TextWrapping="Wrap"/></StackPanel>
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,6">
+                                    <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowRecent}" VerticalAlignment="Center"/>
+                                    <StackPanel VerticalAlignment="Center"><TextBlock Text="„Zuletzt ausgeführt“ anzeigen" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Text="Die Anzahl stellst du unter „Darstellung &amp; Verhalten“ ein." Style="{StaticResource RowDesc}"/></StackPanel>
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,12">
+                                    <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowFavorites}" VerticalAlignment="Center"/>
+                                    <StackPanel VerticalAlignment="Center"><TextBlock Text="„Favoriten“ anzeigen" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Text="Favoriten bleiben über den Filter „Favoriten“ erreichbar." Style="{StaticResource RowDesc}"/></StackPanel>
+                                </DockPanel>
                                 <TextBlock Text="Was dieses Panel zeigt" Style="{StaticResource RowTitle}"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                     <RadioButton Style="{StaticResource Segment}" Content="Alles" IsChecked="{Binding ShowAll}" GroupName="{Binding Id}"/>
@@ -642,15 +660,17 @@
                                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                                                         </Button>
                                                     </StackPanel>
-                                                    <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="12" Margin="4,0,10,0" Foreground="{DynamicResource Text.Secondary}"/>
-                                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="{Binding Indent}">
+                                                        <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="12" Margin="4,0,10,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                                        <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
                                                 </DockPanel>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Gruppe"/>
+                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Gruppe (Untergruppe: Eltern/Name)"/>
                                     <Button Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Command="{Binding AddCategoryCommand}" Margin="8,0,0,0"/>
                                 </StackPanel>
                                 <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
