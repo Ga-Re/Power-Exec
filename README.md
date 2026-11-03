@@ -108,6 +108,11 @@ oder remote auf einem oder vielen Rechnern.
 
 - **Blockierte Dateien** (aus dem Internet heruntergeladen) werden markiert und lassen sich mit „Entsperren“ freigeben; beim Aufklappen eines Eintrags wird die **digitale Signatur** angezeigt
 
+**Einstellungen**
+- Änderungen werden **sofort übernommen** (Panels werden nur neu aufgebaut, wenn sich an ihnen etwas ändert); „Änderungen verwerfen“ stellt den Stand beim Öffnen wieder her
+- Änderungen im Panel (z. B. ein Eintrag in eine Gruppe gezogen) erscheinen direkt im offenen Einstellungsfenster
+- Eigene Einträge lassen sich aus der Einstellungsliste **direkt ins Panel ziehen** (an den Bildschirmrand – das Panel fährt aus – und auf eine Gruppe)
+
 **Diagnose & Daten**
 - Protokoll (`%LOCALAPPDATA%\Power-Exec\app.log`) mit Einlesezeiten, Starts und Fehlern; „Protokoll kopieren“ für Fehlermeldungen
 - Einstellungen **exportieren/importieren** (zusammenführen oder ersetzen) – ohne Kennwörter
