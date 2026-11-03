@@ -13,6 +13,7 @@ public sealed class Workspace
     public Dictionary<string, List<string>> CustomOrder { get; set; } = new();
     public Dictionary<string, string> Fingerprints { get; set; } = new();
     public List<string> CollapsedGroups { get; set; } = new();
+    public Dictionary<string, string> GroupIcons { get; set; } = new();
 }
 
 /// <summary>
@@ -46,6 +47,7 @@ public static class WorkspaceManager
         ws.CustomOrder = s.CustomOrder.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));
         ws.Fingerprints = new Dictionary<string, string>(s.Fingerprints);
         ws.CollapsedGroups = new List<string>(s.CollapsedGroups);
+        ws.GroupIcons = new Dictionary<string, string>(s.GroupIcons);
     }
 
     private static void Load(AppSettings s, Workspace ws)
@@ -59,6 +61,7 @@ public static class WorkspaceManager
         s.CustomOrder = ws.CustomOrder.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));
         s.Fingerprints = new Dictionary<string, string>(ws.Fingerprints);
         s.CollapsedGroups = new List<string>(ws.CollapsedGroups);
+        s.GroupIcons = new Dictionary<string, string>(ws.GroupIcons);
         s.ActiveWorkspace = ws.Name;
     }
 
@@ -89,6 +92,7 @@ public static class WorkspaceManager
             ws.CustomEntries = current.CustomEntries.Select(c => c.Clone()).ToList();
             ws.Favorites = new List<string>(current.Favorites);
             ws.CategoryOrder = new List<string>(current.CategoryOrder);
+            ws.GroupIcons = new Dictionary<string, string>(current.GroupIcons);
         }
         s.Workspaces.Add(ws);
         return ws;

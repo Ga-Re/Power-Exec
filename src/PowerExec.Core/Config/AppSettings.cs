@@ -171,6 +171,9 @@ public sealed class AppSettings
     public List<EntryConfig> Entries { get; set; } = new();
 
     /// <summary>Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle) des aktiven Arbeitsbereichs.</summary>
+    /// <summary>Symbole eigener Gruppen: Gruppenpfad → <see cref="IconRef"/>-Text.</summary>
+    public Dictionary<string, string> GroupIcons { get; set; } = new();
+
     public List<CustomEntry> CustomEntries { get; set; } = new();
 
     /// <summary>Panels (ab 0.7). Das erste ist das Hauptpanel.</summary>

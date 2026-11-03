@@ -68,8 +68,11 @@ public sealed class EntryConfig
     /// <summary>Freitext-Notiz (z. B. Hinweise oder Link zur Doku).</summary>
     public string Notes { get; set; } = string.Empty;
 
-    /// <summary>Eigene Kategorie für die Gruppierung im Panel (leer = keine).</summary>
+    /// <summary>Eigene Gruppe im Panel als Pfad („Server/Exchange“), leer = keine.</summary>
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>Schlagworte für Suche („#tag“) und Filter.</summary>
+    public List<string> Tags { get; set; } = new();
 
     public List<LaunchProfile> Profiles { get; set; } = new();
 
@@ -80,6 +83,7 @@ public sealed class EntryConfig
         Description = Description,
         Category = Category,
         Notes = Notes,
+        Tags = new List<string>(Tags),
         Profiles = Profiles.Select(p => p.Clone()).ToList()
     };
 }

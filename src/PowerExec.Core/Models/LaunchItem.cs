@@ -66,6 +66,10 @@ public sealed class LaunchItem
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsCustom => CustomKind != null;
 
+    /// <summary>Der eigene Eintrag, aus dem dieser Eintrag erzeugt wurde (Snippet-Code, Ein-Klick, Symbol …).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Config.CustomEntry? Source { get; set; }
+
     /// <summary>#Requires -RunAsAdministrator</summary>
     public bool RequiresAdmin { get; set; }
 

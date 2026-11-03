@@ -2,7 +2,7 @@ using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Config;
 
-/// <summary>Darstellung der Einträge: Liste (mit Info-Zeile), kompakte Liste oder Raster (Kacheln).</summary>
+/// <summary>Darstellung der Einträge: Liste oder Raster (Kacheln). „Compact“ stammt aus 0.9 und wird zu Liste + kompakt.</summary>
 public enum ItemLayout { List, Compact, Grid }
 
 /// <summary>Einstellungen eines einzelnen Panels (Position, Hover-Zone, Aussehen, Inhalt).</summary>
@@ -29,7 +29,7 @@ public sealed class PanelConfig
     public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
     public bool Pinned { get; set; }
 
-    /// <summary>Veraltet (bis 0.8): kompakte Ansicht. Wird in <see cref="Layout"/> übernommen.</summary>
+    /// <summary>Kompakt: in der Liste eine Zeile pro Eintrag, im Raster kleinere Kacheln.</summary>
     public bool Compact { get; set; }
 
     public ItemLayout Layout { get; set; } = ItemLayout.List;
@@ -76,8 +76,7 @@ public sealed class PanelConfig
     {
         if (string.IsNullOrWhiteSpace(Id)) Id = Guid.NewGuid().ToString("N");
         if (string.IsNullOrWhiteSpace(Name)) Name = "Panel";
-        if (Compact && Layout == ItemLayout.List) Layout = ItemLayout.Compact;
-        Compact = false;
+        if (Layout == ItemLayout.Compact) { Layout = ItemLayout.List; Compact = true; }
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);

@@ -108,6 +108,7 @@ public static class GroupManager
         foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path)).ToList())
             s.CustomOrder.Remove(key);
         s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path));
+        foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) s.GroupIcons.Remove(key);
         foreach (var p in s.Panels) p.Categories.RemoveAll(c => IsSameOrBelow(Normalize(c), path));
     }
 
@@ -184,6 +185,15 @@ public static class GroupManager
 
     public static string GroupOf(AppSettings s, string path) => Normalize(s.FindEntry(path)?.Category);
 
+    public static IconRef IconOf(AppSettings s, string groupPath) =>
+        s.GroupIcons.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)) is { Value: { } v } ? IconRef.Parse(v) : IconRef.None;
+
+    public static void SetIcon(AppSettings s, string groupPath, IconRef icon)
+    {
+        foreach (var k in s.GroupIcons.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupIcons.Remove(k);
+        if (!icon.IsEmpty) s.GroupIcons[Normalize(groupPath)] = icon.ToString();
+    }
+
     /// <summary>Benennt einen Gruppenpfad samt Untergruppen um (Zuordnungen, Reihenfolge, Einklappzustand, Panel-Filter).</summary>
     private static void RenamePath(AppSettings s, string oldPath, string newPath)
     {
@@ -198,6 +208,11 @@ public static class GroupManager
         {
             s.CustomOrder.Remove(key, out var order);
             s.CustomOrder[KeyPrefix + Map(key[KeyPrefix.Length..])] = order!;
+        }
+        foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, oldPath)).ToList())
+        {
+            s.GroupIcons.Remove(key, out var icon);
+            s.GroupIcons[Map(key)] = icon!;
         }
         for (int i = 0; i < s.CollapsedGroups.Count; i++)
             if (s.CollapsedGroups[i].StartsWith(KeyPrefix) && IsSameOrBelow(s.CollapsedGroups[i][KeyPrefix.Length..], oldPath))
