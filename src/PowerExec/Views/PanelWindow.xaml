@@ -285,7 +285,7 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Border Style="{StaticResource Badge}" Width="40" Height="26" Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                            <Border Style="{StaticResource GibtEsNicht}" Width="40" Height="26" Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                 <TextBlock Text="{Binding BadgeText}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <Image Source="{Binding Icon}" Width="32" Height="32" RenderOptions.BitmapScalingMode="HighQuality"
