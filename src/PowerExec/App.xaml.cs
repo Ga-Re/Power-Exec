@@ -14,6 +14,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (e.Args.Length > 0 && e.Args[0] == "--selftest")
+        {
+            base.OnStartup(e);
+            RunSelfTest(e.Args.Length > 1 ? e.Args[1] : Path.Combine(Path.GetTempPath(), "PowerExec-selftest.txt"));
+            return;
+        }
         _mutex = new Mutex(true, MutexName, out var isFirst);
         if (!isFirst)
         {
@@ -36,6 +42,20 @@ public partial class App : Application
                 Dispatcher.BeginInvoke(() => _controller?.ShowPanelFromHotkey());
         }) { IsBackground = true, Name = "PowerExec.ShowEvent" };
         thread.Start();
+    }
+
+    /// <summary>Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung.</summary>
+    private void RunSelfTest(string resultFile)
+    {
+        _controller = new AppController();
+        Dispatcher.BeginInvoke(async () =>
+        {
+            string? error;
+            try { error = await _controller.RunSelfTestAsync(); }
+            catch (Exception ex) { error = ex.ToString(); }
+            try { File.WriteAllText(resultFile, error ?? "OK"); } catch { }
+            Shutdown(error == null ? 0 : 1);
+        });
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

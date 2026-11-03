@@ -26,6 +26,17 @@ jobs:
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
           --self-contained true -p:PublishSingleFile=true -p:Version=0.0.0-ci -o out
 
+      - name: Oberflächen-Selbsttest (Panels, Einstellungen, Dialoge)
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $result = Join-Path $env:RUNNER_TEMP 'selftest.txt'
+          $p = Start-Process -FilePath out\PowerExec.exe -ArgumentList '--selftest', $result -PassThru
+          $null = $p.Handle  # Exitcode zuverlässig abrufbar machen
+          if (-not $p.WaitForExit(240000)) { $p.Kill(); throw 'Selbsttest hat nicht rechtzeitig beendet.' }
+          if (Test-Path $result) { Get-Content $result }
+          if ($p.ExitCode -ne 0) { throw "Selbsttest fehlgeschlagen (Code $($p.ExitCode))." }
+
       - name: Veröffentlichen (Programmordner für den Installer)
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64

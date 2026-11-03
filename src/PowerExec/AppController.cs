@@ -12,14 +12,14 @@ using PowerExec.Views;
 namespace PowerExec;
 
 /// <summary>Zentrale Steuerung: Einstellungen, Panel, Aktionen, Updates.</summary>
-public sealed class AppController : IDisposable
+public sealed partial class AppController : IDisposable
 {
     private readonly List<PanelHost> _hosts = new();
     private HotkeyService? _hotkey;
     private TrayIcon? _tray;
     private SettingsWindow? _settingsWindow;
 
-    public SettingsStore Store { get; } = new();
+    public SettingsStore Store { get; private set; } = new();
     public AppSettings Settings { get; private set; } = new();
     public ItemRepository Repository { get; private set; } = null!;
     public Launcher Launcher { get; private set; } = null!;
