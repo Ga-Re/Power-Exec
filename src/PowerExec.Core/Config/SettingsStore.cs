@@ -76,6 +76,22 @@ public sealed class SettingsStore
         if (s.Panels.Select(p => p.Id).Distinct().Count() != s.Panels.Count)
             foreach (var p in s.Panels) p.Id = Guid.NewGuid().ToString("N");
         WorkspaceManager.EnsureInitialized(s);
+        if (s.DataVersion < 13)
+        {
+            WorkspaceManager.MigrateLegacy(s);
+            // Ein Klick startet: von eigenen Einträgen in die Eintragseinstellungen
+            foreach (var c in s.CustomEntries.Where(c => c.SingleClick))
+            {
+                var e = s.FindEntry(c.Key) ?? new EntryConfig { Path = c.Key };
+                if (!s.Entries.Contains(e)) s.Entries.Add(e);
+                e.SingleClick = true;
+                c.SingleClick = false;
+            }
+            if (s.Panels.Count > 1) s.Panels.RemoveRange(1, s.Panels.Count - 1); // nur noch ein Panel
+            s.Grouping = GroupingMode.Folder;
+            s.DataVersion = 13;
+        }
+        SmartGroups.EnsureFolderGroups(s);
         s.MachineGroups.RemoveAll(g => string.IsNullOrWhiteSpace(g.Name));
         s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));
         foreach (var e in s.Entries)

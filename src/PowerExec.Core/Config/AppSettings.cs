@@ -55,13 +55,18 @@ public sealed class FolderConfig
         Hidden = new List<string>(Hidden),
         KnownFiles = new List<string>(KnownFiles),
         NewFiles = NewFiles,
-        ShowGroup = ShowGroup
+        ShowGroup = ShowGroup,
+        Group = Group,
+        SubfoldersAsGroups = SubfoldersAsGroups
     };
 
-    /// <summary>
-    /// Ordner als eigene Gruppe im Panel zeigen. Ausgeblendet erscheinen seine Einträge nur noch in eigenen Gruppen,
-    /// Favoriten, „Zuletzt ausgeführt“ und in der Suche.
-    /// </summary>
+    /// <summary>Smarte Gruppe, in der der Ordnerinhalt erscheint (Pfad wie „Server/Tools“).</summary>
+    public string Group { get; set; } = string.Empty;
+
+    /// <summary>Unterordner im Panel als Untergruppen abbilden (nur mit „Unterordner einbeziehen“).</summary>
+    public bool SubfoldersAsGroups { get; set; }
+
+    /// <summary>Bis 0.12: Ordnergruppe anzeigen. Wird in die Gruppenauswahl der Arbeitsbereiche übernommen.</summary>
     public bool ShowGroup { get; set; } = true;
 }
 
@@ -173,6 +178,9 @@ public sealed class AppSettings
     /// <summary>Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle) des aktiven Arbeitsbereichs.</summary>
     /// <summary>Symbole eigener Gruppen: Gruppenpfad → <see cref="IconRef"/>-Text.</summary>
     public Dictionary<string, string> GroupIcons { get; set; } = new();
+
+    /// <summary>Stand des Datenmodells (13 = smarte Gruppen, globale Gruppen, ein Panel).</summary>
+    public int DataVersion { get; set; }
 
     public List<CustomEntry> CustomEntries { get; set; } = new();
 

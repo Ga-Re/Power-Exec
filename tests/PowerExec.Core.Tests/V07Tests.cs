@@ -49,29 +49,34 @@ public class V07Tests
     [Fact]
     public void WorkspacesSwitchKeepData()
     {
+        // Ab 0.13: Ordner/Gruppen global; Favoriten, Profile, Verlauf und Gruppenauswahl je Arbeitsbereich
         var s = new AppSettings();
         WorkspaceManager.EnsureInitialized(s);
-        s.Folders.Add(new FolderConfig { Path = @"C:\KundeA" });
+        s.Folders.Add(new FolderConfig { Path = @"C:\KundeA", Group = "A" });
         s.Favorites.Add(@"C:\KundeA\x.ps1");
+        s.Entries.Add(new EntryConfig { Path = @"C:\KundeA\x.ps1", Notes = "global", Profiles = [new LaunchProfile { Name = "P1", IsDefault = true }] });
 
         var b = WorkspaceManager.Create(s, "Kunde B", copyCurrent: false);
         Assert.True(WorkspaceManager.Switch(s, b.Name));
-        Assert.Empty(s.Folders);
-        Assert.Empty(s.Favorites);
-        s.Folders.Add(new FolderConfig { Path = @"C:\KundeB" });
+        Assert.Single(s.Folders);                          // global
+        Assert.Empty(s.Favorites);                         // je Arbeitsbereich
+        Assert.Empty(s.FindEntry(@"C:\KundeA\x.ps1")!.Profiles);
+        Assert.Equal("global", s.FindEntry(@"C:\KundeA\x.ps1")!.Notes);
+        WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(s), "A", true);
+        Assert.False(WorkspaceManager.ShowsGroup(s, "A/Unter"));
 
         Assert.True(WorkspaceManager.Switch(s, "standard"));
-        Assert.Equal(@"C:\KundeA", Assert.Single(s.Folders).Path);
         Assert.Single(s.Favorites);
-        Assert.True(WorkspaceManager.Switch(s, "Kunde B"));
-        Assert.Equal(@"C:\KundeB", Assert.Single(s.Folders).Path);
+        Assert.Equal("P1", Assert.Single(s.FindEntry(@"C:\KundeA\x.ps1")!.Profiles).Name);
+        Assert.True(WorkspaceManager.ShowsGroup(s, "A"));
 
+        Assert.True(WorkspaceManager.Switch(s, "Kunde B"));
         Assert.False(WorkspaceManager.Delete(s, "Kunde B")); // aktiv
         Assert.True(WorkspaceManager.Rename(s, "Kunde B", "Kunde Beta"));
         Assert.Equal("Kunde Beta", s.ActiveWorkspace);
         var copy = WorkspaceManager.Create(s, "Kunde Beta", copyCurrent: true);
         Assert.Equal("Kunde Beta 2", copy.Name);
-        Assert.Single(copy.Folders);
+        Assert.Single(copy.HiddenGroups);
         Assert.True(WorkspaceManager.Delete(s, "Standard"));
     }
 

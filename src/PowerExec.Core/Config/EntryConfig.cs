@@ -74,6 +74,9 @@ public sealed class EntryConfig
     /// <summary>Schlagworte für Suche („#tag“) und Filter.</summary>
     public List<string> Tags { get; set; } = new();
 
+    /// <summary>Ein Klick im Panel startet sofort das Standardprofil (statt aufzuklappen).</summary>
+    public bool SingleClick { get; set; }
+
     public List<LaunchProfile> Profiles { get; set; } = new();
 
     public EntryConfig Clone() => new()
@@ -84,6 +87,7 @@ public sealed class EntryConfig
         Category = Category,
         Notes = Notes,
         Tags = new List<string>(Tags),
+        SingleClick = SingleClick,
         Profiles = Profiles.Select(p => p.Clone()).ToList()
     };
 }

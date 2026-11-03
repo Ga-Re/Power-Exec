@@ -46,7 +46,7 @@ public static class GroupManager
             if (ParentOf(p) is { } parent) Add(parent);
             list.Add(p);
         }
-        foreach (var c in s.CategoryOrder.Concat(s.Entries.Select(e => e.Category)))
+        foreach (var c in s.CategoryOrder.Concat(s.Folders.Select(f => f.Group)).Concat(s.Entries.Select(e => e.Category)))
         {
             var n = Normalize(c);
             if (n.Length > 0) Add(n);
@@ -105,6 +105,9 @@ public static class GroupManager
         s.CategoryOrder = All(s).Where(c => !IsSameOrBelow(c, path)).ToList();
         foreach (var e in s.Entries.Where(e => IsSameOrBelow(Normalize(e.Category), path)))
             e.Category = string.Empty;
+        // Smarte Gruppe gelöscht: Ordner wird nicht mehr eingelesen
+        s.Folders.RemoveAll(f => f.Group.Length > 0 && IsSameOrBelow(f.Group, path));
+        foreach (var ws in s.Workspaces) ws.HiddenGroups.RemoveAll(h => IsSameOrBelow(h, path));
         foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path)).ToList())
             s.CustomOrder.Remove(key);
         s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path));
@@ -209,6 +212,10 @@ public static class GroupManager
             s.CustomOrder.Remove(key, out var order);
             s.CustomOrder[KeyPrefix + Map(key[KeyPrefix.Length..])] = order!;
         }
+        foreach (var f in s.Folders.Where(f => f.Group.Length > 0 && IsSameOrBelow(f.Group, oldPath))) f.Group = Map(f.Group);
+        foreach (var ws in s.Workspaces)
+            for (int i = 0; i < ws.HiddenGroups.Count; i++)
+                if (IsSameOrBelow(ws.HiddenGroups[i], oldPath)) ws.HiddenGroups[i] = Map(ws.HiddenGroups[i]);
         foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, oldPath)).ToList())
         {
             s.GroupIcons.Remove(key, out var icon);

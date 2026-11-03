@@ -205,7 +205,8 @@ public class SubgroupTests
         var p = new PanelConfig { Compact = true };
         p.Normalize();
         Assert.Equal(ItemLayout.List, p.Layout);
-        Assert.True(p.Compact);
+        Assert.Equal(ItemSize.Small, p.ItemSize);
+        Assert.False(p.Compact);
         Assert.True(p.ShowRecent && p.ShowFavorites);
     }
 }

@@ -2,8 +2,11 @@ using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Config;
 
-/// <summary>Darstellung der Einträge: Liste oder Raster (Kacheln). „Compact“ stammt aus 0.9 und wird zu Liste + kompakt.</summary>
+/// <summary>Darstellung der Einträge: Liste oder Raster (Kacheln). „Compact“ stammt aus 0.9 und wird zu Liste + klein.</summary>
 public enum ItemLayout { List, Compact, Grid }
+
+/// <summary>Größe der Einträge im Panel (Liste und Raster).</summary>
+public enum ItemSize { Small, Medium, Large }
 
 /// <summary>Einstellungen eines einzelnen Panels (Position, Hover-Zone, Aussehen, Inhalt).</summary>
 public sealed class PanelConfig
@@ -34,6 +37,8 @@ public sealed class PanelConfig
 
     public ItemLayout Layout { get; set; } = ItemLayout.List;
 
+    public ItemSize ItemSize { get; set; } = ItemSize.Medium;
+
     /// <summary>Gruppe „Zuletzt ausgeführt“ in diesem Panel zeigen.</summary>
     public bool ShowRecent { get; set; } = true;
 
@@ -58,7 +63,7 @@ public sealed class PanelConfig
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
         PanelOpacity = PanelOpacity, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
-        Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites,
+        Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
     };
 
@@ -77,6 +82,8 @@ public sealed class PanelConfig
         if (string.IsNullOrWhiteSpace(Id)) Id = Guid.NewGuid().ToString("N");
         if (string.IsNullOrWhiteSpace(Name)) Name = "Panel";
         if (Layout == ItemLayout.Compact) { Layout = ItemLayout.List; Compact = true; }
+        // „Kompakt“ (bis 0.12) wird zur Elementgröße „Klein“
+        if (Compact) { ItemSize = ItemSize.Small; Compact = false; }
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);

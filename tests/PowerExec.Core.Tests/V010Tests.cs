@@ -154,6 +154,6 @@ public class V010Tests
         var p = new PanelConfig { Layout = ItemLayout.Compact };
         p.Normalize();
         Assert.Equal(ItemLayout.List, p.Layout);
-        Assert.True(p.Compact);
+        Assert.Equal(ItemSize.Small, p.ItemSize);
     }
 }
