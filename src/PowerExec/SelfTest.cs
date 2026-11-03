@@ -112,7 +112,7 @@ public sealed partial class AppController
                     host.ViewModel.Rebuild();
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
-                    var first = host.ViewModel.VisibleItems.FirstOrDefault();
+                    var first = host.ViewModel.VisibleItems.FirstOrDefault(i => !i.IsSingleClick); // Ein-Klick würde starten
                     if (first == null && host.Config.Name == "Hauptpanel") Fail($"{layout}: keine Einträge im Panel");
                     first?.SelectCommand.Execute(null);
                     await Settle();
