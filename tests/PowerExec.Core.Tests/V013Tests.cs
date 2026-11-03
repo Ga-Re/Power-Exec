@@ -122,4 +122,19 @@ public class V013Tests
         Assert.Equal(ItemSize.Small, p.ItemSize);
         Assert.True(p.ShowsFolder(PanelConfig.CustomEntriesKey));
     }
+
+    [Fact]
+    public void UngroupingKeepsSingleClickAndTags()
+    {
+        var s = new AppSettings();
+        s.Entries.Add(new EntryConfig { Path = "custom:ad", SingleClick = true });
+        s.Entries.Add(new EntryConfig { Path = "custom:x", Tags = { "netz" } });
+        s.Entries.Add(new EntryConfig { Path = "custom:leer", Category = "A" });
+        GroupManager.Assign(s, "custom:ad", null);
+        GroupManager.Assign(s, "custom:x", "");
+        GroupManager.Assign(s, "custom:leer", null);
+        Assert.True(s.FindEntry("custom:ad")!.SingleClick);
+        Assert.Equal("netz", s.FindEntry("custom:x")!.Tags.Single());
+        Assert.Null(s.FindEntry("custom:leer"));
+    }
 }

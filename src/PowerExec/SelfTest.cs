@@ -102,7 +102,6 @@ public sealed partial class AppController
             Settings.Entries.Add(new EntryConfig { Path = Path.Combine(dir, "Cleanup.cmd"), Notes = "Nur nach Rücksprache" });
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel" });
-            Settings.Panels.Add(new PanelConfig { Name = "Zweites", Edge = ScreenEdge.Left, Folders = [PanelConfig.CustomEntriesKey] });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 13;

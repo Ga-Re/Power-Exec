@@ -79,6 +79,11 @@ public sealed class EntryConfig
 
     public List<LaunchProfile> Profiles { get; set; } = new();
 
+    /// <summary>Nichts eingestellt – die Konfiguration muss nicht aufbewahrt werden.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty => string.IsNullOrEmpty(Category) && Profiles.Count == 0 && Tags.Count == 0 && !SingleClick &&
+                           string.IsNullOrWhiteSpace(DisplayName) && string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(Notes);
+
     public EntryConfig Clone() => new()
     {
         Path = Path,

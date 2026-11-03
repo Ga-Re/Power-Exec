@@ -181,9 +181,7 @@ public static class GroupManager
         if (group.Length > 0 && !s.CategoryOrder.Contains(group, StringComparer.CurrentCultureIgnoreCase))
             s.CategoryOrder = All(s).ToList();
         // Leere Konfiguration nicht aufbewahren
-        if (group.Length == 0 && entry.Profiles.Count == 0 && string.IsNullOrWhiteSpace(entry.DisplayName) &&
-            string.IsNullOrWhiteSpace(entry.Description) && string.IsNullOrWhiteSpace(entry.Notes))
-            s.Entries.Remove(entry);
+        if (entry.IsEmpty) s.Entries.Remove(entry);
     }
 
     public static string GroupOf(AppSettings s, string path) => Normalize(s.FindEntry(path)?.Category);
