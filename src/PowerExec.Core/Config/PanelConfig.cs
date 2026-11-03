@@ -84,6 +84,9 @@ public sealed class PanelConfig
         if (Layout == ItemLayout.Compact) { Layout = ItemLayout.List; Compact = true; }
         // „Kompakt“ (bis 0.12) wird zur Elementgröße „Klein“
         if (Compact) { ItemSize = ItemSize.Small; Compact = false; }
+        // Inhaltsauswahl pro Panel gibt es seit 0.13 nicht mehr (Arbeitsbereiche wählen Gruppen)
+        Folders.Clear();
+        Categories.Clear();
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);

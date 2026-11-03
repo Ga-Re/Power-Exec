@@ -72,7 +72,7 @@ public sealed partial class AppController : IDisposable
         if (Settings.Folders.Count == 0)
         {
             _tray.ShowBalloon("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
-            ShowSettings(section: "folders");
+            ShowSettings(section: "groups");
         }
         else if (hotkeyError != null)
         {
@@ -515,17 +515,6 @@ public sealed partial class AppController : IDisposable
         return folder.Group;
     }
 
-    /// <summary>Ordner als Gruppe im Panel zeigen oder ausblenden (Einträge bleiben in Gruppen, Favoriten und Suche).</summary>
-    public void SetFolderGroupVisible(string folderPath, bool visible)
-    {
-        var folder = Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase));
-        if (folder == null) return;
-        folder.ShowGroup = visible;
-        CommitUserChange();
-        if (!visible)
-            _tray?.ShowBalloon("Ordner ausgeblendet", $"{folderPath} erscheint nicht mehr als Gruppe. Seine Einträge findest du weiter über die Suche, in eigenen Gruppen und Favoriten. Wieder einblenden: Einstellungen › Ordner.");
-    }
-
     /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>
     public void AssignGroup(string path, string? group, string? targetKey = null, string? beforeOrAfterPath = null, bool after = false, IReadOnlyList<string>? targetOrder = null)
     {
@@ -728,7 +717,7 @@ public sealed partial class AppController : IDisposable
         FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         CommitUserChange();
-        _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Ordner (Haken setzen).");
+        _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Gruppen › smarte Gruppe aufklappen (Haken setzen).");
     }
 
     /// <summary>
@@ -1018,6 +1007,8 @@ public sealed partial class AppController : IDisposable
         HidePanels(force: true);
         if (_settingsWindow != null)
         {
+            if (folderPath != null) _settingsWindow.CurrentViewModel.FocusGroup(folderPath);
+            if (section != null) _settingsWindow.CurrentViewModel.Section = section;
             _settingsWindow.Activate();
             return;
         }

@@ -108,7 +108,7 @@ public partial class SettingsWindow : Window
             _lastApplied = Fingerprint(_app.Settings);
             _vm.HotkeyError = hotkeyError;
             SaveHint.Text = hotkeyError != null
-                ? "Übernommen – aber ein Tastenkürzel konnte nicht registriert werden (siehe Panels)."
+                ? "Übernommen – aber ein Tastenkürzel konnte nicht registriert werden (siehe Panel › Verhalten)."
                 : $"Übernommen um {DateTime.Now:HH:mm:ss}.";
         }
         catch (Exception ex)
@@ -182,7 +182,7 @@ public partial class SettingsWindow : Window
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    /// <summary>„Neu ▾“: Menü mit den Eintragsarten öffnen.</summary>
+    /// <summary>„Neu ▾“: Menü öffnen (Eintragsarten bzw. Gruppenarten).</summary>
     private void NewEntryMenu_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { ContextMenu: { } menu } button)
@@ -200,14 +200,14 @@ public partial class SettingsWindow : Window
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (key is Key.Back or Key.Delete && Keyboard.Modifiers == ModifierKeys.None)
         {
-            if (_vm.SelectedPanel != null) _vm.SelectedPanel.Hotkey = string.Empty;
+            _vm.Panel.Hotkey = string.Empty;
             ScheduleApply();
             return;
         }
         var text = HotkeyService.Format(Keyboard.Modifiers, key);
         if (text != null)
         {
-            if (_vm.SelectedPanel != null) _vm.SelectedPanel.Hotkey = text;
+            _vm.Panel.Hotkey = text;
             _vm.HotkeyError = null;
             ScheduleApply();
         }

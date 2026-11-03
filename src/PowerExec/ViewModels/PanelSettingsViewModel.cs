@@ -9,47 +9,15 @@ using PowerExec.Services;
 
 namespace PowerExec.ViewModels;
 
-/// <summary>Ein Ordner oder eine Kategorie zum Anhaken im Panel-Inhalt.</summary>
-public sealed class ContentChoiceViewModel : ObservableObject
-{
-    private bool _isChecked;
-
-    public ContentChoiceViewModel(string key, string label, string detail, bool isChecked)
-    {
-        Key = key;
-        Label = label;
-        Detail = detail;
-        _isChecked = isChecked;
-    }
-
-    public string Key { get; }
-    public string Label { get; }
-    public string Detail { get; }
-    public bool IsChecked { get => _isChecked; set => Set(ref _isChecked, value); }
-}
-
 /// <summary>Einstellungen eines Panels im Einstellungsfenster (Arbeitskopie von <see cref="PanelConfig"/>).</summary>
 public sealed class PanelSettingsViewModel : ObservableObject
 {
     private readonly PanelConfig _c;
-    private bool _showAll;
 
-    public PanelSettingsViewModel(PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors,
-        IEnumerable<string> folders, IEnumerable<string> categories)
+    public PanelSettingsViewModel(PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors)
     {
         _c = config.Clone();
         Monitors = monitors;
-        _showAll = _c.Folders.Count == 0 && _c.Categories.Count == 0;
-        foreach (var f in folders)
-            FolderChoices.Add(new ContentChoiceViewModel(f, System.IO.Path.GetFileName(f.TrimEnd('\\', '/')) is { Length: > 0 } n ? n : f, f,
-                _c.Folders.Count == 0 || _c.Folders.Contains(f, StringComparer.OrdinalIgnoreCase)));
-        FolderChoices.Add(new ContentChoiceViewModel(PanelConfig.CustomEntriesKey, "Eigene Einträge", "Webseiten, Ordner, RDP, Befehle",
-            _c.Folders.Count == 0 || _c.Folders.Contains(PanelConfig.CustomEntriesKey, StringComparer.OrdinalIgnoreCase)));
-        foreach (var cat in categories)
-            CategoryChoices.Add(new ContentChoiceViewModel(cat, GroupManager.Display(cat), string.Empty,
-                _c.Categories.Count == 0 || _c.Categories.Contains(cat, StringComparer.CurrentCultureIgnoreCase)));
-        CategoryChoices.Add(new ContentChoiceViewModel(string.Empty, "Ohne Gruppe", string.Empty,
-            _c.Categories.Count == 0 || _c.Categories.Contains(string.Empty)));
         ClearHotkeyCommand = new RelayCommand(() => Hotkey = string.Empty);
     }
 
@@ -132,7 +100,13 @@ public sealed class PanelSettingsViewModel : ObservableObject
         new KeyValuePair<ItemLayout, string>(ItemLayout.List, "Liste"),
         new KeyValuePair<ItemLayout, string>(ItemLayout.Grid, "Raster (Kacheln)")
     };
-    public bool Compact { get => _c.Compact; set { _c.Compact = value; OnPropertyChanged(); } }
+    public ItemSize ItemSize { get => _c.ItemSize; set { _c.ItemSize = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<ItemSize, string>> ItemSizes { get; } = new[]
+    {
+        new KeyValuePair<ItemSize, string>(ItemSize.Small, "Klein"),
+        new KeyValuePair<ItemSize, string>(ItemSize.Medium, "Mittel"),
+        new KeyValuePair<ItemSize, string>(ItemSize.Large, "Groß")
+    };
     public bool ShowRecent { get => _c.ShowRecent; set { _c.ShowRecent = value; OnPropertyChanged(); } }
     public bool ShowFavorites { get => _c.ShowFavorites; set { _c.ShowFavorites = value; OnPropertyChanged(); } }
 
@@ -212,37 +186,6 @@ public sealed class PanelSettingsViewModel : ObservableObject
         set { _c.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); }
     }
 
-    // ---- Inhalt -----------------------------------------------------------
-
-    /// <summary>true = alle Ordner und Kategorien anzeigen (keine Auswahl).</summary>
-    public bool ShowAll
-    {
-        get => _showAll;
-        set { if (Set(ref _showAll, value)) OnPropertyChanged(nameof(ShowSelection)); }
-    }
-
-    public bool ShowSelection { get => !_showAll; set => ShowAll = !value; }
-
-    public ObservableCollection<ContentChoiceViewModel> FolderChoices { get; } = new();
-    public ObservableCollection<ContentChoiceViewModel> CategoryChoices { get; } = new();
-    public bool HasCategories => CategoryChoices.Count > 1;
-
     /// <summary>Erstellt die gespeicherte Panel-Konfiguration aus dem Formular.</summary>
-    public PanelConfig ToConfig()
-    {
-        var c = _c.Clone();
-        if (_showAll)
-        {
-            c.Folders.Clear();
-            c.Categories.Clear();
-        }
-        else
-        {
-            // Alles angehakt = keine Einschränkung (dann erscheinen auch neu hinzugefügte Ordner).
-            c.Folders = FolderChoices.All(f => f.IsChecked) ? new List<string>() : FolderChoices.Where(f => f.IsChecked).Select(f => f.Key).ToList();
-            c.Categories = CategoryChoices.All(f => f.IsChecked) ? new List<string>() : CategoryChoices.Where(f => f.IsChecked).Select(f => f.Key).ToList();
-            if (c.Folders.Count == 0 && FolderChoices.All(f => !f.IsChecked)) c.Folders.Add("-"); // bewusst leer
-        }
-        return c;
-    }
+    public PanelConfig ToConfig() => _c.Clone();
 }

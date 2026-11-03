@@ -604,7 +604,7 @@
                 </TextBlock>
                 <ComboBox Grid.Column="2" x:Name="WorkspaceBox" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28"
                           ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
-                          ToolTip="Arbeitsbereich wechseln (gilt für alle Panels)" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
+                          ToolTip="Arbeitsbereich wechseln" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
                     <Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
                         <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="15"/>
@@ -758,10 +758,10 @@
                 </ScrollViewer.ContextMenu>
                 <StackPanel>
                     <StackPanel Visibility="{Binding HasNoFolders, Converter={StaticResource Vis}}" Margin="16,32,16,0">
-                        <TextBlock Text="Noch keine Ordner festgelegt." FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Power-Exec durchsucht die Ordner, die du in den Einstellungen angibst, nach Scripten und Programmen."
-                                   Style="{StaticResource Caption}" TextAlignment="Center" Margin="0,6,0,12"/>
-                        <Button Style="{StaticResource Btn.Accent}" Content="Ordner hinzufügen" Command="{Binding AddFolderCommand}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Noch keine smarte Gruppe." FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Eine smarte Gruppe liest einen Ordner mit Scripten und Programmen ein. Eigene Einträge legst du per Rechtsklick an."
+                                   Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,12"/>
+                        <Button Style="{StaticResource Btn.Accent}" Content="Ordner hinzufügen …" Command="{Binding NewSmartGroupCommand}" HorizontalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
                                Style="{StaticResource Caption}" Text="Keine Treffer. Die Suche umfasst Name, Synopsis und Beschreibung."/>

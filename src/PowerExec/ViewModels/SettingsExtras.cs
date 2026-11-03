@@ -355,4 +355,11 @@ public sealed class WorkspaceRowViewModel : ObservableObject
     public string Summary { get; }
     public ICommand ActivateCommand { get; }
     public ICommand RemoveCommand { get; }
+
+    private bool _isExpanded;
+    public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
+    public ICommand ToggleCommand => new RelayCommand(() => IsExpanded = !IsExpanded);
+
+    /// <summary>Welche Gruppen in diesem Arbeitsbereich im Panel erscheinen.</summary>
+    public System.Collections.ObjectModel.ObservableCollection<WorkspaceGroupChoice> Groups { get; } = new();
 }

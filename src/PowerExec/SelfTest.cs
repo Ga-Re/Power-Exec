@@ -164,7 +164,7 @@ public sealed partial class AppController
             settingsWindow.ApplyNowForTest();
             if (Settings.RecentRunsCount != 7) Fail("Live-Übernahme: allgemeine Einstellung nicht übernommen");
             if (!ReferenceEquals(hostBefore, _hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
-            settingsVm.SelectedPanel!.PanelWidth = 512;
+            settingsVm.Panel.PanelWidth = 512;
             settingsWindow.ApplyNowForTest();
             if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
 
@@ -182,7 +182,41 @@ public sealed partial class AppController
             settingsVm.SearchText = "update";
             if (!settingsVm.HasSearchResults) Fail("Suche in den Einstellungen findet nichts für „update“");
             settingsVm.SearchText = string.Empty;
-            foreach (var section in new[] { "general", "folders", "custom", "groups", "workspaces", "panels", "behavior", "exec", "remote", "machines", "diag" })
+
+            // Gruppen-Seite: smarte Gruppen haben ihren Ordner; Arbeitsbereiche bieten alle Gruppen zur Auswahl
+            Step("Gruppen und Arbeitsbereiche");
+            var smart = settingsVm.Categories.FirstOrDefault(c => c.IsSmart);
+            if (smart == null) Fail("Gruppen-Seite: keine smarte Gruppe (Ordner) gefunden");
+            else smart.IsExpanded = true;
+            if (settingsVm.Categories.Count(c => c.IsSmart) != Settings.Folders.Count) Fail("Gruppen-Seite: nicht jeder Ordner hat eine smarte Gruppe");
+            settingsVm.Section = "workspaces";
+            await Settle();
+            var wsRow = settingsVm.Workspaces.FirstOrDefault(w => w.IsActive);
+            if (wsRow == null || wsRow.Groups.Count != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
+            else
+            {
+                wsRow.IsExpanded = true;
+                var choice = wsRow.Groups.First(g => g.Path == "Leer");
+                choice.IsVisible = false;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (WorkspaceManager.ShowsGroup(Settings, "Leer")) Fail("Arbeitsbereich: Gruppe ausblenden nicht übernommen");
+                if (_hosts[0].ViewModel.AllGroups.Any(g => g.GroupPath == "Leer")) Fail("Arbeitsbereich: ausgeblendete Gruppe weiter im Panel");
+                settingsVm = settingsWindow.CurrentViewModel;
+                settingsVm.Section = "workspaces";
+                await Settle();
+                settingsVm.Workspaces.First(w => w.IsActive).Groups.First(g => g.Path == "Leer").IsVisible = true;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (!WorkspaceManager.ShowsGroup(Settings, "Leer")) Fail("Arbeitsbereich: Gruppe wieder einblenden nicht übernommen");
+                settingsVm = settingsWindow.CurrentViewModel;
+                if (settingsVm.Workspaces.FirstOrDefault(w => w.IsActive) is { } r2) r2.IsExpanded = true;
+                if (settingsVm.Categories.FirstOrDefault(c => c.IsSmart) is { } sm2) sm2.IsExpanded = true;
+            }
+            settingsVm.FocusGroup(Settings.Folders[0].Group);
+            if (settingsVm.Section != "groups") Fail("Einstellungen: Gruppe fokussieren wechselt nicht zur Gruppen-Seite");
+
+            foreach (var section in new[] { "general", "groups", "custom", "workspaces", "look", "behavior", "exec", "remote", "machines", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);

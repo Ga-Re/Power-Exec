@@ -10,7 +10,7 @@ namespace PowerExec.Controls;
 
 /// <summary>
 /// Eingabe für Schlagworte als Chips: Enter, Komma oder Semikolon fügt hinzu, × bzw. Rücktaste (leeres Feld) entfernt.
-/// Während der Eingabe erscheinen passende vorhandene Schlagworte als Vorschläge.
+/// Beim Hineinklicken erscheinen alle vorhandenen (globalen) Schlagworte, beim Tippen die passenden (Autovervollständigung).
 /// Gebunden wird <see cref="TagsText"/> (kommagetrennt).
 /// </summary>
 public sealed class TagBox : Control
@@ -58,11 +58,15 @@ public sealed class TagBox : Control
         };
         _input.LostKeyboardFocus += (_, e) =>
         {
-            if (e.NewFocus is DependencyObject d && IsInPopup(d)) return;
+            if (_rebuilding || e.NewFocus is DependencyObject d && IsInPopup(d)) return;
             AddPending();
             _popup!.IsOpen = false;
         };
-        _input.GotKeyboardFocus += (_, _) => _border!.SetResourceReference(Border.BorderBrushProperty, "Accent");
+        _input.GotKeyboardFocus += (_, _) =>
+        {
+            _border!.SetResourceReference(Border.BorderBrushProperty, "Accent");
+            ShowSuggestions();
+        };
 
         _list = new ListBox { MaxHeight = 180, BorderThickness = new Thickness(0), Background = Brushes.Transparent };
         _list.SetResourceReference(ForegroundProperty, "Text.Primary");
@@ -117,6 +121,12 @@ public sealed class TagBox : Control
     {
         switch (e.Key)
         {
+            case Key.Enter when _popup.IsOpen && _input.Text.Trim().Length > 0 && _list.SelectedItem is string pick
+                                && pick.StartsWith(_input.Text.Trim().TrimStart('#'), StringComparison.CurrentCultureIgnoreCase):
+                _input.Text = string.Empty;
+                Add(pick); // Autovervollständigung: Anfang getippt, Enter übernimmt den Vorschlag
+                e.Handled = true;
+                break;
             case Key.Enter:
                 if (_input.Text.Trim().Length > 0) { AddPending(); e.Handled = true; }
                 break;
@@ -144,8 +154,8 @@ public sealed class TagBox : Control
     {
         if (_list.SelectedItem is string tag)
         {
-            Add(tag);
             _input.Text = string.Empty;
+            Add(tag);
         }
         _popup.IsOpen = false;
         _input.Focus();
@@ -154,13 +164,15 @@ public sealed class TagBox : Control
     private void ShowSuggestions()
     {
         var text = _input.Text.Trim().TrimStart('#');
-        if (text.Length == 0 || Suggestions == null) { _popup.IsOpen = false; return; }
+        if (Suggestions == null || !_input.IsKeyboardFocused) { _popup.IsOpen = false; return; }
         var matches = Suggestions.Cast<object>().Select(o => o?.ToString() ?? string.Empty)
-            .Where(s => s.Length > 0 && s.Contains(text, StringComparison.CurrentCultureIgnoreCase) && !_tags.Contains(s, StringComparer.CurrentCultureIgnoreCase))
-            .OrderBy(s => s.StartsWith(text, StringComparison.CurrentCultureIgnoreCase) ? 0 : 1).ThenBy(s => s)
-            .Take(12).ToList();
+            .Where(s => s.Length > 0 && (text.Length == 0 || s.Contains(text, StringComparison.CurrentCultureIgnoreCase)) && !_tags.Contains(s, StringComparer.CurrentCultureIgnoreCase))
+            .Distinct(StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(s => text.Length > 0 && s.StartsWith(text, StringComparison.CurrentCultureIgnoreCase) ? 0 : 1).ThenBy(s => s, StringComparer.CurrentCultureIgnoreCase)
+            .Take(text.Length == 0 ? 30 : 12).ToList();
         _list.ItemsSource = matches;
         _popup.IsOpen = matches.Count > 0;
+        if (matches.Count > 0 && text.Length > 0) _list.SelectedIndex = 0;
     }
 
     private void AddPending()
@@ -173,9 +185,12 @@ public sealed class TagBox : Control
     {
         tag = tag.Trim().TrimStart('#');
         if (tag.Length == 0 || _tags.Contains(tag, StringComparer.CurrentCultureIgnoreCase)) return;
+        // Schreibweise eines vorhandenen (globalen) Schlagworts übernehmen
+        if (Suggestions?.Cast<object>().Select(o => o?.ToString()).FirstOrDefault(x => string.Equals(x, tag, StringComparison.CurrentCultureIgnoreCase)) is { } known) tag = known;
         _tags.Add(tag);
         Rebuild();
         PushText();
+        Dispatcher.BeginInvoke(ShowSuggestions, System.Windows.Threading.DispatcherPriority.Input);
     }
 
     private void Remove(string tag)
@@ -202,12 +217,21 @@ public sealed class TagBox : Control
 
     private void UpdatePlaceholder() => _input.Tag = _tags.Count == 0 ? Placeholder : "weiteres …";
 
+    private bool _rebuilding;
+
     private void Rebuild()
     {
-        _panel.Children.Clear();
-        foreach (var tag in _tags) _panel.Children.Add(Chip(tag));
-        _panel.Children.Add(_input);
+        bool hadFocus = _input.IsKeyboardFocused;
+        _rebuilding = true;
+        try
+        {
+            _panel.Children.Clear();
+            foreach (var tag in _tags) _panel.Children.Add(Chip(tag));
+            _panel.Children.Add(_input);
+        }
+        finally { _rebuilding = false; }
         UpdatePlaceholder();
+        if (hadFocus) _input.Focus();
     }
 
     private UIElement Chip(string tag)

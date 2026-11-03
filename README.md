@@ -10,35 +10,34 @@ oder remote auf einem oder vielen Rechnern.
 **Panel**
 - Hover-Zone am Bildschirmrand: Rand, Monitor, Lage, Länge und Breite einstellbar; sie übernimmt die Panelfarbe
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
-- **Mehrere Panels** an verschiedenen Rändern oder Monitoren, jedes mit eigener Hover-Zone, Farbe, Deckkraft, Größe, eigenem Tastenkürzel und eigenem Inhalt (Auswahl von Ordnern, Kategorien und „Eigene Einträge“)
 - **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
-- **Darstellung je Panel:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), jeweils auch **kompakt** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
-- **Rechtsklick auf freie Fläche:** neue Gruppe, neuer Eintrag, aus Vorlagen, aus Zwischenablage, Import, Darstellung
+- **Darstellung:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), **Elementgröße Klein / Mittel / Groß** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
+- **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
 - Suche mit **`#schlagwort`** filtert nach Schlagworten
-- „Zuletzt ausgeführt“ und „Favoriten“ je Panel ein- oder ausblendbar
+- „Zuletzt ausgeführt“ und „Favoriten“ ein- oder ausblendbar (Einstellungen › Gruppen)
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
 - Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
 - Suche über Dateiname, Synopsis und Beschreibung; Filter: Alle, Scripte, Programme, Favoriten
-- Gruppen (Favoriten und Ordner) einklappbar; Kontextmenü pro Gruppe (Im Explorer öffnen, Neu einlesen, Einklappen …)
+- Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
-- **Eigene Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** hineinschieben, zurück in den Ordner ziehen oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
+- **Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** in jede Gruppe verschieben oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
+- **Smarte Gruppen:** eine Gruppe mit Ordner zeigt automatisch dessen Scripte und Programme – auf Wunsch mit Unterordnern als Untergruppen
 - **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
-- Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, Befehl oder Dateien auswählen
-- Darstellung: eigene Gruppen oben, darunter die Ordner – oder nur eigene Gruppen und „Ohne Gruppe“
+- Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, SSH, Snippet, Werkzeug, Befehl, Dateien, aus Vorlagen oder aus der Zwischenablage
 - Doppelklick startet das Standardprofil; Split-Button für weitere Profile
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
-- **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panels öffnen, Arbeitsbereich wechseln
+- **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panel öffnen, Arbeitsbereich wechseln
 
 **Arbeitsbereiche**
-- Getrennte Sammlungen, z. B. je Kunde oder Aufgabe: eigene Ordner, Profile, Kategorien, Favoriten, eigene Einträge und Verlauf
-- Wechsel im Panel-Kopf, im Tray-Menü oder in den Einstellungen; gilt für alle Panels. Panels, Farben, Rechnergruppen und allgemeine Einstellungen sind gemeinsam
-- Neuer Arbeitsbereich leer oder als Kopie des aktuellen
+- Eine Auswahl der Gruppen, z. B. je Kunde oder Aufgabe: Gruppen, Ordner und eigene Einträge gibt es nur einmal; je Arbeitsbereich wählst du, **welche Gruppen** erscheinen
+- Eigene Favoriten, „Zuletzt ausgeführt“, Startprofile und eingeklappte Gruppen je Arbeitsbereich
+- Wechsel im Panel-Kopf, im Tray-Menü oder in den Einstellungen; neuer Arbeitsbereich leer oder als Kopie des aktuellen
 
 **Eigene Einträge**
 - Arten: Webseite, Ordner/Freigabe, Remotedesktop, **SSH** (Windows Terminal, Konsole oder PuTTY), **Snippet** (PowerShell – läuft wie ein Script, auch als Admin, als anderer Benutzer oder remote – oder Text, das in die Zwischenablage kopiert wird), **Windows-Werkzeug** (Snap-ins, Systemsteuerung, `ms-settings:`), Befehl, einzelne Datei
@@ -52,12 +51,12 @@ oder remote auf einem oder vielen Rechnern.
 - Einstellungen › Eigene Einträge: kompakte, durchsuchbare Liste mit Filtern (Art, Gruppe, Schlagwort, Probleme), ⚙ zum Bearbeiten, **Mehrfachauswahl** (verschieben, exportieren, löschen)
 - **Teilen:** Einträge oder ganze Gruppen als Datei exportieren und bei Kollegen importieren (samt Gruppen, Symbolen, Schlagworten und Profilen – ohne Kennwörter)
 
-**Ordner**
-- Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
-- Pro Ordner einstellbar, ob er **als Gruppe im Panel erscheint** – ausgeblendet bleiben seine Einträge in eigenen Gruppen, Favoriten, „Zuletzt ausgeführt“ und in der Suche
-- Die Einstellungen zeigen pro Ordner **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
+**Smarte Gruppen (Ordner)**
+- Beliebig viele Ordner, auch Netzwerkfreigaben (UNC); Anzeigename frei wählbar, Symbol wie bei jeder Gruppe
+- Alles unter Einstellungen › Inhalte › Gruppen: „Neu ▾“ → Gruppe oder smarte Gruppe; Löschen nur nach Rückfrage
+- Die Einstellungen zeigen pro smarter Gruppe **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
 - **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
-- Ordner-Optionen: Unterordner ja/nein, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
+- Ordner-Optionen: Unterordner ja/nein, **Unterordner im Panel als Untergruppen**, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
 - Dateiwächter: Änderungen erscheinen automatisch
 - **Offline-fest:** Antwortet ein Ordner nicht innerhalb des Zeitlimits (z. B. Freigabe offline), zeigt das Panel den zuletzt eingelesenen Stand; beim Start erscheint sofort der zwischengespeicherte Stand
 - **Umbenennen/Verschieben:** Profile, Favorit, Sortierung und Verlauf wandern automatisch mit (Erkennung über Dateiinhalt bzw. gleichen Namen)
@@ -109,9 +108,10 @@ oder remote auf einem oder vielen Rechnern.
 - **Blockierte Dateien** (aus dem Internet heruntergeladen) werden markiert und lassen sich mit „Entsperren“ freigeben; beim Aufklappen eines Eintrags wird die **digitale Signatur** angezeigt
 
 **Einstellungen**
-- Gegliedert wie PowerToys: Navigation mit Symbolen (Allgemein · Inhalte · Panel · Ausführung · Hilfe), **Suche** „Nach Einstellungen suchen“, Karten mit Symbol und Beschreibung, aufklappbare Karten für Unteroptionen
-- Schlagworte als **Chips** mit Vorschlägen (Enter/Komma fügt hinzu, × oder Rücktaste entfernt)
-- Änderungen werden **sofort übernommen** (Panels werden nur neu aufgebaut, wenn sich an ihnen etwas ändert); „Änderungen verwerfen“ stellt den Stand beim Öffnen wieder her
+- Gegliedert wie PowerToys: Navigation mit Symbolen und **einklappbaren Bereichen** (Allgemein · Inhalte: Gruppen, Eigene Einträge, Arbeitsbereiche · Panel: Darstellung, Verhalten · Ausführung · Hilfe), **Suche** „Nach Einstellungen suchen“, Karten mit Symbol und Beschreibung, aufklappbare Karten für Unteroptionen
+- Ein einheitlicher Dialog für eigene Einträge und Startprofile (Symbol, Ziel, Gruppe, Schlagworte, Ein-Klick-Start, Profile)
+- Schlagworte als **Chips** mit globaler Vorschlagsliste und Autovervollständigung (Enter/Komma fügt hinzu, × oder Rücktaste entfernt)
+- Änderungen werden **sofort übernommen** (das Panel wird nur neu aufgebaut, wenn sich an ihm etwas ändert); „Änderungen verwerfen“ stellt den Stand beim Öffnen wieder her
 - Änderungen im Panel (z. B. ein Eintrag in eine Gruppe gezogen) erscheinen direkt im offenen Einstellungsfenster
 - Eigene Einträge lassen sich aus der Einstellungsliste **direkt ins Panel ziehen** (an den Bildschirmrand – das Panel fährt aus – und auf eine Gruppe)
 
@@ -128,7 +128,7 @@ oder remote auf einem oder vielen Rechnern.
 
 1. `PowerExec-Setup.exe` aus dem neuesten [Release](https://github.com/Ga-Re/Power-Exec/releases) herunterladen und starten.
 2. Optional „Verknüpfung auf dem Desktop“ und „Mit Windows starten“ wählen.
-3. Fertig. Beim ersten Start öffnen sich die Einstellungen, um Ordner hinzuzufügen.
+3. Fertig. Beim ersten Start öffnen sich die Einstellungen, um eine smarte Gruppe (Ordner) anzulegen.
 
 Der Installer braucht **keine Adminrechte**: Er installiert für den angemeldeten Benutzer nach
 `%LOCALAPPDATA%\Programs\Power-Exec` und legt einen Startmenü-Eintrag sowie einen Eintrag unter

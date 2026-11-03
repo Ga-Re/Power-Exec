@@ -39,7 +39,35 @@ public sealed class CustomEntryRowViewModel : ObservableObject
     public string Badge => CustomEntryViewModel.PanelBadge(Entry.Kind, Entry.Target);
     public string Icon => Entry.Icon;
     public bool HasIcon => Entry.Icon.Length > 0;
-    public bool SingleClick => Entry.SingleClick;
+
+    private System.Windows.Media.ImageSource? _image;
+    private bool _imageLoaded;
+    /// <summary>Automatisches Symbol wie im Panel (Favicon, Programm-, Ordner-, Verknüpfungssymbol).</summary>
+    public System.Windows.Media.ImageSource? Image
+    {
+        get
+        {
+            if (!_imageLoaded && !HasIcon && _owner.ShowImages)
+            {
+                _imageLoaded = true;
+                try
+                {
+                    _image = ItemViewModel.LoadIcon(_owner.App, Entry.ToLaunchItem(), img =>
+                    {
+                        _image = img;
+                        OnPropertyChanged(nameof(Image));
+                        OnPropertyChanged(nameof(HasImage));
+                        OnPropertyChanged(nameof(ShowBadge));
+                    });
+                }
+                catch { _image = null; }
+            }
+            return _image;
+        }
+    }
+    public bool HasImage => !HasIcon && Image != null;
+    public bool ShowBadge => !HasIcon && !HasImage;
+    public bool SingleClick => _owner.IsSingleClick(Entry.Key);
     public bool HasPlaceholders => Entry.Placeholders.Count > 0;
 
     private HealthResult? _health;
@@ -56,6 +84,8 @@ public sealed class CustomEntryRowViewModel : ObservableObject
         Entry = entry;
         Group = group;
         Tags = tags;
+        _imageLoaded = false;
+        _image = null;
         Refresh();
     }
 
@@ -69,7 +99,7 @@ public sealed class CustomEntryRowViewModel : ObservableObject
     internal void Refresh()
     {
         foreach (var p in new[] { nameof(Name), nameof(Detail), nameof(KindText), nameof(GroupText), nameof(TagsText), nameof(Tags), nameof(Badge), nameof(Icon),
-                     nameof(HasIcon), nameof(SingleClick), nameof(HasPlaceholders), nameof(HealthText), nameof(HealthOk) })
+                     nameof(HasIcon), nameof(Image), nameof(HasImage), nameof(ShowBadge), nameof(SingleClick), nameof(HasPlaceholders), nameof(HealthText), nameof(HealthOk) })
             OnPropertyChanged(p);
     }
 }
@@ -82,6 +112,10 @@ public sealed class CustomEntryListViewModel : ObservableObject
 {
     private readonly AppController _app;
     private readonly AppSettings _s;
+
+    internal AppController App => _app;
+    internal bool ShowImages => _app.Settings.ShowProgramIcons;
+    internal bool IsSingleClick(string key) => _s.FindEntry(key)?.SingleClick == true;
     private readonly Func<IReadOnlyList<string>> _groups;
     private string _query = string.Empty;
     private string _kindFilter = "all";

@@ -34,7 +34,7 @@ public sealed class PanelViewModel : ObservableObject
         UpdateLaterCommand = new RelayCommand(() => { _updateDismissed = true; OnPropertyChanged(nameof(UpdateVisible)); });
         _app.Update.PropertyChanged += OnUpdateChanged;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
-        AddFolderCommand = new RelayCommand(() => _app.ShowSettings());
+        AddFolderCommand = new RelayCommand(() => _app.ShowSettings(section: "groups"));
     }
 
     public ObservableCollection<GroupViewModel> Groups { get; } = new();

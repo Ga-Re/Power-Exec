@@ -715,7 +715,8 @@
                 <ControlTemplate TargetType="c:SettingsExpander">
                     <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,3">
                         <StackPanel>
-                            <Grid MinHeight="66" Margin="16,12,8,12">
+                            <!-- Gleiche Höhe wie SettingsCard (Padding 12 + 42 = 66) -->
+                            <Grid MinHeight="42" Margin="16,12,12,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>

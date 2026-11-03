@@ -17,8 +17,10 @@ public sealed class VisibilityConverter : IValueConverter
             null => false,
             _ => true
         };
-        if (parameter is string p && p.Equals("invert", StringComparison.OrdinalIgnoreCase)) visible = !visible;
-        return visible ? Visibility.Visible : Visibility.Collapsed;
+        var p = parameter as string ?? string.Empty;
+        if (p.Contains("invert", StringComparison.OrdinalIgnoreCase)) visible = !visible;
+        // „hidden“: Platz freihalten (z. B. damit Zeilen bündig bleiben)
+        return visible ? Visibility.Visible : p.Contains("hidden", StringComparison.OrdinalIgnoreCase) ? Visibility.Hidden : Visibility.Collapsed;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

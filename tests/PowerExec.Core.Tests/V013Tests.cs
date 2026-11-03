@@ -97,4 +97,29 @@ public class V013Tests
         Assert.Empty(s.Folders);
         Assert.Empty(WorkspaceManager.Active(s).HiddenGroups);
     }
+
+    [Fact]
+    public void HiddenParentHidesSubgroupsPerWorkspace()
+    {
+        var s = new AppSettings();
+        WorkspaceManager.EnsureInitialized(s);
+        GroupManager.Create(s, "Admin");
+        GroupManager.Create(s, "Admin/AD");
+        var other = WorkspaceManager.Create(s, "Kunde A", copyCurrent: false);
+        WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(s), "Admin", true);
+        Assert.False(WorkspaceManager.ShowsGroup(s, "Admin/AD"));
+        Assert.True(WorkspaceManager.ShowsGroupIn(other, "Admin/AD"));
+        Assert.True(WorkspaceManager.ShowsGroup(s, string.Empty));
+    }
+
+    [Fact]
+    public void PanelContentFilterIsDropped()
+    {
+        var p = new PanelConfig { Compact = true, Folders = { @"C:\x" }, Categories = { "A" } };
+        p.Normalize();
+        Assert.Empty(p.Folders);
+        Assert.Empty(p.Categories);
+        Assert.Equal(ItemSize.Small, p.ItemSize);
+        Assert.True(p.ShowsFolder(PanelConfig.CustomEntriesKey));
+    }
 }

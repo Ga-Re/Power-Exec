@@ -66,8 +66,10 @@ public static class WorkspaceManager
     }
 
     /// <summary>Ist die Gruppe im aktiven Arbeitsbereich sichtbar? (Ausgeblendete Gruppe blendet auch ihre Untergruppen aus.)</summary>
-    public static bool ShowsGroup(AppSettings s, string groupPath) =>
-        groupPath.Length == 0 || !Active(s).HiddenGroups.Any(h => GroupManager.IsSameOrBelow(groupPath, h));
+    public static bool ShowsGroup(AppSettings s, string groupPath) => ShowsGroupIn(Active(s), groupPath);
+
+    public static bool ShowsGroupIn(Workspace ws, string groupPath) =>
+        groupPath.Length == 0 || !ws.HiddenGroups.Any(h => GroupManager.IsSameOrBelow(groupPath, h));
 
     public static void SetGroupHidden(Workspace ws, string groupPath, bool hidden)
     {

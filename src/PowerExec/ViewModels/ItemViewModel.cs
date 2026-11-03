@@ -109,9 +109,11 @@ public sealed class ItemViewModel : ObservableObject
     /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
     /// EXE/Verknüpfung/Snap-in und sonstige Dateien = Shell-Symbol. Scripte behalten ihr Kürzel (PS1, CMD …).
     /// </summary>
-    private ImageSource? LoadIcon(AppController app, LaunchItem item)
+    private ImageSource? LoadIcon(AppController app, LaunchItem item) => LoadIcon(app, item, img => Icon = img);
+
+    /// <summary>Symbol laden (auch für die Liste „Eigene Einträge“); <paramref name="Done"/> liefert nachgeladene Symbole.</summary>
+    internal static ImageSource? LoadIcon(AppController app, LaunchItem item, Action<ImageSource> Done)
     {
-        void Done(ImageSource img) => Icon = img;
         switch (item.CustomKind)
         {
             case CustomEntryKind.Url: return app.Icons.GetFavicon(item.Source?.Target.Trim() ?? item.LaunchTarget ?? string.Empty, Done);

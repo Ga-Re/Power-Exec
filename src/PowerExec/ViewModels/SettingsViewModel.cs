@@ -215,7 +215,7 @@ public sealed class FolderViewModel : ObservableObject
     public FolderConfig Config { get; }
 
     public string Path { get => _path; set => Set(ref _path, value?.Trim() ?? string.Empty); }
-    public bool Recursive { get => _recursive; set => Set(ref _recursive, value); }
+    public bool Recursive { get => _recursive; set { if (Set(ref _recursive, value)) OnPropertyChanged(nameof(Summary)); } }
 
     /// <summary>Leer = Standard-Dateiendungen.</summary>
     public string Extensions { get => _extensions; set => Set(ref _extensions, value ?? string.Empty); }
@@ -262,13 +262,12 @@ public sealed class FolderViewModel : ObservableObject
 
     public bool AutoShow { get => !RequireApproval; set => RequireApproval = !value; }
 
-    /// <summary>Ordner als Gruppe im Panel anzeigen.</summary>
-    public bool ShowGroup
+    /// <summary>Unterordner im Panel als Untergruppen anzeigen (nur mit „Unterordner einbeziehen“).</summary>
+    public bool SubfoldersAsGroups
     {
-        get => Config.ShowGroup;
-        set { Config.ShowGroup = value; OnPropertyChanged(); OnPropertyChanged(nameof(ShowGroupText)); }
+        get => Config.SubfoldersAsGroups;
+        set { Config.SubfoldersAsGroups = value; OnPropertyChanged(); }
     }
-    public string ShowGroupText => Config.ShowGroup ? "im Panel" : "ausgeblendet";
 
     public string ModeHint => RequireApproval
         ? "Neue Dateien bleiben ausgeblendet; im Panel und hier erscheint ein Hinweis."
@@ -403,30 +402,90 @@ public sealed class ColorPresetViewModel : ObservableObject
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));
 }
 
+/// <summary>Eine Gruppe in den Einstellungen (Inhalte › Gruppen); smarte Gruppen haben einen Ordner.</summary>
 public sealed class CategoryItemViewModel : ObservableObject
 {
     private string _icon = string.Empty;
+    private string _name;
+    private FolderViewModel? _folder;
+    private bool _isExpanded;
 
     public CategoryItemViewModel(string name, Action<CategoryItemViewModel, int> move, Action<CategoryItemViewModel> remove,
-        string icon = "", Action<CategoryItemViewModel>? chooseIcon = null)
+        string icon = "", Action<CategoryItemViewModel>? chooseIcon = null, Action<CategoryItemViewModel>? rename = null)
     {
-        Name = name;
+        _name = name;
         _icon = icon;
         ChooseIconCommand = new RelayCommand(() => chooseIcon?.Invoke(this), () => chooseIcon != null);
+        RenameCommand = new RelayCommand(() => rename?.Invoke(this), () => rename != null);
         UpCommand = new RelayCommand(() => move(this, -1));
         DownCommand = new RelayCommand(() => move(this, 1));
         RemoveCommand = new RelayCommand(() => remove(this));
+        ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
     }
 
-    public string Name { get; }
+    public string Name
+    {
+        get => _name;
+        set { if (Set(ref _name, value)) { OnPropertyChanged(nameof(Display)); OnPropertyChanged(nameof(Indent)); OnPropertyChanged(nameof(CardMargin)); } }
+    }
     public string Display => GroupManager.LeafOf(Name);
     public string Icon { get => _icon; set { if (Set(ref _icon, value ?? string.Empty)) OnPropertyChanged(nameof(HasIcon)); } }
     public bool HasIcon => _icon.Length > 0;
+    public Thickness Indent => new(GroupManager.DepthOf(Name) * 22, 0, 0, 0);
+    public Thickness CardMargin => new(GroupManager.DepthOf(Name) * 28, 0, 0, 6);
+
+    /// <summary>Ordner der smarten Gruppe (null = normale Gruppe).</summary>
+    public FolderViewModel? Folder
+    {
+        get => _folder;
+        set { if (Set(ref _folder, value)) { OnPropertyChanged(nameof(IsSmart)); OnPropertyChanged(nameof(KindText)); } }
+    }
+    public bool IsSmart => _folder != null;
+    public string KindText => _folder != null ? "Smarte Gruppe · " + _folder.Path : "Gruppe";
+    public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
+
     public ICommand ChooseIconCommand { get; }
-    public Thickness Indent => new(GroupManager.DepthOf(Name) * 18, 0, 0, 0);
+    public ICommand RenameCommand { get; }
     public ICommand UpCommand { get; }
     public ICommand DownCommand { get; }
     public ICommand RemoveCommand { get; }
+    public ICommand ToggleCommand { get; }
+}
+
+/// <summary>Gruppe in der Auswahl eines Arbeitsbereichs (sichtbar oder ausgeblendet).</summary>
+public sealed class WorkspaceGroupChoice : ObservableObject
+{
+    private readonly Workspace _ws;
+    private readonly Action _changed;
+
+    public WorkspaceGroupChoice(Workspace ws, string path, string icon, Action changed)
+    {
+        _ws = ws;
+        Path = path;
+        Icon = icon;
+        _changed = changed;
+    }
+
+    public string Path { get; }
+    public string Icon { get; }
+    public string Display => GroupManager.LeafOf(Path);
+    public Thickness Indent => new(GroupManager.DepthOf(Path) * 22, 0, 0, 0);
+
+    /// <summary>Die Gruppe selbst ist nicht ausgeblendet.</summary>
+    public bool IsVisible
+    {
+        get => !_ws.HiddenGroups.Contains(Path, StringComparer.CurrentCultureIgnoreCase);
+        set { WorkspaceManager.SetGroupHidden(_ws, Path, !value); OnPropertyChanged(); _changed(); }
+    }
+
+    /// <summary>Übergeordnete Gruppe ist sichtbar (sonst ist diese automatisch mit ausgeblendet).</summary>
+    public bool IsEnabled => GroupManager.ParentOf(Path) is not { } parent || WorkspaceManager.ShowsGroupIn(_ws, parent);
+
+    public void Refresh()
+    {
+        OnPropertyChanged(nameof(IsVisible));
+        OnPropertyChanged(nameof(IsEnabled));
+    }
 }
 
 public sealed record FolderTimeInfo(string Path, string Text, bool IsProblem);
@@ -459,11 +518,12 @@ public sealed class SettingsViewModel : ObservableObject
             .Concat(ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)))
             .ToList();
 
-        AddFolderCommand = new RelayCommand(AddFolder);
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
         CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
         InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
+        CurrentReleaseNotesCommand = new RelayCommand(() => Launcher.OpenUrl(
+            $"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}/releases/tag/v{UpdateService.CurrentVersionText}"));
         _app.Update.PropertyChanged += OnUpdateChanged;
         _app.Repository.Changed += OnRepositoryChanged;
         AppLog.Changed += OnLogChanged;
@@ -471,16 +531,19 @@ public sealed class SettingsViewModel : ObservableObject
         OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
         BrowseEditorCommand = new RelayCommand(BrowseEditor);
         BrowseLogFolderCommand = new RelayCommand(BrowseLogFolder);
-        SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "folders");
+        SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "general");
 
         foreach (var c in GroupManager.All(_s))
-            Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon));
+        {
+            var cat = new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon, RenameCategory);
+            cat.Folder = Folders.FirstOrDefault(f => f.Config.Group.Equals(c, StringComparison.CurrentCultureIgnoreCase));
+            Categories.Add(cat);
+        }
+        if (focusFolder != null) FocusGroup(focusFolder);
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
-        foreach (var pc in _s.Panels) Panels.Add(CreatePanelVm(pc));
-        SelectedPanel = Panels.FirstOrDefault();
-        AddPanelCommand = new RelayCommand(AddPanel);
-        RemovePanelCommand = new RelayCommand(RemovePanel, () => Panels.Count > 1 && SelectedPanel != null);
+        if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
+        Panel = new PanelSettingsViewModel(_s.Panels[0], _monitors);
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(g, RemoveGroup));
         AddGroupCommand = new RelayCommand(AddGroup);
@@ -495,51 +558,58 @@ public sealed class SettingsViewModel : ObservableObject
         UpdateStatus = app.Updates.LastCheck is { } t
             ? (app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar (geprüft {t:HH:mm})." : $"Aktuell (geprüft {t:HH:mm}).")
             : "Noch nicht geprüft.";
-        if (focusFolder != null) _section = "folders";
+
     }
 
     // ---- Suche in den Einstellungen ---------------------------------------------
 
     public sealed record SearchHit(string Section, string Page, string Title, string Keywords);
 
-    private static readonly (string Section, string Page)[] Pages =
+    private static readonly (string Section, string Page, string Segment)[] Pages =
     {
-        ("general", "Allgemein"), ("folders", "Ordner"), ("custom", "Eigene Einträge"), ("groups", "Gruppen"), ("workspaces", "Arbeitsbereiche"),
-        ("panels", "Panels"), ("behavior", "Verhalten"), ("exec", "PowerShell"), ("remote", "Remote"), ("machines", "Rechnergruppen"), ("diag", "Diagnose")
+        ("general", "Allgemein", ""),
+        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("workspaces", "Arbeitsbereiche", "content"),
+        ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
+        ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
+        ("diag", "Diagnose", "help")
     };
 
     private static readonly SearchHit[] Index =
     {
         new("general", "Allgemein", "Version und Updates", "update aktualisieren version vorabversion beta github"),
+        new("general", "Allgemein", "Versionshinweise", "release notes neuerungen änderungen"),
         new("general", "Allgemein", "Mit Windows starten", "autostart anmeldung start"),
-        new("general", "Allgemein", "Design", "hell dunkel theme farbe"),
-        new("general", "Allgemein", "Animation", "ausfahren sanft schnell"),
-        new("general", "Allgemein", "Symbole anzeigen", "icons favicon programmsymbol"),
         new("general", "Allgemein", "Einstellungen sichern", "export import backup datei"),
-        new("folders", "Ordner", "Ordner hinzufügen", "pfad freigabe unc netzwerk scan"),
-        new("folders", "Ordner", "Standard-Dateiendungen", "ps1 exe cmd endung"),
-        new("folders", "Ordner", "Globale Ausschlüsse", "ausschließen muster"),
-        new("folders", "Ordner", "Automatisch neu einlesen", "dateiwächter rescan"),
-        new("folders", "Ordner", "Zeitlimit für nicht erreichbare Ordner", "timeout offline"),
-        new("folders", "Ordner", "Neue Dateien freigeben", "freigabe sichtbar haken"),
+        new("groups", "Gruppen", "Gruppen und Untergruppen", "gruppe untergruppe reihenfolge kategorie"),
+        new("groups", "Gruppen", "Smarte Gruppe (Ordner)", "ordner pfad freigabe unc netzwerk scan smart"),
+        new("groups", "Gruppen", "Gruppensymbole", "icon symbol fluent heroicons emoji"),
+        new("groups", "Gruppen", "Favoriten", "stern favorit anzeigen"),
+        new("groups", "Gruppen", "Zuletzt ausgeführt", "verlauf anzahl recent"),
+        new("groups", "Gruppen", "Unterordner als Untergruppen", "rekursiv unterordner"),
+        new("groups", "Gruppen", "Standard-Dateiendungen", "ps1 exe cmd endung"),
+        new("groups", "Gruppen", "Globale Ausschlüsse", "ausschließen muster"),
+        new("groups", "Gruppen", "Automatisch neu einlesen", "dateiwächter rescan"),
+        new("groups", "Gruppen", "Zeitlimit für nicht erreichbare Ordner", "timeout offline"),
+        new("groups", "Gruppen", "Neue Dateien freigeben", "freigabe sichtbar haken"),
         new("custom", "Eigene Einträge", "Eigene Einträge verwalten", "webseite url ordner rdp ssh snippet werkzeug befehl datei"),
         new("custom", "Eigene Einträge", "Aus Vorlagen", "katalog mmc systemsteuerung ms-settings"),
         new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
         new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
-        new("groups", "Gruppen", "Gruppierung im Panel", "ordner kategorie"),
-        new("groups", "Gruppen", "Eigene Gruppen und Symbole", "untergruppe reihenfolge icon symbol"),
         new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
-        new("panels", "Panels", "Panel hinzufügen", "mehrere panels monitor"),
-        new("panels", "Panels", "Bildschirmrand und Monitor", "links rechts oben unten"),
-        new("panels", "Panels", "Hover-Zone", "breite länge auslöser"),
-        new("panels", "Panels", "Panelgröße", "breite höhe lage"),
-        new("panels", "Panels", "Panelfarbe und Deckkraft", "farbe transparenz"),
-        new("panels", "Panels", "Tastenkürzel", "hotkey shortcut"),
-        new("panels", "Panels", "Inhalt und Darstellung", "liste raster kompakt favoriten zuletzt"),
+        new("workspaces", "Arbeitsbereiche", "Gruppen je Arbeitsbereich", "ausblenden sichtbar auswahl"),
+        new("look", "Darstellung", "Design", "hell dunkel theme farbe"),
+        new("look", "Darstellung", "Animation", "ausfahren sanft schnell"),
+        new("look", "Darstellung", "Symbole anzeigen", "icons favicon programmsymbol"),
+        new("look", "Darstellung", "Liste oder Raster", "kacheln ansicht"),
+        new("look", "Darstellung", "Elementgröße", "klein mittel groß kompakt"),
+        new("look", "Darstellung", "Panelfarbe und Deckkraft", "farbe transparenz"),
+        new("look", "Darstellung", "Panelgröße", "breite höhe lage"),
+        new("look", "Darstellung", "Hover-Zone", "rand monitor breite länge auslöser links rechts oben unten"),
         new("behavior", "Verhalten", "Verweilzeit bis zum Ausfahren", "hover verzögerung"),
         new("behavior", "Verhalten", "Einklappen nach Verlassen", "schließen verzögerung"),
         new("behavior", "Verhalten", "Bei Vollbild-Programmen ausblenden", "video präsentation spiel rdp"),
-        new("behavior", "Verhalten", "„Zuletzt ausgeführt“", "verlauf anzahl"),
+        new("behavior", "Verhalten", "Tastenkürzel", "hotkey shortcut"),
+        new("behavior", "Verhalten", "Standardfilter", "scripte programme"),
         new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
         new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
         new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
@@ -553,6 +623,36 @@ public sealed class SettingsViewModel : ObservableObject
         new("diag", "Diagnose", "Protokoll", "log fehler kopieren"),
         new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
     };
+
+    // ---- Navigation: einklappbare Bereiche --------------------------------------
+
+    private bool _navContent = true, _navPanel = true, _navExec = true, _navHelp = true;
+    public bool NavContent { get => _navContent; set => Set(ref _navContent, value); }
+    public bool NavPanel { get => _navPanel; set => Set(ref _navPanel, value); }
+    public bool NavExec { get => _navExec; set => Set(ref _navExec, value); }
+    public bool NavHelp { get => _navHelp; set => Set(ref _navHelp, value); }
+    public ICommand ToggleNavCommand => new RelayCommand(p =>
+    {
+        switch (p?.ToString())
+        {
+            case "content": NavContent = !NavContent; break;
+            case "panel": NavPanel = !NavPanel; break;
+            case "exec": NavExec = !NavExec; break;
+            case "help": NavHelp = !NavHelp; break;
+        }
+    });
+
+    /// <summary>Bereich der gewählten Seite aufklappen (z. B. nach Suche).</summary>
+    private void NavExpandFor(string section)
+    {
+        switch (Pages.FirstOrDefault(x => x.Section == section).Segment)
+        {
+            case "content": NavContent = true; break;
+            case "panel": NavPanel = true; break;
+            case "exec": NavExec = true; break;
+            case "help": NavHelp = true; break;
+        }
+    }
 
     private string _searchText = string.Empty;
     public string SearchText
@@ -586,8 +686,8 @@ public sealed class SettingsViewModel : ObservableObject
         {
             if (!Set(ref _section, value)) return;
             OnPropertyChanged(nameof(PageTitle));
-            if (value == "panels") RefreshPanelChoices(); // neu hinzugefügte Ordner/Kategorien anbieten
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
+            NavExpandFor(value);
         }
     }
 
@@ -623,46 +723,14 @@ public sealed class SettingsViewModel : ObservableObject
     // ---- Panels ------------------------------------------------------------
 
     private readonly IReadOnlyList<KeyValuePair<int, string>> _monitors;
-    private PanelSettingsViewModel? _selectedPanel;
 
-    public ObservableCollection<PanelSettingsViewModel> Panels { get; } = new();
-    public PanelSettingsViewModel? SelectedPanel { get => _selectedPanel; set { if (Set(ref _selectedPanel, value)) CommandManager.InvalidateRequerySuggested(); } }
-    public bool IsMultiPanel => Panels.Count > 1;
-    public ICommand AddPanelCommand { get; }
-    public ICommand RemovePanelCommand { get; }
+    /// <summary>Das (einzige) Panel.</summary>
+    public PanelSettingsViewModel Panel { get; }
 
-    private PanelSettingsViewModel CreatePanelVm(PanelConfig c) =>
-        new(c, _monitors, Folders.Select(f => f.Path).Where(p => p.Length > 0), Categories.Select(x => x.Name));
+    // ---- Besondere Gruppen (Favoriten, Zuletzt ausgeführt) ----------------------
 
-    private void AddPanel()
-    {
-        var used = Panels.Select(p => p.Edge).ToHashSet();
-        var edge = new[] { ScreenEdge.Left, ScreenEdge.Right, ScreenEdge.Top, ScreenEdge.Bottom }.FirstOrDefault(e => !used.Contains(e));
-        var vm = CreatePanelVm(new PanelConfig { Name = $"Panel {Panels.Count + 1}", Edge = edge });
-        Panels.Add(vm);
-        SelectedPanel = vm;
-        OnPropertyChanged(nameof(IsMultiPanel));
-    }
-
-    private void RemovePanel()
-    {
-        if (SelectedPanel == null || Panels.Count <= 1) return;
-        if (MessageBox.Show($"Panel „{SelectedPanel.Name}“ entfernen?", "Panel entfernen", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        var i = Panels.IndexOf(SelectedPanel);
-        Panels.Remove(SelectedPanel);
-        SelectedPanel = Panels[Math.Clamp(i, 0, Panels.Count - 1)];
-        OnPropertyChanged(nameof(IsMultiPanel));
-    }
-
-    /// <summary>Ordner/Kategorien haben sich geändert: Auswahl der Panels neu aufbauen (Haken bleiben erhalten).</summary>
-    public void RefreshPanelChoices()
-    {
-        var sel = SelectedPanel?.Id;
-        var configs = Panels.Select(p => p.ToConfig()).ToList();
-        Panels.Clear();
-        foreach (var c in configs) Panels.Add(CreatePanelVm(c));
-        SelectedPanel = Panels.FirstOrDefault(p => p.Id == sel) ?? Panels.FirstOrDefault();
-    }
+    public bool ShowFavorites { get => Panel.ShowFavorites; set { Panel.ShowFavorites = value; OnPropertyChanged(); } }
+    public bool ShowRecent { get => Panel.ShowRecent; set { Panel.ShowRecent = value; OnPropertyChanged(); } }
 
     // ---- Eigene Einträge ------------------------------------------------------
 
@@ -705,16 +773,19 @@ public sealed class SettingsViewModel : ObservableObject
     private void LoadWorkspaces()
     {
         Workspaces.Clear();
+        var groups = Categories.Select(c => c.Name).ToList();
         foreach (var w in _s.Workspaces)
         {
             bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
-            int folders = active ? Folders.Count : w.Folders.Count;
-            int entries = active ? EntryList.Count : w.CustomEntries.Count;
             int favs = active ? _app.Settings.Favorites.Count : w.Favorites.Count;
-            var summary = $"{folders} Ordner · {favs} Favoriten · {entries} eigene Einträge" + (active ? " · aktiv" : string.Empty);
-            Workspaces.Add(new WorkspaceRowViewModel(w.Name, active, summary,
+            int hidden = groups.Count(g => !WorkspaceManager.ShowsGroupIn(w, g));
+            var summary = $"{groups.Count - hidden} von {groups.Count} Gruppen · {favs} Favoriten" + (active ? " · aktiv" : string.Empty);
+            var row = new WorkspaceRowViewModel(w.Name, active, summary,
                 r => SwitchWorkspaceRequested?.Invoke(r.OriginalName),
-                RemoveWorkspace));
+                RemoveWorkspace);
+            foreach (var g in groups)
+                row.Groups.Add(new WorkspaceGroupChoice(w, g, Categories.First(c => c.Name == g).Icon, () => { foreach (var x in row.Groups) x.Refresh(); }));
+            Workspaces.Add(row);
         }
     }
 
@@ -722,8 +793,6 @@ public sealed class SettingsViewModel : ObservableObject
     {
         ApplyWorkspaceRenames();
         // Aktuelle Formularwerte als Grundlage für eine Kopie verwenden
-        _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
-        EntryList.ApplyTo(_s);
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         WorkspaceManager.Create(_s, NewWorkspace, CopyWorkspace);
         NewWorkspace = string.Empty;
@@ -732,7 +801,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void RemoveWorkspace(WorkspaceRowViewModel w)
     {
-        if (MessageBox.Show($"Arbeitsbereich „{w.OriginalName}“ mit seinen Ordnern, Profilen und Favoriten löschen?", "Arbeitsbereich löschen",
+        if (MessageBox.Show($"Arbeitsbereich „{w.OriginalName}“ mit seinen Favoriten, Startprofilen und der Gruppenauswahl löschen?\nGruppen und Einträge bleiben erhalten.", "Arbeitsbereich löschen",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         ApplyWorkspaceRenames();
         WorkspaceManager.Delete(_s, w.Name);
@@ -784,17 +853,96 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
-    /// <summary>Entfernt die Gruppe samt Untergruppen aus der Liste (wird beim Speichern gelöscht).</summary>
+    private static Window? OwnerWindow() => Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+
+    /// <summary>Entfernt die Gruppe samt Untergruppen (nach Rückfrage); smarte Gruppen lesen ihren Ordner nicht mehr ein.</summary>
     private void RemoveCategory(CategoryItemViewModel c)
     {
-        foreach (var x in Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name)).ToList()) Categories.Remove(x);
+        var affected = Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name)).ToList();
+        var folders = affected.Where(x => x.Folder != null).Select(x => x.Folder!.Path).ToList();
+        var text = $"Gruppe „{c.Display}“" + (affected.Count > 1 ? $" mit {affected.Count - 1} Untergruppe(n)" : string.Empty) + " löschen?" +
+                   (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
+                   "\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.";
+        if (MessageBox.Show(OwnerWindow()!, text, "Gruppe löschen", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        foreach (var x in affected)
+        {
+            Categories.Remove(x);
+            if (x.Folder != null) Folders.Remove(x.Folder);
+        }
     }
+
+    /// <summary>Gruppe umbenennen (auch Anzeigename einer smarten Gruppe); Untergruppen, Zuordnungen, Symbole wandern mit.</summary>
+    private void RenameCategory(CategoryItemViewModel c)
+    {
+        var parent = GroupManager.ParentOf(c.Name);
+        var newName = Views.InputWindow.Ask("Gruppe umbenennen", c.IsSmart ? "Der Name erscheint im Panel; der Ordner bleibt gleich." : string.Empty, c.Display, "Umbenennen",
+            n =>
+            {
+                var path = parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
+                return Categories.Any(x => x != c && x.Name.Equals(path, StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null;
+            });
+        if (newName == null || newName == c.Display) return;
+        var oldPath = c.Name;
+        var newPath = parent == null ? GroupManager.CleanName(newName) : parent + GroupManager.Separator + GroupManager.CleanName(newName);
+        // Arbeitskopie auf den Stand der Liste bringen, dann wie im Panel umbenennen
+        _s.CategoryOrder = Categories.Select(x => x.Name).ToList();
+        _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
+        GroupManager.Rename(_s, oldPath, GroupManager.CleanName(newName));
+        string Map(string p) => GroupManager.IsSameOrBelow(p, oldPath) ? newPath + p[oldPath.Length..] : p;
+        foreach (var x in Categories) x.Name = Map(x.Name);
+        foreach (var f in Folders) f.Config.Group = Map(f.Config.Group);
+        LoadWorkspaces();
+    }
+
+    /// <summary>Gruppe (Pfad) oder Ordner einer smarten Gruppe hervorheben und aufklappen.</summary>
+    public void FocusGroup(string groupOrFolder)
+    {
+        var cat = Categories.FirstOrDefault(c => c.Name.Equals(groupOrFolder, StringComparison.CurrentCultureIgnoreCase))
+                  ?? Categories.FirstOrDefault(c => c.Folder != null && c.Folder.Path.Equals(groupOrFolder, StringComparison.OrdinalIgnoreCase));
+        // Untergruppe aus Unterordnern: zur smarten Gruppe darüber
+        for (var p = GroupManager.ParentOf(groupOrFolder); cat == null && p != null; p = GroupManager.ParentOf(p))
+            cat = Categories.FirstOrDefault(c => c.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase));
+        if (cat == null) return;
+        cat.IsExpanded = true;
+        if (cat.Folder != null) cat.Folder.IsHighlighted = true;
+        Section = "groups";
+    }
+
+    /// <summary>Neue (normale) Gruppe auf oberster Ebene.</summary>
+    private void AddGroupPrompt()
+    {
+        var name = Views.InputWindow.Ask("Neue Gruppe", "Einträge ziehst du im Panel per Drag & Drop hinein.", "Neue Gruppe", "Anlegen",
+            n => Categories.Any(x => x.Name.Equals(GroupManager.CleanName(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es schon." : null);
+        if (name == null) return;
+        Categories.Add(new CategoryItemViewModel(GroupManager.CleanName(name), MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory));
+    }
+
+    /// <summary>Neue smarte Gruppe: Ordner wählen, Name = Ordnername (änderbar).</summary>
+    private void AddSmartGroup()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner für die smarte Gruppe auswählen" };
+        if (dlg.ShowDialog(OwnerWindow()) != true) return;
+        if (Folders.FirstOrDefault(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        {
+            MessageBox.Show(OwnerWindow()!, $"Dieser Ordner gehört bereits zur Gruppe „{existing.Config.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var leaf = GroupManager.CleanName(System.IO.Path.GetFileName(dlg.FolderName.TrimEnd('\\', '/')) is { Length: > 0 } l ? l : "Ordner");
+        var name = leaf;
+        for (int i = 2; Categories.Any(x => x.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"{leaf} {i}";
+        var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName, Group = name }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true };
+        Folders.Add(folder);
+        Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Folder = folder, IsExpanded = true });
+    }
+
+    public ICommand NewGroupCommand => new RelayCommand(AddGroupPrompt);
+    public ICommand NewSmartGroupCommand => new RelayCommand(AddSmartGroup);
 
     private void AddCategory()
     {
         var name = GroupManager.Normalize(NewCategory);
         if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon));
+            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory));
         NewCategory = string.Empty;
     }
 
@@ -851,7 +999,6 @@ public sealed class SettingsViewModel : ObservableObject
     public string UpdateStatus { get => _updateStatus; set => Set(ref _updateStatus, value); }
     public string SettingsFile => _app.Store.FilePath;
 
-    public ICommand AddFolderCommand { get; }
     public ICommand ClearMachinesCommand { get; }
     public ICommand CheckUpdatesCommand { get; }
     public ICommand OpenLogFolderCommand { get; }
@@ -868,15 +1015,14 @@ public sealed class SettingsViewModel : ObservableObject
         return st.Excluded > 0 ? $"{st.Count} Dateien, {st.Excluded} ausgeblendet" : $"{st.Count} Dateien";
     }
 
-    private void AddFolder()
+    /// <summary>Ordner von der smarten Gruppe trennen (Gruppe bleibt als normale Gruppe).</summary>
+    private void RemoveFolder(FolderViewModel f)
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner mit Scripten oder Programmen auswählen" };
-        if (dlg.ShowDialog() != true) return;
-        if (Folders.Any(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase))) return;
-        Folders.Add(new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true });
+        if (MessageBox.Show(OwnerWindow()!, $"Ordner {f.Path} von der Gruppe trennen?\n\nSeine Dateien erscheinen dann nicht mehr im Panel; die Gruppe selbst und hineingezogene Einträge bleiben.",
+                "Ordner entfernen", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        Folders.Remove(f);
+        foreach (var c in Categories.Where(c => c.Folder == f)) c.Folder = null;
     }
-
-    private void RemoveFolder(FolderViewModel f) => Folders.Remove(f);
 
     private void BrowseEditor()
     {
@@ -901,6 +1047,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ICommand InstallUpdateCommand { get; }
     public ICommand ReleaseNotesCommand { get; }
+    /// <summary>Versionshinweise der installierten Version auf GitHub.</summary>
+    public ICommand CurrentReleaseNotesCommand { get; }
 
     private void OnUpdateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -1033,13 +1181,10 @@ public sealed class SettingsViewModel : ObservableObject
         // Laufzeitzustand aus den aktuellen Einstellungen übernehmen (kann sich währenddessen geändert haben)
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
-        // Panels: Formular, aber „angeheftet“ und „kompakt“ aus dem laufenden Zustand übernehmen
-        _s.Panels = Panels.Select(p =>
-        {
-            var c = p.ToConfig();
-            if (_app.Settings.Panels.FirstOrDefault(x => x.Id == c.Id) is { } live) { c.Pinned = live.Pinned; }
-            return c;
-        }).ToList();
+        // Panel: Formular, aber „angeheftet“ aus dem laufenden Zustand übernehmen
+        var panel = Panel.ToConfig();
+        if (_app.Settings.Panels.FirstOrDefault() is { } live) panel.Pinned = live.Pinned;
+        _s.Panels = new List<PanelConfig> { panel };
         EntryList.ApplyTo(_s);
         _s.MachineGroups = MachineGroups.Select(g => g.ToGroup()).Where(g => g.Name.Length > 0)
             .GroupBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).Select(g => g.First()).ToList();
