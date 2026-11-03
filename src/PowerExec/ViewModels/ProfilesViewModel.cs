@@ -281,7 +281,7 @@ public sealed class ProfilesViewModel : ObservableObject
     public string SaveLabel => _saveImmediately ? "Speichern" : "Übernehmen";
     public string SaveHint => _saveImmediately
         ? "Kennwörter und Parameter vom Typ PSCredential/SecureString werden nie gespeichert."
-        : "Wird mit „Speichern“ in den Einstellungen übernommen. Kennwörter werden nie gespeichert.";
+        : "Wird sofort übernommen. Kennwörter werden nie gespeichert.";
     public string DisplayNamePlaceholder => Item.DisplayName;
     public string DescriptionPlaceholder => string.IsNullOrWhiteSpace(Item.Synopsis) ? "Beschreibung im Panel" : "aus der Datei: " + Item.Synopsis;
 

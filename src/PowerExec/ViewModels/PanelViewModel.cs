@@ -400,12 +400,15 @@ public sealed class PanelViewModel : ObservableObject
     /// Drag &amp; Drop zwischen Gruppen: in eine eigene Gruppe schieben, zurück in Ordner/„Eigene Einträge“
     /// (= aus der Gruppe nehmen) oder auf „Favoriten“ (= als Favorit markieren).
     /// </summary>
-    public void MoveToGroup(ItemViewModel dragged, GroupViewModel target, ItemViewModel? near = null, bool after = false)
+    public void MoveToGroup(ItemViewModel dragged, GroupViewModel target, ItemViewModel? near = null, bool after = false) =>
+        MoveKeyToGroup(dragged.Item.FullPath, target, near, after);
+
+    /// <summary>Wie <see cref="MoveToGroup"/>, aber über den Schlüssel (z. B. aus der Einstellungsliste gezogen).</summary>
+    public void MoveKeyToGroup(string path, GroupViewModel target, ItemViewModel? near = null, bool after = false)
     {
-        var path = dragged.Item.FullPath;
         if (target.Kind == "fav")
         {
-            if (!_app.IsFavorite(path)) _app.ToggleFavorite(dragged.Item);
+            if (!_app.IsFavorite(path) && _app.FindItem(path) is { } item) _app.ToggleFavorite(item);
             return;
         }
         if (!target.AcceptsItems) return;
@@ -413,6 +416,12 @@ public sealed class PanelViewModel : ObservableObject
         var wanted = target.GroupName ?? string.Empty;
         if (current.Equals(wanted, StringComparison.CurrentCultureIgnoreCase) && near == null) return;
         _app.AssignGroup(path, wanted, target.Key, near?.Item.FullPath, after, target.Items.Select(i => i.Item.FullPath).ToList());
+    }
+
+    /// <summary>Eintrag aus der Einstellungsliste außerhalb einer Gruppe abgelegt: unter „Eigene Einträge“ (ohne Gruppe).</summary>
+    public void DropEntryWithoutGroup(string key)
+    {
+        if (GroupManager.GroupOf(_app.Settings, key).Length > 0) _app.AssignGroup(key, null);
     }
 
     /// <summary>Aus dem Explorer/Browser auf eine Gruppe (oder ins Panel) gezogen.</summary>

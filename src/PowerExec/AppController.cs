@@ -94,14 +94,37 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <returns>Fehlermeldung zum Tastenkürzel oder null.</returns>
+    /// <summary>
+    /// Änderung aus dem Panel (Gruppe, Favorit, eigener Eintrag …): speichern, Panels neu aufbauen und
+    /// ein offenes Einstellungsfenster informieren, damit es den neuen Stand zeigt.
+    /// </summary>
+    private void CommitUserChange()
+    {
+        SaveSettings();
+        RebuildPanels();
+        SettingsChangedOutside?.Invoke();
+    }
+
+    /// <summary>Einstellungen wurden außerhalb des Einstellungsfensters geändert (z. B. im Panel).</summary>
+    public event Action? SettingsChangedOutside;
+
+    /// <summary>
+    /// Übernimmt neue Einstellungen (live aus dem Einstellungsfenster). Panels und Hover-Zonen werden nur neu erzeugt,
+    /// wenn sich an ihnen etwas geändert hat; Ordner nur neu eingelesen, wenn Ordner oder Filter anders sind.
+    /// </summary>
+    /// <returns>Fehlermeldung zum Tastenkürzel oder null.</returns>
     public string? ApplySettings(AppSettings updated)
     {
         var foldersChanged = !FoldersEqual(Settings, updated);
+        var panelsChanged = PanelKey(Settings) != PanelKey(updated);
+        var themeChanged = Settings.Theme != updated.Theme;
+        var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
         SaveSettings();
-        ThemeService.Apply(Settings.Theme);
-        AutostartService.Apply(Settings.StartWithWindows);
-        var hotkeyError = CreateHosts();
+        if (themeChanged) ThemeService.Apply(Settings.Theme);
+        if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
+        string? hotkeyError = null;
+        if (panelsChanged || themeChanged || _hosts.Count == 0) hotkeyError = CreateHosts();
         if (foldersChanged) Repository.UpdateSettings(Settings);
         else
         {
@@ -110,6 +133,11 @@ public sealed partial class AppController : IDisposable
         }
         return hotkeyError;
     }
+
+    /// <summary>Alles, was Panelfenster und Hover-Zonen betrifft (ohne „angeheftet“).</summary>
+    private static string PanelKey(AppSettings s) =>
+        System.Text.Json.JsonSerializer.Serialize(s.Panels.Select(p => { var c = p.Clone(); c.Pinned = false; return c; })) +
+        $"|{s.HoverDelayMs}|{s.HideHotZoneInFullscreen}";
 
     private static bool FoldersEqual(AppSettings a, AppSettings b)
     {
@@ -414,8 +442,7 @@ public sealed partial class AppController : IDisposable
         var path = GroupManager.Create(Settings, name, parent);
         if (parent != null)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(parent), StringComparison.OrdinalIgnoreCase));
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         return path;
     }
 
@@ -426,8 +453,7 @@ public sealed partial class AppController : IDisposable
         if (newName == null || newName == GroupManager.LeafOf(path)) return;
         if (GroupManager.Rename(Settings, path, newName))
         {
-            SaveSettings();
-            RebuildPanels();
+            CommitUserChange();
         }
     }
 
@@ -439,15 +465,13 @@ public sealed partial class AppController : IDisposable
                    (count > 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“." : string.Empty);
         if (!Confirm(text, "Gruppe löschen")) return;
         GroupManager.Delete(Settings, path);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     public void MoveGroup(string path, int delta)
     {
         GroupManager.Move(Settings, path, delta);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Drag &amp; Drop einer Gruppe auf eine andere: davor, dahinter oder hinein (Untergruppe).</summary>
@@ -461,8 +485,7 @@ public sealed partial class AppController : IDisposable
         }
         if (position == GroupDropPosition.Into)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(target), StringComparison.OrdinalIgnoreCase));
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Ordner als Gruppe im Panel zeigen oder ausblenden (Einträge bleiben in Gruppen, Favoriten und Suche).</summary>
@@ -471,8 +494,7 @@ public sealed partial class AppController : IDisposable
         var folder = Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase));
         if (folder == null) return;
         folder.ShowGroup = visible;
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         if (!visible)
             _tray?.ShowBalloon("Ordner ausgeblendet", $"{folderPath} erscheint nicht mehr als Gruppe. Seine Einträge findest du weiter über die Suche, in eigenen Gruppen und Favoriten. Wieder einblenden: Einstellungen › Ordner.");
     }
@@ -486,8 +508,7 @@ public sealed partial class AppController : IDisposable
             var order = targetOrder.Where(p => !p.Equals(path, StringComparison.OrdinalIgnoreCase)).Append(path).ToList();
             Settings.CustomOrder[targetKey] = ItemOrdering.Move(order, path, beforeOrAfterPath, after);
         }
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Aus dem Explorer oder Browser gezogene Ziele übernehmen.</summary>
@@ -496,8 +517,7 @@ public sealed partial class AppController : IDisposable
         if (targets.Count == 0) return;
         var scanned = new HashSet<string>(Repository.Items.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
         var keys = DropClassifier.AddToSettings(Settings, targets, group, scanned.Contains);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         AppLog.Info($"Per Drag & Drop hinzugefügt{(group != null ? " (Gruppe " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
         if (group == null && keys.Count > 0 && Hosts.Any(h => !h.Config.ShowsFolder(PanelConfig.CustomEntriesKey)))
             _tray?.ShowBalloon("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
@@ -513,8 +533,7 @@ public sealed partial class AppController : IDisposable
         if (result == null) return false;
         Settings.CustomEntries.Add(result.Entry);
         ApplyEditResult(result);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         return true;
     }
 
@@ -545,8 +564,7 @@ public sealed partial class AppController : IDisposable
         }
         ApplyEditResult(result);
         Health.Forget(result.Entry.Key);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         return true;
     }
 
@@ -563,8 +581,7 @@ public sealed partial class AppController : IDisposable
         var source = Settings.FindEntry(entry.Key);
         if (source != null && source.Profiles.Count > 0)
             (Settings.FindEntry(result.Entry.Key) ?? AddEntry(result.Entry.Key)).Profiles = source.Profiles.Select(p => p.Clone()).ToList();
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     private EntryConfig AddEntry(string key)
@@ -579,8 +596,7 @@ public sealed partial class AppController : IDisposable
         var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         if (entry == null) return;
         entry.SingleClick = !entry.SingleClick;
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Strg+V bzw. „Aus Zwischenablage“: Inhalt erkennen und als Eintrag vorschlagen.</summary>
@@ -618,8 +634,7 @@ public sealed partial class AppController : IDisposable
             Settings.CustomEntries.Add(e);
             if (!string.IsNullOrEmpty(group)) GroupManager.Assign(Settings, e.Key, group);
         }
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Symbol einer eigenen Gruppe wählen.</summary>
@@ -629,8 +644,7 @@ public sealed partial class AppController : IDisposable
         var picked = WithDialog(() => IconPickerWindow.Pick(current, $"Symbol für „{GroupManager.LeafOf(groupPath)}“"));
         if (picked == null) return;
         GroupManager.SetIcon(Settings, groupPath, picked.Value);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Eigene Einträge als Datei speichern (z. B. eine Gruppe für Kollegen).</summary>
@@ -671,8 +685,7 @@ public sealed partial class AppController : IDisposable
         {
             var file = EntryShare.Parse(File.ReadAllText(dlg.FileName));
             var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
-            SaveSettings();
-            RebuildPanels();
+            CommitUserChange();
             AppLog.Info($"Eigene Einträge importiert ({added} neu, {updated} aktualisiert): {dlg.FileName}");
             MessageBox.Show($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", MessageBoxButton.OK, MessageBoxImage.Information);
             return added + updated > 0;
@@ -695,8 +708,7 @@ public sealed partial class AppController : IDisposable
         Settings.Entries.RemoveAll(e => e.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.Favorites.RemoveAll(p => p.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.RecentRuns.RemoveAll(r => r.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     public bool IsFavorite(string path) => Settings.Favorites.Contains(path, StringComparer.OrdinalIgnoreCase);
@@ -707,8 +719,7 @@ public sealed partial class AppController : IDisposable
             Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         else
             Settings.Favorites.Add(item.FullPath);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     public FolderConfig? FolderOf(LaunchItem item) =>
@@ -721,8 +732,7 @@ public sealed partial class AppController : IDisposable
         if (folder == null) return;
         FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
         _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Ordner (Haken setzen).");
     }
 
@@ -931,8 +941,7 @@ public sealed partial class AppController : IDisposable
     public void RecordRun(LaunchItem item, LaunchProfile profile)
     {
         RecentRunList.Add(Settings, item.FullPath, profile.IsImplicit ? "Standard" : profile.Name);
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
@@ -974,8 +983,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Wird vom Profil-Dialog nach dem Speichern aufgerufen.</summary>
     public void OnProfilesSaved()
     {
-        SaveSettings();
-        RebuildPanels();
+        CommitUserChange();
     }
 
     /// <summary>Startet die Remote-/Massenausführung und öffnet die Ergebnisliste.</summary>

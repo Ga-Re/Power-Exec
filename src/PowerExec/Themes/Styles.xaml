@@ -289,7 +289,8 @@
                             <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Foreground="{DynamicResource Text.Tertiary}"
                                        Margin="{TemplateBinding Padding}" Padding="2,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                        IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" Focusable="False"
+                            <!-- Kein Margin: TextBox wendet Padding selbst auf den Textbereich an (sonst sitzt der Cursor doppelt eingerückt) -->
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
                         </Grid>
@@ -324,7 +325,7 @@
                 <ControlTemplate TargetType="PasswordBox">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">

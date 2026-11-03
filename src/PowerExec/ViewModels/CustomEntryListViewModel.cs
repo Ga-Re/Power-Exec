@@ -234,7 +234,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         if (rows.Count == 0) return;
         var text = rows.Count == 1 ? $"„{rows[0].Name}“ entfernen?" : $"{rows.Count} Einträge entfernen?";
-        if (MessageBox.Show(Owner()!, text + "\n\nWirksam nach „Speichern“. Dateien und Ordner selbst bleiben unverändert.", "Entfernen",
+        if (MessageBox.Show(Owner()!, text + "\n\nDateien und Ordner selbst bleiben unverändert.", "Entfernen",
                 MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         foreach (var r in rows)
         {
@@ -290,7 +290,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
                 if (_s.FindEntry(cfg.Path) is { } target) target.Profiles = cfg.Profiles.Select(p => p.Clone()).ToList();
                 else _s.Entries.Add(cfg.Clone());
             CountsChanged();
-            MessageBox.Show(Owner()!, $"{added} neue und {updated} aktualisierte Einträge übernommen. Wirksam nach „Speichern“.", "Importieren",
+            MessageBox.Show(Owner()!, $"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)

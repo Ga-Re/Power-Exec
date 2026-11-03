@@ -181,18 +181,34 @@ public sealed class FolderViewModel : ObservableObject
         DismissPendingCommand = new RelayCommand(() => ResolvePending(false));
         SetTypeFilterCommand = new RelayCommand(p => TypeFilter = p?.ToString() ?? "all");
 
-        // Gefundene Einträge (auch ausgeblendete) und per Muster ausgeschlossene Dateien
-        foreach (var item in app.Repository.Items.Where(i => i.RootFolder.Equals(f.Path, StringComparison.OrdinalIgnoreCase))
-                     .OrderBy(i => FolderVisibility.RelativePath(f, i.FullPath), StringComparer.CurrentCultureIgnoreCase))
-            Rows.Add(new EntryRowViewModel(this, app, settings, item, item.FullPath, FolderVisibility.RelativePath(f, item.FullPath), null));
-        var status2 = app.Repository.FolderStatuses.FirstOrDefault(st => st.Path.Equals(f.Path, StringComparison.OrdinalIgnoreCase));
-        if (status2 != null)
-            foreach (var ex in status2.ExcludedFiles.OrderBy(x => x.RelativePath, StringComparer.CurrentCultureIgnoreCase))
-                Rows.Add(new EntryRowViewModel(this, app, settings, null, ex.FullPath, ex.RelativePath, ex.Pattern));
-
+        LoadRows();
         RowsView = System.Windows.Data.CollectionViewSource.GetDefaultView(Rows);
         RowsView.Filter = o => o is EntryRowViewModel r && Matches(r);
         _isExpanded = Rows.Any(r => r.IsNew);
+    }
+
+    /// <summary>Gefundene Einträge (auch ausgeblendete) und per Muster ausgeschlossene Dateien laden.</summary>
+    private void LoadRows()
+    {
+        Rows.Clear();
+        var f = Config;
+        foreach (var item in _app.Repository.Items.Where(i => i.RootFolder.Equals(f.Path, StringComparison.OrdinalIgnoreCase))
+                     .OrderBy(i => FolderVisibility.RelativePath(f, i.FullPath), StringComparer.CurrentCultureIgnoreCase))
+            Rows.Add(new EntryRowViewModel(this, _app, _settings, item, item.FullPath, FolderVisibility.RelativePath(f, item.FullPath), null));
+        var status = _app.Repository.FolderStatuses.FirstOrDefault(st => st.Path.Equals(f.Path, StringComparison.OrdinalIgnoreCase));
+        if (status != null)
+            foreach (var ex in status.ExcludedFiles.OrderBy(x => x.RelativePath, StringComparer.CurrentCultureIgnoreCase))
+                Rows.Add(new EntryRowViewModel(this, _app, _settings, null, ex.FullPath, ex.RelativePath, ex.Pattern));
+    }
+
+    /// <summary>Nach dem Einlesen (live übernommene Ordner, Muster) die Tabelle aktualisieren.</summary>
+    public void ReloadRows()
+    {
+        if (!Path.Equals(Config.Path, StringComparison.OrdinalIgnoreCase)) Config.Path = Path;
+        LoadRows();
+        RowsView.Refresh();
+        foreach (var p in new[] { nameof(HasNoEntries), nameof(NoRows) }) OnPropertyChanged(p);
+        OnRowsChanged();
     }
 
     /// <summary>Arbeitskopie der Ordner-Einstellungen (Haken, bekannte Dateien, Modus).</summary>
@@ -441,6 +457,7 @@ public sealed class SettingsViewModel : ObservableObject
         InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
         _app.Update.PropertyChanged += OnUpdateChanged;
+        _app.Repository.Changed += OnRepositoryChanged;
         AppLog.Changed += OnLogChanged;
         OpenLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
         OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
@@ -758,7 +775,7 @@ public sealed class SettingsViewModel : ObservableObject
         var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner mit Scripten oder Programmen auswählen" };
         if (dlg.ShowDialog() != true) return;
         if (Folders.Any(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase))) return;
-        Folders.Add(new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName }, "Wird nach dem Speichern eingelesen", RemoveFolder) { IsExpanded = true, ShowOptions = true });
+        Folders.Add(new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true });
     }
 
     private void RemoveFolder(FolderViewModel f) => Folders.Remove(f);
@@ -794,10 +811,17 @@ public sealed class SettingsViewModel : ObservableObject
         CommandManager.InvalidateRequerySuggested();
     }
 
+    private void OnRepositoryChanged(object? sender, EventArgs e)
+    {
+        if (_app.Repository.IsScanning) return;
+        foreach (var f in Folders) f.ReloadRows();
+    }
+
     /// <summary>Vom Fenster beim Schließen aufgerufen.</summary>
     public void Detach()
     {
         _app.Update.PropertyChanged -= OnUpdateChanged;
+        _app.Repository.Changed -= OnRepositoryChanged;
         AppLog.Changed -= OnLogChanged;
     }
 

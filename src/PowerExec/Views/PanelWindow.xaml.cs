@@ -452,6 +452,13 @@ public partial class PanelWindow : Window
     private void Row_DragOver(object sender, DragEventArgs e)
     {
         if (sender is not Border row) return;
+        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel over && GroupOf(over) is { AcceptsItems: true } overGroup)
+        {
+            e.Effects = DragDropEffects.Move;
+            row.BorderThickness = overGroup.Kind != "fav" ? InsertMarker(row, e) : new Thickness(0);
+            e.Handled = true;
+            return;
+        }
         if (!e.Data.GetDataPresent(DragFormat)) return; // Dateien aus dem Explorer: übernimmt die Gruppe
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
         var target = row.DataContext as ViewModels.ItemViewModel;
@@ -474,6 +481,13 @@ public partial class PanelWindow : Window
     {
         if (sender is not Border row) return;
         row.BorderThickness = new Thickness(0);
+        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel dropTarget && GroupOf(dropTarget) is { } dropGroup)
+        {
+            e.Handled = true;
+            if (e.Data.GetData(SettingsWindow.EntryDragFormat) is string key)
+                Vm.MoveKeyToGroup(key, dropGroup, dropGroup.Kind == "fav" ? null : dropTarget, InsertAfter(row, e));
+            return;
+        }
         if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ViewModels.ItemViewModel target) return;
         var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
         var group = GroupOf(target);
@@ -505,6 +519,11 @@ public partial class PanelWindow : Window
             allowed = group.AcceptsItems && !group.Items.Contains(source);
             e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
         }
+        else if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat))
+        {
+            allowed = group.AcceptsItems;
+            e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
+        }
         else
         {
             allowed = ExternalDrop.HasData(e.Data);
@@ -532,6 +551,11 @@ public partial class PanelWindow : Window
             Vm.MoveToGroup((ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!, group);
             return;
         }
+        if (e.Data.GetData(SettingsWindow.EntryDragFormat) is string entryKey)
+        {
+            if (group.AcceptsItems) Vm.MoveKeyToGroup(entryKey, group);
+            return;
+        }
         var targets = ExternalDrop.Read(e.Data);
         if (targets.Count > 0) Vm.DropExternal(targets, group);
     }
@@ -539,12 +563,19 @@ public partial class PanelWindow : Window
     /// <summary>Außerhalb einer Gruppe abgelegt: als eigener Eintrag ohne Gruppe.</summary>
     private void Panel_DragOver(object sender, DragEventArgs e)
     {
-        e.Effects = !e.Data.GetDataPresent(DragFormat) && !e.Data.GetDataPresent(GroupDragFormat) && ExternalDrop.HasData(e.Data) ? ExternalEffect(e) : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) ? DragDropEffects.Move
+            : !e.Data.GetDataPresent(DragFormat) && !e.Data.GetDataPresent(GroupDragFormat) && ExternalDrop.HasData(e.Data) ? ExternalEffect(e) : DragDropEffects.None;
         e.Handled = true;
     }
 
     private void Panel_Drop(object sender, DragEventArgs e)
     {
+        if (e.Data.GetData(SettingsWindow.EntryDragFormat) is string entryKey)
+        {
+            Vm.DropEntryWithoutGroup(entryKey);
+            e.Handled = true;
+            return;
+        }
         if (e.Data.GetDataPresent(DragFormat) || e.Data.GetDataPresent(GroupDragFormat)) return;
         var targets = ExternalDrop.Read(e.Data);
         if (targets.Count > 0) Vm.DropExternal(targets, null);

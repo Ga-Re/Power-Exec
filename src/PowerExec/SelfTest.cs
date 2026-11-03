@@ -143,10 +143,37 @@ public sealed partial class AppController
             }
 
             Step("Einstellungen");
+            Step("Textfeld: Cursor");
+            await CheckCaretAlignment();
+
             // Einstellungen: alle Bereiche
             var settingsVm = new SettingsViewModel(this, null);
             var settingsWindow = new SettingsWindow(settingsVm, this);
             settingsWindow.Show();
+            await Settle();
+
+            // Live-Übernahme: allgemeine Einstellung ohne Neuaufbau der Panels, Panel-Einstellung mit
+            Step("Live-Übernahme");
+            var hostBefore = _hosts[0];
+            settingsVm.RecentRunsCount = 7;
+            settingsWindow.ApplyNowForTest();
+            if (Settings.RecentRunsCount != 7) Fail("Live-Übernahme: allgemeine Einstellung nicht übernommen");
+            if (!ReferenceEquals(hostBefore, _hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
+            settingsVm.SelectedPanel!.PanelWidth = 512;
+            settingsWindow.ApplyNowForTest();
+            if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
+
+            // Änderung im Panel (Eintrag in Gruppe ziehen) → Einstellungsfenster zeigt den neuen Stand
+            Step("Änderung im Panel");
+            var entryKey = Settings.CustomEntries.First(c => c.Name == "Intranet").Key;
+            var leer = _hosts[0].ViewModel.AllGroups.First(g => g.GroupPath == "Leer");
+            _hosts[0].ViewModel.MoveKeyToGroup(entryKey, leer);
+            await Settle();
+            if (GroupManager.GroupOf(Settings, entryKey) != "Leer") Fail("Ablegen in Gruppe: Zuordnung fehlt");
+            var reloaded = settingsWindow.CurrentViewModel;
+            if (ReferenceEquals(reloaded, settingsVm)) Fail("Einstellungsfenster hat Änderung aus dem Panel nicht übernommen");
+            else if (reloaded.EntryList.Rows.First(r => r.Entry.Key == entryKey).Group != "Leer") Fail("Einstellungsliste zeigt alte Gruppe");
+            settingsVm = reloaded;
             foreach (var section in new[] { "folders", "custom", "panels", "panel", "workspaces", "machines", "exec", "diag", "updates" })
             {
                 settingsVm.Section = section;
@@ -195,6 +222,23 @@ public sealed partial class AppController
     }
 
     private void Fail(string message) => _selfTestErrors.Add(message);
+
+    /// <summary>Cursor und Platzhaltertext müssen im Textfeld an derselben Stelle beginnen (Innenabstand nur einmal).</summary>
+    private async Task CheckCaretAlignment()
+    {
+        var box = new System.Windows.Controls.TextBox { Padding = new Thickness(30, 0, 8, 0), Tag = "Suchen", Width = 300 };
+        var w = new Window { Content = box, Width = 360, Height = 120, Style = (Style)Application.Current.FindResource("AppWindow") };
+        w.Show();
+        await Settle();
+        var caret = box.GetRectFromCharacterIndex(0).Left;
+        var placeholder = box.Template.FindName("Placeholder", box) as FrameworkElement;
+        var placeholderLeft = placeholder != null ? placeholder.TranslatePoint(new Point(placeholder.Margin.Left > 0 ? 0 : 0, 0), box).X + 2 : double.NaN;
+        w.Close();
+        if (caret > 45) Fail($"Textfeld: Cursor zu weit rechts ({caret:0} px bei 30 px Innenabstand)");
+        if (caret < 25) Fail($"Textfeld: Innenabstand fehlt ({caret:0} px)");
+        if (!double.IsNaN(placeholderLeft) && Math.Abs(caret - placeholderLeft) > 4)
+            Fail($"Textfeld: Cursor ({caret:0} px) und Platzhalter ({placeholderLeft:0} px) beginnen nicht an derselben Stelle");
+    }
 
     private static async Task Settle()
     {
