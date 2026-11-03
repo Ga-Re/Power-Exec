@@ -117,6 +117,7 @@ public static class ProfileResolver
             parts.Add(string.IsNullOrWhiteSpace(profile.Arguments) ? "ohne Argumente" : profile.Arguments.Trim());
         }
         if (profile.RunAsAdmin) parts.Add("Admin");
+        else if (profile.RunAsOtherUser) parts.Add("anderer Benutzer");
         return string.Join(" · ", parts);
     }
 }

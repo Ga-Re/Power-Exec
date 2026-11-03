@@ -137,7 +137,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
         RowsView.SortDescriptions.Add(new SortDescription(nameof(CustomEntryRowViewModel.Name), ListSortDirection.Ascending));
         foreach (var r in Rows) r.SetHealth(app.Health?.Get(r.Entry.Key));
 
-        NewCommand = new RelayCommand(p => New(Enum.TryParse<CustomEntryKind>(p?.ToString(), out var k) ? k : CustomEntryKind.Url));
+        NewCommand = new RelayCommand(p => New(p?.ToString()));
         CatalogCommand = new RelayCommand(AddFromCatalog);
         ImportCommand = new RelayCommand(Import);
         ExportCommand = new RelayCommand(() => _app.ExportEntries(SelectedOrVisible().Select(r => r.Entry).ToList(), null, Owner(), BuildPreview()));
@@ -157,12 +157,28 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Refilter(); } }
     public string KindFilter { get => _kindFilter; set { if (Set(ref _kindFilter, value)) Refilter(); } }
-    public string GroupFilter { get => _groupFilter; set { if (Set(ref _groupFilter, value ?? "*")) Refilter(); } }
+    public string GroupFilter
+    {
+        get => _groupFilter;
+        set
+        {
+            if (value == SeparatorKey) { OnPropertyChanged(); return; } // Trennlinie ist nicht wählbar
+            if (Set(ref _groupFilter, value ?? "*")) Refilter();
+        }
+    }
     public string TagFilter { get => _tagFilter; set { if (Set(ref _tagFilter, value ?? "*")) Refilter(); } }
 
-    public IReadOnlyList<KeyValuePair<string, string>> GroupFilters =>
-        new[] { new KeyValuePair<string, string>("*", "Alle Gruppen"), new KeyValuePair<string, string>("", "Ohne Gruppe") }
-            .Concat(_groups().Select(g => new KeyValuePair<string, string>(g, GroupManager.Display(g)))).ToList();
+    /// <summary>Feste Filter, Trennlinie (Schlüssel „—“, nicht wählbar), dann die Gruppen.</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> GroupFilters
+    {
+        get
+        {
+            var fixedOnes = new[] { new KeyValuePair<string, string>("*", "Alle Gruppen"), new KeyValuePair<string, string>("", "Ohne Gruppe") };
+            var groups = _groups().Select(g => new KeyValuePair<string, string>(g, GroupManager.Display(g))).ToList();
+            return groups.Count == 0 ? fixedOnes : fixedOnes.Append(new KeyValuePair<string, string>(SeparatorKey, string.Empty)).Concat(groups).ToList();
+        }
+    }
+    public const string SeparatorKey = "\u2014sep";
 
     public IReadOnlyList<KeyValuePair<string, string>> TagFilters =>
         new[] { new KeyValuePair<string, string>("*", "Alle Schlagworte") }
@@ -242,15 +258,36 @@ public sealed class CustomEntryListViewModel : ObservableObject
     private IEnumerable<CustomEntryRowViewModel> SelectedOrVisible() =>
         Selected.Any() ? Selected : RowsView.Cast<CustomEntryRowViewModel>();
 
-    private void New(CustomEntryKind kind) => AddWithEditor(new CustomEntry { Kind = kind }, _groupFilter is "*" ? string.Empty : _groupFilter);
+    private void New(string? kindKey) => AddWithEditor(CustomEntry.FromKindKey(kindKey), _groupFilter is "*" ? string.Empty : _groupFilter);
 
-    private void AddWithEditor(CustomEntry template, string group)
+    private void AddWithEditor(CustomEntry? template, string group)
     {
         ApplyTo(_s); // Liste → Arbeitskopie, damit der Dialog den aktuellen Stand sieht
-        var key = Views.ProfilesWindow.EditEntry(_app, _s, template, isNew: true, saveImmediately: false, group, null, Owner());
+        var result = Views.ProfilesWindow.EditEntryEx(_app, _s, template, isNew: true, saveImmediately: false, group, null, Owner());
+        if (result.Alternative == "catalog") { AddFromCatalog(); return; }
+        if (result.Alternative == "files") { AddFiles(group); return; }
+        if (result.SmartGroupPath is { } folder) { _app.CreateSmartGroupFor(folder, group.Length > 0 ? group : null); return; }
+        var key = result.SavedKey;
         if (key == null) return;
         var e = _s.CustomEntries.First(c => c.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
         Rows.Add(new CustomEntryRowViewModel(this, e.Clone(), GroupManager.GroupOf(_s, key), Core.Config.Tags.Of(_s, key).ToList()));
+        CountsChanged();
+    }
+
+    /// <summary>Dateien auswählen und als eigene Einträge (Art „Datei“) übernehmen.</summary>
+    private void AddFiles(string group)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Multiselect = true,
+            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
+        };
+        if (dlg.ShowDialog(Owner()) != true) return;
+        foreach (var f in dlg.FileNames)
+        {
+            if (Rows.Any(r => r.Entry.Key.Equals(f, StringComparison.OrdinalIgnoreCase))) continue;
+            Rows.Add(new CustomEntryRowViewModel(this, new CustomEntry { Kind = CustomEntryKind.File, Target = f }, group, Array.Empty<string>()));
+        }
         CountsChanged();
     }
 

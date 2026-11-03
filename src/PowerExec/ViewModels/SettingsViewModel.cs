@@ -344,7 +344,7 @@ public sealed class FolderViewModel : ObservableObject
         var item = row.Item.IsPowerShell ? _app.Repository.Reload(row.Item) : row.Item;
         var vm = new ProfilesViewModel(_app, item, _settings, saveImmediately: false);
         vm.Saved += row.Refresh;
-        var w = new Views.ProfilesWindow(vm);
+        var w = new Views.ProfilesWindow(vm, _app);
         w.Owner = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
         w.ShowDialog();
     }
@@ -1181,6 +1181,7 @@ public sealed class SettingsViewModel : ObservableObject
         // Laufzeitzustand aus den aktuellen Einstellungen übernehmen (kann sich währenddessen geändert haben)
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
+        _s.EditorSizes = new Dictionary<string, string>(_app.Settings.EditorSizes);
         // Panel: Formular, aber „angeheftet“ aus dem laufenden Zustand übernehmen
         var panel = Panel.ToConfig();
         if (_app.Settings.Panels.FirstOrDefault() is { } live) panel.Pinned = live.Pinned;

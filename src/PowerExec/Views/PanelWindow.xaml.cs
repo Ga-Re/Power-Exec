@@ -81,6 +81,9 @@ public partial class PanelWindow : Window
 
         _monitor = monitor;
         _hiding = false;
+        // Für „Text einfügen“: das Fenster merken, in dem vorher gearbeitet wurde
+        var fg = NativeMethods.GetForegroundWindow();
+        if (fg != IntPtr.Zero && fg != _hwnd) Services.ForegroundTracker.Remember(fg);
         Place();
         if (!IsVisible) Show();
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen

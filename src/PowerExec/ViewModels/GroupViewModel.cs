@@ -50,23 +50,8 @@ public sealed class GroupViewModel : ObservableObject
         AddFromCatalogCommand = new RelayCommand(() => app.AddFromCatalog(GroupPath));
         AddFromClipboardCommand = new RelayCommand(() => app.AddFromClipboard(GroupPath));
         CustomIcon = GroupPath != null ? Core.Config.GroupManager.IconOf(app.Settings, GroupPath).ToString() : string.Empty;
-        NewEntryCommand = new RelayCommand(p =>
-        {
-            var kind = Enum.TryParse<Core.Config.CustomEntryKind>(p?.ToString(), out var k) ? k : Core.Config.CustomEntryKind.Url;
-            app.NewCustomEntry(kind, GroupPath);
-        });
-        AddFilesCommand = new RelayCommand(() =>
-        {
-            var dlg = new Microsoft.Win32.OpenFileDialog
-            {
-                Title = IsUserGroup ? $"Dateien zur Gruppe „{Title}“ hinzufügen" : "Dateien hinzufügen",
-                Multiselect = true,
-                Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
-            };
-            if (app.WithDialog(() => dlg.ShowDialog()) != true) return;
-            app.AddDropped(dlg.FileNames.Select(f => new Core.Config.DroppedTarget(Core.Config.CustomEntryKind.File, f, Path.GetFileName(f))).ToList(),
-                GroupPath);
-        });
+        NewEntryCommand = new RelayCommand(p => app.NewCustomEntry(p?.ToString(), GroupPath));
+        AddFilesCommand = new RelayCommand(() => app.AddFilesDialog(GroupPath));
     }
 
     /// <summary>Vom Benutzer angelegte Gruppe (umbenennen, löschen, Einträge hineinziehen).</summary>

@@ -218,6 +218,8 @@ public sealed class ItemRepository : IDisposable
     private static LaunchItem Merge(LaunchItem loaded, LaunchItem basic)
     {
         loaded.CustomKind = basic.CustomKind;
+        loaded.WorkingDirectory = basic.WorkingDirectory;
+        loaded.WindowState = basic.WindowState;
         if (basic.DisplayName.Length > 0 && !basic.DisplayName.Equals(Path.GetFileName(basic.FullPath), StringComparison.OrdinalIgnoreCase))
             loaded.DisplayName = basic.DisplayName;
         if (basic.Synopsis.Length > 0) loaded.Synopsis = basic.Synopsis;

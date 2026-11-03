@@ -60,6 +60,12 @@ public sealed class LaunchItem
     /// <summary>Bei eigenen Einträgen: feste Argumente.</summary>
     public string LaunchArguments { get; set; } = string.Empty;
 
+    /// <summary>Bei eigenen Einträgen: Arbeitsordner (null = automatisch).</summary>
+    public string? WorkingDirectory { get; set; }
+
+    /// <summary>Bei eigenen Einträgen: Fenster beim Start.</summary>
+    public Config.LaunchWindowState WindowState { get; set; }
+
     /// <summary>Art des eigenen Eintrags (null = Datei aus einem Ordner).</summary>
     public Config.CustomEntryKind? CustomKind { get; set; }
 

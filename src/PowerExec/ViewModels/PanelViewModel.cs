@@ -132,22 +132,11 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand NewSmartGroupCommand => new RelayCommand(() => _app.CreateSmartGroup());
 
     // Rechtsklick auf freie Fläche
-    public ICommand NewEntryCommand => new RelayCommand(p =>
-        _app.NewCustomEntry(Enum.TryParse<CustomEntryKind>(p?.ToString(), out var k) ? k : CustomEntryKind.Url, null));
+    public ICommand NewEntryCommand => new RelayCommand(p => _app.NewCustomEntry(p?.ToString(), null));
     public ICommand AddFromCatalogCommand => new RelayCommand(() => _app.AddFromCatalog(null));
     public ICommand AddFromClipboardCommand => new RelayCommand(() => _app.AddFromClipboard(SelectedItem is { } s ? GroupManager.GroupOf(_app.Settings, s.Item.FullPath) is { Length: > 0 } g ? g : null : null));
     public ICommand ImportEntriesCommand => new RelayCommand(() => _app.ImportEntries());
-    public ICommand AddFilesCommand => new RelayCommand(() =>
-    {
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Dateien hinzufügen",
-            Multiselect = true,
-            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
-        };
-        if (_app.WithDialog(() => dlg.ShowDialog()) != true) return;
-        _app.AddDropped(dlg.FileNames.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), null);
-    });
+    public ICommand AddFilesCommand => new RelayCommand(() => _app.AddFilesDialog(null));
 
     /// <summary>Panel wird angezeigt: eigene Einträge im Hintergrund prüfen (höchstens alle 10 Minuten je Eintrag).</summary>
     public void OnShown()

@@ -84,6 +84,12 @@ public sealed class Launcher
             WorkingDirectory = spec.WorkingDirectory ?? string.Empty
         };
         if (spec.Verb != null) psi.Verb = spec.Verb;
+        psi.WindowStyle = spec.WindowState switch
+        {
+            Core.Config.LaunchWindowState.Maximized => ProcessWindowStyle.Maximized,
+            Core.Config.LaunchWindowState.Minimized => ProcessWindowStyle.Minimized,
+            _ => ProcessWindowStyle.Normal
+        };
         if (cred != null)
         {
             psi.UserName = cred.UserName;

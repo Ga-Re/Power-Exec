@@ -68,6 +68,23 @@ internal static class NativeMethods
     public static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    public static extern bool IsWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+    /// <summary>Strg+V an das Vordergrundfenster senden.</summary>
+    public static void SendCtrlV()
+    {
+        const byte VK_CONTROL = 0x11, VK_V = 0x56;
+        const uint KEYUP = 0x0002;
+        keybd_event(VK_CONTROL, 0, 0, UIntPtr.Zero);
+        keybd_event(VK_V, 0, 0, UIntPtr.Zero);
+        keybd_event(VK_V, 0, KEYUP, UIntPtr.Zero);
+        keybd_event(VK_CONTROL, 0, KEYUP, UIntPtr.Zero);
+    }
+
+    [DllImport("user32.dll")]
     public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
     public static string ClassNameOf(IntPtr hwnd)

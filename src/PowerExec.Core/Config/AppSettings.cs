@@ -136,6 +136,9 @@ public sealed class AppSettings
     /// <summary>Anzahl der Einträge in „Zuletzt ausgeführt“ (0 = Gruppe ausblenden).</summary>
     public int RecentRunsCount { get; set; } = 5;
 
+    /// <summary>Zuletzt verwendete Größe des Eintragsdialogs je Art („Url“ → „900x700“).</summary>
+    public Dictionary<string, string> EditorSizes { get; set; } = new();
+
     // Panel-Zustand
     public List<string> Favorites { get; set; } = new();
     public List<string> CollapsedGroups { get; set; } = new();

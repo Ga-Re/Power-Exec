@@ -226,11 +226,14 @@
                                     <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="9" Margin="6,0,0,0"/></StackPanel>
                                 <Button.ContextMenu>
                                     <ContextMenu>
+                                        <MenuItem Header="Neuer Eintrag …" Command="{Binding NewCommand}"/>
+                                        <Separator/>
                                         <MenuItem Header="Webseite …" Command="{Binding NewCommand}" CommandParameter="Url"/>
                                         <MenuItem Header="Ordner …" Command="{Binding NewCommand}" CommandParameter="Folder"/>
                                         <MenuItem Header="Remotedesktop …" Command="{Binding NewCommand}" CommandParameter="Rdp"/>
                                         <MenuItem Header="SSH-Verbindung …" Command="{Binding NewCommand}" CommandParameter="Ssh"/>
-                                        <MenuItem Header="Snippet …" Command="{Binding NewCommand}" CommandParameter="Snippet"/>
+                                        <MenuItem Header="PowerShell-Snippet …" Command="{Binding NewCommand}" CommandParameter="Snippet"/>
+                                        <MenuItem Header="Text-Snippet …" Command="{Binding NewCommand}" CommandParameter="TextSnippet"/>
                                         <MenuItem Header="Windows-Werkzeug …" Command="{Binding NewCommand}" CommandParameter="Tool"/>
                                         <MenuItem Header="Befehl …" Command="{Binding NewCommand}" CommandParameter="Command"/>
                                         <MenuItem Header="Datei …" Command="{Binding NewCommand}" CommandParameter="File"/>
@@ -264,7 +267,26 @@
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
                         </Button>
                         <StackPanel Orientation="Horizontal">
-                            <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                                        <Style.Triggers>
+                                            <!-- Trennlinie zwischen festen Filtern und Gruppen -->
+                                            <DataTrigger Binding="{Binding Key}" Value="—sep">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ComboBoxItem">
+                                                            <Separator Margin="8,4" Background="{DynamicResource Border.Default}"/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                            </ComboBox>
                             <ComboBox Width="170" Margin="8,0,0,0" ItemsSource="{Binding TagFilters}" SelectedValue="{Binding TagFilter}" DisplayMemberPath="Value" SelectedValuePath="Key"/>
                             <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                         </StackPanel>

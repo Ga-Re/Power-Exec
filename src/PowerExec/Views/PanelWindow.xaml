@@ -13,6 +13,10 @@
         <ContextMenu x:Key="GroupMenu" x:Shared="False">
             <MenuItem Header="Neuer Eintrag" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <MenuItem Header="Neuer Eintrag …" Command="{Binding NewEntryCommand}">
+                    <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="Webseite …" Command="{Binding NewEntryCommand}" CommandParameter="Url">
                     <MenuItem.Icon><TextBlock Text="&#xE774;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
@@ -22,8 +26,20 @@
                 <MenuItem Header="Remotedesktop …" Command="{Binding NewEntryCommand}" CommandParameter="Rdp">
                     <MenuItem.Icon><TextBlock Text="&#xE8AF;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="Befehl …" Command="{Binding NewEntryCommand}" CommandParameter="Command">
+                <MenuItem Header="SSH-Verbindung …" Command="{Binding NewEntryCommand}" CommandParameter="Ssh">
                     <MenuItem.Icon><TextBlock Text="&#xE756;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="PowerShell-Snippet …" Command="{Binding NewEntryCommand}" CommandParameter="Snippet">
+                    <MenuItem.Icon><TextBlock Text="&#xE943;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Text-Snippet …" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet">
+                    <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Windows-Werkzeug …" Command="{Binding NewEntryCommand}" CommandParameter="Tool">
+                    <MenuItem.Icon><TextBlock Text="&#xE90F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Befehl …" Command="{Binding NewEntryCommand}" CommandParameter="Command">
+                    <MenuItem.Icon><TextBlock Text="&#xE7C4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
                 <MenuItem Header="Dateien auswählen …" Command="{Binding AddFilesCommand}">
                     <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -726,11 +742,14 @@
                         </MenuItem>
                         <MenuItem Header="Neuer Eintrag">
                             <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                            <MenuItem Header="Neuer Eintrag …" Command="{Binding NewEntryCommand}"/>
+                            <Separator/>
                             <MenuItem Header="Webseite …" Command="{Binding NewEntryCommand}" CommandParameter="Url"/>
                             <MenuItem Header="Ordner …" Command="{Binding NewEntryCommand}" CommandParameter="Folder"/>
                             <MenuItem Header="Remotedesktop …" Command="{Binding NewEntryCommand}" CommandParameter="Rdp"/>
                             <MenuItem Header="SSH-Verbindung …" Command="{Binding NewEntryCommand}" CommandParameter="Ssh"/>
-                            <MenuItem Header="Snippet …" Command="{Binding NewEntryCommand}" CommandParameter="Snippet"/>
+                            <MenuItem Header="PowerShell-Snippet …" Command="{Binding NewEntryCommand}" CommandParameter="Snippet"/>
+                            <MenuItem Header="Text-Snippet …" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet"/>
                             <MenuItem Header="Windows-Werkzeug …" Command="{Binding NewEntryCommand}" CommandParameter="Tool"/>
                             <MenuItem Header="Befehl …" Command="{Binding NewEntryCommand}" CommandParameter="Command"/>
                             <MenuItem Header="Dateien auswählen …" Command="{Binding AddFilesCommand}"/>

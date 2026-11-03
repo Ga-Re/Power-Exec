@@ -43,6 +43,8 @@ public sealed partial class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
         SetupSnippetFolder();
+        CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
+        Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
 
         Icons = new IconService(Application.Current.Dispatcher);
         Health = new HealthService(Application.Current.Dispatcher);
@@ -354,9 +356,11 @@ public sealed partial class AppController : IDisposable
     /// </summary>
     private LaunchItem? ResolvePlaceholders(LaunchItem item)
     {
-        if (item.PlaceholdersResolved || item.Source is not { } entry || entry.Placeholders.Count == 0) return item;
-        var values = WithDialog(() => PlaceholderWindow.Ask(item.DisplayName, entry.Placeholders,
-            name => ParameterHistory.Get(Settings, entry.Key, name)));
+        if (item.PlaceholdersResolved || item.Source is not { } entry || !entry.NeedsResolving) return item;
+        IReadOnlyDictionary<string, string>? values = new Dictionary<string, string>();
+        if (entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
+            values = WithDialog(() => PlaceholderWindow.Ask(item.DisplayName, entry.Placeholders,
+                name => ParameterHistory.Get(Settings, entry.Key, name)));
         if (values == null) return null;
         foreach (var kv in values) ParameterHistory.Add(Settings, entry.Key, kv.Key, kv.Value);
         SaveSettings();
@@ -382,22 +386,29 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Snippet in die Zwischenablage (Platzhalter vorher abfragen).</summary>
-    public void CopySnippet(LaunchItem item)
+    public void CopySnippet(LaunchItem item, bool record = true)
     {
         if (item.Source is not { Kind: CustomEntryKind.Snippet }) return;
         var resolved = ResolvePlaceholders(item);
         if (resolved?.Source == null) return;
         try
         {
-            Clipboard.SetText(resolved.Source.Code);
-            RecordRun(item, ProfileResolver.GetDefault(Settings, item));
-            _tray?.ShowBalloon("In die Zwischenablage kopiert", item.DisplayName);
+            ClipboardText.Set(resolved.Source.Code, resolved.Source.CopyAsHtml);
+            if (record) RecordRun(item, ProfileResolver.GetDefault(Settings, item));
             HidePanels();
+            if (resolved.Source.PasteAfterCopy) _ = PasteAsync(item.DisplayName);
+            else _tray?.ShowBalloon("In die Zwischenablage kopiert", item.DisplayName);
         }
         catch (Exception ex)
         {
             MessageBox.Show("Die Zwischenablage ist gerade belegt: " + ex.Message, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private async Task PasteAsync(string name)
+    {
+        if (!await ForegroundTracker.PasteIntoPreviousAsync())
+            _tray?.ShowBalloon("In die Zwischenablage kopiert", $"{name}: Kein Zielfenster gefunden – mit Strg+V einfügen.");
     }
 
     // ---- Eigene Gruppen ---------------------------------------------------
@@ -540,15 +551,66 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Neuen eigenen Eintrag in einer Gruppe anlegen (Dialog).</summary>
-    public void NewCustomEntry(CustomEntryKind kind, string? group) => NewCustomEntry(new CustomEntry { Kind = kind }, group);
+    /// <summary>Neuer Eintrag aus einem Menü: Art-Schlüssel („Url“, „TextSnippet“ …) oder null = Art im Dialog wählen.</summary>
+    public void NewCustomEntry(string? kindKey, string? group)
+    {
+        var template = CustomEntry.FromKindKey(kindKey);
+        var result = WithDialog(() => ProfilesWindow.EditEntryEx(this, Settings, template, isNew: true, saveImmediately: false, group, null));
+        HandleEditorResult(result, group);
+    }
 
     /// <summary>Eintrag vorbelegt anlegen (Zwischenablage, Vorlage, Duplikat) – der Eintragsdialog zeigt ihn zum Bestätigen.</summary>
     public bool NewCustomEntry(CustomEntry template, string? group, IEnumerable<string>? tags = null)
     {
-        var key = WithDialog(() => ProfilesWindow.EditEntry(this, Settings, template, isNew: true, saveImmediately: false, group, tags));
-        if (key == null) return false;
+        var result = WithDialog(() => ProfilesWindow.EditEntryEx(this, Settings, template, isNew: true, saveImmediately: false, group, tags));
+        return HandleEditorResult(result, group);
+    }
+
+    /// <summary>Ergebnis des Eintragsdialogs: gespeichert, oder Vorlagen / Dateien / smarte Gruppe gewählt.</summary>
+    private bool HandleEditorResult(ProfilesWindow.EditorResult result, string? group)
+    {
+        if (result.SavedKey != null) { CommitUserChange(); return true; }
+        switch (result.Alternative)
+        {
+            case "catalog": AddFromCatalog(group); break;
+            case "files": AddFilesDialog(group); break;
+        }
+        if (result.SmartGroupPath is { } path) CreateSmartGroupFor(path, group);
+        return false;
+    }
+
+    /// <summary>Dateien auswählen und als Einträge anlegen.</summary>
+    public void AddFilesDialog(string? group)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = group != null ? $"Dateien zur Gruppe „{GroupManager.LeafOf(group)}“ hinzufügen" : "Dateien hinzufügen",
+            Multiselect = true,
+            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
+        };
+        if (WithDialog(() => dlg.ShowDialog()) == true)
+            AddDropped(dlg.FileNames.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), group);
+    }
+
+    /// <summary>Ordner als smarte Gruppe anlegen (aus dem Eintragsdialog).</summary>
+    public void CreateSmartGroupFor(string folderPath, string? parent)
+    {
+        if (Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        {
+            MessageBox.Show($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        SmartGroups.Add(Settings, folderPath, null, string.IsNullOrEmpty(parent) ? null : parent);
+        SaveSettings();
+        Repository.UpdateSettings(Settings);
         CommitUserChange();
-        return true;
+    }
+
+    /// <summary>Eintrag aus dem Dialog testen – mit dem eingestellten Standardverhalten, ohne „Zuletzt ausgeführt“.</summary>
+    public void TestRun(CustomEntry entry, LaunchProfile profile)
+    {
+        var item = DescribeCustom(entry);
+        RunProfile(item, profile, null, record: false);
     }
 
     /// <summary>Eigenen Eintrag bearbeiten – im selben Dialog wie die Startprofile.</summary>
@@ -817,11 +879,11 @@ public sealed partial class AppController : IDisposable
     /// Startet ein Profil. <paramref name="overrideMode"/> erzwingt einmalig Admin oder anderes Konto
     /// (Knöpfe „Admin“ und „Als …“ im Panel).
     /// </summary>
-    public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null)
+    public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null, bool record = true)
     {
         if (item.Source?.CopiesToClipboard == true)
         {
-            CopySnippet(item);
+            CopySnippet(item, record);
             return;
         }
         item = Refresh(item); // Parameter könnten sich geändert haben
@@ -829,7 +891,7 @@ public sealed partial class AppController : IDisposable
         item = resolvedItem;
         profile ??= ProfileResolver.GetDefault(Settings, item);
         bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
-        var mode = Requirements.ModeFor(item, overrideMode ?? (profile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser), remote);
+        var mode = Requirements.ModeFor(item, overrideMode ?? ProfileMode(profile), remote);
         var targets = remote ? MachineList.Resolve(Settings, profile.Machines) : Array.Empty<string>();
         if (remote && profile.Target == ProfileTarget.Fixed && targets.Count == 0)
         {
@@ -849,7 +911,7 @@ public sealed partial class AppController : IDisposable
             var request = BuildRequest(item, profile, mode, values);
             if (!ConfirmRun(item, profile, targets.Count, null)) return;
             HidePanels();
-            RecordRun(item, profile);
+            if (record) RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name} · {(remote ? targets.Count + " Rechner" : "lokal")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             if (remote)
             {
@@ -872,9 +934,11 @@ public sealed partial class AppController : IDisposable
 
         if (!ConfirmRun(item, profile, 0, null)) return;
         HidePanels();
+        try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
+        catch (Exception ex) { AppLog.Error("Start vorbereiten fehlgeschlagen", ex); }
         if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null))
         {
-            RecordRun(item, profile);
+            if (record) RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
         }
     }
@@ -928,6 +992,10 @@ public sealed partial class AppController : IDisposable
         CommitUserChange();
     }
 
+    /// <summary>Startmodus eines Profils: Administrator, anderer Benutzer (Anmeldung beim Start) oder aktuelles Konto.</summary>
+    public static ExecutionMode ProfileMode(LaunchProfile p) =>
+        p.RunAsAdmin ? ExecutionMode.Administrator : p.RunAsOtherUser ? ExecutionMode.OtherUser : ExecutionMode.CurrentUser;
+
     private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
     {
         Item = item,
@@ -959,7 +1027,7 @@ public sealed partial class AppController : IDisposable
         HidePanels(force: true);
         item = Refresh(item);
         var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);
-        var w = new ProfilesWindow(vm);
+        var w = new ProfilesWindow(vm, this);
         w.Show();
         w.Activate();
     }

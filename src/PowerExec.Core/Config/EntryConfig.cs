@@ -20,6 +20,8 @@ public sealed class LaunchProfile
     public string Name { get; set; } = "Standard";
     public bool IsDefault { get; set; }
     public bool RunAsAdmin { get; set; }
+    /// <summary>Als anderer Benutzer starten (Anmeldung wird beim Start abgefragt, nie gespeichert).</summary>
+    public bool RunAsOtherUser { get; set; }
     public PsEngine Engine { get; set; } = PsEngine.PowerShell7;
     public bool NoExit { get; set; } = true;
     public bool NoProfile { get; set; } = true;
@@ -45,6 +47,7 @@ public sealed class LaunchProfile
         Name = Name,
         IsDefault = IsDefault,
         RunAsAdmin = RunAsAdmin,
+        RunAsOtherUser = RunAsOtherUser,
         Engine = Engine,
         NoExit = NoExit,
         NoProfile = NoProfile,

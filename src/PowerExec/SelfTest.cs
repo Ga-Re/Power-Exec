@@ -227,7 +227,7 @@ public sealed partial class AppController
 
             // Dialoge
             var item = Repository.Items.First(i => i.FullPath.Equals(script, StringComparison.OrdinalIgnoreCase));
-            await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false)));
+            await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false), this));
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: false)));
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: true)));
             var request = new ExecutionRequest { Item = item, Targets = ["WEB1", "WEB2"] };
@@ -235,8 +235,47 @@ public sealed partial class AppController
             await ShowAndClose(IconPickerWindow.ForTest());
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
-            foreach (var kind in Enum.GetValues<CustomEntryKind>())
-                await ShowAndClose(ProfilesWindow.ForTest(this, new CustomEntry { Kind = kind, Target = "x", Code = "Get-Date" }));
+            // Eintragsdialog: Kachelauswahl, jedes Formular, Live-Prüfung
+            Step("Eintragsdialog");
+            var picker = (ProfilesWindow)ProfilesWindow.ForTest(this, null);
+            if (!picker.ViewModelForTest.ShowKindPicker) Fail("Eintragsdialog: ohne Art erscheint keine Kachelauswahl");
+            picker.Show();
+            await Settle();
+            if (picker.Content is FrameworkElement pickerRoot) Screenshot(pickerRoot, "entry-auswahl");
+            picker.ViewModelForTest.PickKindCommand.Execute("Rdp");
+            await Settle();
+            if (picker.ViewModelForTest.ShowKindPicker || picker.ViewModelForTest.Entry?.IsRdp != true) Fail("Eintragsdialog: Kachel wählt die Art nicht");
+            if (picker.ViewModelForTest.SaveCommand.CanExecute(null)) Fail("Eintragsdialog: Speichern trotz fehlendem Rechner möglich");
+            picker.ViewModelForTest.Entry!.Target = "SRV-01";
+            if (!picker.ViewModelForTest.SaveCommand.CanExecute(null)) Fail("Eintragsdialog: Speichern trotz gültiger Eingabe gesperrt");
+            picker.Close();
+            var samples = new Dictionary<string, CustomEntry>
+            {
+                ["Url"] = new() { Kind = CustomEntryKind.Url, Target = "https://example.com", AppWindow = true },
+                ["Folder"] = new() { Kind = CustomEntryKind.Folder, Target = Path.GetTempPath(), OpenWith = FolderOpener.Program },
+                ["Rdp"] = new() { Kind = CustomEntryKind.Rdp, Target = "SRV-01", User = @"FIRMAdmin", Screen = RdpScreen.Window, ScreenWidth = 1600, ScreenHeight = 900 },
+                ["Ssh"] = new() { Kind = CustomEntryKind.Ssh, Target = "srv", User = "root", JumpHost = "bastion", PortForward = "8080:localhost:80" },
+                ["Snippet"] = new() { Kind = CustomEntryKind.Snippet, Code = "param([string]$Ziel = 'localhost', [switch]$Lang)\nTest-Connection $Ziel -Count 1" },
+                ["TextSnippet"] = new() { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Viele Grüße\n{{$Benutzer}}", CopyAsHtml = true },
+                ["Tool"] = new() { Kind = CustomEntryKind.Tool, Target = "services.msc" },
+                ["Command"] = new() { Kind = CustomEntryKind.Command, Target = "cmd.exe", WorkingDirectory = @"C:\" },
+                ["File"] = new() { Kind = CustomEntryKind.File, Target = script }
+            };
+            foreach (var (key, sample) in samples)
+            {
+                var w = (ProfilesWindow)ProfilesWindow.ForTest(this, sample);
+                w.Show();
+                await Settle();
+                await Task.Delay(800); // verzögerte Prüfungen (Syntax, Erreichbarkeit)
+                await Settle();
+                if (w.Content is FrameworkElement root) Screenshot(root, "entry-" + key);
+                var vm = w.ViewModelForTest;
+                if (key == "Folder" && vm.SaveCommand.CanExecute(null)) Fail("Ordner: „Öffnen mit Programm“ ohne Programm wird nicht bemängelt");
+                if (key == "Snippet" && (!vm.HasParameters || vm.Entry!.HasSyntaxErrors)) Fail("PowerShell-Snippet: Parameter nicht erkannt oder falscher Syntaxfehler");
+                if (key is "Url" or "Rdp" or "Ssh" or "TextSnippet" && vm.ShowStartSection) Fail($"{key}: Startabschnitt wird angezeigt, obwohl er nicht passt");
+                if (key is "Command" or "Snippet" && !vm.ShowStartSection) Fail($"{key}: Startabschnitt fehlt");
+                w.Close();
+            }
 
             Step("Snippets");
             // Eigene Einträge: Snippet-Datei, Platzhalter, Ein-Klick

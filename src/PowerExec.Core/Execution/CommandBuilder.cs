@@ -20,6 +20,9 @@ public sealed class LocalLaunchSpec
 
     public string? WorkingDirectory { get; init; }
 
+    /// <summary>Fenster beim Start (nur über die Shell bzw. bei Programmen wirksam).</summary>
+    public LaunchWindowState WindowState { get; set; }
+
     /// <summary>Lesbare Vorschau des Befehls (ohne Base64).</summary>
     public required string Preview { get; init; }
 }
@@ -35,10 +38,17 @@ public static class CommandBuilder
 
     public static LocalLaunchSpec BuildLocal(ExecutionRequest r)
     {
+        var spec = BuildLocalCore(r);
+        spec.WindowState = r.Item.WindowState;
+        return spec;
+    }
+
+    private static LocalLaunchSpec BuildLocalCore(ExecutionRequest r)
+    {
         var path = r.EffectivePath;
         var item = r.Item;
         // Eigene Einträge (URL, Befehl …) haben kein sinnvolles Verzeichnis.
-        var dir = item.CustomKind is null or CustomEntryKind.File ? Path.GetDirectoryName(path) : null;
+        var dir = item.WorkingDirectory ?? (item.CustomKind is null or CustomEntryKind.File ? Path.GetDirectoryName(path) : null);
         // Andere Konten haben oft keinen Zugriff auf das Arbeitsverzeichnis (z. B. Netzfreigaben).
         var workDir = r.Mode == ExecutionMode.OtherUser ? null : dir;
 
