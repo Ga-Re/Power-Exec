@@ -25,10 +25,29 @@ public sealed partial class AppController
         try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { }
     }
 
+    /// <summary>Sammelt WPF-Bindungsfehler „Eigenschaft nicht gefunden“ – z. B. falscher DataContext.</summary>
+    private sealed class BindingErrorListener : System.Diagnostics.TraceListener
+    {
+        public readonly HashSet<string> Errors = new();
+        private readonly System.Text.StringBuilder _line = new();
+        public override void Write(string? message) => _line.Append(message);
+        public override void WriteLine(string? message)
+        {
+            _line.Append(message);
+            var text = _line.ToString();
+            _line.Clear();
+            if (text.Contains("BindingExpression path error")) lock (Errors) Errors.Add(text);
+        }
+    }
+
     public async Task<string?> RunSelfTestAsync(string? progressFile = null)
     {
         _progressFile = progressFile;
         Step("Start");
+        var bindingErrors = new BindingErrorListener();
+        System.Diagnostics.PresentationTraceSources.Refresh();
+        System.Diagnostics.PresentationTraceSources.DataBindingSource.Listeners.Add(bindingErrors);
+        System.Diagnostics.PresentationTraceSources.DataBindingSource.Switch.Level = System.Diagnostics.SourceLevels.Error;
         var dispatcher = Application.Current.Dispatcher;
         dispatcher.UnhandledException += (_, e) =>
         {
@@ -170,6 +189,8 @@ public sealed partial class AppController
             foreach (var h in _hosts) h.Dispose();
             _hosts.Clear();
         }
+        lock (bindingErrors.Errors)
+            foreach (var e in bindingErrors.Errors.Take(25)) Fail("Bindungsfehler: " + e);
         return _selfTestErrors.Count == 0 ? null : string.Join(Environment.NewLine + Environment.NewLine, _selfTestErrors);
     }
 

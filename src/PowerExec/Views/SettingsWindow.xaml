@@ -716,7 +716,8 @@
                 </StackPanel>
 
                 <!-- Eigene Einträge -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}" DataContext="{Binding EntryList}">
+                <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
+                <StackPanel DataContext="{Binding EntryList}">
                     <TextBlock Text="Eigene Einträge" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Webseiten, Ordner, Remotedesktop, SSH, Snippets, Windows-Werkzeuge, Befehle und einzelne Dateien. ⚙ bearbeitet einen Eintrag; mehrere markieren zum Verschieben, Exportieren oder Löschen. Änderungen werden mit „Speichern“ übernommen."
                                Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
@@ -877,6 +878,7 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                </Grid>
 
                 <!-- Rechnergruppen -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
