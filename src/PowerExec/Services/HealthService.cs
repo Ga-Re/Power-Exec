@@ -104,6 +104,10 @@ public sealed class HealthService
                 return await WithTimeout(() => File.Exists(target), 5000)
                     ? new HealthResult(true, "Datei vorhanden", now)
                     : new HealthResult(false, "Datei nicht gefunden", now);
+            case CustomEntryKind.Rdp when e.UsesRdpFile:
+                return await WithTimeout(() => File.Exists(e.RdpFile.Trim()), 5000)
+                    ? new HealthResult(true, ".rdp-Datei vorhanden", now)
+                    : new HealthResult(false, ".rdp-Datei nicht gefunden", now);
             case CustomEntryKind.Rdp:
             case CustomEntryKind.Ssh:
             {

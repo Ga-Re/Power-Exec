@@ -41,6 +41,15 @@ oder remote auf einem oder vielen Rechnern.
 
 **Eigene Einträge**
 - Arten: Webseite, Ordner/Freigabe, Remotedesktop, **SSH** (Windows Terminal, Konsole oder PuTTY), **Snippet** (PowerShell – läuft wie ein Script, auch als Admin, als anderer Benutzer oder remote – oder Text, das in die Zwischenablage kopiert wird), **Windows-Werkzeug** (Snap-ins, Systemsteuerung, `ms-settings:`), Befehl, einzelne Datei
+- **Eintragsdialog je Art:** erst die Art als Kachel wählen (oder direkt aus dem Menü), dann ein eigenes Formular nur mit den passenden Feldern; oben Symbol, Anzeigename und Beschreibung; Art jederzeit änderbar (passende Werte bleiben); Prüfung **live am Feld**, Speichern erst bei gültigen Pflichtfeldern; Fenstergröße wird je Art gemerkt
+  - **Webseite:** Titel und Favicon werden automatisch vorgeschlagen, Browser/privat/Profil, **App-Fenster** (ohne Tabs und Adressleiste), Platzhalter-Hilfe
+  - **Remotedesktop:** Rechner, Port, **Benutzer** (vorbelegt, ohne Kennwort), **Vollbild oder Fenstergröße**, **alle Monitore**, **Admin-Sitzung**, **RD-Gateway** – oder eine vorhandene **.rdp-Datei**
+  - **SSH:** **Befehl nach dem Login**, **Sprungserver** (-J), **Port-Weiterleitungen** (-L), **Windows-Terminal-Profil**
+  - **PowerShell-Snippet:** Editor mit Zeilennummern und **Syntaxprüfung**, **Vorschau der abgefragten Parameter**, Ausführungsart (Admin, anderer Benutzer, remote, PowerShell 5.1/7), **Testen**
+  - **Text-Snippet:** eingebaute Variablen **{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}}**, Platzhalter mit Vorschau, **formatiert (HTML) kopieren**, **direkt in das vorher aktive Fenster einfügen**
+  - **Ordner:** Erreichbarkeitsprüfung mit UNC-Hinweis, **Öffnen mit** (Explorer, neues Fenster, Programm, Terminal), als anderer Benutzer, „als smarte Gruppe anlegen“
+  - **Befehl, Datei, Werkzeug:** **Arbeitsordner**, **Fenster** (normal, maximiert, minimiert), Ausführen als (aktuelles Konto, Administrator, anderer Benutzer), Werkzeug-Auswahl mit Suche
+  - Startverhalten = Standardprofil; **weitere Startprofile** eingeklappt darunter. Gleicher Aufbau für Scripte und Programme aus smarten Gruppen (⚙)
 - **Vorlagen-Katalog** mit rund 70 Admin-Werkzeugen, Systemsteuerungs- und Einstellungsseiten
 - **Platzhalter** `{{Name}}` bzw. `{{Name:Vorgabe}}` in Adresse, Argumenten oder Code werden beim Start abgefragt (mit Verlauf), z. B. `https://ticket/{{Nummer}}` oder `mstsc /v:{{Rechner}}`
 - Webseiten in einem bestimmten **Browser** (Edge, Chrome, Firefox), privat und mit Browserprofil öffnen
@@ -48,7 +57,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Mit einem Klick starten** statt aufklappen (je Eintrag); **Duplizieren**; **Schlagworte**
 - **Erreichbarkeits-Prüfung**: tote Links, fehlende Ordner/Dateien, nicht erreichbare RDP-/SSH-Rechner und fehlende Programme werden markiert
 - Infos ohne Wiederholungen: bei Webseiten Titel und Adresse, bei Ordnern Anzahl Dateien und Unterordner, Größe und letzte Änderung
-- Einstellungen › Eigene Einträge: kompakte, durchsuchbare Liste mit Filtern (Art, Gruppe, Schlagwort, Probleme), ⚙ zum Bearbeiten, **Mehrfachauswahl** (verschieben, exportieren, löschen)
+- Einstellungen › Eigene Einträge: kompakte, durchsuchbare Liste mit echten Symbolen und Filtern (Art, Gruppe, Schlagwort, Probleme), ⚙ zum Bearbeiten, **Mehrfachauswahl** (verschieben, exportieren, löschen)
 - **Teilen:** Einträge oder ganze Gruppen als Datei exportieren und bei Kollegen importieren (samt Gruppen, Symbolen, Schlagworten und Profilen – ohne Kennwörter)
 
 **Smarte Gruppen (Ordner)**
