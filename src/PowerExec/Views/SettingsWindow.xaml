@@ -458,7 +458,8 @@
                 </StackPanel>
 
                 <!-- Inhalte › Schlagworte -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=tags}" DataContext="{Binding TagList}">
+                <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=tags}">
+                <StackPanel DataContext="{Binding TagList}">
                     <TextBlock Text="Schlagworte" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Alle Schlagworte deiner Einträge. Im Panel filtert #schlagwort in der Suche. Umbenennen auf einen vorhandenen Namen führt beide zusammen."
                                Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
@@ -519,6 +520,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </StackPanel>
+                </Grid>
 
                 <!-- Arbeitsbereiche -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=workspaces}">
