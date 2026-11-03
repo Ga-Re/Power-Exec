@@ -42,6 +42,15 @@ jobs:
           if (Test-Path $result) { Get-Content $result }
           if ($p.ExitCode -ne 0) { throw "Selbsttest fehlgeschlagen (Code $($p.ExitCode))." }
 
+      - name: Bildschirmfotos des Selbsttests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftest-screens
+          path: ${{ runner.temp }}/screens/*.png
+          retention-days: 5
+          if-no-files-found: ignore
+
       - name: Veröffentlichen (Programmordner für den Installer)
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64

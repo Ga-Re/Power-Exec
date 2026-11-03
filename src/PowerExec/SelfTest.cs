@@ -17,6 +17,7 @@ public sealed partial class AppController
 {
     private readonly List<string> _selfTestErrors = new();
     private string? _progressFile;
+    private int _shotCounter;
 
     /// <summary>Fortschritt in eine Datei schreiben – bei einem Hänger sieht man den letzten Schritt.</summary>
     private void Step(string name)
@@ -135,6 +136,7 @@ public sealed partial class AppController
                     if (first == null && host.Config.Name == "Hauptpanel") Fail($"{layout}: keine Einträge im Panel");
                     first?.SelectCommand.Execute(null);
                     await Settle();
+                    if (host.Window.Content is FrameworkElement panelRoot) Screenshot(panelRoot, $"panel-{host.Config.Name}-{layout}{(compact ? "-kompakt" : "")}");
                     if (host.Config.Name == "Hauptpanel" && !host.ViewModel.AllGroups.Any(g => g.GroupPath == "Admin/AD" && g.Items.Count == 1))
                         Fail($"{layout}: Untergruppe Admin/AD fehlt oder ist leer");
                     host.Window.HidePanel();
@@ -181,6 +183,8 @@ public sealed partial class AppController
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
+                await Settle();
+                if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
                 await Settle();
             }
             settingsWindow.Close();
@@ -231,6 +235,29 @@ public sealed partial class AppController
 
     private void Fail(string message) => _selfTestErrors.Add(message);
 
+    /// <summary>Bildschirmfoto eines Fensters (Inhalt) für die Sichtprüfung als CI-Artefakt.</summary>
+    private void Screenshot(FrameworkElement element, string name)
+    {
+        if (_progressFile == null || element.ActualWidth < 1 || element.ActualHeight < 1) return;
+        try
+        {
+            var dir = Path.Combine(Path.GetDirectoryName(_progressFile)!, "screens");
+            Directory.CreateDirectory(dir);
+            var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(element);
+            var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap((int)(element.ActualWidth * dpi.DpiScaleX), (int)(element.ActualHeight * dpi.DpiScaleY),
+                dpi.PixelsPerInchX, dpi.PixelsPerInchY, System.Windows.Media.PixelFormats.Pbgra32);
+            bmp.Render(element);
+            var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+            using var fs = File.Create(Path.Combine(dir, name + ".png"));
+            enc.Save(fs);
+        }
+        catch (Exception ex)
+        {
+            Step("Bildschirmfoto fehlgeschlagen: " + ex.Message);
+        }
+    }
+
     /// <summary>Cursor und Platzhaltertext müssen im Textfeld an derselben Stelle beginnen (Innenabstand nur einmal).</summary>
     private async Task CheckCaretAlignment()
     {
@@ -260,6 +287,7 @@ public sealed partial class AppController
         Step("Fenster " + w.GetType().Name + " " + w.Title);
         w.Show();
         await Settle();
+        if (w.Content is FrameworkElement root) Screenshot(root, "window-" + w.GetType().Name + "-" + (++_shotCounter));
         w.Close();
     }
 }
