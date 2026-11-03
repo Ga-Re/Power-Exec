@@ -71,8 +71,14 @@ public partial class App : Application
         e.Handled = true;
         // Beim Beenden (z. B. für ein Update) nur protokollieren – keine Meldung, die das Update aufhält
         if (_controller?.IsExiting == true) return;
-        MessageBox.Show("Ein unerwarteter Fehler ist aufgetreten:\n\n" + e.Exception.Message, "Power-Exec",
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        // Ort des Fehlers (erste Stelle im Power-Exec-Code) und Version mit anzeigen, damit sich der Fehler zuordnen lässt
+        var frame = new System.Diagnostics.StackTrace(e.Exception, false).GetFrames()
+            .Select(f => f.GetMethod())
+            .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true);
+        var where = frame != null ? $"{frame.DeclaringType!.Name}.{frame.Name}" : e.Exception.TargetSite?.Name ?? "unbekannt";
+        var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "error.log");
+        MessageBox.Show($"Ein unerwarteter Fehler ist aufgetreten:\n\n{e.Exception.Message}\n\nOrt: {where} · Version {Services.UpdateService.CurrentVersionText}\n" +
+                        $"Details: {log}", "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 

@@ -50,6 +50,13 @@ public partial class PanelWindow : Window
                 else HidePanel();
                 e.Handled = true;
             }
+            // Strg+V außerhalb eines Textfelds bzw. Strg+Umschalt+V: Zwischenablage als neuen Eintrag übernehmen
+            else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) &&
+                     (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || Keyboard.FocusedElement is not TextBox))
+            {
+                e.Handled = true;
+                Vm.AddFromClipboardCommand.Execute(null);
+            }
         };
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(() => { if (IsOpen) Place(); });
     }
@@ -80,6 +87,7 @@ public partial class PanelWindow : Window
         IsOpen = true;
         _poll.Start();
         Animate(show: true);
+        Vm.OnShown();
         if (viaHotkey) FocusSearch();
     }
 

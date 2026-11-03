@@ -42,6 +42,12 @@ public sealed class GroupViewModel : ObservableObject
         NewGroupCommand = new RelayCommand(() => app.CreateGroup());
         NewSubgroupCommand = new RelayCommand(() => app.CreateGroup(GroupPath), () => IsUserGroup);
         HideFolderCommand = new RelayCommand(() => app.SetFolderGroupVisible(FolderPath!, false), () => FolderPath != null);
+        ChooseIconCommand = new RelayCommand(() => app.ChooseGroupIcon(GroupPath!), () => IsUserGroup);
+        ExportCommand = new RelayCommand(() => app.ExportGroup(GroupPath!), () => IsUserGroup);
+        ImportCommand = new RelayCommand(() => app.ImportEntries(GroupPath), () => IsUserGroup || Kind == "custom");
+        AddFromCatalogCommand = new RelayCommand(() => app.AddFromCatalog(GroupPath));
+        AddFromClipboardCommand = new RelayCommand(() => app.AddFromClipboard(GroupPath));
+        CustomIcon = GroupPath != null ? Core.Config.GroupManager.IconOf(app.Settings, GroupPath).ToString() : string.Empty;
         NewEntryCommand = new RelayCommand(p =>
         {
             var kind = Enum.TryParse<Core.Config.CustomEntryKind>(p?.ToString(), out var k) ? k : Core.Config.CustomEntryKind.Url;
@@ -96,6 +102,15 @@ public sealed class GroupViewModel : ObservableObject
     public ICommand MoveDownCommand { get; }
     public ICommand NewGroupCommand { get; }
     public ICommand NewSubgroupCommand { get; }
+    public ICommand ChooseIconCommand { get; }
+    public ICommand ExportCommand { get; }
+    public ICommand ImportCommand { get; }
+    public ICommand AddFromCatalogCommand { get; }
+    public ICommand AddFromClipboardCommand { get; }
+
+    /// <summary>Selbst gewähltes Symbol der Gruppe (IconRef-Text), leer = Standardsymbol.</summary>
+    public string CustomIcon { get; }
+    public bool HasCustomIcon => CustomIcon.Length > 0;
     public ICommand HideFolderCommand { get; }
     public ICommand NewEntryCommand { get; }
     public ICommand AddFilesCommand { get; }

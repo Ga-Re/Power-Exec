@@ -35,6 +35,8 @@ public partial class IconPickerWindow : Window
         Loaded += (_, _) => SearchBox.Focus();
     }
 
+    internal static Window ForTest() => new IconPickerWindow(IconRef.Parse("fluent:folder"), "Test");
+
     /// <returns>Das gewählte Symbol, <see cref="IconRef.None"/> für „kein Symbol“ oder null bei Abbruch.</returns>
     public static IconRef? Pick(IconRef current, string heading = "Symbol wählen")
     {

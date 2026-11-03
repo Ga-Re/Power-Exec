@@ -130,9 +130,9 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public IReadOnlyList<KeyValuePair<ItemLayout, string>> Layouts { get; } = new[]
     {
         new KeyValuePair<ItemLayout, string>(ItemLayout.List, "Liste"),
-        new KeyValuePair<ItemLayout, string>(ItemLayout.Compact, "Kompakt"),
         new KeyValuePair<ItemLayout, string>(ItemLayout.Grid, "Raster (Kacheln)")
     };
+    public bool Compact { get => _c.Compact; set { _c.Compact = value; OnPropertyChanged(); } }
     public bool ShowRecent { get => _c.ShowRecent; set { _c.ShowRecent = value; OnPropertyChanged(); } }
     public bool ShowFavorites { get => _c.ShowFavorites; set { _c.ShowFavorites = value; OnPropertyChanged(); } }
 

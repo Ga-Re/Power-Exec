@@ -88,23 +88,70 @@ public sealed class PanelViewModel : ObservableObject
             if (_host.Config.Layout == value) return;
             _host.Config.Layout = value;
             _app.SaveSettings();
-            foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph) }) OnPropertyChanged(p);
+            RaiseLayout();
         }
     }
 
-    public bool IsCompact => Layout == ItemLayout.Compact;
-    public bool IsGrid => Layout == ItemLayout.Grid;
-    public bool IsList => Layout != ItemLayout.Grid;
-
-    /// <summary>Symbol des Darstellungs-Knopfs im Panel-Kopf.</summary>
-    public string LayoutGlyph => Layout switch
+    private void RaiseLayout()
     {
-        ItemLayout.Grid => "\uE8A9",
-        ItemLayout.Compact => "\uE76F",
-        _ => "\uE8FD"
-    };
+        foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+    }
+
+    /// <summary>Kompakt: Liste einzeilig, Raster mit kleineren Kacheln.</summary>
+    public bool IsCompact
+    {
+        get => _host.Config.Compact;
+        set
+        {
+            if (_host.Config.Compact == value) return;
+            _host.Config.Compact = value;
+            _app.SaveSettings();
+            RaiseLayout();
+        }
+    }
+
+    public bool IsGrid
+    {
+        get => Layout == ItemLayout.Grid;
+        set => Layout = value ? ItemLayout.Grid : ItemLayout.List;
+    }
+
+    public bool IsList => !IsGrid;
+
+    /// <summary>Symbol des Umschalters Liste/Raster im Panel-Kopf (zeigt die aktuelle Darstellung).</summary>
+    public string LayoutGlyph => IsGrid ? "\uE8A9" : "\uE8FD";
+    public string LayoutToolTip => IsGrid ? "Raster – klicken für Liste" : "Liste – klicken für Raster";
 
     public ICommand SetLayoutCommand { get; }
+    public ICommand ToggleGridCommand => new RelayCommand(() => IsGrid = !IsGrid);
+    public ICommand ToggleCompactCommand => new RelayCommand(() => IsCompact = !IsCompact);
+
+    // Rechtsklick auf freie Fläche
+    public ICommand NewEntryCommand => new RelayCommand(p =>
+        _app.NewCustomEntry(Enum.TryParse<CustomEntryKind>(p?.ToString(), out var k) ? k : CustomEntryKind.Url, null));
+    public ICommand AddFromCatalogCommand => new RelayCommand(() => _app.AddFromCatalog(null));
+    public ICommand AddFromClipboardCommand => new RelayCommand(() => _app.AddFromClipboard(SelectedItem is { } s ? GroupManager.GroupOf(_app.Settings, s.Item.FullPath) is { Length: > 0 } g ? g : null : null));
+    public ICommand ImportEntriesCommand => new RelayCommand(() => _app.ImportEntries());
+    public ICommand AddFilesCommand => new RelayCommand(() =>
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Dateien hinzufügen",
+            Multiselect = true,
+            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
+        };
+        if (_app.WithDialog(() => dlg.ShowDialog()) != true) return;
+        _app.AddDropped(dlg.FileNames.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), null);
+    });
+
+    /// <summary>Panel wird angezeigt: eigene Einträge im Hintergrund prüfen (höchstens alle 10 Minuten je Eintrag).</summary>
+    public void OnShown()
+    {
+        if (_app.Health == null) return;
+        var keys = new HashSet<string>(AllItems.Where(i => i.Item.Source != null).Select(i => i.Item.FullPath), StringComparer.OrdinalIgnoreCase);
+        var entries = _app.Settings.CustomEntries.Where(c => keys.Contains(c.Key)).ToList();
+        if (entries.Count > 0) _ = _app.Health.CheckAsync(entries);
+    }
 
     // Arbeitsbereiche
     public IReadOnlyList<string> Workspaces => _app.Settings.Workspaces.Select(w => w.Name).ToList();
@@ -147,8 +194,10 @@ public sealed class PanelViewModel : ObservableObject
     {
         var settings = _app.Settings;
         var repo = _app.Repository;
-        var query = _searchText.Trim();
-        bool searching = query.Length > 0;
+        // „#schlagwort“ filtert nach Schlagworten, der Rest ist normale Suche
+        var (tagFilter, query) = Tags.SplitQuery(_searchText.Trim());
+        bool tagsOk(LaunchItem i) => tagFilter.Count == 0 || Tags.Matches(Tags.Of(settings, i.FullPath), tagFilter);
+        bool searching = query.Length > 0 || tagFilter.Count > 0;
         var collapsed = new HashSet<string>(settings.CollapsedGroups, StringComparer.OrdinalIgnoreCase);
 
         // Nur sichtbare Einträge (Haken in den Ordner-Einstellungen, neue Dateien ggf. erst nach Freigabe)
@@ -189,12 +238,12 @@ public sealed class PanelViewModel : ObservableObject
             if (ItemFilter.MatchesQuery(i, query)) return true;
             var e = settings.FindEntry(i.FullPath);
             return e != null && query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .All(t => (i.SearchText + " " + e.DisplayName + " " + e.Description + " " + e.Notes + " " + e.Category)
+                .All(t => (i.SearchText + " " + e.DisplayName + " " + e.Description + " " + e.Notes + " " + e.Category + " " + string.Join(' ', e.Tags) + " " + i.Source?.Code)
                     .Contains(t, StringComparison.CurrentCultureIgnoreCase));
         }
 
         var pool = visible
-            .Where(i => ItemFilter.MatchesType(i, _filter, _app.IsFavorite(i.FullPath)) && (query.Length == 0 || Matches(i)))
+            .Where(i => ItemFilter.MatchesType(i, _filter, _app.IsFavorite(i.FullPath)) && tagsOk(i) && (query.Length == 0 || Matches(i)))
             .ToList();
 
         IEnumerable<LaunchItem> Order(IEnumerable<LaunchItem> items) => searching
@@ -297,7 +346,7 @@ public sealed class PanelViewModel : ObservableObject
             : $"{errors.Count} Ordner nicht erreichbar";
 
         if (repo.IsScanning && repo.Items.Count == 0) Footer = "Ordner werden eingelesen …";
-        else if (searching) Footer = $"{pool.Count} Treffer für „{query}“";
+        else if (searching) Footer = $"{pool.Count} Treffer für „{_searchText.Trim()}“";
         else Footer = $"{visible.Count} Einträge · eingelesen {repo.LastScan:HH:mm}" + (HasWorkspaces ? $" · {settings.ActiveWorkspace}" : string.Empty);
 
         OnPropertyChanged(nameof(HasNoFolders));
@@ -305,7 +354,7 @@ public sealed class PanelViewModel : ObservableObject
         OnPropertyChanged(nameof(HotkeyHint));
         OnPropertyChanged(nameof(HasHotkey));
         OnPropertyChanged(nameof(IsPinned));
-        foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph) }) OnPropertyChanged(p);
+        RaiseLayout();
         OnPropertyChanged(nameof(Workspaces));
         OnPropertyChanged(nameof(ActiveWorkspace));
         OnPropertyChanged(nameof(HasWorkspaces));

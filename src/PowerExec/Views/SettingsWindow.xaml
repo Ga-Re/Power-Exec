@@ -388,9 +388,12 @@
                         <Border Style="{StaticResource Card}" Padding="16,12">
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,10">
-                                    <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Layouts}" SelectedValue="{Binding Layout}"/>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ComboBox Style="{StaticResource RowCombo}" Width="170" ItemsSource="{Binding Layouts}" SelectedValue="{Binding Layout}"/>
+                                        <CheckBox Content="Kompakt" IsChecked="{Binding Compact}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                    </StackPanel>
                                     <StackPanel VerticalAlignment="Center"><TextBlock Text="Darstellung" Style="{StaticResource RowTitle}"/>
-                                        <TextBlock Text="Liste mit Info-Zeile, kompakte Liste oder Raster (Kacheln). Auch über den Knopf im Panel-Kopf umschaltbar." Style="{StaticResource RowDesc}" TextWrapping="Wrap"/></StackPanel>
+                                        <TextBlock Text="Liste oder Raster (Kacheln); kompakt = einzeilige Liste bzw. kleine Kacheln. Auch über die Knöpfe im Panel-Kopf umschaltbar." Style="{StaticResource RowDesc}" TextWrapping="Wrap"/></StackPanel>
                                 </DockPanel>
                                 <DockPanel Margin="0,0,0,6">
                                     <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowRecent}" VerticalAlignment="Center"/>

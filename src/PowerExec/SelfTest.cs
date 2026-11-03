@@ -55,11 +55,18 @@ public sealed partial class AppController
             GroupManager.Create(Settings, "AD", "Admin");
             GroupManager.Create(Settings, "Leer");
             GroupManager.Assign(Settings, script, "Admin/AD");
+            GroupManager.SetIcon(Settings, "Admin", IconRef.Parse("fluent:shield"));
+            GroupManager.SetIcon(Settings, "Admin/AD", IconRef.Parse("hero:users"));
             Settings.CustomEntries.Add(new CustomEntry { Name = "Intranet", Kind = CustomEntryKind.Url, Target = "https://example.com" });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Freigabe", Kind = CustomEntryKind.Folder, Target = dir });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Server", Kind = CustomEntryKind.Rdp, Target = "SRV-01" });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Terminal", Kind = CustomEntryKind.Command, Target = "cmd.exe" });
             Settings.CustomEntries.Add(new CustomEntry { Kind = CustomEntryKind.File, Target = Path.Combine(dir, "Sub", "Info.ps1") });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Ping", Kind = CustomEntryKind.Snippet, Code = "param([string]$Ziel = 'localhost')\nTest-Connection $Ziel -Count 1", Icon = "hero:signal" });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Signatur", Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Viele Grüße\n{{Name}}" });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Linux", Kind = CustomEntryKind.Ssh, Target = "srv", User = "root", Port = 2222, Icon = "emoji:🐧" });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "AD", Kind = CustomEntryKind.Tool, Target = "dsa.msc", Icon = "fluent:people_team", SingleClick = true });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Ticket", Kind = CustomEntryKind.Url, Target = "https://example.com/{{Nr}}", Browser = BrowserChoice.Edge, Private = true, Icon = "glyph:E8EC" });
             Settings.Favorites.Add(Path.Combine(dir, "Cleanup.cmd"));
             Settings.Entries.Add(new EntryConfig { Path = Path.Combine(dir, "Cleanup.cmd"), Notes = "Nur nach Rücksprache" });
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
@@ -77,11 +84,17 @@ public sealed partial class AppController
             CreateHosts();
             if (Repository.Items.Count < 3) Fail($"Scan fand nur {Repository.Items.Count} Einträge");
 
-            foreach (var layout in new[] { ItemLayout.List, ItemLayout.Compact, ItemLayout.Grid })
+            // Alle eingebetteten Symbole müssen sich in WPF-Geometrien umwandeln lassen
+            var broken = IconLibrary.Fluent().Concat(IconLibrary.Hero()).Where(c => IconLibrary.GeometryOf(c.Ref) == null).Select(c => c.Ref.ToString()).ToList();
+            if (IconLibrary.FluentCount < 1000 || IconLibrary.HeroCount < 200) Fail($"Symbole fehlen: Fluent {IconLibrary.FluentCount}, Hero {IconLibrary.HeroCount}");
+            if (broken.Count > 0) Fail($"{broken.Count} Symbole ungültig, z. B. {string.Join(", ", broken.Take(5))}");
+
+            foreach (var (layout, compact) in new[] { (ItemLayout.List, false), (ItemLayout.List, true), (ItemLayout.Grid, false), (ItemLayout.Grid, true) })
             {
                 foreach (var host in _hosts)
                 {
                     host.Config.Layout = layout;
+                    host.Config.Compact = compact;
                     host.ViewModel.Rebuild();
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
@@ -114,6 +127,17 @@ public sealed partial class AppController
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: true)));
             var request = new ExecutionRequest { Item = item, Targets = ["WEB1", "WEB2"] };
             await ShowAndClose(new ResultsWindow(new ResultsViewModel(this, request, "TEST\\user")));
+            await ShowAndClose(IconPickerWindow.ForTest());
+            await ShowAndClose(CatalogWindow.ForTest());
+            await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
+            foreach (var kind in Enum.GetValues<CustomEntryKind>())
+                await ShowAndClose(CustomEntryWindow.ForTest(new CustomEntry { Kind = kind, Target = "x" }, GroupManager.All(Settings)));
+
+            // Eigene Einträge: Snippet-Datei, Platzhalter, Ein-Klick
+            var snippet = Settings.CustomEntries.First(c => c.Name == "Ping");
+            var snippetItem = DescribeCustom(snippet);
+            if (!File.Exists(snippet.SnippetPath) || snippetItem.Parameters.Count != 1) Fail("PowerShell-Snippet: Datei oder param() nicht erkannt");
+            if (!_hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
 
             // Arbeitsbereich wechseln
             SwitchWorkspace("Kunde A");

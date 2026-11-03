@@ -26,6 +26,9 @@ public partial class PlaceholderWindow : Window
         Fields.ItemsSource = fields;
     }
 
+    internal static Window ForTest(IReadOnlyList<Placeholder> placeholders) =>
+        new PlaceholderWindow("Test", placeholders.Select(p => new Field { Name = p.Name, Value = p.Default, History = new[] { "a", "b" } }).ToList());
+
     public static Dictionary<string, string>? Ask(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history)
     {
         var fields = placeholders.Select(p =>

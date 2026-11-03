@@ -22,6 +22,9 @@ public partial class CustomEntryWindow : Window
         Loaded += (_, _) => TargetBox.Focus();
     }
 
+    internal static Window ForTest(CustomEntry entry, IReadOnlyList<string> groups) =>
+        new CustomEntryWindow(new CustomEntryViewModel(entry, groups.FirstOrDefault(), new[] { "test" }, groups), isNew: false);
+
     /// <returns>Der geänderte Eintrag samt Gruppe und Schlagworten oder null bei Abbruch.</returns>
     public static CustomEntryEditResult? Edit(IReadOnlyList<string> groups, CustomEntry entry, bool isNew, string? group, IEnumerable<string> tags, Window? owner = null)
     {

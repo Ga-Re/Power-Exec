@@ -24,6 +24,8 @@ public partial class CatalogWindow : Window
         Loaded += (_, _) => SearchBox.Focus();
     }
 
+    internal static Window ForTest() => new CatalogWindow();
+
     public static IReadOnlyList<CatalogTemplate>? Pick()
     {
         var w = new CatalogWindow();

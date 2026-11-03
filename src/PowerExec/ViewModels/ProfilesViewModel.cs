@@ -249,6 +249,7 @@ public sealed class ProfilesViewModel : ObservableObject
         _description = entry?.Description ?? string.Empty;
         _category = entry?.Category ?? string.Empty;
         _notes = entry?.Notes ?? string.Empty;
+        _tags = Core.Config.Tags.Format(entry?.Tags ?? new List<string>());
         Categories = target.CategoryOrder
             .Concat(target.Entries.Select(e => e.Category))
             .Where(c => !string.IsNullOrWhiteSpace(c))
@@ -293,6 +294,10 @@ public sealed class ProfilesViewModel : ObservableObject
     private string _notes;
     /// <summary>Eigene Notiz (z. B. „nur nach Rücksprache mit dem DBA“); erscheint im Panel und im Ausführen-Dialog.</summary>
     public string Notes { get => _notes; set => Set(ref _notes, value ?? string.Empty); }
+
+    private string _tags;
+    /// <summary>Schlagworte, durch Komma getrennt (Suche im Panel: #schlagwort).</summary>
+    public string TagsText { get => _tags; set => Set(ref _tags, value ?? string.Empty); }
     public IReadOnlyList<string> Categories { get; }
 
     public ObservableCollection<ProfileEditViewModel> Profiles { get; } = new();
@@ -364,6 +369,7 @@ public sealed class ProfilesViewModel : ObservableObject
             Description = Description.Trim(),
             Category = Category.Trim(),
             Notes = Notes.Trim(),
+            Tags = Core.Config.Tags.Parse(TagsText),
             Profiles = Profiles.Select(p => p.ToProfile()).ToList()
         };
         if (entry.Category.Length > 0 && !_target.CategoryOrder.Contains(entry.Category, StringComparer.CurrentCultureIgnoreCase))

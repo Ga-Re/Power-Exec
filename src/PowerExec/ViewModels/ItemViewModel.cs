@@ -33,9 +33,12 @@ public sealed class ItemViewModel : ObservableObject
             p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
             new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
 
-        if (app.Settings.ShowProgramIcons) _icon = LoadIcon(app, item);
+        CustomIcon = item.Source?.Icon ?? string.Empty;
+        if (app.Settings.ShowProgramIcons && CustomIcon.Length == 0) _icon = LoadIcon(app, item);
+        _health = item.Source != null ? app.Health?.Get(item.Source.Key) : null;
 
-        SelectCommand = new RelayCommand(() => _panel.Select(this));
+        // Eigene Einträge mit „Ein Klick startet“: sofort ausführen statt aufklappen
+        SelectCommand = new RelayCommand(() => { if (IsSingleClick) RunCommand?.Execute(null); else _panel.Select(this); });
         RunCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
         RunAdminCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator), () => CanElevate);
         RunAsUserCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser), () => CanElevate);
@@ -56,7 +59,50 @@ public sealed class ItemViewModel : ObservableObject
             if (name != null) _app.AssignGroup(Item.FullPath, name);
         });
         UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
+        CopySnippetCommand = new RelayCommand(() => _app.CopySnippet(Item), () => IsSnippet);
+        DuplicateCommand = new RelayCommand(() => _app.DuplicateCustomEntry(Item), () => CanDuplicate);
+        ToggleSingleClickCommand = new RelayCommand(() => _app.ToggleSingleClick(Item), () => Item.IsCustom && Item.CustomKind != CustomEntryKind.File);
+        OpenDetailsCommand = new RelayCommand(() => _panel.Select(this));
     }
+
+    // ---- Eigene Einträge: Symbol, Ein-Klick, Snippets, Prüfung -------------------
+
+    /// <summary>Selbst gewähltes Symbol (IconRef-Text), leer = automatisch.</summary>
+    public string CustomIcon { get; }
+    public bool HasCustomIcon => CustomIcon.Length > 0;
+    public bool ShowBadge => !HasCustomIcon && !HasIcon;
+    public bool IsSingleClick => Item.Source?.SingleClick == true;
+    public bool IsSnippet => Item.CustomKind == CustomEntryKind.Snippet;
+    public bool CanDuplicate => Item.IsCustom && Item.CustomKind != CustomEntryKind.File;
+    public bool CanToggleSingleClick => Item.IsCustom && Item.CustomKind != CustomEntryKind.File;
+    public string SingleClickHeader => IsSingleClick ? "Mit einem Klick starten ✓" : "Mit einem Klick starten";
+    public string RunHeader => Item.Source?.CopiesToClipboard == true ? "In die Zwischenablage kopieren" : "Ausführen";
+
+    private readonly Services.HealthResult? _health;
+    public bool HasHealthProblem => _health is { Ok: false };
+    public string? HealthText => _health is { Ok: false } h ? h.Message : null;
+
+    public IReadOnlyList<string> Tags => _entry?.Tags ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public bool HasTags => Tags.Count > 0;
+    public string TagsText => "#" + string.Join("  #", Tags);
+
+    private string? _folderInfo;
+    /// <summary>Bei Ordnern: Dateien, Unterordner, Größe (wird beim Aufklappen ermittelt).</summary>
+    public string? FolderInfo { get => _folderInfo; private set { if (Set(ref _folderInfo, value)) { OnPropertyChanged(nameof(Meta)); OnPropertyChanged(nameof(HasMeta)); } } }
+
+    private async void LoadFolderInfo()
+    {
+        if (Item.CustomKind != CustomEntryKind.Folder || _folderInfo != null || Item.Source == null) return;
+        var path = Item.Source.Target.Trim();
+        if (Item.Source.Placeholders.Count > 0) return;
+        FolderInfo = Services.FolderStats.Cached(path) ?? "Ordner wird ausgewertet …";
+        FolderInfo = await Services.FolderStats.GetAsync(path);
+    }
+
+    public ICommand CopySnippetCommand { get; }
+    public ICommand DuplicateCommand { get; }
+    public ICommand ToggleSingleClickCommand { get; }
+    public ICommand OpenDetailsCommand { get; }
 
     /// <summary>
     /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
@@ -67,10 +113,17 @@ public sealed class ItemViewModel : ObservableObject
         void Done(ImageSource img) => Icon = img;
         switch (item.CustomKind)
         {
-            case CustomEntryKind.Url: return app.Icons.GetFavicon(item.LaunchTarget ?? string.Empty, Done);
+            case CustomEntryKind.Url: return app.Icons.GetFavicon(item.Source?.Target.Trim() ?? item.LaunchTarget ?? string.Empty, Done);
             case CustomEntryKind.Folder: return app.Icons.GetFolder(Done);
             case CustomEntryKind.Rdp: return app.Icons.GetProgram("mstsc.exe", Done);
-            case CustomEntryKind.Command: return app.Icons.GetProgram(item.LaunchTarget ?? string.Empty, Done);
+            case CustomEntryKind.Command:
+            case CustomEntryKind.Ssh:
+                return app.Icons.GetProgram(item.LaunchTarget ?? string.Empty, Done);
+            case CustomEntryKind.Tool:
+                var t = item.Source?.Target.Trim() ?? string.Empty;
+                return t.Contains(':') && !Path.IsPathRooted(t) ? null : app.Icons.GetProgram(t, Done);
+            case CustomEntryKind.Snippet:
+                return null;
         }
         if (item.Type is ItemType.PowerShell or ItemType.Batch) return null;
         return app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, Done);
@@ -109,7 +162,8 @@ public sealed class ItemViewModel : ObservableObject
     public bool HasParseError => Item.ParseError != null;
     public string? ParseError => Item.ParseError;
 
-    public string BadgeText => Item.CustomKind is { } ck and not CustomEntryKind.File ? CustomEntryViewModel.PanelBadge(ck) : Item.Type switch
+    public string BadgeText => Item.Source is { Kind: CustomEntryKind.Snippet, Language: SnippetLanguage.Text } ? "TXT"
+        : Item.CustomKind is { } ck and not CustomEntryKind.File ? CustomEntryViewModel.PanelBadge(ck, Item.Source?.Target ?? string.Empty) : Item.Type switch
     {
         ItemType.PowerShell => "PS1",
         ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
@@ -123,7 +177,7 @@ public sealed class ItemViewModel : ObservableObject
     {
         get
         {
-            if (Item.IsCustom && Item.CustomKind != CustomEntryKind.File) return Item.Description;
+            if (Item.Source is { } src && src.Kind != CustomEntryKind.File) return CustomMeta(src);
             if (!Item.IsPowerShell) return Item.FullPath;
             var parts = new List<string> { Item.FullPath };
             parts.Add(Item.HasParameters ? $"{Item.Parameters.Count} Parameter" : "keine Parameter");
@@ -132,8 +186,39 @@ public sealed class ItemViewModel : ObservableObject
         }
     }
 
+    /// <summary>Zusatzinfo für eigene Einträge ohne Wiederholung der Info-Zeile.</summary>
+    private string CustomMeta(CustomEntry src)
+    {
+        var parts = new List<string>();
+        switch (src.Kind)
+        {
+            case CustomEntryKind.Url when src.Browser != BrowserChoice.Default:
+                parts.Add(src.Browser switch { BrowserChoice.Chrome => "Chrome", BrowserChoice.Firefox => "Firefox", _ => "Edge" } +
+                          (src.Private ? " · privat" : string.Empty) + (src.BrowserProfile.Length > 0 ? " · Profil " + src.BrowserProfile : string.Empty));
+                break;
+            case CustomEntryKind.Folder:
+                if (_folderInfo != null) parts.Add(_folderInfo);
+                break;
+            case CustomEntryKind.Snippet:
+                var lines = src.Code.Replace("\r", "").Split('\n');
+                parts.Add(string.Join("\n", lines.Take(8)) + (lines.Length > 8 ? "\n…" : string.Empty));
+                break;
+            case CustomEntryKind.Ssh:
+            case CustomEntryKind.Rdp:
+            case CustomEntryKind.Command:
+            case CustomEntryKind.Tool:
+                var cmd = ((Item.LaunchTarget ?? string.Empty) + " " + Item.LaunchArguments).Trim();
+                if (!cmd.Equals(Synopsis, StringComparison.OrdinalIgnoreCase)) parts.Add(cmd);
+                break;
+        }
+        if (src.Placeholders.Count > 0) parts.Add("Fragt beim Start: " + string.Join(", ", src.Placeholders.Select(p => p.Name)));
+        return string.Join("\n", parts);
+    }
+
+    public bool HasMeta => Meta.Length > 0;
+
     /// <summary>Text für den Ausführen-Knopf: Scripte mit Parametern öffnen den Dialog.</summary>
-    public string RunLabel => "Ausführen";
+    public string RunLabel => Item.Source?.CopiesToClipboard == true ? "Kopieren" : "Ausführen";
 
     public string RunToolTip
     {
@@ -156,7 +241,7 @@ public sealed class ItemViewModel : ObservableObject
         get => _icon;
         private set
         {
-            if (Set(ref _icon, value)) OnPropertyChanged(nameof(HasIcon));
+            if (Set(ref _icon, value)) { OnPropertyChanged(nameof(HasIcon)); OnPropertyChanged(nameof(ShowBadge)); }
         }
     }
 
@@ -167,7 +252,7 @@ public sealed class ItemViewModel : ObservableObject
         get => _isSelected;
         set
         {
-            if (Set(ref _isSelected, value) && value) { LoadSignature(); LoadRequirements(); }
+            if (Set(ref _isSelected, value) && value) { LoadSignature(); LoadRequirements(); LoadFolderInfo(); }
         }
     }
 
