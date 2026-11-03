@@ -11,6 +11,7 @@ oder remote auf einem oder vielen Rechnern.
 - Hover-Zone am Bildschirmrand: Rand, Monitor, Lage, Länge und Breite einstellbar; sie übernimmt die Panelfarbe
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
 - **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
+- **Acrylic:** Hintergrund hinter dem Panel weichzeichnen (Panel › Darstellung)
 - **Darstellung:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), **Elementgröße Klein / Mittel / Groß** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
 - **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
@@ -27,6 +28,8 @@ oder remote auf einem oder vielen Rechnern.
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
 - **Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** in jede Gruppe verschieben oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
+- **Gruppenfarben:** Palette oder eigene Farbe; die Gruppe erscheint als getönte Karte mit farbigem Symbol, Untergruppen erben die Farbe
+- **Liste oder Raster je Gruppe:** im Gruppenkopf, per Rechtsklick › Darstellung oder in Einstellungen › Gruppen
 - **Smarte Gruppen:** eine Gruppe mit Ordner zeigt automatisch dessen Scripte und Programme – auf Wunsch mit Unterordnern als Untergruppen
 - **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
 - Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, SSH, Snippet, Werkzeug, Befehl, Dateien, aus Vorlagen oder aus der Zwischenablage
@@ -49,7 +52,8 @@ oder remote auf einem oder vielen Rechnern.
   - **Text-Snippet:** eingebaute Variablen **{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}}**, Platzhalter mit Vorschau, **formatiert (HTML) kopieren**, **direkt in das vorher aktive Fenster einfügen**
   - **Ordner:** Erreichbarkeitsprüfung mit UNC-Hinweis, **Öffnen mit** (Explorer, neues Fenster, Programm, Terminal), als anderer Benutzer, „als smarte Gruppe anlegen“
   - **Befehl, Datei, Werkzeug:** **Arbeitsordner**, **Fenster** (normal, maximiert, minimiert), Ausführen als (aktuelles Konto, Administrator, anderer Benutzer), Werkzeug-Auswahl mit Suche
-  - Startverhalten = Standardprofil; **weitere Startprofile** eingeklappt darunter. Gleicher Aufbau für Scripte und Programme aus smarten Gruppen (⚙)
+  - **Startprofile für alle Arten** (Liste links, Einstellungen rechts): je Profil eigene Startoptionen – z. B. Webseite „Arbeit“ in Edge mit Browserprofil A, „Privat“ in Chrome mit Browserprofil B; RDP mit anderem Benutzer oder Vollbild; SSH über anderen Sprungserver; Ordner im Terminal statt Explorer. Ziel, Adresse und Code gelten für alle Profile. Gleicher Aufbau für Scripte und Programme aus smarten Gruppen (⚙)
+  - Browser-Auswahl zeigt **nur installierte Browser**, Browserprofile werden **gefunden und zur Auswahl angeboten** (Edge, Chrome, Firefox)
 - **Vorlagen-Katalog** mit rund 70 Admin-Werkzeugen, Systemsteuerungs- und Einstellungsseiten
 - **Platzhalter** `{{Name}}` bzw. `{{Name:Vorgabe}}` in Adresse, Argumenten oder Code werden beim Start abgefragt (mit Verlauf), z. B. `https://ticket/{{Nummer}}` oder `mstsc /v:{{Rechner}}`
 - Webseiten in einem bestimmten **Browser** (Edge, Chrome, Firefox), privat und mit Browserprofil öffnen
@@ -119,6 +123,8 @@ oder remote auf einem oder vielen Rechnern.
 **Einstellungen**
 - Gegliedert wie PowerToys: Navigation mit Symbolen und **einklappbaren Bereichen** (Allgemein · Inhalte: Gruppen, Eigene Einträge, Arbeitsbereiche · Panel: Darstellung, Verhalten · Ausführung · Hilfe), **Suche** „Nach Einstellungen suchen“, Karten mit Symbol und Beschreibung, aufklappbare Karten für Unteroptionen
 - Ein einheitlicher Dialog für eigene Einträge und Startprofile (Symbol, Ziel, Gruppe, Schlagworte, Ein-Klick-Start, Profile)
+- **Schlagwort-Verwaltung:** alle Schlagworte mit Anzahl und Einträgen, umbenennen, zusammenführen, löschen, **Farbe** je Schlagwort
+- **Rechnergruppen** einklappbar; überall, wo Rechner eingegeben werden, schlägt „@“ die Gruppen vor, dazu „Gruppe einfügen ▾“
 - Schlagworte als **Chips** mit globaler Vorschlagsliste und Autovervollständigung (Enter/Komma fügt hinzu, × oder Rücktaste entfernt)
 - Änderungen werden **sofort übernommen** (das Panel wird nur neu aufgebaut, wenn sich an ihm etwas ändert); „Änderungen verwerfen“ stellt den Stand beim Öffnen wieder her
 - Änderungen im Panel (z. B. ein Eintrag in eine Gruppe gezogen) erscheinen direkt im offenen Einstellungsfenster

@@ -59,3 +59,31 @@ public sealed class EqualsVisibilityConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>#RRGGBB → Pinsel (leer/ungültig = transparent).</summary>
+public sealed class HexBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        Core.Config.PanelColors.TryParse(value as string, out var c)
+            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(c.R, c.G, c.B))
+            : System.Windows.Media.Brushes.Transparent;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>Schlagwort → getönter Chip-Hintergrund (Parameter „has“: hat das Schlagwort eine Farbe?).</summary>
+public sealed class TagBrushConverter : IValueConverter
+{
+    /// <summary>Farbe eines Schlagworts (setzt die App).</summary>
+    public static Func<string, string>? Lookup { get; set; }
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var hex = value is string tag ? Lookup?.Invoke(tag) ?? string.Empty : string.Empty;
+        bool has = Core.Config.PanelColors.TryParse(hex, out var c);
+        if (parameter as string == "has") return has;
+        return has ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x60, c.R, c.G, c.B)) : System.Windows.Media.Brushes.Transparent;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}

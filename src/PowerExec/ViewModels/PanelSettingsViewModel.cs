@@ -180,6 +180,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
         : "Farbe des Designs";
 
+    public bool Acrylic { get => _c.Acrylic; set { _c.Acrylic = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); } }
+
     public int PanelOpacity
     {
         get => _c.PanelOpacity;

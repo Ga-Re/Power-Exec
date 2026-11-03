@@ -112,6 +112,8 @@ public static class GroupManager
             s.CustomOrder.Remove(key);
         s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path));
         foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) s.GroupIcons.Remove(key);
+        foreach (var dict in new[] { s.GroupColors, s.GroupLayouts })
+            foreach (var key in dict.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) dict.Remove(key);
         foreach (var p in s.Panels) p.Categories.RemoveAll(c => IsSameOrBelow(Normalize(c), path));
     }
 
@@ -189,6 +191,39 @@ public static class GroupManager
     public static IconRef IconOf(AppSettings s, string groupPath) =>
         s.GroupIcons.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)) is { Value: { } v } ? IconRef.Parse(v) : IconRef.None;
 
+    /// <summary>Eigene Farbe der Gruppe (ohne Vererbung), leer = keine.</summary>
+    public static string OwnColorOf(AppSettings s, string groupPath) =>
+        s.GroupColors.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value ?? string.Empty;
+
+    /// <summary>Wirksame Farbe: eigene oder die der nächsten übergeordneten Gruppe.</summary>
+    public static string ColorOf(AppSettings s, string groupPath)
+    {
+        for (string? p = Normalize(groupPath); p != null && p.Length > 0; p = ParentOf(p))
+            if (OwnColorOf(s, p) is { Length: > 0 } c) return c;
+        return string.Empty;
+    }
+
+    public static void SetColor(AppSettings s, string groupPath, string? color)
+    {
+        foreach (var k in s.GroupColors.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupColors.Remove(k);
+        if (PanelColors.TryParse(color, out var c)) s.GroupColors[Normalize(groupPath)] = c.Hex;
+    }
+
+    /// <summary>Darstellung der Gruppe: null = wie das Panel, sonst Liste oder Raster.</summary>
+    public static ItemLayout? LayoutOf(AppSettings s, string groupPath) =>
+        s.GroupLayouts.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value switch
+        {
+            "Grid" => ItemLayout.Grid,
+            "List" => ItemLayout.List,
+            _ => null
+        };
+
+    public static void SetLayout(AppSettings s, string groupPath, ItemLayout? layout)
+    {
+        foreach (var k in s.GroupLayouts.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupLayouts.Remove(k);
+        if (layout is ItemLayout.Grid or ItemLayout.List) s.GroupLayouts[Normalize(groupPath)] = layout == ItemLayout.Grid ? "Grid" : "List";
+    }
+
     public static void SetIcon(AppSettings s, string groupPath, IconRef icon)
     {
         foreach (var k in s.GroupIcons.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupIcons.Remove(k);
@@ -214,11 +249,12 @@ public static class GroupManager
         foreach (var ws in s.Workspaces)
             for (int i = 0; i < ws.HiddenGroups.Count; i++)
                 if (IsSameOrBelow(ws.HiddenGroups[i], oldPath)) ws.HiddenGroups[i] = Map(ws.HiddenGroups[i]);
-        foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, oldPath)).ToList())
-        {
-            s.GroupIcons.Remove(key, out var icon);
-            s.GroupIcons[Map(key)] = icon!;
-        }
+        foreach (var dict in new[] { s.GroupIcons, s.GroupColors, s.GroupLayouts })
+            foreach (var key in dict.Keys.Where(k => IsSameOrBelow(k, oldPath)).ToList())
+            {
+                dict.Remove(key, out var value);
+                dict[Map(key)] = value!;
+            }
         for (int i = 0; i < s.CollapsedGroups.Count; i++)
             if (s.CollapsedGroups[i].StartsWith(KeyPrefix) && IsSameOrBelow(s.CollapsedGroups[i][KeyPrefix.Length..], oldPath))
                 s.CollapsedGroups[i] = KeyPrefix + Map(s.CollapsedGroups[i][KeyPrefix.Length..]);

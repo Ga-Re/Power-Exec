@@ -95,6 +95,7 @@ public sealed class PanelViewModel : ObservableObject
     private void RaiseLayout()
     {
         foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsLarge), nameof(ItemSize), nameof(ItemSizeText), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+        foreach (var g in AllGroups) g.RefreshLayout();
     }
 
     /// <summary>Elementgröße: Klein (Liste einzeilig, kleine Kacheln), Mittel, Groß.</summary>

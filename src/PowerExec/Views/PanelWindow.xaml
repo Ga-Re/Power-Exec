@@ -56,6 +56,33 @@
                     <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
+            <MenuItem Header="Darstellung" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8A9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <MenuItem Header="Wie das Panel" Command="{Binding SetLayoutCommand}" CommandParameter="panel" IsCheckable="False"
+                          IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
+                <MenuItem Header="Liste" Command="{Binding SetLayoutCommand}" CommandParameter="List"
+                          IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=List}"/>
+                <MenuItem Header="Raster" Command="{Binding SetLayoutCommand}" CommandParameter="Grid"
+                          IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Grid}"/>
+            </MenuItem>
+            <MenuItem Header="Farbe" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}" ItemsSource="{Binding ColorChoices}">
+                <MenuItem.Icon><TextBlock Text="&#xE790;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                        <Setter Property="Command" Value="{Binding Command}"/>
+                        <Setter Property="CommandParameter" Value="{Binding Hex}"/>
+                        <Setter Property="IsChecked" Value="{Binding IsCurrent, Mode=OneWay}"/>
+                        <Setter Property="Header" Value="{Binding Name}"/>
+                        <Setter Property="Icon">
+                            <Setter.Value>
+                                <Ellipse Width="14" Height="14" Fill="{Binding Swatch}"/>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
+            <MenuItem Header="Eigene Farbe …" Command="{Binding CustomColorCommand}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}"/>
+            <MenuItem Header="Farbe entfernen" Command="{Binding SetColorCommand}" CommandParameter="" Visibility="{Binding HasColor, Converter={StaticResource Vis}}"/>
             <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -477,8 +504,15 @@
         </DataTemplate>
         <!-- Gruppe (Ordner, Favoriten, eigene Gruppe mit Untergruppen) -->
         <DataTemplate x:Key="GroupTemplate">
-                <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Margin="0,2,0,0"
+                <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" Margin="0,2,0,0"
                         AllowDrop="True" DragOver="Group_DragOver" DragLeave="Group_DragLeave" Drop="Group_Drop">
+                <!-- Farbe der Gruppe als getönte Karte (über den Stil, damit die Drag-Hervorhebung zurückgesetzt werden kann) -->
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{Binding CardBackground}"/>
+                        <Setter Property="BorderBrush" Value="{Binding CardBorder}"/>
+                    </Style>
+                </Border.Style>
                 <StackPanel>
                     <Border x:Name="GroupHeader" CornerRadius="6" BorderBrush="{DynamicResource Accent}" BorderThickness="0" Background="Transparent" AllowDrop="True"
                             PreviewMouseLeftButtonDown="GroupHeader_PreviewMouseLeftButtonDown" PreviewMouseMove="GroupHeader_PreviewMouseMove"
@@ -504,8 +538,18 @@
                                     </TextBlock.RenderTransform>
                                 </TextBlock>
                                 <Grid Grid.Column="1" Margin="8,0">
-                                    <c:IconPresenter Icon="{Binding CustomIcon}" Size="16" Foreground="{DynamicResource Text.Primary}"
-                                                     Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}}"/>
+                                    <c:IconPresenter Icon="{Binding CustomIcon}" Size="16" Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}}">
+                                        <c:IconPresenter.Style>
+                                            <Style TargetType="c:IconPresenter">
+                                                <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasColor}" Value="True">
+                                                        <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </c:IconPresenter.Style>
+                                    </c:IconPresenter>
                                     <TextBlock Text="{Binding IconGlyph}" FontSize="13"
                                                Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                         <TextBlock.Style>
@@ -513,6 +557,9 @@
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsFavorites}" Value="True">
                                                         <Setter Property="Foreground" Value="{DynamicResource Star}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding HasColor}" Value="True">
+                                                        <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -523,10 +570,17 @@
                                 <TextBlock Grid.Column="3" Text="{Binding CountText}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
-                        <Button Grid.Column="1" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
-                                ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
-                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
-                        </Button>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <!-- Liste/Raster nur für diese Gruppe (bei Mausover) -->
+                            <Button x:Name="LayoutToggle" Style="{StaticResource Btn.Icon}" Width="28" Height="32" ToolTip="{Binding LayoutToolTip}"
+                                    Command="{Binding ToggleLayoutCommand}" Visibility="Hidden">
+                                <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="12"/>
+                            </Button>
+                            <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
+                                    ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
+                                <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                     </Border>
                     <TextBlock Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Vis}}" FontSize="12"
@@ -537,7 +591,7 @@
                                 <Style TargetType="ItemsControl">
                                     <Setter Property="ItemTemplate" Value="{StaticResource ItemTemplate}"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding DataContext.IsGrid, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                        <DataTrigger Binding="{Binding IsGrid}" Value="True">
                                             <Setter Property="ItemTemplate" Value="{StaticResource TileTemplate}"/>
                                             <Setter Property="ItemsPanel">
                                                 <Setter.Value>
@@ -559,6 +613,17 @@
                     </Border>
                 </StackPanel>
                 </Border>
+            <DataTemplate.Triggers>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition SourceName="GroupHeader" Property="IsMouseOver" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter TargetName="LayoutToggle" Property="Visibility" Value="Visible"/>
+                </MultiTrigger>
+                <DataTrigger Binding="{Binding CanChangeLayout}" Value="False">
+                    <Setter TargetName="LayoutToggle" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
     </Window.Resources>

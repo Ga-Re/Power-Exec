@@ -90,6 +90,9 @@
                         <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=custom}">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE71B;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Eigene Einträge"/></StackPanel>
                         </RadioButton>
+                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=tags}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Schlagworte"/></StackPanel>
+                        </RadioButton>
                         <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=workspaces}">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Arbeitsbereiche"/></StackPanel>
                         </RadioButton>
@@ -411,16 +414,25 @@
                     <ItemsControl ItemsSource="{Binding MachineGroups}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource Card}" Padding="16,12">
+                                <Border Style="{StaticResource Card}" Padding="8,8,16,8">
                                     <StackPanel>
                                         <DockPanel>
+                                            <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="Rechner anzeigen" Margin="0,0,6,0">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform><RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/></TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Button>
                                             <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Gruppe löschen">
                                                 <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
                                             </Button>
                                             <TextBlock Text="@" FontSize="16" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
-                                            <TextBox Width="240" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Name der Gruppe"/>
+                                            <TextBox Width="220" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Name der Gruppe"/>
                                             <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                            <TextBlock Text="{Binding Preview}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" FontSize="11" VerticalAlignment="Center"
+                                                       Margin="12,0,8,0" TextTrimming="CharacterEllipsis"
+                                                       Visibility="{Binding IsExpanded, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                         </DockPanel>
+                                        <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="36,0,0,4">
                                         <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
                                                  MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
                                                  FontFamily="{StaticResource MonoFont}" Margin="0,8,0,0" Tag="Ein Rechner pro Zeile (oder durch Komma getrennt)"/>
@@ -435,6 +447,7 @@
                                         </DockPanel>
                                         <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
                                                    Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -442,6 +455,69 @@
                     </ItemsControl>
                     <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
                                Text="Die AD-Suche läuft mit deinem angemeldeten Konto. Name mit * als Platzhalter, eine OU (alle Computer darin) oder ein eigener LDAP-Filter in Klammern."/>
+                </StackPanel>
+
+                <!-- Inhalte › Schlagworte -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=tags}" DataContext="{Binding TagList}">
+                    <TextBlock Text="Schlagworte" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Alle Schlagworte deiner Einträge. Im Panel filtert #schlagwort in der Suche. Umbenennen auf einen vorhandenen Namen führt beide zusammen."
+                               Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <Grid Margin="0,0,0,10" MaxWidth="420" HorizontalAlignment="Left" Width="420">
+                        <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="Schlagwort suchen"/>
+                        <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                    </Grid>
+                    <TextBlock Text="Noch keine Schlagworte. Du vergibst sie im Eintragsdialog unter „Einordnen“." Style="{StaticResource Caption}"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,4">
+                                    <StackPanel>
+                                        <DockPanel Margin="6,6,8,6">
+                                            <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="Einträge anzeigen">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                    <TextBlock.RenderTransform><RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/></TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Button>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <ComboBox Width="170" Margin="0,0,8,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding Color}" SelectedValuePath="Key" ToolTip="Farbe des Schlagworts">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Ellipse Width="12" Height="12" Margin="0,0,8,0" Stroke="{DynamicResource Border.Control}" StrokeThickness="1"
+                                                                         Fill="{Binding Key, Converter={StaticResource HexBrush}}"/>
+                                                                <TextBlock Text="{Binding Value}"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="Umbenennen oder zusammenführen">
+                                                    <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </Button>
+                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding DeleteCommand}" ToolTip="Von allen Einträgen entfernen">
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </Button>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
+                                                <Border Background="{Binding ChipBrush}" CornerRadius="11" Padding="10,2,10,3">
+                                                    <TextBlock Text="{Binding Tag, StringFormat=#{0}}" FontSize="13"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0"
+                                                Background="{DynamicResource Bg.CardAlt}" Padding="44,8,16,10">
+                                            <ItemsControl ItemsSource="{Binding Entries}" Focusable="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate><TextBlock Text="{Binding}" Margin="0,2"/></DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
 
                 <!-- Arbeitsbereiche -->
@@ -638,6 +714,23 @@
                                                         BorderThickness="1" Margin="0,0,8,0" Visibility="{Binding Folder.HasPending, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
                                                     <TextBlock Text="{Binding Folder.PendingCount, StringFormat={}{0} neu}" FontSize="11" Foreground="{DynamicResource Status.Warning}" VerticalAlignment="Center"/>
                                                 </Border>
+                                                <ComboBox Width="150" Margin="0,0,4,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding ColorOwn}" SelectedValuePath="Key"
+                                                          ToolTip="Farbe der Gruppe (Untergruppen übernehmen sie)">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <Ellipse Width="12" Height="12" Margin="0,0,8,0" Stroke="{DynamicResource Border.Control}" StrokeThickness="1"
+                                                                         Fill="{Binding Key, Converter={StaticResource HexBrush}}"/>
+                                                                <TextBlock Text="{Binding Value}"/>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Command="{Binding CustomColorCommand}" ToolTip="Eigene Farbe (#RRGGBB)">
+                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </Button>
+                                                <ComboBox Width="125" Margin="4,0,8,0" ItemsSource="{Binding LayoutList}" SelectedValue="{Binding Layout}"
+                                                          DisplayMemberPath="Value" SelectedValuePath="Key" ToolTip="Darstellung dieser Gruppe im Panel"/>
                                                 <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="Umbenennen (Anzeigename)">
                                                     <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
                                                 </Button>
@@ -1041,6 +1134,10 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <c:SettingsCard Icon="&#xE7B3;" Header="Acrylic (Hintergrund weichzeichnen)"
+                                    Description="Der Desktop hinter dem Panel erscheint verschwommen, getönt mit der Panelfarbe – wie das Startmenü von Windows 11. Unter 72 % Deckkraft wirkt es am stärksten.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Acrylic}"/>
+                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>

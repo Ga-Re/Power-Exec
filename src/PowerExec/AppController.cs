@@ -43,6 +43,8 @@ public sealed partial class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
         SetupSnippetFolder();
+        Controls.MachineBox.GroupSource = () => Settings.MachineGroups;
+        Infrastructure.TagBrushConverter.Lookup = t => Tags.ColorOf(Settings, t);
         CustomEntry.TerminalAvailable = () => IconService.ResolveProgram("wt.exe") != null;
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
@@ -685,6 +687,31 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Symbol einer eigenen Gruppe wählen.</summary>
+    /// <summary>Darstellung einer Gruppe: null = wie das Panel.</summary>
+    public void SetGroupLayout(string groupPath, ItemLayout? layout)
+    {
+        GroupManager.SetLayout(Settings, groupPath, layout);
+        SaveSettings();
+        foreach (var h in Hosts) foreach (var g in h.ViewModel.AllGroups) g.RefreshLayout();
+        SettingsChangedOutside?.Invoke();
+    }
+
+    /// <summary>Gruppenfarbe setzen (leer = keine bzw. von der übergeordneten Gruppe).</summary>
+    public void SetGroupColor(string groupPath, string? color)
+    {
+        GroupManager.SetColor(Settings, groupPath, color);
+        CommitUserChange();
+    }
+
+    /// <summary>Eigene Gruppenfarbe als #RRGGBB.</summary>
+    public void PickGroupColor(string groupPath)
+    {
+        var current = GroupManager.OwnColorOf(Settings, groupPath);
+        var text = WithDialog(() => InputWindow.Ask("Eigene Farbe", $"Farbe für „{GroupManager.LeafOf(groupPath)}“ als #RRGGBB, z. B. #3B82F6.", current, "Übernehmen",
+            t => PanelColors.TryParse(t, out _) ? null : "Bitte als #RRGGBB angeben."));
+        if (text != null) SetGroupColor(groupPath, text);
+    }
+
     public void ChooseGroupIcon(string groupPath)
     {
         var current = GroupManager.IconOf(Settings, groupPath);

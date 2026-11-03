@@ -450,6 +450,64 @@ public sealed class CategoryItemViewModel : ObservableObject
     public ICommand DownCommand { get; }
     public ICommand RemoveCommand { get; }
     public ICommand ToggleCommand { get; }
+
+    // ---- Farbe und Darstellung -------------------------------------------------------
+
+    /// <summary>Arbeitskopie der Einstellungen (Farbe/Darstellung werden dort direkt gesetzt).</summary>
+    public AppSettings? Settings { get; init; }
+
+    public static IReadOnlyList<KeyValuePair<string, string>> ColorList { get; } =
+        new[] { new KeyValuePair<string, string>(string.Empty, "Keine / wie übergeordnet") }
+            .Concat(PanelColors.AccentPresets.Select(p => new KeyValuePair<string, string>(p.Hex, p.Name))).ToList();
+
+    /// <summary>Palette plus eine eigene Farbe, falls gesetzt.</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> Colors =>
+        ColorOwn.Length > 0 && !ColorList.Any(c => c.Key.Equals(ColorOwn, StringComparison.OrdinalIgnoreCase))
+            ? ColorList.Append(new KeyValuePair<string, string>(ColorOwn, "Eigene " + ColorOwn)).ToList()
+            : ColorList;
+
+    public string ColorOwn
+    {
+        get => Settings != null ? GroupManager.OwnColorOf(Settings, Name) : string.Empty;
+        set
+        {
+            if (Settings == null) return;
+            GroupManager.SetColor(Settings, Name, value);
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(Colors));
+            OnPropertyChanged(nameof(Swatch));
+        }
+    }
+
+    public System.Windows.Media.Brush Swatch =>
+        Settings != null && PanelColors.TryParse(GroupManager.ColorOf(Settings, Name), out var c)
+            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(c.R, c.G, c.B))
+            : System.Windows.Media.Brushes.Transparent;
+
+    public ICommand CustomColorCommand => new RelayCommand(() =>
+    {
+        var t = Views.InputWindow.Ask("Eigene Farbe", $"Farbe für „{Display}“ als #RRGGBB, z. B. #3B82F6.", ColorOwn, "Übernehmen",
+            x => PanelColors.TryParse(x, out _) ? null : "Bitte als #RRGGBB angeben.");
+        if (t != null) ColorOwn = t;
+    });
+
+    public static IReadOnlyList<KeyValuePair<string, string>> LayoutList { get; } = new[]
+    {
+        new KeyValuePair<string, string>("panel", "Wie das Panel"),
+        new KeyValuePair<string, string>("List", "Liste"),
+        new KeyValuePair<string, string>("Grid", "Raster")
+    };
+
+    public string Layout
+    {
+        get => Settings != null && GroupManager.LayoutOf(Settings, Name) is { } l ? l.ToString() : "panel";
+        set
+        {
+            if (Settings == null) return;
+            GroupManager.SetLayout(Settings, Name, value switch { "Grid" => ItemLayout.Grid, "List" => ItemLayout.List, _ => null });
+            OnPropertyChanged();
+        }
+    }
 }
 
 /// <summary>Gruppe in der Auswahl eines Arbeitsbereichs (sichtbar oder ausgeblendet).</summary>
@@ -535,7 +593,7 @@ public sealed class SettingsViewModel : ObservableObject
 
         foreach (var c in GroupManager.All(_s))
         {
-            var cat = new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon, RenameCategory);
+            var cat = new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon, RenameCategory) { Settings = _s };
             cat.Folder = Folders.FirstOrDefault(f => f.Config.Group.Equals(c, StringComparison.CurrentCultureIgnoreCase));
             Categories.Add(cat);
         }
@@ -545,6 +603,7 @@ public sealed class SettingsViewModel : ObservableObject
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
         Panel = new PanelSettingsViewModel(_s.Panels[0], _monitors);
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
+        TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(g, RemoveGroup));
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
@@ -568,7 +627,7 @@ public sealed class SettingsViewModel : ObservableObject
     private static readonly (string Section, string Page, string Segment)[] Pages =
     {
         ("general", "Allgemein", ""),
-        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("workspaces", "Arbeitsbereiche", "content"),
+        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("workspaces", "Arbeitsbereiche", "content"),
         ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
         ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
         ("diag", "Diagnose", "help")
@@ -595,6 +654,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("custom", "Eigene Einträge", "Aus Vorlagen", "katalog mmc systemsteuerung ms-settings"),
         new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
         new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
+        new("tags", "Schlagworte", "Schlagworte verwalten", "tag umbenennen zusammenführen löschen farbe #"),
         new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
         new("workspaces", "Arbeitsbereiche", "Gruppen je Arbeitsbereich", "ausblenden sichtbar auswahl"),
         new("look", "Darstellung", "Design", "hell dunkel theme farbe"),
@@ -687,6 +747,7 @@ public sealed class SettingsViewModel : ObservableObject
             if (!Set(ref _section, value)) return;
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
+            if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
             NavExpandFor(value);
         }
     }
@@ -736,6 +797,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Liste „Eigene Einträge“ (Suche, Filter, Mehrfachauswahl).</summary>
     public CustomEntryListViewModel EntryList { get; }
+
+    /// <summary>Schlagwort-Verwaltung.</summary>
+    public TagsViewModel TagList { get; }
 
     // ---- Rechnergruppen -------------------------------------------------------
 
@@ -914,7 +978,7 @@ public sealed class SettingsViewModel : ObservableObject
         var name = Views.InputWindow.Ask("Neue Gruppe", "Einträge ziehst du im Panel per Drag & Drop hinein.", "Neue Gruppe", "Anlegen",
             n => Categories.Any(x => x.Name.Equals(GroupManager.CleanName(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es schon." : null);
         if (name == null) return;
-        Categories.Add(new CategoryItemViewModel(GroupManager.CleanName(name), MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory));
+        Categories.Add(new CategoryItemViewModel(GroupManager.CleanName(name), MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s });
     }
 
     /// <summary>Neue smarte Gruppe: Ordner wählen, Name = Ordnername (änderbar).</summary>
@@ -932,7 +996,7 @@ public sealed class SettingsViewModel : ObservableObject
         for (int i = 2; Categories.Any(x => x.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"{leaf} {i}";
         var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName, Group = name }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true };
         Folders.Add(folder);
-        Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Folder = folder, IsExpanded = true });
+        Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s, Folder = folder, IsExpanded = true });
     }
 
     public ICommand NewGroupCommand => new RelayCommand(AddGroupPrompt);
@@ -942,7 +1006,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var name = GroupManager.Normalize(NewCategory);
         if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory));
+            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s });
         NewCategory = string.Empty;
     }
 

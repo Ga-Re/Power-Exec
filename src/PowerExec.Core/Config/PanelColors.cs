@@ -28,6 +28,23 @@ public static class PanelColors
         new("Eisblau", "#E3EEF7")
     ];
 
+    /// <summary>Gruppen- und Schlagwortfarben: kräftig genug für Symbole, lesbar in hell und dunkel.</summary>
+    public static readonly IReadOnlyList<ColorPreset> AccentPresets =
+    [
+        new("Blau", "#3B82F6"),
+        new("Himmel", "#0EA5E9"),
+        new("Türkis", "#14B8A6"),
+        new("Grün", "#22C55E"),
+        new("Limette", "#84CC16"),
+        new("Gelb", "#EAB308"),
+        new("Orange", "#F97316"),
+        new("Rot", "#EF4444"),
+        new("Pink", "#EC4899"),
+        new("Violett", "#8B5CF6"),
+        new("Indigo", "#6366F1"),
+        new("Grau", "#94A3B8")
+    ];
+
     /// <summary>Liest "#RRGGBB", "RRGGBB" oder "#RGB".</summary>
     public static bool TryParse(string? text, out Rgb color)
     {

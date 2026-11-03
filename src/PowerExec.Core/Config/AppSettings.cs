@@ -182,6 +182,15 @@ public sealed class AppSettings
     /// <summary>Symbole eigener Gruppen: Gruppenpfad → <see cref="IconRef"/>-Text.</summary>
     public Dictionary<string, string> GroupIcons { get; set; } = new();
 
+    /// <summary>Gruppenfarbe (#RRGGBB) je Gruppenpfad; Untergruppen erben, wenn sie keine eigene haben.</summary>
+    public Dictionary<string, string> GroupColors { get; set; } = new();
+
+    /// <summary>Darstellung je Gruppe: „List“ oder „Grid“ (fehlt = wie das Panel).</summary>
+    public Dictionary<string, string> GroupLayouts { get; set; } = new();
+
+    /// <summary>Farbe je Schlagwort (#RRGGBB).</summary>
+    public Dictionary<string, string> TagColors { get; set; } = new();
+
     /// <summary>Stand des Datenmodells (13 = smarte Gruppen, globale Gruppen, ein Panel).</summary>
     public int DataVersion { get; set; }
 

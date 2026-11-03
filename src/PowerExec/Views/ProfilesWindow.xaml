@@ -146,8 +146,8 @@
                                          IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
                         </StackPanel>
                     </Border>
-                    <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0" FontFamily="{StaticResource MonoFont}"
-                             Tag="Rechnernamen oder @Gruppe, mit Komma getrennt" Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
+                    <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0"
+                                  Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
                     <WrapPanel Margin="0,10,0,0">
                         <ComboBox Width="210" Margin="0,0,16,6" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
                                   ItemsSource="{Binding DataContext.Engines, RelativeSource={RelativeSource AncestorType=Window}}"/>

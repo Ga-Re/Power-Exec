@@ -87,6 +87,8 @@ public sealed partial class AppController
             GroupManager.Assign(Settings, script, "Admin/AD");
             GroupManager.SetIcon(Settings, "Admin", IconRef.Parse("fluent:shield"));
             GroupManager.SetIcon(Settings, "Admin/AD", IconRef.Parse("hero:users"));
+            GroupManager.SetColor(Settings, "Admin", "#22C55E");
+            GroupManager.SetLayout(Settings, "Admin/AD", ItemLayout.Grid);
             Settings.CustomEntries.Add(new CustomEntry { Name = "Intranet", Kind = CustomEntryKind.Url, Target = "https://example.com" });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Freigabe", Kind = CustomEntryKind.Folder, Target = dir });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Server", Kind = CustomEntryKind.Rdp, Target = "SRV-01" });
@@ -101,7 +103,7 @@ public sealed partial class AppController
             Settings.Favorites.Add(Path.Combine(dir, "Cleanup.cmd"));
             Settings.Entries.Add(new EntryConfig { Path = Path.Combine(dir, "Cleanup.cmd"), Notes = "Nur nach Rücksprache" });
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
-            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel" });
+            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", Acrylic = true, PanelOpacity = 90 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 13;
@@ -144,6 +146,15 @@ public sealed partial class AppController
                     host.Window.HidePanel();
                     await Settle();
                 }
+            }
+
+            Step("Gruppenfarbe und Darstellung je Gruppe");
+            {
+                var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
+                if (ad == null || !ad.HasColor || ad.ColorHex != "#22C55E") Fail("Gruppenfarbe wird nicht an die Untergruppe vererbt");
+                if (ad == null || !ad.IsGrid) Fail("Darstellung je Gruppe (Raster) wird nicht übernommen");
+                var admin = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
+                if (admin != null && _hosts[0].ViewModel.IsGrid == false && admin.IsGrid) Fail("Gruppe ohne eigene Darstellung folgt nicht dem Panel");
             }
 
             Step("Einstellungen");
@@ -215,7 +226,7 @@ public sealed partial class AppController
             settingsVm.FocusGroup(Settings.Folders[0].Group);
             if (settingsVm.Section != "groups") Fail("Einstellungen: Gruppe fokussieren wechselt nicht zur Gruppen-Seite");
 
-            foreach (var section in new[] { "general", "groups", "custom", "workspaces", "look", "behavior", "exec", "remote", "machines", "diag" })
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "look", "behavior", "exec", "remote", "machines", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
@@ -272,8 +283,19 @@ public sealed partial class AppController
                 var vm = w.ViewModelForTest;
                 if (key == "Folder" && vm.SaveCommand.CanExecute(null)) Fail("Ordner: „Öffnen mit Programm“ ohne Programm wird nicht bemängelt");
                 if (key == "Snippet" && (!vm.HasParameters || vm.Entry!.HasSyntaxErrors)) Fail("PowerShell-Snippet: Parameter nicht erkannt oder falscher Syntaxfehler");
-                if (key is "Url" or "Rdp" or "Ssh" or "TextSnippet" && vm.ShowStartSection) Fail($"{key}: Startabschnitt wird angezeigt, obwohl er nicht passt");
-                if (key is "Command" or "Snippet" && !vm.ShowStartSection) Fail($"{key}: Startabschnitt fehlt");
+                if (key is "Url" or "Rdp" or "Ssh" or "TextSnippet" && vm.ShowRunAs) Fail($"{key}: „Ausführen als“ wird angezeigt, obwohl es nicht passt");
+                if (key == "Url")
+                {
+                    // zweites Profil mit anderem Browser-Profil
+                    vm.AddCommand.Execute(null);
+                    var second = vm.Profiles.Last();
+                    second.Options!.Private = true;
+                    if (!second.Detail.Contains("privat")) Fail("Webseite: Kurzinfo des Profils zeigt die Startoptionen nicht");
+                    if (second.ToProfile().Options?.Private != true) Fail("Webseite: Startoptionen des Profils werden nicht gespeichert");
+                    await Settle();
+                    if (w.Content is FrameworkElement r2) Screenshot(r2, "entry-Url-profile");
+                }
+                if (key is "Url" or "Rdp" or "Ssh" or "Folder" or "Command" && vm.Profiles.Any(p => p.Options == null || !p.HasOptions)) Fail($"{key}: Startprofil ohne eigene Startoptionen");
                 w.Close();
             }
 

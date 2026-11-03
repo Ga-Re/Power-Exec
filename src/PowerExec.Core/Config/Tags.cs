@@ -17,6 +17,52 @@ public static class Tags
     public static IReadOnlyList<string> All(AppSettings s) =>
         s.Entries.SelectMany(e => e.Tags).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(t => t, StringComparer.CurrentCultureIgnoreCase).ToList();
 
+    /// <summary>Schlagworte mit Anzahl der Einträge.</summary>
+    public static IReadOnlyList<(string Tag, int Count)> Counts(AppSettings s) =>
+        s.Entries.SelectMany(e => e.Tags.Distinct(StringComparer.CurrentCultureIgnoreCase))
+            .GroupBy(t => t, StringComparer.CurrentCultureIgnoreCase)
+            .Select(g => (g.First(), g.Count()))
+            .OrderBy(x => x.Item1, StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    /// <summary>Einträge (Pfade/Schlüssel) mit diesem Schlagwort.</summary>
+    public static IReadOnlyList<string> EntriesWith(AppSettings s, string tag) =>
+        s.Entries.Where(e => e.Tags.Contains(tag, StringComparer.CurrentCultureIgnoreCase)).Select(e => e.Path).ToList();
+
+    /// <summary>Umbenennen; gibt es den neuen Namen schon, werden beide zusammengeführt.</summary>
+    public static void Rename(AppSettings s, string oldTag, string newTag)
+    {
+        newTag = newTag.Trim().TrimStart('#');
+        if (newTag.Length == 0) return;
+        foreach (var e in s.Entries.Where(e => e.Tags.Contains(oldTag, StringComparer.CurrentCultureIgnoreCase)))
+        {
+            e.Tags = e.Tags.Where(t => !t.Equals(oldTag, StringComparison.CurrentCultureIgnoreCase) && !t.Equals(newTag, StringComparison.CurrentCultureIgnoreCase))
+                .Append(newTag).ToList();
+        }
+        var color = ColorOf(s, oldTag);
+        SetColor(s, oldTag, null);
+        if (color.Length > 0 && ColorOf(s, newTag).Length == 0) SetColor(s, newTag, color);
+    }
+
+    /// <summary>Schlagwort von allen Einträgen entfernen.</summary>
+    public static int Delete(AppSettings s, string tag)
+    {
+        int n = 0;
+        foreach (var e in s.Entries)
+            n += e.Tags.RemoveAll(t => t.Equals(tag, StringComparison.CurrentCultureIgnoreCase)) > 0 ? 1 : 0;
+        s.Entries.RemoveAll(e => e.IsEmpty);
+        SetColor(s, tag, null);
+        return n;
+    }
+
+    public static string ColorOf(AppSettings s, string tag) =>
+        s.TagColors.FirstOrDefault(kv => kv.Key.Equals(tag, StringComparison.CurrentCultureIgnoreCase)).Value ?? string.Empty;
+
+    public static void SetColor(AppSettings s, string tag, string? color)
+    {
+        foreach (var k in s.TagColors.Keys.Where(k => k.Equals(tag, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.TagColors.Remove(k);
+        if (PanelColors.TryParse(color, out var c)) s.TagColors[tag] = c.Hex;
+    }
+
     public static void Set(AppSettings s, string path, IEnumerable<string> tags)
     {
         var list = tags.Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();

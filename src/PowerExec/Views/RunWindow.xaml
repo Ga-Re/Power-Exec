@@ -1,6 +1,7 @@
 <Window x:Class="PowerExec.Views.RunWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:PowerExec.Controls"
         Title="{Binding Title, StringFormat=Ausführen – {0}}" Style="{StaticResource AppWindow}"
         Width="1040" Height="820" MinWidth="760" MinHeight="560" WindowStartupLocation="CenterScreen">
     <Window.Resources>
@@ -237,8 +238,8 @@
                             </ItemsControl>
                             <DockPanel Margin="0,0,0,10">
                                 <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Margin="8,0,0,0" Command="{Binding AddMachineCommand}"/>
-                                <TextBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
-                                         Tag="Rechnername(n), mit Komma getrennt" PreviewKeyDown="MachineBox_KeyDown"/>
+                                <c:MachineBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
+                                              Placeholder="Rechnername(n) oder @Gruppe, mit Komma getrennt – Enter fügt hinzu" KeyDown="MachineBox_KeyDown"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,10">
                                 <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Command="{Binding TestConnectionCommand}">

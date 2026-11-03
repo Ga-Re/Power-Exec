@@ -1,4 +1,6 @@
 using System.Windows.Input;
+using System.Windows.Media;
+using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
 
 namespace PowerExec.ViewModels;
@@ -45,6 +47,11 @@ public sealed class GroupViewModel : ObservableObject
         HideFolderCommand = new RelayCommand(() => app.HideGroupInWorkspace(GroupPath!), () => GroupPath != null);
         IsSmartGroup = GroupPath != null && Core.Config.SmartGroups.FolderOf(app.Settings, GroupPath) != null;
         ChooseIconCommand = new RelayCommand(() => app.ChooseGroupIcon(GroupPath!), () => IsUserGroup);
+        _app = app;
+        SetLayoutCommand = new RelayCommand(p => app.SetGroupLayout(GroupPath!, p?.ToString() switch { "Grid" => ItemLayout.Grid, "List" => ItemLayout.List, _ => null }), _ => GroupPath != null);
+        ToggleLayoutCommand = new RelayCommand(() => app.SetGroupLayout(GroupPath!, IsGrid ? ItemLayout.List : ItemLayout.Grid), () => GroupPath != null);
+        SetColorCommand = new RelayCommand(p => app.SetGroupColor(GroupPath!, p?.ToString()), _ => GroupPath != null);
+        CustomColorCommand = new RelayCommand(() => app.PickGroupColor(GroupPath!), () => GroupPath != null);
         ExportCommand = new RelayCommand(() => app.ExportGroup(GroupPath!), () => IsUserGroup);
         ImportCommand = new RelayCommand(() => app.ImportEntries(GroupPath), () => IsUserGroup || Kind == "custom");
         AddFromCatalogCommand = new RelayCommand(() => app.AddFromCatalog(GroupPath));
@@ -102,6 +109,47 @@ public sealed class GroupViewModel : ObservableObject
     public bool HasCustomIcon => CustomIcon.Length > 0;
     public ICommand HideFolderCommand { get; }
     public ICommand NewEntryCommand { get; }
+
+    // ---- Farbe und Darstellung je Gruppe -----------------------------------------------
+
+    private readonly AppController _app;
+
+    public ICommand SetLayoutCommand { get; }
+    public ICommand ToggleLayoutCommand { get; }
+    public ICommand SetColorCommand { get; }
+    public ICommand CustomColorCommand { get; }
+
+    /// <summary>Darstellung der Gruppe: eigene Einstellung oder die des Panels.</summary>
+    public bool IsGrid => (GroupPath != null ? GroupManager.LayoutOf(_app.Settings, GroupPath) : null) is { } own ? own == ItemLayout.Grid : _panel.IsGrid;
+    /// <summary>„panel“, „List“ oder „Grid“ (für die Haken im Menü).</summary>
+    public string LayoutSetting => GroupPath != null && GroupManager.LayoutOf(_app.Settings, GroupPath) is { } l ? l.ToString() : "panel";
+    public string LayoutGlyph => IsGrid ? "\uE8FD" : "\uE8A9";
+    public string LayoutToolTip => IsGrid ? "Diese Gruppe als Liste anzeigen" : "Diese Gruppe als Raster anzeigen";
+    public bool CanChangeLayout => GroupPath != null;
+
+    internal void RefreshLayout()
+    {
+        foreach (var p in new[] { nameof(IsGrid), nameof(LayoutSetting), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+    }
+
+    /// <summary>Wirksame Farbe (eigene oder geerbt), leer = keine.</summary>
+    public string ColorHex => GroupPath != null ? GroupManager.ColorOf(_app.Settings, GroupPath) : string.Empty;
+    public string OwnColorHex => GroupPath != null ? GroupManager.OwnColorOf(_app.Settings, GroupPath) : string.Empty;
+    public bool HasColor => ColorHex.Length > 0;
+
+    private Brush? BrushOf(byte alpha) =>
+        PanelColors.TryParse(ColorHex, out var c) ? Freeze(new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B))) : null;
+    private static Brush Freeze(Brush b) { b.Freeze(); return b; }
+
+    /// <summary>Symbol in voller Farbe.</summary>
+    public Brush? AccentBrush => BrushOf(255);
+    /// <summary>Getönte Karte: Hintergrund dezent, Rand etwas kräftiger.</summary>
+    public Brush CardBackground => BrushOf(0x24) ?? Brushes.Transparent;
+    public Brush CardBorder => BrushOf(0x73) ?? Brushes.Transparent;
+
+    /// <summary>Farben für das Menü „Farbe“.</summary>
+    public IReadOnlyList<GroupColorChoice> ColorChoices => PanelColors.AccentPresets
+        .Select(p => new GroupColorChoice(p.Name, p.Hex, OwnColorHex.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand)).ToList();
     public ICommand AddFilesCommand { get; }
 
     public string Key { get; }
@@ -153,4 +201,10 @@ public sealed class GroupViewModel : ObservableObject
     public ICommand ExpandAllCommand { get; }
     public ICommand FolderSettingsCommand { get; }
     public ICommand ResetOrderCommand { get; }
+}
+
+/// <summary>Eintrag im Menü „Farbe“ einer Gruppe.</summary>
+public sealed record GroupColorChoice(string Name, string Hex, bool IsCurrent, ICommand Command)
+{
+    public Brush Swatch { get; } = new SolidColorBrush((Color)ColorConverter.ConvertFromString(Hex));
 }

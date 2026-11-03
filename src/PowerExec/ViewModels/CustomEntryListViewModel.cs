@@ -246,6 +246,13 @@ public sealed class CustomEntryListViewModel : ObservableObject
         CommandManager.InvalidateRequerySuggested();
     }
 
+    /// <summary>Schlagworte wurden in der Verwaltung geändert: Zeilen aus der Arbeitskopie neu lesen.</summary>
+    public void ReloadTags()
+    {
+        foreach (var r in Rows) r.Update(r.Entry, r.Group, Core.Config.Tags.Of(_s, r.Entry.Key).ToList());
+        CountsChanged();
+    }
+
     private void CountsChanged()
     {
         foreach (var p in new[] { nameof(Count), nameof(IsEmpty), nameof(NoMatches), nameof(SummaryText), nameof(TagFilters), nameof(GroupFilters), nameof(MoveTargets) })

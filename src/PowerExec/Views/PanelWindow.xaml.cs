@@ -37,6 +37,7 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
+        if (Cfg.Acrylic) Interop.Acrylic.Apply(_hwnd, true);
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
@@ -139,6 +140,9 @@ public partial class PanelWindow : Window
         Resources.MergedDictionaries.Clear();
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
+        // Acrylic: Hintergrund muss durchscheinen, damit die Weichzeichnung sichtbar ist
+        if (s.Acrylic) opacity = Math.Min(opacity, 0.72);
+        Interop.Acrylic.Apply(_hwnd, s.Acrylic);
 
         if (PanelColors.TryParse(s.PanelColor, out var rgb))
         {
@@ -532,16 +536,21 @@ public partial class PanelWindow : Window
             allowed = ExternalDrop.HasData(e.Data);
             e.Effects = allowed ? ExternalEffect(e) : DragDropEffects.None;
         }
-        box.BorderBrush = allowed ? (Brush)FindResource("Accent") : Brushes.Transparent;
-        box.Background = allowed ? (Brush)FindResource("Bg.Hover") : Brushes.Transparent;
+        if (allowed)
+        {
+            box.BorderBrush = (Brush)FindResource("Accent");
+            box.Background = (Brush)FindResource("Bg.Hover");
+        }
+        else Group_DragLeave(sender, e);
         e.Handled = true;
     }
 
     private void Group_DragLeave(object sender, DragEventArgs e)
     {
         if (sender is not Border box) return;
-        box.BorderBrush = Brushes.Transparent;
-        box.Background = Brushes.Transparent;
+        // zurück zur Gruppenfarbe aus dem Stil
+        box.ClearValue(Border.BorderBrushProperty);
+        box.ClearValue(Border.BackgroundProperty);
     }
 
     private void Group_Drop(object sender, DragEventArgs e)

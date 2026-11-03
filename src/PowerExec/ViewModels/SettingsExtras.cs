@@ -24,11 +24,27 @@ public sealed class MachineGroupViewModel : ObservableObject
         ImportCommand = new RelayCommand(Import);
         AdSearchCommand = new RelayCommand(() => _ = SearchAdAsync(), () => !_searching && _adQuery.Trim().Length > 0);
         SortCommand = new RelayCommand(() => Machines = string.Join(Environment.NewLine, Parse().OrderBy(n => n, StringComparer.OrdinalIgnoreCase)));
+        ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
+        _isExpanded = group.Machines.Count == 0; // neue Gruppen offen, vorhandene eingeklappt
+    }
+
+    private bool _isExpanded;
+    public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
+    public ICommand ToggleCommand { get; }
+
+    /// <summary>Kurzvorschau im eingeklappten Zustand.</summary>
+    public string Preview
+    {
+        get
+        {
+            var names = Parse();
+            return names.Count == 0 ? "leer" : string.Join(", ", names.Take(6)) + (names.Count > 6 ? $" … (+{names.Count - 6})" : string.Empty);
+        }
     }
 
     public string Name { get => _name; set { if (Set(ref _name, (value ?? string.Empty).TrimStart('@'))) OnPropertyChanged(nameof(Reference)); } }
     public string Reference => "@" + _name.Trim();
-    public string Machines { get => _machines; set { if (Set(ref _machines, value ?? string.Empty)) OnPropertyChanged(nameof(CountText)); } }
+    public string Machines { get => _machines; set { if (Set(ref _machines, value ?? string.Empty)) { OnPropertyChanged(nameof(CountText)); OnPropertyChanged(nameof(Preview)); } } }
     public string CountText { get { var n = Parse().Count; return n == 1 ? "1 Rechner" : $"{n} Rechner"; } }
     public string AdQuery { get => _adQuery; set => Set(ref _adQuery, value ?? string.Empty); }
     public string Status { get => _status; private set => Set(ref _status, value); }

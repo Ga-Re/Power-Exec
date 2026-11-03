@@ -385,7 +385,8 @@ public sealed class RunViewModel : ObservableObject
 
     private void AddMachines()
     {
-        foreach (var name in MachineList.ParseNames(NewMachine))
+        // @Gruppe wird hier gleich in ihre Rechner aufgelöst
+        foreach (var name in MachineList.Resolve(_app.Settings, MachineList.ParseNames(NewMachine)))
         {
             var existing = FavoriteMachines.Concat(RecentMachines).FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (existing != null)
