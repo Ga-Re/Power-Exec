@@ -72,6 +72,9 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Text="Art" Style="{StaticResource Label}"/>
@@ -137,13 +140,15 @@
 
                 <!-- Allgemein -->
                 <TextBlock Grid.Row="13" Text="Gruppe" Style="{StaticResource Label}"/>
-                <StackPanel Grid.Row="13" Grid.Column="1">
-                    <ComboBox IsEditable="True" Width="280" HorizontalAlignment="Left" ItemsSource="{Binding Groups}" Text="{Binding Group, UpdateSourceTrigger=LostFocus}" Margin="0,3"
-                              ToolTip="Leer = „Eigene Einträge“. Untergruppe: Eltern/Name"/>
-                    <TextBox Text="{Binding TagsText, UpdateSourceTrigger=PropertyChanged}" Tag="Schlagworte, z. B. ad, exchange (Suche: #ad)" Margin="0,3"/>
-                    <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="Beschreibung (optional, erscheint als Info im Panel)" Margin="0,3"/>
-                    <CheckBox Content="Mit einem Klick starten (statt aufzuklappen)" IsChecked="{Binding SingleClick}" Margin="0,8,0,0"/>
-                </StackPanel>
+                <ComboBox Grid.Row="13" Grid.Column="1" IsEditable="True" Width="280" HorizontalAlignment="Left" ItemsSource="{Binding Groups}"
+                          Text="{Binding Group, UpdateSourceTrigger=LostFocus}" Margin="0,3"
+                          ToolTip="Leer = „Eigene Einträge“. Untergruppe: Eltern/Name"/>
+                <TextBlock Grid.Row="14" Text="Schlagworte" Style="{StaticResource Label}"/>
+                <c:TagBox Grid.Row="14" Grid.Column="1" TagsText="{Binding TagsText}" Suggestions="{Binding AllTags}" Margin="0,3"
+                          Placeholder="z. B. ad, exchange – Enter fügt hinzu (Suche im Panel: #ad)"/>
+                <TextBlock Grid.Row="15" Text="Beschreibung" Style="{StaticResource Label}"/>
+                <TextBox Grid.Row="15" Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="optional, erscheint als Info im Panel" Margin="0,3"/>
+                <CheckBox Grid.Row="16" Grid.Column="1" Content="Mit einem Klick starten (statt aufzuklappen)" IsChecked="{Binding SingleClick}" Margin="0,8,0,0"/>
             </Grid>
         </ScrollViewer>
     </DockPanel>

@@ -13,8 +13,9 @@ public sealed class CustomEntryViewModel : ObservableObject
     private string _group;
     private string _tags;
 
-    public CustomEntryViewModel(CustomEntry entry, string? group = null, IEnumerable<string>? tags = null, IReadOnlyList<string>? groups = null)
+    public CustomEntryViewModel(CustomEntry entry, string? group = null, IEnumerable<string>? tags = null, IReadOnlyList<string>? groups = null, IReadOnlyList<string>? allTags = null)
     {
+        AllTags = allTags ?? Array.Empty<string>();
         _e = entry.Clone();
         _group = group ?? string.Empty;
         _tags = Core.Config.Tags.Format(tags ?? Array.Empty<string>());
@@ -118,6 +119,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     public bool SingleClick { get => _e.SingleClick; set { _e.SingleClick = value; OnPropertyChanged(); } }
     public string Group { get => _group; set => Set(ref _group, value ?? string.Empty); }
     public IReadOnlyList<string> Groups { get; }
+    /// <summary>Vorhandene Schlagworte (Vorschläge im Schlagwortfeld).</summary>
+    public IReadOnlyList<string> AllTags { get; }
     public string TagsText { get => _tags; set => Set(ref _tags, value ?? string.Empty); }
 
     public bool IsUrl => _e.Kind == CustomEntryKind.Url;

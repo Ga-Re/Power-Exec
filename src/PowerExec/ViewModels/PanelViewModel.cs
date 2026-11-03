@@ -224,7 +224,8 @@ public sealed class PanelViewModel : ObservableObject
             var seen = new HashSet<string>(visible.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
             foreach (var c in settings.CustomEntries)
             {
-                if (c.Target.Trim().Length == 0) continue;
+                // Snippets haben kein Ziel, nur Code
+                if (c.Target.Trim().Length == 0 && (c.Kind != CustomEntryKind.Snippet || c.Code.Trim().Length == 0)) continue;
                 var li = _app.DescribeCustom(c);
                 if (!seen.Add(li.FullPath)) continue; // Datei liegt bereits in einem durchsuchten Ordner
                 if (CategoryOk(li)) customItems.Add(li);

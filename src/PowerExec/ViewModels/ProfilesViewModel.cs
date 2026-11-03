@@ -298,6 +298,7 @@ public sealed class ProfilesViewModel : ObservableObject
     private string _tags;
     /// <summary>Schlagworte, durch Komma getrennt (Suche im Panel: #schlagwort).</summary>
     public string TagsText { get => _tags; set => Set(ref _tags, value ?? string.Empty); }
+    public IReadOnlyList<string> AllTags => Core.Config.Tags.All(_target);
     public IReadOnlyList<string> Categories { get; }
 
     public ObservableCollection<ProfileEditViewModel> Profiles { get; } = new();

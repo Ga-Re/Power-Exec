@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         Title="Power-Exec – Einstellungen" Style="{StaticResource AppWindow}"
-        Width="1040" Height="760" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
+        Width="1120" Height="800" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <Style x:Key="RowTitle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14"/>
@@ -34,32 +34,84 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Navigation -->
-        <DockPanel Margin="12,12,8,12">
-            <TextBlock DockPanel.Dock="Bottom" Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="14,0,0,0"/>
-            <StackPanel>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ordner"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=folders}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Eigene Einträge"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=custom}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Panels"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panels}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Darstellung &amp; Verhalten"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Arbeitsbereiche"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=workspaces}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Rechnergruppen"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=machines}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Ausführung"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Diagnose &amp; Daten"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=diag}"/>
-                <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Updates"
-                             IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
-            </StackPanel>
+        <!-- Navigation (wie PowerToys: Symbole, Kategorien) -->
+        <DockPanel Margin="10,12,6,12">
+            <TextBlock DockPanel.Dock="Bottom" Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="14,8,0,0"/>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                    <StackPanel.Resources>
+                        <Style x:Key="NavHeader" TargetType="TextBlock">
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Text.Tertiary}"/>
+                            <Setter Property="Margin" Value="14,14,0,4"/>
+                        </Style>
+                    </StackPanel.Resources>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=general}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Allgemein"/></StackPanel>
+                    </RadioButton>
+                    <TextBlock Text="Inhalte" Style="{StaticResource NavHeader}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=folders}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Ordner"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=custom}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE71B;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Eigene Einträge"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=groups}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Gruppen"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=workspaces}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Arbeitsbereiche"/></StackPanel>
+                    </RadioButton>
+                    <TextBlock Text="Panel" Style="{StaticResource NavHeader}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=panels}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A9;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Panels"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=behavior}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE823;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Verhalten"/></StackPanel>
+                    </RadioButton>
+                    <TextBlock Text="Ausführung" Style="{StaticResource NavHeader}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE756;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="PowerShell"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=remote}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE968;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Remote"/></StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=machines}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Rechnergruppen"/></StackPanel>
+                    </RadioButton>
+                    <TextBlock Text="Hilfe" Style="{StaticResource NavHeader}"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=diag}">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Diagnose"/></StackPanel>
+                    </RadioButton>
+                </StackPanel>
+            </ScrollViewer>
         </DockPanel>
 
         <DockPanel Grid.Column="1">
+        <!-- Suche (wie PowerToys oben in der Mitte) -->
+        <Grid DockPanel.Dock="Top" Margin="28,12,28,4" MaxWidth="520" HorizontalAlignment="Stretch">
+            <TextBox x:Name="SettingsSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0" Tag="Nach Einstellungen suchen"/>
+            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            <Popup IsOpen="{Binding HasSearchResults, Mode=OneWay}" PlacementTarget="{Binding ElementName=SettingsSearch}" Placement="Bottom" AllowsTransparency="True"
+                   StaysOpen="True" Width="{Binding ActualWidth, ElementName=SettingsSearch}">
+                <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="6" Padding="4" Margin="0,4,0,0">
+                    <ItemsControl ItemsSource="{Binding SearchResults}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource Btn.Subtle}" HorizontalContentAlignment="Stretch" Padding="10,4" MinHeight="40"
+                                        Command="{Binding DataContext.OpenSearchHitCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Title}" FontSize="13"/>
+                                        <TextBlock Text="{Binding Page}" FontSize="11" Foreground="{DynamicResource Text.Secondary}"/>
+                                    </StackPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Popup>
+        </Grid>
         <!-- Update-Hinweis: erscheint in allen Bereichen, sobald eine neue Version gefunden wurde -->
         <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="14,12" CornerRadius="6" Background="{DynamicResource Info.Bg}"
                 BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding HasUpdate, Converter={StaticResource Vis}}">
@@ -78,7 +130,7 @@
             </DockPanel>
         </Border>
         <ScrollViewer x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid Margin="16,8,28,24">
+            <Grid Margin="28,4,28,28">
 
                 <!-- Ordner -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=folders}">
@@ -319,6 +371,7 @@
                         </StackPanel>
                     </Button>
 
+                    <TextBlock Text="Für alle Ordner" Style="{StaticResource SettingsSection}"/>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
                             <TextBox DockPanel.Dock="Right" Width="300" Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
@@ -384,7 +437,7 @@
                         </StackPanel>
                     </Border>
                     <StackPanel DataContext="{Binding SelectedPanel}">
-                        <TextBlock Text="Inhalt" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
+                        <TextBlock Text="Inhalt" Style="{StaticResource SettingsSection}"/>
                         <Border Style="{StaticResource Card}" Padding="16,12">
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,10">
@@ -444,7 +497,7 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                        <TextBlock Text="Position, Größe &amp; Aussehen" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
+                        <TextBlock Text="Position, Größe &amp; Aussehen" Style="{StaticResource SettingsSection}"/>
                         <Border Style="{StaticResource Card}">
                             <DockPanel>
                                 <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding EdgeList}" SelectedValue="{Binding Edge}"/>
@@ -601,120 +654,6 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Panel & Verhalten -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=panel}">
-                    <TextBlock Text="Darstellung &amp; Verhalten" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Einstellungen für alle Panels. Lage, Farbe, Größe und Tastenkürzel stellst du je Panel unter „Panels“ ein." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
-
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="0" Maximum="1000" TickFrequency="50" Value="{Binding HoverDelayMs}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding HoverDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Verweilzeit bis zum Ausfahren" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Verhindert ungewolltes Öffnen beim Vorbeifahren." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="0" Maximum="2000" TickFrequency="100" Value="{Binding CollapseDelayMs}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding CollapseDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Einklappen nach Verlassen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Zeit, bis das Panel wieder einfährt." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Animation" Style="{StaticResource RowTitle}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Design" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Hell oder dunkel für alle Fenster." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}" Padding="16,12">
-                        <StackPanel>
-                            <DockPanel>
-                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Groupings}" SelectedValue="{Binding Grouping}"/>
-                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Gruppierung im Panel" Style="{StaticResource RowTitle}"/>
-                                    <TextBlock Text="Eigene Gruppen stehen immer oben; darunter die Ordner oder nur „Ohne Gruppe“. Gruppen legst du im Panel an (Rechtsklick auf eine Gruppe oder + unten) und ziehst Einträge per Drag &amp; Drop hinein." Style="{StaticResource RowDesc}"/></StackPanel>
-                            </DockPanel>
-                            <StackPanel Margin="0,12,0,0">
-                                <TextBlock Text="Eigene Gruppen (Reihenfolge)" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                                <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="4,4">
-                                                <DockPanel>
-                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding UpCommand}" ToolTip="Nach oben">
-                                                            <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding DownCommand}" ToolTip="Nach unten">
-                                                            <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="Aus der Liste entfernen">
-                                                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                                                        </Button>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="{Binding Indent}">
-                                                        <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="12" Margin="4,0,10,0" Foreground="{DynamicResource Text.Secondary}"/>
-                                                        <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </DockPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                    <TextBox Width="220" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Gruppe (Untergruppe: Eltern/Name)"/>
-                                    <Button Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Command="{Binding AddCategoryCommand}" Margin="8,0,0,0"/>
-                                </StackPanel>
-                                <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
-                                           Text="Entfernen löscht nur die Gruppe – ihre Einträge erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“."/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="0" Maximum="10" TickFrequency="1" Value="{Binding RecentRunsCount}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding RecentRunsText}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="„Zuletzt ausgeführt“" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Anzahl der zuletzt gestarteten Einträge oben im Panel (mit dem verwendeten Profil). 0 = ausblenden." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HideHotZoneInFullscreen}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Bei Vollbild-Programmen ausblenden" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Die Hover-Zone ist deaktiviert, solange auf dem Monitor ein Video, eine Präsentation, ein Spiel oder eine Remotedesktop-Sitzung im Vollbild läuft. Das Tastenkürzel funktioniert weiterhin." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowProgramIcons}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Symbole anzeigen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Programmsymbole bei EXE, Verknüpfungen und Snap-ins, Ordnersymbol, Remotedesktop-Symbol und das Favicon von Webseiten (wird einmal von der Seite geladen und zwischengespeichert). Scripte behalten ihr Kürzel." Style="{StaticResource RowDesc}" TextWrapping="Wrap"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartWithWindows}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Mit Windows starten" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Power-Exec startet nach der Anmeldung im Hintergrund." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                </StackPanel>
-
                 <!-- Eigene Einträge -->
                 <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
                 <StackPanel DataContext="{Binding EntryList}">
@@ -845,8 +784,7 @@
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="3" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding GroupText}" FontSize="12" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding TagsText}" FontSize="11" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis"
-                                                               Visibility="{Binding TagsText, Converter={StaticResource Vis}}"/>
+                                                    <ItemsControl ItemsSource="{Binding Tags}" ItemTemplate="{StaticResource TagChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
                                                 </StackPanel>
                                                 <Ellipse x:Name="Dot" Grid.Column="4" Width="9" Height="9" Fill="{DynamicResource Text.Disabled}" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                          ToolTip="{Binding HealthText}"/>
@@ -968,154 +906,235 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Ausführung -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=exec}">
-                    <TextBlock Text="Ausführung" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Standardwerte für den Ausführen-Dialog und für Remote." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
-
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding EnginesList}" SelectedValue="{Binding DefaultEngine}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Standard-PowerShell (lokal)" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Im Dialog pro Start änderbar. Ist PowerShell 7 nicht installiert, wird 5.1 verwendet." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding RemoteEngines}" SelectedValue="{Binding RemoteEngine}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="PowerShell bei Remote" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Auf den meisten Servern ist nur 5.1 vorhanden. Scripte für Remote sollten unter 5.1 laufen." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Policies}" SelectedValue="{Binding ExecutionPolicy}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Execution Policy" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Wird nur an den gestarteten Prozess übergeben." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoProfile}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Ohne Profil starten (-NoProfile)" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Schnellerer Start, keine Seiteneffekte aus dem Profil." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoExit}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Konsole nach Ende offen lassen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Bei lokaler Ausführung von PowerShell- und Batch-Scripten." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="Immer UNC" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Netzwerkpfade" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Laufwerksbuchstaben werden vor dem Start in UNC-Pfade umgewandelt. Fehlt dem gewählten Konto der Zugriff, erscheint eine klare Fehlermeldung." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="Pro Start im Dialog" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Begleitdateien bei Remote" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="„Scriptordner mitsenden“ im Dialog, oder dauerhaft mit der Zeile „PowerExec: CopyFolder“ unter .NOTES im Script." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="Deaktiviert" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Delegation (CredSSP)" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Bewusst nicht unterstützt: Anmeldedaten würden an den Zielrechner weitergegeben." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="1" Maximum="64" TickFrequency="1" Value="{Binding ThrottleLimit}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding ThrottleLimit}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Gleichzeitige Verbindungen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Für die Massenausführung." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Slider Width="180" Minimum="10" Maximum="300" TickFrequency="10" Value="{Binding RemoteTimeoutSeconds}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding RemoteTimeoutSeconds, StringFormat={}{0} s}" Width="40" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Verbindungs-Timeout pro Rechner" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Danach gilt der Rechner als nicht erreichbar." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteUseSsl}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Remote über HTTPS (Port 5986)" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Nötig für Rechner außerhalb der Domäne bzw. wenn WinRM nur per HTTPS erreichbar ist. Auf dem Zielrechner muss ein HTTPS-Listener eingerichtet sein." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NotifyOnFinish}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Benachrichtigen, wenn ein Remote-Lauf fertig ist" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Windows-Benachrichtigung mit Zusammenfassung; ein Klick öffnet die Ergebnisliste." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
+                <!-- Allgemein -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
+                    <TextBlock Text="Allgemein" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Version und Updates" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsExpander Icon="&#xE895;" Header="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Description="{Binding UpdateStatus}">
+                        <c:SettingsExpander.HeaderContent>
+                            <Button Style="{StaticResource Btn.Accent}" Content="Nach Updates suchen" Command="{Binding CheckUpdatesCommand}"/>
+                        </c:SettingsExpander.HeaderContent>
                         <StackPanel>
-                            <DockPanel>
-                                <ComboBox DockPanel.Dock="Right" Style="{StaticResource RowCombo}" ItemsSource="{Binding Editors}" SelectedValue="{Binding Editor}"/>
-                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Editor für „Im Editor öffnen“" Style="{StaticResource RowTitle}"/></StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CheckUpdatesOnStart}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Beim Start nach Updates suchen" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <DockPanel Margin="0,8,0,0" Visibility="{Binding IsCustomEditor, Converter={StaticResource Vis}}">
-                                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseEditorCommand}" Margin="8,0,0,0"/>
-                                <TextBox Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="Pfad zur EXE, z. B. C:\Program Files\Notepad++\notepad++.exe"/>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IncludePrereleases}" VerticalAlignment="Center"/>
+                                <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorabversionen einbeziehen"/>
+                                    <TextBlock Text="Neue Funktionen früher – können noch Fehler enthalten." Style="{StaticResource Caption}" FontSize="12"/></StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{Binding RepoText}" Command="{Binding OpenRepoCommand}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                <TextBlock Text="Quelle (GitHub Releases, SHA-256-geprüft)" VerticalAlignment="Center"/>
                             </DockPanel>
                         </StackPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Style="{StaticResource Btn.Standard}" Content="Ändern …" Command="{Binding BrowseLogFolderCommand}"/>
-                                <Button Style="{StaticResource Btn.Standard}" Content="Öffnen" Command="{Binding OpenLogFolderCommand}" Margin="8,0,0,0"/>
+                    </c:SettingsExpander>
+
+                    <TextBlock Text="Start" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE7E8;" Header="Mit Windows starten" Description="Power-Exec startet nach der Anmeldung im Hintergrund.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding StartWithWindows}"/>
+                    </c:SettingsCard>
+
+                    <TextBlock Text="Darstellung" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE790;" Header="Design" Description="Hell oder dunkel für alle Fenster.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE916;" Header="Animation" Description="Wie das Panel aus- und einfährt.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8B9;" Header="Symbole anzeigen"
+                                    Description="Programmsymbole, Ordnersymbol, Remotedesktop-Symbol und Favicons von Webseiten (einmal geladen und zwischengespeichert). Scripte behalten ihr Kürzel.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowProgramIcons}"/>
+                    </c:SettingsCard>
+
+                    <TextBlock Text="Sichern und Wiederherstellen" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsExpander Icon="&#xE8F1;" Header="Einstellungen sichern"
+                                        Description="Ordner, Startprofile, Favoriten, Gruppen, eigene Einträge und Rechnerliste als Datei – zum Sichern oder für einen anderen PC. Kennwörter sind nie enthalten.">
+                        <c:SettingsExpander.HeaderContent>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource Btn.Standard}" Content="Exportieren …" Command="{Binding ExportCommand}"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
                             </StackPanel>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Log-Ordner" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="{Binding LogFolderDisplay}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/></StackPanel>
+                        </c:SettingsExpander.HeaderContent>
+                        <DockPanel Style="{StaticResource SubSetting}">
+                            <TextBlock Text="Einstellungsdatei" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                            <TextBlock Text="{Binding SettingsFile}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                         </DockPanel>
+                    </c:SettingsExpander>
+                </StackPanel>
+
+                <!-- Gruppen -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}">
+                    <TextBlock Text="Gruppen" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Eigene Gruppen legst du am schnellsten im Panel an (Rechtsklick oder + unten) und ziehst Einträge per Drag &amp; Drop hinein. Hier: Darstellung, Reihenfolge und Symbole."
+                               Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                    <TextBlock Text="Darstellung im Panel" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE8FD;" Header="Gruppierung" Description="Eigene Gruppen stehen immer oben; darunter die Ordner – oder nur „Ohne Gruppe“.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Groupings}" SelectedValue="{Binding Grouping}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="Eigene Gruppen" Style="{StaticResource SettingsSection}"/>
+                    <Border Style="{StaticResource Card}" Padding="12,8">
+                        <StackPanel>
+                            <TextBlock Text="Noch keine eigenen Gruppen." Style="{StaticResource Caption}" Margin="4,6"
+                                       Visibility="{Binding Categories.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                            <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="4,4">
+                                            <DockPanel>
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding UpCommand}" ToolTip="Nach oben">
+                                                        <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding DownCommand}" ToolTip="Nach unten">
+                                                        <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Gruppe löschen (Einträge bleiben erhalten)">
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    </Button>
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="{Binding Indent}">
+                                                    <Button Style="{StaticResource Btn.Standard}" Width="34" Height="34" MinHeight="34" Padding="0" Command="{Binding ChooseIconCommand}"
+                                                            ToolTip="Symbol wählen" Margin="0,0,10,0">
+                                                        <Grid>
+                                                            <c:IconPresenter Icon="{Binding Icon}" Size="18" Foreground="{DynamicResource Text.Primary}" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
+                                                            <TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="14" Foreground="{DynamicResource Text.Tertiary}"
+                                                                       Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                                                        </Grid>
+                                                    </Button>
+                                                    <TextBlock Text="{Binding Display}" VerticalAlignment="Center" FontSize="14"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="4,10,0,4">
+                                <TextBox Width="260" Text="{Binding NewCategory, UpdateSourceTrigger=PropertyChanged}" Tag="Neue Gruppe (Untergruppe: Eltern/Name)"/>
+                                <Button Style="{StaticResource Btn.Standard}" Content="Hinzufügen" Command="{Binding AddCategoryCommand}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Liste leeren" Command="{Binding ClearMachinesCommand}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Zuletzt verwendete Rechner" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="{Binding MachinesText}" Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="Immer abfragen" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Anmeldedaten" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Werden bei jedem Start abgefragt und nie gespeichert." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="2,6,0,0" TextWrapping="Wrap"
+                               Text="Löschen entfernt nur die Gruppe (samt Untergruppen) – ihre Einträge erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“."/>
+                </StackPanel>
+
+                <!-- Verhalten -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
+                    <TextBlock Text="Verhalten" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Gilt für alle Panels. Lage, Größe, Farbe und Tastenkürzel stellst du je Panel unter „Panels“ ein." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                    <TextBlock Text="Ausfahren und Einklappen" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE823;" Header="Verweilzeit bis zum Ausfahren" Description="Verhindert ungewolltes Öffnen beim Vorbeifahren.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="1000" TickFrequency="50" Value="{Binding HoverDelayMs}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding HoverDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE81C;" Header="Einklappen nach Verlassen" Description="Zeit, bis das Panel wieder einfährt.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="2000" TickFrequency="100" Value="{Binding CollapseDelayMs}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding CollapseDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE740;" Header="Bei Vollbild-Programmen ausblenden"
+                                    Description="Die Hover-Zone ruht, solange ein Video, eine Präsentation, ein Spiel oder eine Remotedesktop-Sitzung im Vollbild läuft. Das Tastenkürzel funktioniert weiter.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HideHotZoneInFullscreen}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="Inhalt" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE81C;" Header="„Zuletzt ausgeführt“" Description="Anzahl der zuletzt gestarteten Einträge oben im Panel (mit dem verwendeten Profil). 0 = aus. Je Panel abschaltbar unter „Panels“.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="10" TickFrequency="1" Value="{Binding RecentRunsCount}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding RecentRunsText}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                </StackPanel>
+
+                <!-- PowerShell -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=exec}">
+                    <TextBlock Text="PowerShell" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Standardwerte für den Start von Scripten. Startprofile eines Eintrags (⚙) können sie überschreiben." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                    <TextBlock Text="Start" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE756;" Header="Standard-PowerShell (lokal)" Description="Fehlt PowerShell 7, wird automatisch Windows PowerShell 5.1 verwendet.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding EnginesList}" SelectedValue="{Binding DefaultEngine}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE72E;" Header="Execution Policy" Description="Gilt nur für die von Power-Exec gestarteten Scripte.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Policies}" SelectedValue="{Binding ExecutionPolicy}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE77B;" Header="Ohne Profil starten (-NoProfile)" Description="Schnellerer Start, keine Seiteneffekte aus dem PowerShell-Profil.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoProfile}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE7C4;" Header="Konsole nach Ende offen lassen (-NoExit)" Description="Damit die Ausgabe sichtbar bleibt.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoExit}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="Editor" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE70F;" Header="Editor für „Im Editor öffnen“">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Editors}" SelectedValue="{Binding Editor}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8E5;" Header="Eigener Editor" Description="Pfad zur EXE" Visibility="{Binding IsCustomEditor, Converter={StaticResource Vis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Width="320" Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="C:\Program Files\Notepad++\notepad++.exe"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseEditorCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <TextBlock Text="Gut zu wissen" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsExpander Icon="&#xE946;" Header="So startet Power-Exec Scripte" Description="Netzlaufwerke, Begleitdateien, Delegation">
+                        <StackPanel Margin="0,6">
+                            <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="Netzwerkpfade: "/><Run Text="Verbundene Laufwerke werden vor dem Start in UNC-Pfade umgewandelt – erhöhte Prozesse und andere Konten sehen keine verbundenen Laufwerke."/></TextBlock>
+                            <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="Begleitdateien bei Remote: "/><Run Text="„Scriptordner mitsenden“ kopiert Module und Dateien über die Remote-Sitzung und löscht sie danach. Dauerhaft mit „PowerExec: CopyFolder“ unter .NOTES."/></TextBlock>
+                            <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="Delegation (CredSSP): "/><Run Text="wird bewusst nicht unterstützt, weil Anmeldedaten an den Zielrechner weitergegeben würden."/></TextBlock>
+                        </StackPanel>
+                    </c:SettingsExpander>
+                </StackPanel>
+
+                <!-- Remote -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=remote}">
+                    <TextBlock Text="Remote" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Ausführung auf anderen Rechnern über WinRM, einzeln oder parallel auf vielen." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                    <TextBlock Text="Verbindung" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE968;" Header="PowerShell bei Remote" Description="Auf den meisten Servern gibt es nur 5.1. PowerShell 7 nur, wenn der Endpunkt PowerShell.7 existiert.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding RemoteEngines}" SelectedValue="{Binding RemoteEngine}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE72E;" Header="Remote über HTTPS (Port 5986)" Description="Für Rechner außerhalb der Domäne bzw. wenn WinRM nur per HTTPS erreichbar ist. Auf dem Ziel muss ein HTTPS-Listener eingerichtet sein.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding RemoteUseSsl}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE916;" Header="Verbindungs-Timeout pro Rechner" Description="Danach gilt der Rechner als nicht erreichbar.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="10" Maximum="300" TickFrequency="10" Value="{Binding RemoteTimeoutSeconds}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding RemoteTimeoutSeconds, StringFormat={}{0} s}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE902;" Header="Gleichzeitige Verbindungen" Description="Für die Massenausführung.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="1" Maximum="64" TickFrequency="1" Value="{Binding ThrottleLimit}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ThrottleLimit}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <TextBlock Text="Ergebnisse" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xEA8F;" Header="Benachrichtigen, wenn ein Remote-Lauf fertig ist" Description="Windows-Benachrichtigung mit Zusammenfassung; ein Klick öffnet die Ergebnisliste.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NotifyOnFinish}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8B7;" Header="Log-Ordner" Description="{Binding LogFolderDisplay}">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource Btn.Standard}" Content="Ändern …" Command="{Binding BrowseLogFolderCommand}"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Öffnen" Command="{Binding OpenLogFolderCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <TextBlock Text="Rechner und Anmeldung" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE7F4;" Header="Zuletzt verwendete Rechner" Description="{Binding MachinesText}">
+                        <Button Style="{StaticResource Btn.Standard}" Content="Liste leeren" Command="{Binding ClearMachinesCommand}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8D7;" Header="Anmeldedaten" Description="Werden bei jedem Start abgefragt und nie gespeichert.">
+                        <TextBlock Text="Immer abfragen" Foreground="{DynamicResource Text.Secondary}"/>
+                    </c:SettingsCard>
                 </StackPanel>
 
                 <!-- Diagnose & Daten -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=diag}">
-                    <TextBlock Text="Diagnose &amp; Daten" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Protokoll für die Fehlersuche, Einlesezeiten und das Sichern der Einstellungen." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
+                    <TextBlock Text="Diagnose" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Protokoll für die Fehlersuche und Einlesezeiten der Ordner." Style="{StaticResource Caption}"/>
 
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Style="{StaticResource Btn.Standard}" Content="Exportieren …" Command="{Binding ExportCommand}"/>
-                                <Button Style="{StaticResource Btn.Standard}" Content="Importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
-                            </StackPanel>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="Einstellungen sichern" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Ordner, Startprofile, Favoriten, Gruppen und Rechnerliste als Datei – zum Sichern oder für einen anderen PC. Kennwörter sind nie enthalten." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
+                    <TextBlock Text="Einlesen der Ordner" Style="{StaticResource SettingsSection}"/>
 
                     <Border Style="{StaticResource Card}" Padding="16,12">
                         <StackPanel>
@@ -1140,6 +1159,7 @@
                         </StackPanel>
                     </Border>
 
+                    <TextBlock Text="Protokoll" Style="{StaticResource SettingsSection}"/>
                     <Border Style="{StaticResource Card}" Padding="16,12">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
@@ -1164,51 +1184,6 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Updates -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=updates}">
-                    <TextBlock Text="Updates" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Neue Versionen kommen aus den GitHub Releases." Style="{StaticResource Caption}" Margin="0,0,0,14"/>
-
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentVersion}" VerticalAlignment="Center"/>
-                            <TextBlock Text="Installierte Version" Style="{StaticResource RowTitle}" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{Binding RepoText}" Command="{Binding OpenRepoCommand}" VerticalAlignment="Center"
-                                    Foreground="{DynamicResource Accent}"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Quelle" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Öffentliches Repository, keine Anmeldung nötig." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding CheckUpdatesOnStart}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Beim Start nach Updates suchen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Bei einer neuen Version erscheint ein Hinweis mit Bestätigung." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IncludePrereleases}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Vorabversionen einbeziehen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Auch Releases, die als Pre-release markiert sind." Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Nach Updates suchen" Command="{Binding CheckUpdatesCommand}" VerticalAlignment="Center"/>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="Letzte Prüfung" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="{Binding UpdateStatus}" Style="{StaticResource RowDesc}"/></StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <StackPanel VerticalAlignment="Center"><TextBlock Text="Einstellungsdatei" Style="{StaticResource RowTitle}"/>
-                            <TextBlock Text="{Binding SettingsFile}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/></StackPanel>
-                    </Border>
-                </StackPanel>
             </Grid>
         </ScrollViewer>
         </DockPanel>

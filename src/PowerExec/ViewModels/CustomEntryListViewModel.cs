@@ -68,7 +68,7 @@ public sealed class CustomEntryRowViewModel : ObservableObject
 
     internal void Refresh()
     {
-        foreach (var p in new[] { nameof(Name), nameof(Detail), nameof(KindText), nameof(GroupText), nameof(TagsText), nameof(Badge), nameof(Icon),
+        foreach (var p in new[] { nameof(Name), nameof(Detail), nameof(KindText), nameof(GroupText), nameof(TagsText), nameof(Tags), nameof(Badge), nameof(Icon),
                      nameof(HasIcon), nameof(SingleClick), nameof(HasPlaceholders), nameof(HealthText), nameof(HealthOk) })
             OnPropertyChanged(p);
     }

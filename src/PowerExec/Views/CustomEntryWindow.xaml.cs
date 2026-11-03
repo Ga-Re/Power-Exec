@@ -26,9 +26,12 @@ public partial class CustomEntryWindow : Window
         new CustomEntryWindow(new CustomEntryViewModel(entry, groups.FirstOrDefault(), new[] { "test" }, groups), isNew: false);
 
     /// <returns>Der geänderte Eintrag samt Gruppe und Schlagworten oder null bei Abbruch.</returns>
+    /// <summary>Vorhandene Schlagworte für die Vorschläge (setzt die App beim Start bzw. vor dem Öffnen).</summary>
+    public static Func<IReadOnlyList<string>> KnownTags { get; set; } = () => Array.Empty<string>();
+
     public static CustomEntryEditResult? Edit(IReadOnlyList<string> groups, CustomEntry entry, bool isNew, string? group, IEnumerable<string> tags, Window? owner = null)
     {
-        var vm = new CustomEntryViewModel(entry, group, tags, groups);
+        var vm = new CustomEntryViewModel(entry, group, tags, groups, KnownTags());
         var w = new CustomEntryWindow(vm, isNew);
         if (owner != null) { w.Owner = owner; w.WindowStartupLocation = WindowStartupLocation.CenterOwner; }
         return w.ShowDialog() == true ? new CustomEntryEditResult(vm.ToEntry(), GroupManager.Normalize(vm.Group), vm.TagList) : null;

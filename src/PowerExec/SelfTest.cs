@@ -174,7 +174,10 @@ public sealed partial class AppController
             if (ReferenceEquals(reloaded, settingsVm)) Fail("Einstellungsfenster hat Änderung aus dem Panel nicht übernommen");
             else if (reloaded.EntryList.Rows.First(r => r.Entry.Key == entryKey).Group != "Leer") Fail("Einstellungsliste zeigt alte Gruppe");
             settingsVm = reloaded;
-            foreach (var section in new[] { "folders", "custom", "panels", "panel", "workspaces", "machines", "exec", "diag", "updates" })
+            settingsVm.SearchText = "update";
+            if (!settingsVm.HasSearchResults) Fail("Suche in den Einstellungen findet nichts für „update“");
+            settingsVm.SearchText = string.Empty;
+            foreach (var section in new[] { "general", "folders", "custom", "groups", "workspaces", "panels", "behavior", "exec", "remote", "machines", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
@@ -201,6 +204,11 @@ public sealed partial class AppController
             var snippetItem = DescribeCustom(snippet);
             if (!File.Exists(snippet.SnippetPath) || snippetItem.Parameters.Count != 1) Fail("PowerShell-Snippet: Datei oder param() nicht erkannt");
             if (!_hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
+            // Jeder eigene Eintrag muss im Hauptpanel erscheinen (Snippets haben kein Ziel!)
+            _hosts[0].ViewModel.ResetForNextOpen();
+            foreach (var c in Settings.CustomEntries)
+                if (!_hosts[0].ViewModel.AllItems.Any(i => i.Item.FullPath.Equals(c.Key, StringComparison.OrdinalIgnoreCase)))
+                    Fail($"Eigener Eintrag fehlt im Panel: {c.Name} ({c.Kind})");
 
             Step("Arbeitsbereich wechseln");
             // Arbeitsbereich wechseln

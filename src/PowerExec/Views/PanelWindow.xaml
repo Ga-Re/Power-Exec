@@ -225,8 +225,8 @@
                                Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
                     <TextBlock Text="{Binding Meta}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,0,0,8"
                                Visibility="{Binding HasMeta, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{Binding TagsText}" FontSize="11" Foreground="{DynamicResource Accent}" TextWrapping="Wrap" Margin="0,0,0,8"
-                               Visibility="{Binding HasTags, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding Tags}" ItemTemplate="{StaticResource TagChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False" Margin="0,0,0,6"
+                                  Visibility="{Binding HasTags, Converter={StaticResource Vis}}"/>
                     <DockPanel Margin="0,0,0,8" Visibility="{Binding HasHealthProblem, Converter={StaticResource Vis}}">
                         <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="12" Margin="0,1,6,0" VerticalAlignment="Top" Foreground="{DynamicResource Status.Error}"/>
                         <TextBlock Text="{Binding HealthText}" FontSize="12" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap"/>

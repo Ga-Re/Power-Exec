@@ -43,6 +43,7 @@ public sealed partial class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
         SetupSnippetFolder();
+        CustomEntryWindow.KnownTags = () => Tags.All(Settings);
 
         Icons = new IconService(Application.Current.Dispatcher);
         Health = new HealthService(Application.Current.Dispatcher);
@@ -72,7 +73,7 @@ public sealed partial class AppController : IDisposable
         if (Settings.Folders.Count == 0)
         {
             _tray.ShowBalloon("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
-            ShowSettings();
+            ShowSettings(section: "folders");
         }
         else if (hotkeyError != null)
         {

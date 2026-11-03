@@ -46,6 +46,7 @@ public partial class SettingsWindow : Window
         AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler((_, _) => ScheduleApply()));
         AddHandler(UIElement.LostKeyboardFocusEvent, new RoutedEventHandler((_, _) => ScheduleApply()));
         Activated += (_, _) => ScheduleApply(); // zurück aus einem Dialog (⚙, Eintrag bearbeiten …)
+        Deactivated += (_, _) => _vm.SearchText = string.Empty; // Suchvorschläge nicht über anderen Fenstern stehen lassen
 
         _app.SettingsChangedOutside += OnChangedOutside;
         Closing += (_, _) => ApplyNow(force: true);

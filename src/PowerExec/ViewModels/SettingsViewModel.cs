@@ -403,11 +403,16 @@ public sealed class ColorPresetViewModel : ObservableObject
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));
 }
 
-public sealed class CategoryItemViewModel
+public sealed class CategoryItemViewModel : ObservableObject
 {
-    public CategoryItemViewModel(string name, Action<CategoryItemViewModel, int> move, Action<CategoryItemViewModel> remove)
+    private string _icon = string.Empty;
+
+    public CategoryItemViewModel(string name, Action<CategoryItemViewModel, int> move, Action<CategoryItemViewModel> remove,
+        string icon = "", Action<CategoryItemViewModel>? chooseIcon = null)
     {
         Name = name;
+        _icon = icon;
+        ChooseIconCommand = new RelayCommand(() => chooseIcon?.Invoke(this), () => chooseIcon != null);
         UpCommand = new RelayCommand(() => move(this, -1));
         DownCommand = new RelayCommand(() => move(this, 1));
         RemoveCommand = new RelayCommand(() => remove(this));
@@ -415,6 +420,9 @@ public sealed class CategoryItemViewModel
 
     public string Name { get; }
     public string Display => GroupManager.LeafOf(Name);
+    public string Icon { get => _icon; set { if (Set(ref _icon, value ?? string.Empty)) OnPropertyChanged(nameof(HasIcon)); } }
+    public bool HasIcon => _icon.Length > 0;
+    public ICommand ChooseIconCommand { get; }
     public Thickness Indent => new(GroupManager.DepthOf(Name) * 18, 0, 0, 0);
     public ICommand UpCommand { get; }
     public ICommand DownCommand { get; }
@@ -427,7 +435,7 @@ public sealed class SettingsViewModel : ObservableObject
 {
     private readonly AppController _app;
     private readonly AppSettings _s;
-    private string _section = "folders";
+    private string _section = "general";
     private string _defaultExtensions;
     private string _globalExcludes;
     private string _updateStatus = string.Empty;
@@ -466,7 +474,7 @@ public sealed class SettingsViewModel : ObservableObject
         SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "folders");
 
         foreach (var c in GroupManager.All(_s))
-            Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory));
+            Categories.Add(new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon));
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
         foreach (var pc in _s.Panels) Panels.Add(CreatePanelVm(pc));
@@ -490,12 +498,94 @@ public sealed class SettingsViewModel : ObservableObject
         if (focusFolder != null) _section = "folders";
     }
 
+    // ---- Suche in den Einstellungen ---------------------------------------------
+
+    public sealed record SearchHit(string Section, string Page, string Title, string Keywords);
+
+    private static readonly (string Section, string Page)[] Pages =
+    {
+        ("general", "Allgemein"), ("folders", "Ordner"), ("custom", "Eigene Einträge"), ("groups", "Gruppen"), ("workspaces", "Arbeitsbereiche"),
+        ("panels", "Panels"), ("behavior", "Verhalten"), ("exec", "PowerShell"), ("remote", "Remote"), ("machines", "Rechnergruppen"), ("diag", "Diagnose")
+    };
+
+    private static readonly SearchHit[] Index =
+    {
+        new("general", "Allgemein", "Version und Updates", "update aktualisieren version vorabversion beta github"),
+        new("general", "Allgemein", "Mit Windows starten", "autostart anmeldung start"),
+        new("general", "Allgemein", "Design", "hell dunkel theme farbe"),
+        new("general", "Allgemein", "Animation", "ausfahren sanft schnell"),
+        new("general", "Allgemein", "Symbole anzeigen", "icons favicon programmsymbol"),
+        new("general", "Allgemein", "Einstellungen sichern", "export import backup datei"),
+        new("folders", "Ordner", "Ordner hinzufügen", "pfad freigabe unc netzwerk scan"),
+        new("folders", "Ordner", "Standard-Dateiendungen", "ps1 exe cmd endung"),
+        new("folders", "Ordner", "Globale Ausschlüsse", "ausschließen muster"),
+        new("folders", "Ordner", "Automatisch neu einlesen", "dateiwächter rescan"),
+        new("folders", "Ordner", "Zeitlimit für nicht erreichbare Ordner", "timeout offline"),
+        new("folders", "Ordner", "Neue Dateien freigeben", "freigabe sichtbar haken"),
+        new("custom", "Eigene Einträge", "Eigene Einträge verwalten", "webseite url ordner rdp ssh snippet werkzeug befehl datei"),
+        new("custom", "Eigene Einträge", "Aus Vorlagen", "katalog mmc systemsteuerung ms-settings"),
+        new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
+        new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
+        new("groups", "Gruppen", "Gruppierung im Panel", "ordner kategorie"),
+        new("groups", "Gruppen", "Eigene Gruppen und Symbole", "untergruppe reihenfolge icon symbol"),
+        new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
+        new("panels", "Panels", "Panel hinzufügen", "mehrere panels monitor"),
+        new("panels", "Panels", "Bildschirmrand und Monitor", "links rechts oben unten"),
+        new("panels", "Panels", "Hover-Zone", "breite länge auslöser"),
+        new("panels", "Panels", "Panelgröße", "breite höhe lage"),
+        new("panels", "Panels", "Panelfarbe und Deckkraft", "farbe transparenz"),
+        new("panels", "Panels", "Tastenkürzel", "hotkey shortcut"),
+        new("panels", "Panels", "Inhalt und Darstellung", "liste raster kompakt favoriten zuletzt"),
+        new("behavior", "Verhalten", "Verweilzeit bis zum Ausfahren", "hover verzögerung"),
+        new("behavior", "Verhalten", "Einklappen nach Verlassen", "schließen verzögerung"),
+        new("behavior", "Verhalten", "Bei Vollbild-Programmen ausblenden", "video präsentation spiel rdp"),
+        new("behavior", "Verhalten", "„Zuletzt ausgeführt“", "verlauf anzahl"),
+        new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
+        new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
+        new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
+        new("exec", "PowerShell", "Editor", "vscode ise notepad"),
+        new("remote", "Remote", "PowerShell bei Remote", "winrm 5.1 7"),
+        new("remote", "Remote", "HTTPS (Port 5986)", "ssl winrm"),
+        new("remote", "Remote", "Gleichzeitige Verbindungen und Timeout", "throttle masse"),
+        new("remote", "Remote", "Benachrichtigung und Log-Ordner", "protokoll fertig"),
+        new("remote", "Remote", "Zuletzt verwendete Rechner", "rechnerliste leeren"),
+        new("machines", "Rechnergruppen", "Rechnergruppen", "gruppe csv import ad active directory"),
+        new("diag", "Diagnose", "Protokoll", "log fehler kopieren"),
+        new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
+    };
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value ?? string.Empty)) { OnPropertyChanged(nameof(SearchResults)); OnPropertyChanged(nameof(HasSearchResults)); } }
+    }
+
+    public IReadOnlyList<SearchHit> SearchResults
+    {
+        get
+        {
+            var words = _searchText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0) return Array.Empty<SearchHit>();
+            return Index.Where(h => words.All(w => (h.Title + " " + h.Keywords + " " + h.Page).Contains(w, StringComparison.CurrentCultureIgnoreCase))).Take(12).ToList();
+        }
+    }
+    public bool HasSearchResults => SearchResults.Count > 0;
+
+    public ICommand OpenSearchHitCommand => new RelayCommand(p =>
+    {
+        if (p is SearchHit h) { Section = h.Section; SearchText = string.Empty; }
+    });
+
+    public string PageTitle => Pages.FirstOrDefault(x => x.Section == _section).Page ?? string.Empty;
+
     public string Section
     {
         get => _section;
         set
         {
             if (!Set(ref _section, value)) return;
+            OnPropertyChanged(nameof(PageTitle));
             if (value == "panels") RefreshPanelChoices(); // neu hinzugefügte Ordner/Kategorien anbieten
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
         }
@@ -673,6 +763,14 @@ public sealed class SettingsViewModel : ObservableObject
     public string NewCategory { get => _newCategory; set => Set(ref _newCategory, value ?? string.Empty); }
     public ICommand AddCategoryCommand { get; }
 
+    private void ChooseCategoryIcon(CategoryItemViewModel c)
+    {
+        var picked = Views.IconPickerWindow.Pick(IconRef.Parse(c.Icon), $"Symbol für „{c.Display}“");
+        if (picked == null) return;
+        GroupManager.SetIcon(_s, c.Name, picked.Value);
+        c.Icon = picked.Value.ToString();
+    }
+
     /// <summary>Unter den Geschwistern verschieben (Untergruppen wandern mit).</summary>
     private void MoveCategory(CategoryItemViewModel c, int delta)
     {
@@ -696,7 +794,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var name = GroupManager.Normalize(NewCategory);
         if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory));
+            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon));
         NewCategory = string.Empty;
     }
 
