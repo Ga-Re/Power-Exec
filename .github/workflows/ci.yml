@@ -33,7 +33,12 @@ jobs:
           $result = Join-Path $env:RUNNER_TEMP 'selftest.txt'
           $p = Start-Process -FilePath out\PowerExec.exe -ArgumentList '--selftest', $result -PassThru
           $null = $p.Handle  # Exitcode zuverlässig abrufbar machen
-          if (-not $p.WaitForExit(240000)) { $p.Kill(); throw 'Selbsttest hat nicht rechtzeitig beendet.' }
+          if (-not $p.WaitForExit(240000)) {
+            $p.Kill()
+            if (Test-Path "$result.progress") { Get-Content "$result.progress" | Select-Object -Last 15 }
+            throw 'Selbsttest hat nicht rechtzeitig beendet.'
+          }
+          if (Test-Path "$result.progress") { Get-Content "$result.progress" | Select-Object -Last 3 }
           if (Test-Path $result) { Get-Content $result }
           if ($p.ExitCode -ne 0) { throw "Selbsttest fehlgeschlagen (Code $($p.ExitCode))." }
 

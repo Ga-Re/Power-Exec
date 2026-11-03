@@ -51,7 +51,7 @@ public partial class App : Application
         Dispatcher.BeginInvoke(async () =>
         {
             string? error;
-            try { error = await _controller.RunSelfTestAsync(); }
+            try { error = await _controller.RunSelfTestAsync(resultFile + ".progress"); }
             catch (Exception ex) { error = ex.ToString(); }
             try { File.WriteAllText(resultFile, error ?? "OK"); } catch { }
             Shutdown(error == null ? 0 : 1);

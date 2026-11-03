@@ -16,9 +16,19 @@ namespace PowerExec;
 public sealed partial class AppController
 {
     private readonly List<string> _selfTestErrors = new();
+    private string? _progressFile;
 
-    public async Task<string?> RunSelfTestAsync()
+    /// <summary>Fortschritt in eine Datei schreiben – bei einem Hänger sieht man den letzten Schritt.</summary>
+    private void Step(string name)
     {
+        if (_progressFile == null) return;
+        try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { }
+    }
+
+    public async Task<string?> RunSelfTestAsync(string? progressFile = null)
+    {
+        _progressFile = progressFile;
+        Step("Start");
         var dispatcher = Application.Current.Dispatcher;
         dispatcher.UnhandledException += (_, e) =>
         {
@@ -80,10 +90,13 @@ public sealed partial class AppController
             Health = new HealthService(dispatcher);
             Repository = new ItemRepository(Settings, dispatcher);
             Launcher = new Launcher(() => Settings);
+            Step("Scan");
             await Repository.ScanAsync();
+            Step("Panels erzeugen");
             CreateHosts();
             if (Repository.Items.Count < 3) Fail($"Scan fand nur {Repository.Items.Count} Einträge");
 
+            Step("Symbole prüfen");
             // Alle eingebetteten Symbole müssen sich in WPF-Geometrien umwandeln lassen
             var broken = IconLibrary.Fluent().Concat(IconLibrary.Hero()).Where(c => IconLibrary.GeometryOf(c.Ref) == null).Select(c => c.Ref.ToString()).ToList();
             if (IconLibrary.FluentCount < 1000 || IconLibrary.HeroCount < 200) Fail($"Symbole fehlen: Fluent {IconLibrary.FluentCount}, Hero {IconLibrary.HeroCount}");
@@ -95,6 +108,7 @@ public sealed partial class AppController
                 {
                     host.Config.Layout = layout;
                     host.Config.Compact = compact;
+                    Step($"Panel {host.Config.Name} {layout} kompakt={compact}");
                     host.ViewModel.Rebuild();
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
@@ -109,6 +123,7 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Einstellungen");
             // Einstellungen: alle Bereiche
             var settingsVm = new SettingsViewModel(this, null);
             var settingsWindow = new SettingsWindow(settingsVm, this);
@@ -116,6 +131,7 @@ public sealed partial class AppController
             foreach (var section in new[] { "folders", "custom", "panels", "panel", "workspaces", "machines", "exec", "diag", "updates" })
             {
                 settingsVm.Section = section;
+                Step("Einstellungen " + section);
                 await Settle();
             }
             settingsWindow.Close();
@@ -133,12 +149,14 @@ public sealed partial class AppController
             foreach (var kind in Enum.GetValues<CustomEntryKind>())
                 await ShowAndClose(CustomEntryWindow.ForTest(new CustomEntry { Kind = kind, Target = "x" }, GroupManager.All(Settings)));
 
+            Step("Snippets");
             // Eigene Einträge: Snippet-Datei, Platzhalter, Ein-Klick
             var snippet = Settings.CustomEntries.First(c => c.Name == "Ping");
             var snippetItem = DescribeCustom(snippet);
             if (!File.Exists(snippet.SnippetPath) || snippetItem.Parameters.Count != 1) Fail("PowerShell-Snippet: Datei oder param() nicht erkannt");
             if (!_hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
 
+            Step("Arbeitsbereich wechseln");
             // Arbeitsbereich wechseln
             SwitchWorkspace("Kunde A");
             await Settle();
@@ -164,8 +182,9 @@ public sealed partial class AppController
         await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
     }
 
-    private static async Task ShowAndClose(Window w)
+    private async Task ShowAndClose(Window w)
     {
+        Step("Fenster " + w.GetType().Name + " " + w.Title);
         w.Show();
         await Settle();
         w.Close();

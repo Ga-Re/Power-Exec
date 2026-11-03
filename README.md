@@ -12,7 +12,10 @@ oder remote auf einem oder vielen Rechnern.
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
 - **Mehrere Panels** an verschiedenen Rändern oder Monitoren, jedes mit eigener Hover-Zone, Farbe, Deckkraft, Größe, eigenem Tastenkürzel und eigenem Inhalt (Auswahl von Ordnern, Kategorien und „Eigene Einträge“)
 - **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
-- **Darstellung je Panel:** Liste, kompakte Liste oder **Raster** (Kacheln mit großem Symbol; Details des ausgewählten Eintrags unten im Panel) – per Knopf im Panel-Kopf oder in den Einstellungen
+- **Darstellung je Panel:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), jeweils auch **kompakt** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
+- **Rechtsklick auf freie Fläche:** neue Gruppe, neuer Eintrag, aus Vorlagen, aus Zwischenablage, Import, Darstellung
+- **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
+- Suche mit **`#schlagwort`** filtert nach Schlagworten
 - „Zuletzt ausgeführt“ und „Favoriten“ je Panel ein- oder ausblendbar
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
@@ -37,9 +40,17 @@ oder remote auf einem oder vielen Rechnern.
 - Wechsel im Panel-Kopf, im Tray-Menü oder in den Einstellungen; gilt für alle Panels. Panels, Farben, Rechnergruppen und allgemeine Einstellungen sind gemeinsam
 - Neuer Arbeitsbereich leer oder als Kopie des aktuellen
 
-**Eigene Einträge ohne Datei**
-- Webseiten, Ordner/Freigaben, Remotedesktop-Verbindungen (`mstsc /v:`) und beliebige Befehle mit Argumenten
-- Erscheinen in der Gruppe „Eigene Einträge“, lassen sich favorisieren, kategorisieren, mit Profilen und Notizen versehen
+**Eigene Einträge**
+- Arten: Webseite, Ordner/Freigabe, Remotedesktop, **SSH** (Windows Terminal, Konsole oder PuTTY), **Snippet** (PowerShell – läuft wie ein Script, auch als Admin, als anderer Benutzer oder remote – oder Text, das in die Zwischenablage kopiert wird), **Windows-Werkzeug** (Snap-ins, Systemsteuerung, `ms-settings:`), Befehl, einzelne Datei
+- **Vorlagen-Katalog** mit rund 70 Admin-Werkzeugen, Systemsteuerungs- und Einstellungsseiten
+- **Platzhalter** `{{Name}}` bzw. `{{Name:Vorgabe}}` in Adresse, Argumenten oder Code werden beim Start abgefragt (mit Verlauf), z. B. `https://ticket/{{Nummer}}` oder `mstsc /v:{{Rechner}}`
+- Webseiten in einem bestimmten **Browser** (Edge, Chrome, Firefox), privat und mit Browserprofil öffnen
+- **Eigenes Symbol** aus Fluent UI System Icons (≈2.500), Heroicons (324), Segoe-Glyphen, Emoji oder eigener Bilddatei – auch für **Gruppen**
+- **Mit einem Klick starten** statt aufklappen (je Eintrag); **Duplizieren**; **Schlagworte**
+- **Erreichbarkeits-Prüfung**: tote Links, fehlende Ordner/Dateien, nicht erreichbare RDP-/SSH-Rechner und fehlende Programme werden markiert
+- Infos ohne Wiederholungen: bei Webseiten Titel und Adresse, bei Ordnern Anzahl Dateien und Unterordner, Größe und letzte Änderung
+- Einstellungen › Eigene Einträge: kompakte, durchsuchbare Liste mit Filtern (Art, Gruppe, Schlagwort, Probleme), ⚙ zum Bearbeiten, **Mehrfachauswahl** (verschieben, exportieren, löschen)
+- **Teilen:** Einträge oder ganze Gruppen als Datei exportieren und bei Kollegen importieren (samt Gruppen, Symbolen, Schlagworten und Profilen – ohne Kennwörter)
 
 **Ordner**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC)
