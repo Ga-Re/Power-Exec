@@ -1,6 +1,7 @@
 <Window x:Class="PowerExec.Views.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:PowerExec.Controls"
         Title="Power-Exec – Einstellungen" Style="{StaticResource AppWindow}"
         Width="1040" Height="760" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
     <Window.Resources>
@@ -712,79 +713,166 @@
                 </StackPanel>
 
                 <!-- Eigene Einträge -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}" DataContext="{Binding EntryList}">
                     <TextBlock Text="Eigene Einträge" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Einträge ohne Datei: Webseiten, Ordner und Freigaben, Remotedesktop-Verbindungen und Befehle. Sie erscheinen im Panel in der Gruppe „Eigene Einträge“ und lassen sich wie andere Einträge favorisieren, kategorisieren und mit Profilen versehen." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Url" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE774;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Webseite"/></StackPanel>
+                    <TextBlock Text="Webseiten, Ordner, Remotedesktop, SSH, Snippets, Windows-Werkzeuge, Befehle und einzelne Dateien. ⚙ bearbeitet einen Eintrag; mehrere markieren zum Verschieben, Exportieren oder Löschen. Änderungen werden mit „Speichern“ übernommen."
+                               Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                    <!-- Werkzeugleiste -->
+                    <DockPanel Margin="0,0,0,8">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Style="{StaticResource Btn.Accent}" Click="NewEntryMenu_Click" Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Neu"/>
+                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="9" Margin="6,0,0,0"/></StackPanel>
+                                <Button.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Webseite …" Command="{Binding NewCommand}" CommandParameter="Url"/>
+                                        <MenuItem Header="Ordner …" Command="{Binding NewCommand}" CommandParameter="Folder"/>
+                                        <MenuItem Header="Remotedesktop …" Command="{Binding NewCommand}" CommandParameter="Rdp"/>
+                                        <MenuItem Header="SSH-Verbindung …" Command="{Binding NewCommand}" CommandParameter="Ssh"/>
+                                        <MenuItem Header="Snippet …" Command="{Binding NewCommand}" CommandParameter="Snippet"/>
+                                        <MenuItem Header="Windows-Werkzeug …" Command="{Binding NewCommand}" CommandParameter="Tool"/>
+                                        <MenuItem Header="Befehl …" Command="{Binding NewCommand}" CommandParameter="Command"/>
+                                        <MenuItem Header="Datei …" Command="{Binding NewCommand}" CommandParameter="File"/>
+                                        <Separator/>
+                                        <MenuItem Header="Aus Vorlagen …" Command="{Binding CatalogCommand}"/>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Aus Vorlagen …" Command="{Binding CatalogCommand}" Margin="8,0,0,0"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Importieren …" Command="{Binding ImportCommand}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <Grid>
+                            <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="Suchen (Name, Ziel, Code, #schlagwort)"/>
+                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                        </Grid>
+                    </DockPanel>
+                    <WrapPanel Margin="0,0,0,8">
+                        <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Webseiten" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Url}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Ordner" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Folder}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="RDP" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Rdp}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="SSH" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Ssh}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Snippets" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Snippet}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Werkzeuge" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Tool}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Befehle" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Command}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Dateien" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=File}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Mit Problemen" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=problems}"/>
+                    </WrapPanel>
+                    <DockPanel Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding CheckCommand}"
+                                ToolTip="Webseiten, Ordner, Dateien, RDP-/SSH-Ports und Programme prüfen (Auswahl bzw. alle sichtbaren)">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
                         </Button>
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Folder" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Ordner"/></StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Rdp" Margin="0,0,8,0">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8AF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Remotedesktop"/></StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding AddCustomEntryCommand}" CommandParameter="Command">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE756;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Befehl"/></StackPanel>
-                        </Button>
-                    </StackPanel>
-                    <TextBlock Text="Noch keine eigenen Einträge." Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="{Binding HasNoCustomEntries, Converter={StaticResource Vis}}"/>
-                    <ItemsControl ItemsSource="{Binding CustomEntries}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource Card}" Padding="16,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="110"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,8">
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                                <Button Style="{StaticResource Btn.Subtle}" Content="Testen" Command="{Binding TestCommand}" Margin="0,0,4,0"/>
-                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Entfernen">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
-                                                </Button>
-                                            </StackPanel>
-                                            <Border Background="{DynamicResource Badge.Other.Bg}" CornerRadius="4" Padding="6,1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                                <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource Badge.Other.Fg}"/>
-                                            </Border>
-                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        </DockPanel>
-                                        <TextBlock Grid.Row="1" Text="Art" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                                        <ComboBox Grid.Row="1" Grid.Column="1" Width="260" HorizontalAlignment="Left" ItemsSource="{Binding KindList}" SelectedValue="{Binding Kind}"
-                                                  DisplayMemberPath="Value" SelectedValuePath="Key" Margin="0,2"/>
-                                        <TextBlock Grid.Row="2" Text="Name" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Anzeigename im Panel" Margin="0,2"/>
-                                        <TextBlock Grid.Row="3" Text="{Binding TargetLabel}" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                                        <DockPanel Grid.Row="3" Grid.Column="1" Margin="0,2">
-                                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="8,0,0,0"/>
-                                            <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
-                                        </DockPanel>
-                                        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,2,0,0">
-                                            <Grid Visibility="{Binding HasArguments, Converter={StaticResource Vis}}" Margin="0,0,0,2">
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Argumente" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                                                <TextBox Grid.Column="1" Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="optional, z. B. /f oder /admin" FontFamily="{StaticResource MonoFont}"/>
-                                            </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            <ComboBox Width="170" Margin="8,0,0,0" ItemsSource="{Binding TagFilters}" SelectedValue="{Binding TagFilter}" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                            <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Mehrfachauswahl -->
+                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                            Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                            <ComboBox Width="190" IsEditable="True" ItemsSource="{Binding MoveTargets}" Text="{Binding MoveTarget, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,6,2"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="In Gruppe verschieben" Command="{Binding MoveSelectedCommand}" Margin="0,2,10,2"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Exportieren …" Command="{Binding ExportCommand}" Margin="0,2,6,2"/>
+                            <Button Style="{StaticResource Btn.Standard}" Content="Löschen" Command="{Binding RemoveSelectedCommand}" Margin="0,2,6,2"/>
+                            <Button Style="{StaticResource Btn.Subtle}" Content="Auswahl aufheben" Command="{Binding ClearSelectionCommand}" Margin="0,2,0,2"/>
+                        </WrapPanel>
+                    </Border>
+
+                    <TextBlock Text="Noch keine eigenen Einträge. „Neu“, „Aus Vorlagen“ – oder im Panel per Drag &amp; Drop, Strg+V und Rechtsklick." Style="{StaticResource Caption}" Margin="0,4,0,0"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="Keine Treffer für Suche und Filter." Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="{Binding NoMatches, Converter={StaticResource Vis}}"/>
+
+                    <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                        <StackPanel>
+                            <!-- Kopfzeile -->
+                            <Grid Margin="10,8,10,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="28"/>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="28"/>
+                                    <ColumnDefinition Width="76"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Style="{StaticResource Btn.Subtle}" Content="Alle" FontSize="11" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
+                                        Grid.ColumnSpan="2" HorizontalAlignment="Left" ToolTip="Alle sichtbaren auswählen"/>
+                                <TextBlock Grid.Column="2" Text="Eintrag" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="Gruppe / Schlagworte" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding RowsView}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="EntryRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent">
                                             <Grid>
-                                                <Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                                <TextBlock Text="Beschreibung" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
-                                                <TextBox Grid.Column="1" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Tag="optional, erscheint als Info im Panel"/>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="28"/>
+                                                    <ColumnDefinition Width="40"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="150"/>
+                                                    <ColumnDefinition Width="28"/>
+                                                    <ColumnDefinition Width="76"/>
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                                <Grid Grid.Column="1" Width="32" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                    <Border Width="32" Height="20" CornerRadius="4" Background="{DynamicResource Badge.Other.Bg}"
+                                                            Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                                        <TextBlock Text="{Binding Badge}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource Badge.Other.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <c:IconPresenter Icon="{Binding Icon}" Size="20" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Primary}"/>
+                                                </Grid>
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="320"/>
+                                                        <TextBlock Text="{Binding KindText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
+                                                        <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="11" Margin="6,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                                                   ToolTip="Startet mit einem Klick" Visibility="{Binding SingleClick, Converter={StaticResource Vis}}"/>
+                                                        <TextBlock Text="{}{{…}}" FontSize="11" Margin="6,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="Mit Platzhaltern"
+                                                                   Visibility="{Binding HasPlaceholders, Converter={StaticResource Vis}}"/>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Detail}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding GroupText}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding TagsText}" FontSize="11" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding TagsText, Converter={StaticResource Vis}}"/>
+                                                </StackPanel>
+                                                <Ellipse x:Name="Dot" Grid.Column="4" Width="9" Height="9" Fill="{DynamicResource Text.Disabled}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                         ToolTip="{Binding HealthText}"/>
+                                                <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding EditCommand}" ToolTip="Bearbeiten">
+                                                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                    </Button>
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Entfernen">
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    </Button>
+                                                </StackPanel>
                                             </Grid>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <Trigger SourceName="EntryRow" Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="EntryRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter TargetName="EntryRow" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthOk}" Value="True">
+                                                <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Status.Success}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding HealthOk}" Value="False">
+                                                <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Status.Error}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Rechnergruppen -->

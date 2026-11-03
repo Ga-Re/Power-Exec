@@ -1,0 +1,52 @@
+<Window x:Class="PowerExec.Views.CatalogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:PowerExec.Controls"
+        Title="Aus Vorlagen hinzufügen" Style="{StaticResource AppWindow}"
+        Width="680" Height="640" MinWidth="480" MinHeight="420" WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True" Topmost="True">
+    <DockPanel Margin="20,16,20,16">
+        <TextBlock DockPanel.Dock="Top" Text="Aus Vorlagen hinzufügen" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock DockPanel.Dock="Top" Text="Häufige Admin-Werkzeuge, Systemsteuerung, Windows-Einstellungen und Beispiele mit Platzhaltern. Mehrere auswählen und übernehmen."
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBox x:Name="SearchBox" Padding="28,0,8,0" Tag="Suchen, z. B. dns, dienste, proxy" TextChanged="Search_Changed"/>
+            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+        </Grid>
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="90"/>
+                <Button Style="{StaticResource Btn.Accent}" Content="Übernehmen" IsDefault="True" MinWidth="110" Margin="8,0,0,0" Click="Ok_Click"/>
+            </StackPanel>
+        </DockPanel>
+        <Border BorderThickness="1" BorderBrush="{DynamicResource Border.Default}" CornerRadius="6">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="List" Margin="4" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Header}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,10,0,4"
+                                           Visibility="{Binding Header, Converter={StaticResource Vis}}"/>
+                                <CheckBox IsChecked="{Binding IsChecked}" Margin="8,3" Checked="Check_Changed" Unchecked="Check_Changed">
+                                    <DockPanel>
+                                        <c:IconPresenter Icon="{Binding Template.Icon}" Size="20" Margin="0,0,10,0" Foreground="{DynamicResource Text.Primary}"/>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Template.Name}"/>
+                                            <TextBlock Style="{StaticResource Caption}" FontSize="11" TextTrimming="CharacterEllipsis">
+                                                <Run Text="{Binding Template.Target, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                                <Run Text="{Binding Template.Arguments, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                                <Run Text=" · "/>
+                                                <Run Text="{Binding Template.Description, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </CheckBox>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>

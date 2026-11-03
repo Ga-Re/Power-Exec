@@ -70,6 +70,7 @@ public sealed partial class AppController
             ThemeService.Apply(Settings.Theme);
 
             Icons = new IconService(dispatcher);
+            Health = new HealthService(dispatcher);
             Repository = new ItemRepository(Settings, dispatcher);
             Launcher = new Launcher(() => Settings);
             await Repository.ScanAsync();

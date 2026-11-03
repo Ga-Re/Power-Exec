@@ -25,6 +25,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\PowerExec.ico" />
+    <EmbeddedResource Include="Assets\icons.json" LogicalName="PowerExec.icons.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />

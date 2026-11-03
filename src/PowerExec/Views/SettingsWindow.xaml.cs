@@ -50,6 +50,18 @@ public partial class SettingsWindow : Window
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
 
+    /// <summary>„Neu ▾“: Menü mit den Eintragsarten öffnen.</summary>
+    private void NewEntryMenu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { ContextMenu: { } menu } button)
+        {
+            menu.PlacementTarget = button;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.DataContext = button.DataContext;
+            menu.IsOpen = true;
+        }
+    }
+
     private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         e.Handled = true;

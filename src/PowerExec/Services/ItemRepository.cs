@@ -224,6 +224,9 @@ public sealed class ItemRepository : IDisposable
         return loaded;
     }
 
+    /// <summary>Metadaten einer einzelnen Datei lesen (ohne Zwischenspeicher).</summary>
+    public LaunchItem LoadFile(string path, string rootFolder) => _loader.Load(path, rootFolder);
+
     public LaunchItem Reload(LaunchItem item)
     {
         var fresh = _loader.Load(item.FullPath, item.RootFolder);

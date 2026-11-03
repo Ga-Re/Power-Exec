@@ -25,6 +25,7 @@ public sealed partial class AppController : IDisposable
     public Launcher Launcher { get; private set; } = null!;
     public UpdateService Updates { get; } = new();
     public IconService Icons { get; private set; } = null!;
+    public HealthService Health { get; private set; } = null!;
     /// <summary>Update-Hinweis für alle Panels und das Einstellungsfenster.</summary>
     public UpdateState Update { get; } = new();
 
@@ -41,8 +42,11 @@ public sealed partial class AppController : IDisposable
             SaveSettings();
         }
         ThemeService.Apply(Settings.Theme);
+        SetupSnippetFolder();
 
         Icons = new IconService(Application.Current.Dispatcher);
+        Health = new HealthService(Application.Current.Dispatcher);
+        Health.Changed += RebuildPanels;
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
         Launcher = new Launcher(() => Settings);
         Repository.Changed += (_, _) =>
@@ -244,11 +248,128 @@ public sealed partial class AppController : IDisposable
         return custom == null ? null : DescribeCustom(custom);
     }
 
-    /// <summary>Eigener Eintrag als <see cref="LaunchItem"/>; bei Dateien mit Metadaten (Synopsis, Parameter).</summary>
+    /// <summary>Eigener Eintrag als <see cref="LaunchItem"/>; bei Dateien und PowerShell-Snippets mit Metadaten (Synopsis, Parameter).</summary>
     public LaunchItem DescribeCustom(CustomEntry entry)
     {
         var item = entry.ToLaunchItem();
-        return entry.Kind == CustomEntryKind.File ? Repository.DescribeSingle(item) : item;
+        if (entry.Kind == CustomEntryKind.File) return Repository.DescribeSingle(item);
+        if (entry.Kind == CustomEntryKind.Snippet && entry.Language == SnippetLanguage.PowerShell) return DescribeSnippet(entry, item);
+        return item;
+    }
+
+    private readonly Dictionary<string, (string Code, LaunchItem Item)> _snippetCache = new();
+
+    /// <summary>Legt den Snippet-Code als .ps1 ab (UTF-8 mit BOM für Windows PowerShell) und liest param() und Hilfe daraus.</summary>
+    private LaunchItem DescribeSnippet(CustomEntry entry, LaunchItem item)
+    {
+        try
+        {
+            if (!_snippetCache.TryGetValue(entry.Id, out var cached) || cached.Code != entry.Code || !File.Exists(entry.SnippetPath))
+            {
+                Directory.CreateDirectory(CustomEntry.SnippetFolder);
+                File.WriteAllText(entry.SnippetPath, entry.Code, new System.Text.UTF8Encoding(true));
+                var loaded = Repository.LoadFile(entry.SnippetPath, PanelConfig.CustomEntriesKey).Rebased(entry.Key, PanelConfig.CustomEntriesKey);
+                cached = (entry.Code, loaded);
+                _snippetCache[entry.Id] = cached;
+            }
+            var result = cached.Item.Rebased(entry.Key, PanelConfig.CustomEntriesKey);
+            result.DisplayName = item.DisplayName;
+            result.Synopsis = entry.Description.Trim().Length > 0 ? entry.Description.Trim() : (result.Synopsis.Length > 0 ? result.Synopsis : item.Synopsis);
+            result.LaunchTarget = entry.SnippetPath;
+            result.CustomKind = CustomEntryKind.Snippet;
+            result.Source = entry;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Snippet konnte nicht vorbereitet werden", ex);
+            return item;
+        }
+    }
+
+    /// <summary>Snippet-Ordner: unter ProgramData, damit auch andere Konten („Als …“) die Datei lesen können.</summary>
+    private static void SetupSnippetFolder()
+    {
+        foreach (var root in new[] { Environment.SpecialFolder.CommonApplicationData, Environment.SpecialFolder.LocalApplicationData })
+        {
+            try
+            {
+                var dir = Path.Combine(Environment.GetFolderPath(root), "Power-Exec", "Snippets");
+                Directory.CreateDirectory(dir);
+                var probe = Path.Combine(dir, ".probe");
+                File.WriteAllText(probe, string.Empty);
+                File.Delete(probe);
+                CustomEntry.SnippetFolder = dir;
+                foreach (var f in Directory.EnumerateFiles(dir, "*-run-*.ps1"))
+                    try { if (DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > TimeSpan.FromDays(1)) File.Delete(f); } catch { }
+                return;
+            }
+            catch { }
+        }
+    }
+
+    /// <summary>Aktuellen Stand eines Eintrags holen (Parameter eines Scripts können sich geändert haben).</summary>
+    private LaunchItem Refresh(LaunchItem item)
+    {
+        if (item.PlaceholdersResolved) return item;
+        if (item.Source != null)
+        {
+            var entry = Settings.CustomEntries.FirstOrDefault(c => c.Id == item.Source.Id) ?? item.Source;
+            return DescribeCustom(entry);
+        }
+        return item.IsPowerShell ? Repository.Reload(item) : item;
+    }
+
+    /// <summary>
+    /// Platzhalter ({{Name}}) abfragen und einsetzen. Liefert null bei Abbruch.
+    /// Snippets bekommen dafür eine eigene .ps1 für genau diesen Start.
+    /// </summary>
+    private LaunchItem? ResolvePlaceholders(LaunchItem item)
+    {
+        if (item.PlaceholdersResolved || item.Source is not { } entry || entry.Placeholders.Count == 0) return item;
+        var values = WithDialog(() => PlaceholderWindow.Ask(item.DisplayName, entry.Placeholders,
+            name => ParameterHistory.Get(Settings, entry.Key, name)));
+        if (values == null) return null;
+        foreach (var kv in values) ParameterHistory.Add(Settings, entry.Key, kv.Key, kv.Value);
+        SaveSettings();
+        var resolved = entry.WithValues(values);
+        LaunchItem result;
+        if (resolved.Kind == CustomEntryKind.Snippet && resolved.Language == SnippetLanguage.PowerShell)
+        {
+            var runPath = Path.Combine(CustomEntry.SnippetFolder, $"{entry.Id}-run-{DateTime.Now:yyyyMMddHHmmssfff}.ps1");
+            File.WriteAllText(runPath, resolved.Code, new System.Text.UTF8Encoding(true));
+            result = Repository.LoadFile(runPath, PanelConfig.CustomEntriesKey).Rebased(entry.Key, PanelConfig.CustomEntriesKey);
+            result.DisplayName = item.DisplayName;
+            result.LaunchTarget = runPath;
+            result.CustomKind = CustomEntryKind.Snippet;
+        }
+        else
+        {
+            result = resolved.ToLaunchItem();
+            result.DisplayName = item.DisplayName;
+        }
+        result.Source = resolved;
+        result.PlaceholdersResolved = true;
+        return result;
+    }
+
+    /// <summary>Snippet in die Zwischenablage (Platzhalter vorher abfragen).</summary>
+    public void CopySnippet(LaunchItem item)
+    {
+        if (item.Source is not { Kind: CustomEntryKind.Snippet }) return;
+        var resolved = ResolvePlaceholders(item);
+        if (resolved?.Source == null) return;
+        try
+        {
+            Clipboard.SetText(resolved.Source.Code);
+            RecordRun(item, ProfileResolver.GetDefault(Settings, item));
+            _tray?.ShowBalloon("In die Zwischenablage kopiert", item.DisplayName);
+            HidePanels();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Die Zwischenablage ist gerade belegt: " + ex.Message, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     // ---- Eigene Gruppen ---------------------------------------------------
@@ -383,32 +504,184 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Neuen eigenen Eintrag in einer Gruppe anlegen (Dialog).</summary>
-    public void NewCustomEntry(CustomEntryKind kind, string? group)
+    public void NewCustomEntry(CustomEntryKind kind, string? group) => NewCustomEntry(new CustomEntry { Kind = kind }, group);
+
+    /// <summary>Eintrag vorbelegt anlegen (Zwischenablage, Vorlage, Duplikat) – der Dialog zeigt ihn zum Bestätigen.</summary>
+    public bool NewCustomEntry(CustomEntry template, string? group)
     {
-        var entry = WithDialog(() => CustomEntryWindow.Edit(new CustomEntry { Kind = kind }, isNew: true, group));
-        if (entry == null) return;
-        Settings.CustomEntries.Add(entry);
-        if (!string.IsNullOrEmpty(group)) GroupManager.Assign(Settings, entry.Key, group);
+        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), template, isNew: true, group, Array.Empty<string>()));
+        if (result == null) return false;
+        Settings.CustomEntries.Add(result.Entry);
+        ApplyEditResult(result);
         SaveSettings();
         RebuildPanels();
+        return true;
+    }
+
+    private void ApplyEditResult(CustomEntryEditResult r)
+    {
+        GroupManager.Assign(Settings, r.Entry.Key, r.Group);
+        Tags.Set(Settings, r.Entry.Key, r.Tags);
     }
 
     public void EditCustomEntry(LaunchItem item)
     {
         var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
-        if (entry == null) return;
+        if (entry != null) EditCustomEntry(entry);
+    }
+
+    public bool EditCustomEntry(CustomEntry entry)
+    {
         var oldKey = entry.Key;
-        var edited = WithDialog(() => CustomEntryWindow.Edit(entry, isNew: false, GroupManager.GroupOf(Settings, oldKey)));
-        if (edited == null) return;
-        var i = Settings.CustomEntries.IndexOf(entry);
-        Settings.CustomEntries[i] = edited;
-        if (!edited.Key.Equals(oldKey, StringComparison.OrdinalIgnoreCase))
+        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), entry, isNew: false, GroupManager.GroupOf(Settings, oldKey), Tags.Of(Settings, oldKey)));
+        if (result == null) return false;
+        var i = Settings.CustomEntries.FindIndex(c => c.Id == entry.Id);
+        if (i < 0) return false;
+        Settings.CustomEntries[i] = result.Entry;
+        if (!result.Entry.Key.Equals(oldKey, StringComparison.OrdinalIgnoreCase))
         {
             // Datei-Eintrag mit neuem Pfad: Gruppe, Profile und Favorit mitnehmen
-            PathMigration.Apply(Settings, new PathMove(oldKey, edited.Key));
+            PathMigration.Apply(Settings, new PathMove(oldKey, result.Entry.Key));
+        }
+        ApplyEditResult(result);
+        Health.Forget(result.Entry.Key);
+        SaveSettings();
+        RebuildPanels();
+        return true;
+    }
+
+    /// <summary>Kopie eines eigenen Eintrags anlegen (gleiche Gruppe, Schlagworte), Dialog zum Anpassen.</summary>
+    public void DuplicateCustomEntry(LaunchItem item)
+    {
+        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
+        if (entry == null || entry.Kind == CustomEntryKind.File) return;
+        var copy = entry.Duplicate();
+        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), copy, isNew: true, GroupManager.GroupOf(Settings, entry.Key), Tags.Of(Settings, entry.Key)));
+        if (result == null) return;
+        Settings.CustomEntries.Add(result.Entry);
+        ApplyEditResult(result);
+        var source = Settings.FindEntry(entry.Key);
+        if (source != null && source.Profiles.Count > 0)
+            (Settings.FindEntry(result.Entry.Key) ?? AddEntry(result.Entry.Key)).Profiles = source.Profiles.Select(p => p.Clone()).ToList();
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    private EntryConfig AddEntry(string key)
+    {
+        var e = new EntryConfig { Path = key };
+        Settings.Entries.Add(e);
+        return e;
+    }
+
+    public void ToggleSingleClick(LaunchItem item)
+    {
+        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
+        if (entry == null) return;
+        entry.SingleClick = !entry.SingleClick;
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    /// <summary>Strg+V bzw. „Aus Zwischenablage“: Inhalt erkennen und als Eintrag vorschlagen.</summary>
+    public void AddFromClipboard(string? group)
+    {
+        string? text = null;
+        try
+        {
+            if (Clipboard.ContainsFileDropList())
+            {
+                var files = Clipboard.GetFileDropList().Cast<string>().ToList();
+                AddDropped(files.Select(f => DropClassifier.Classify(f, Directory.Exists, p => { try { return File.ReadAllText(p); } catch { return null; } })).ToList(), group);
+                return;
+            }
+            if (Clipboard.ContainsText()) text = Clipboard.GetText();
+        }
+        catch { }
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            _tray?.ShowBalloon("Zwischenablage leer", "Kopiere eine Adresse, einen Pfad, einen Rechnernamen oder Code und versuche es erneut.");
+            return;
+        }
+        NewCustomEntry(ClipboardClassifier.Suggest(text, Directory.Exists, File.Exists), group);
+    }
+
+    /// <summary>Vorlagen-Katalog: ausgewählte Vorlagen in die Gruppe übernehmen.</summary>
+    public void AddFromCatalog(string? group)
+    {
+        var chosen = WithDialog(() => CatalogWindow.Pick());
+        if (chosen == null || chosen.Count == 0) return;
+        foreach (var t in chosen)
+        {
+            var e = ToolCatalog.Create(t);
+            if (Settings.CustomEntries.Any(c => c.Kind == e.Kind && c.Target == e.Target && c.Arguments == e.Arguments && c.Code == e.Code)) continue;
+            Settings.CustomEntries.Add(e);
+            if (!string.IsNullOrEmpty(group)) GroupManager.Assign(Settings, e.Key, group);
         }
         SaveSettings();
         RebuildPanels();
+    }
+
+    /// <summary>Symbol einer eigenen Gruppe wählen.</summary>
+    public void ChooseGroupIcon(string groupPath)
+    {
+        var current = GroupManager.IconOf(Settings, groupPath);
+        var picked = WithDialog(() => IconPickerWindow.Pick(current, $"Symbol für „{GroupManager.LeafOf(groupPath)}“"));
+        if (picked == null) return;
+        GroupManager.SetIcon(Settings, groupPath, picked.Value);
+        SaveSettings();
+        RebuildPanels();
+    }
+
+    /// <summary>Eigene Einträge als Datei speichern (z. B. eine Gruppe für Kollegen).</summary>
+    public void ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, Window? owner = null, AppSettings? source = null)
+    {
+        if (entries.Count == 0)
+        {
+            MessageBox.Show("Es sind keine eigenen Einträge ausgewählt.", "Exportieren", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = EntryShare.FileFilter,
+            FileName = (rootGroup != null ? GroupManager.LeafOf(rootGroup) : "Eigene Einträge") + ".pxentries.json"
+        };
+        if (WithDialog(() => dlg.ShowDialog(owner)) != true) return;
+        try
+        {
+            File.WriteAllText(dlg.FileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
+            AppLog.Info($"{entries.Count} eigene Einträge exportiert: {dlg.FileName}");
+            _tray?.ShowBalloon("Exportiert", $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Exportieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    public void ExportGroup(string groupPath) =>
+        ExportEntries(Settings.CustomEntries.Where(c => GroupManager.GroupOf(Settings, c.Key) is { Length: > 0 } g && GroupManager.IsSameOrBelow(g, groupPath)).ToList(), groupPath);
+
+    /// <returns>true, wenn etwas importiert wurde.</returns>
+    public bool ImportEntries(string? intoGroup = null, Window? owner = null)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*" };
+        if (WithDialog(() => dlg.ShowDialog(owner)) != true) return false;
+        try
+        {
+            var file = EntryShare.Parse(File.ReadAllText(dlg.FileName));
+            var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
+            SaveSettings();
+            RebuildPanels();
+            AppLog.Info($"Eigene Einträge importiert ({added} neu, {updated} aktualisiert): {dlg.FileName}");
+            MessageBox.Show($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", MessageBoxButton.OK, MessageBoxImage.Information);
+            return added + updated > 0;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
     }
 
     public void RemoveCustomEntry(LaunchItem item)
@@ -552,7 +825,14 @@ public sealed partial class AppController : IDisposable
     /// </summary>
     public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null)
     {
-        if (item.IsPowerShell) item = Repository.Reload(item); // Parameter könnten sich geändert haben
+        if (item.Source?.CopiesToClipboard == true)
+        {
+            CopySnippet(item);
+            return;
+        }
+        item = Refresh(item); // Parameter könnten sich geändert haben
+        if (ResolvePlaceholders(item) is not { } resolvedItem) return;
+        item = resolvedItem;
         profile ??= ProfileResolver.GetDefault(Settings, item);
         bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
         var mode = Requirements.ModeFor(item, overrideMode ?? (profile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser), remote);
@@ -670,7 +950,9 @@ public sealed partial class AppController : IDisposable
 
     public void OpenRunDialog(LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
     {
-        if (item.IsPowerShell) item = Repository.Reload(item);
+        item = Refresh(item);
+        if (ResolvePlaceholders(item) is not { } resolvedItem) return;
+        item = resolvedItem;
         HidePanels();
         var vm = new RunViewModel(this, item, mode, remote, profile);
         var w = new RunWindow(vm);
@@ -682,7 +964,7 @@ public sealed partial class AppController : IDisposable
     public void ShowProfiles(LaunchItem item)
     {
         HidePanels(force: true);
-        if (item.IsPowerShell) item = Repository.Reload(item);
+        item = Refresh(item);
         var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);
         var w = new ProfilesWindow(vm);
         w.Show();

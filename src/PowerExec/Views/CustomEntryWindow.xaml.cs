@@ -4,34 +4,38 @@ using PowerExec.ViewModels;
 
 namespace PowerExec.Views;
 
-/// <summary>Eigenen Eintrag direkt aus dem Panel anlegen oder bearbeiten.</summary>
+/// <summary>Ergebnis des Eintrags-Editors.</summary>
+public sealed record CustomEntryEditResult(CustomEntry Entry, string Group, IReadOnlyList<string> Tags);
+
+/// <summary>Eigenen Eintrag anlegen oder bearbeiten (aus Panel und Einstellungen).</summary>
 public partial class CustomEntryWindow : Window
 {
     private readonly CustomEntryViewModel _vm;
 
-    private CustomEntryWindow(CustomEntryViewModel vm, bool isNew, string? group)
+    private CustomEntryWindow(CustomEntryViewModel vm, bool isNew)
     {
         _vm = vm;
         InitializeComponent();
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
         Heading.Text = isNew ? "Neuer Eintrag" : "Eintrag bearbeiten";
-        GroupText.Text = string.IsNullOrEmpty(group) ? "Erscheint unter „Eigene Einträge“." : $"Erscheint in der Gruppe „{group}“.";
         Loaded += (_, _) => TargetBox.Focus();
     }
 
-    /// <returns>Der geänderte Eintrag oder null bei Abbruch.</returns>
-    public static CustomEntry? Edit(CustomEntry entry, bool isNew, string? group)
+    /// <returns>Der geänderte Eintrag samt Gruppe und Schlagworten oder null bei Abbruch.</returns>
+    public static CustomEntryEditResult? Edit(IReadOnlyList<string> groups, CustomEntry entry, bool isNew, string? group, IEnumerable<string> tags, Window? owner = null)
     {
-        var w = new CustomEntryWindow(new CustomEntryViewModel(entry, _ => { }), isNew, group);
-        return w.ShowDialog() == true ? w._vm.ToEntry() : null;
+        var vm = new CustomEntryViewModel(entry, group, tags, groups);
+        var w = new CustomEntryWindow(vm, isNew);
+        if (owner != null) { w.Owner = owner; w.WindowStartupLocation = WindowStartupLocation.CenterOwner; }
+        return w.ShowDialog() == true ? new CustomEntryEditResult(vm.ToEntry(), GroupManager.Normalize(vm.Group), vm.TagList) : null;
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm.Target.Trim().Length == 0)
+        if (_vm.Validate() is { } error)
         {
-            ErrorText.Text = _vm.TargetLabel + " fehlt.";
+            ErrorText.Text = error;
             ErrorText.Visibility = Visibility.Visible;
             return;
         }

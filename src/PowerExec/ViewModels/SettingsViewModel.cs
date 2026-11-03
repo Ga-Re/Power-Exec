@@ -456,8 +456,7 @@ public sealed class SettingsViewModel : ObservableObject
         SelectedPanel = Panels.FirstOrDefault();
         AddPanelCommand = new RelayCommand(AddPanel);
         RemovePanelCommand = new RelayCommand(RemovePanel, () => Panels.Count > 1 && SelectedPanel != null);
-        foreach (var c in _s.CustomEntries) CustomEntries.Add(new CustomEntryViewModel(c, RemoveCustomEntry));
-        AddCustomEntryCommand = new RelayCommand(AddCustomEntry);
+        EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(g, RemoveGroup));
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
@@ -560,22 +559,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ---- Eigene Einträge ------------------------------------------------------
 
-    public ObservableCollection<CustomEntryViewModel> CustomEntries { get; } = new();
-    public ICommand AddCustomEntryCommand { get; }
-    public bool HasNoCustomEntries => CustomEntries.Count == 0;
-
-    private void AddCustomEntry(object? kind)
-    {
-        var k = kind is CustomEntryKind ck ? ck : Enum.TryParse<CustomEntryKind>(kind?.ToString(), out var parsed) ? parsed : CustomEntryKind.Url;
-        CustomEntries.Add(new CustomEntryViewModel(new CustomEntry { Kind = k }, RemoveCustomEntry));
-        OnPropertyChanged(nameof(HasNoCustomEntries));
-    }
-
-    private void RemoveCustomEntry(CustomEntryViewModel e)
-    {
-        CustomEntries.Remove(e);
-        OnPropertyChanged(nameof(HasNoCustomEntries));
-    }
+    /// <summary>Liste „Eigene Einträge“ (Suche, Filter, Mehrfachauswahl).</summary>
+    public CustomEntryListViewModel EntryList { get; }
 
     // ---- Rechnergruppen -------------------------------------------------------
 
@@ -617,7 +602,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
             int folders = active ? Folders.Count : w.Folders.Count;
-            int entries = active ? CustomEntries.Count : w.CustomEntries.Count;
+            int entries = active ? EntryList.Count : w.CustomEntries.Count;
             int favs = active ? _app.Settings.Favorites.Count : w.Favorites.Count;
             var summary = $"{folders} Ordner · {favs} Favoriten · {entries} eigene Einträge" + (active ? " · aktiv" : string.Empty);
             Workspaces.Add(new WorkspaceRowViewModel(w.Name, active, summary,
@@ -631,7 +616,7 @@ public sealed class SettingsViewModel : ObservableObject
         ApplyWorkspaceRenames();
         // Aktuelle Formularwerte als Grundlage für eine Kopie verwenden
         _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
-        _s.CustomEntries = CustomEntries.Select(c => c.ToEntry()).ToList();
+        EntryList.ApplyTo(_s);
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         WorkspaceManager.Create(_s, NewWorkspace, CopyWorkspace);
         NewWorkspace = string.Empty;
@@ -933,7 +918,7 @@ public sealed class SettingsViewModel : ObservableObject
             if (_app.Settings.Panels.FirstOrDefault(x => x.Id == c.Id) is { } live) { c.Pinned = live.Pinned; }
             return c;
         }).ToList();
-        _s.CustomEntries = CustomEntries.Select(c => c.ToEntry()).Where(c => c.Target.Trim().Length > 0).ToList();
+        EntryList.ApplyTo(_s);
         _s.MachineGroups = MachineGroups.Select(g => g.ToGroup()).Where(g => g.Name.Length > 0)
             .GroupBy(g => g.Name, StringComparer.CurrentCultureIgnoreCase).Select(g => g.First()).ToList();
         _s.ParameterHistory = _app.Settings.ParameterHistory.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));

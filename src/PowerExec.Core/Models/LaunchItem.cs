@@ -14,10 +14,10 @@ public enum ItemType
 /// <summary>Ein Script oder Programm, das in einem konfigurierten Ordner gefunden wurde.</summary>
 public sealed class LaunchItem
 {
-    public required string FullPath { get; init; }
+    public required string FullPath { get; set; }
 
     /// <summary>Der konfigurierte Stammordner, in dem die Datei gefunden wurde.</summary>
-    public required string RootFolder { get; init; }
+    public required string RootFolder { get; set; }
 
     public required ItemType Type { get; init; }
 
@@ -69,6 +69,19 @@ public sealed class LaunchItem
     /// <summary>Der eigene Eintrag, aus dem dieser Eintrag erzeugt wurde (Snippet-Code, Ein-Klick, Symbol …).</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public Config.CustomEntry? Source { get; set; }
+
+    /// <summary>Platzhalter wurden für diesen Start bereits abgefragt und eingesetzt.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool PlaceholdersResolved { get; set; }
+
+    /// <summary>Kopie mit anderem Pfad (z. B. Snippet: Metadaten aus der .ps1, Schlüssel „custom:Id“).</summary>
+    public LaunchItem Rebased(string fullPath, string rootFolder)
+    {
+        var c = (LaunchItem)MemberwiseClone();
+        c.FullPath = fullPath;
+        c.RootFolder = rootFolder;
+        return c;
+    }
 
     /// <summary>#Requires -RunAsAdministrator</summary>
     public bool RequiresAdmin { get; set; }
