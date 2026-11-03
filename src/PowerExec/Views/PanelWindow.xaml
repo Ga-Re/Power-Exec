@@ -28,19 +28,20 @@
                 <MenuItem Header="Dateien auswählen …" Command="{Binding AddFilesCommand}">
                     <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-            </MenuItem>
-            <MenuItem Header="Aus Vorlagen …" Command="{Binding AddFromCatalogCommand}" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Aus Zwischenablage einfügen" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V"
-                      Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE77F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                <Separator/>
+                <MenuItem Header="Aus Vorlagen …" Command="{Binding AddFromCatalogCommand}">
+                    <MenuItem.Icon><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Aus Zwischenablage einfügen" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V">
+                    <MenuItem.Icon><TextBlock Text="&#xE77F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
+                <Separator Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"/>
+                <MenuItem Header="Neue Untergruppe …" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                    <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                </MenuItem>
             </MenuItem>
             <MenuItem Header="Symbol ändern …" Command="{Binding ChooseIconCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE790;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Neue Untergruppe …" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -78,11 +79,11 @@
             <MenuItem Header="Reihenfolge zurücksetzen (alphabetisch)" Command="{Binding ResetOrderCommand}"
                       Visibility="{Binding AllowReorder, Converter={StaticResource Vis}}"/>
             <Separator Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"/>
-            <MenuItem Header="Ordner im Panel ausblenden" Command="{Binding HideFolderCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"
-                      ToolTip="Die Einträge bleiben in eigenen Gruppen, Favoriten und der Suche">
+            <MenuItem Header="In diesem Arbeitsbereich ausblenden" Command="{Binding HideFolderCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
+                      ToolTip="Wieder einblenden: Einstellungen › Arbeitsbereiche">
                 <MenuItem.Icon><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="Ordner-Einstellungen …" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
+            <MenuItem Header="Gruppe konfigurieren …" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -364,6 +365,19 @@
                     <Setter TargetName="TileName" Property="FontSize" Value="10.5"/>
                     <Setter TargetName="TileName" Property="Margin" Value="0,2,0,0"/>
                 </DataTrigger>
+                <DataTrigger Binding="{Binding DataContext.IsLarge, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                    <Setter TargetName="Row" Property="Width" Value="96"/>
+                    <Setter TargetName="TileGrid" Property="Height" Value="84"/>
+                    <Setter TargetName="IconRow" Property="Height" Value="40"/>
+                    <Setter TargetName="TileImage" Property="Width" Value="34"/>
+                    <Setter TargetName="TileImage" Property="Height" Value="34"/>
+                    <Setter TargetName="TileCustom" Property="Size" Value="34"/>
+                    <Setter TargetName="TileIcon" Property="LayoutTransform">
+                        <Setter.Value><ScaleTransform ScaleX="1.2" ScaleY="1.2"/></Setter.Value>
+                    </Setter>
+                    <Setter TargetName="TileName" Property="FontSize" Value="12.5"/>
+                    <Setter TargetName="TileName" Property="MaxHeight" Value="34"/>
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
@@ -433,6 +447,15 @@
                         <Setter.Value><ScaleTransform ScaleX="0.82" ScaleY="0.82"/></Setter.Value>
                     </Setter>
                 </MultiDataTrigger>
+                <DataTrigger Binding="{Binding DataContext.IsLarge, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                    <Setter TargetName="RowGrid" Property="Margin" Value="10,10"/>
+                    <Setter TargetName="NameText" Property="FontSize" Value="15.5"/>
+                    <Setter TargetName="NameText" Property="MaxWidth" Value="420"/>
+                    <Setter TargetName="Syn" Property="FontSize" Value="13"/>
+                    <Setter TargetName="BadgeBox" Property="LayoutTransform">
+                        <Setter.Value><ScaleTransform ScaleX="1.25" ScaleY="1.25"/></Setter.Value>
+                    </Setter>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
                     <Setter TargetName="Syn" Property="TextWrapping" Value="Wrap"/>
@@ -586,9 +609,22 @@
                     <Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
                         <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="15"/>
                     </Button>
-                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsCompact}" ToolTip="Kompakt: Liste einzeilig, Raster mit kleinen Kacheln">
-                        <TextBlock Text="&#xE73F;" Style="{StaticResource Icon}" FontSize="15"/>
-                    </ToggleButton>
+                    <Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="Elementgröße: Klein, Mittel, Groß">
+                        <TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}" FontSize="15"/>
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Klein" Command="{Binding SetItemSizeCommand}" CommandParameter="Small">
+                                    <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Small}"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Mittel" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium">
+                                    <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Medium}"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Groß" Command="{Binding SetItemSizeCommand}" CommandParameter="Large">
+                                    <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Large}"/></MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                     <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsPinned}" ToolTip="Anheften: Panel bleibt offen">
                         <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ToggleButton>
@@ -685,6 +721,9 @@
                         <MenuItem Header="Neue Gruppe …" Command="{Binding NewGroupCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem Header="Neue smarte Gruppe (Ordner) …" Command="{Binding NewSmartGroupCommand}">
+                            <MenuItem.Icon><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Neuer Eintrag">
                             <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                             <MenuItem Header="Webseite …" Command="{Binding NewEntryCommand}" CommandParameter="Url"/>
@@ -695,12 +734,9 @@
                             <MenuItem Header="Windows-Werkzeug …" Command="{Binding NewEntryCommand}" CommandParameter="Tool"/>
                             <MenuItem Header="Befehl …" Command="{Binding NewEntryCommand}" CommandParameter="Command"/>
                             <MenuItem Header="Dateien auswählen …" Command="{Binding AddFilesCommand}"/>
-                        </MenuItem>
-                        <MenuItem Header="Aus Vorlagen …" Command="{Binding AddFromCatalogCommand}">
-                            <MenuItem.Icon><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                        </MenuItem>
-                        <MenuItem Header="Aus Zwischenablage einfügen" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V">
-                            <MenuItem.Icon><TextBlock Text="&#xE77F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                            <Separator/>
+                            <MenuItem Header="Aus Vorlagen …" Command="{Binding AddFromCatalogCommand}"/>
+                            <MenuItem Header="Aus Zwischenablage einfügen" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V"/>
                         </MenuItem>
                         <MenuItem Header="Einträge importieren …" Command="{Binding ImportEntriesCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -709,8 +745,11 @@
                         <MenuItem Header="Raster" Command="{Binding ToggleGridCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding IsGrid, Converter={StaticResource Vis}}"/></MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Kompakt" Command="{Binding ToggleCompactCommand}">
-                            <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding IsCompact, Converter={StaticResource Vis}}"/></MenuItem.Icon>
+                        <MenuItem Header="Elementgröße">
+                            <MenuItem.Icon><TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+                            <MenuItem Header="Klein" Command="{Binding SetItemSizeCommand}" CommandParameter="Small"/>
+                            <MenuItem Header="Mittel" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium"/>
+                            <MenuItem Header="Groß" Command="{Binding SetItemSizeCommand}" CommandParameter="Large"/>
                         </MenuItem>
                         <MenuItem Header="Einstellungen …" Command="{Binding SettingsCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>

@@ -51,7 +51,12 @@ public static class SmartGroups
     public static string EffectiveGroup(AppSettings s, string itemPath, string rootFolder)
     {
         var explicitGroup = GroupManager.GroupOf(s, itemPath);
-        if (explicitGroup.Length > 0) return explicitGroup;
+        return explicitGroup.Length > 0 ? explicitGroup : ImplicitGroup(s, itemPath, rootFolder);
+    }
+
+    /// <summary>Gruppe allein aus dem Ordner (ohne ausdrückliche Zuordnung).</summary>
+    public static string ImplicitGroup(AppSettings s, string itemPath, string rootFolder)
+    {
         var folder = s.Folders.FirstOrDefault(f => f.Path.Equals(rootFolder, StringComparison.OrdinalIgnoreCase));
         if (folder == null || folder.Group.Length == 0) return string.Empty;
         if (!folder.SubfoldersAsGroups || !folder.Recursive) return folder.Group;

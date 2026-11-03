@@ -61,7 +61,7 @@ public sealed class ItemViewModel : ObservableObject
         UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
         CopySnippetCommand = new RelayCommand(() => _app.CopySnippet(Item), () => IsSnippet);
         DuplicateCommand = new RelayCommand(() => _app.DuplicateCustomEntry(Item), () => CanDuplicate);
-        ToggleSingleClickCommand = new RelayCommand(() => _app.ToggleSingleClick(Item), () => Item.IsCustom && Item.CustomKind != CustomEntryKind.File);
+        ToggleSingleClickCommand = new RelayCommand(() => _app.ToggleSingleClick(Item));
         OpenDetailsCommand = new RelayCommand(() => _panel.Select(this));
     }
 
@@ -71,10 +71,11 @@ public sealed class ItemViewModel : ObservableObject
     public string CustomIcon { get; }
     public bool HasCustomIcon => CustomIcon.Length > 0;
     public bool ShowBadge => !HasCustomIcon && !HasIcon;
-    public bool IsSingleClick => Item.Source?.SingleClick == true;
+    /// <summary>Ein Klick startet sofort (je Eintrag einstellbar, für Scripte, Programme und eigene Einträge).</summary>
+    public bool IsSingleClick => _entry?.SingleClick == true;
     public bool IsSnippet => Item.CustomKind == CustomEntryKind.Snippet;
     public bool CanDuplicate => Item.IsCustom && Item.CustomKind != CustomEntryKind.File;
-    public bool CanToggleSingleClick => Item.IsCustom && Item.CustomKind != CustomEntryKind.File;
+    public bool CanToggleSingleClick => true;
     public string SingleClickHeader => IsSingleClick ? "Mit einem Klick starten ✓" : "Mit einem Klick starten";
     public string RunHeader => Item.Source?.CopiesToClipboard == true ? "In die Zwischenablage kopieren" : "Ausführen";
 

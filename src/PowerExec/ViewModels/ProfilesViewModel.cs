@@ -238,24 +238,30 @@ public sealed class ProfilesViewModel : ObservableObject
     private string _description;
     private string _category;
 
-    public ProfilesViewModel(AppController app, LaunchItem item, AppSettings target, bool saveImmediately)
+    /// <param name="customEntry">Eigener Eintrag, der hier mitbearbeitet wird (null = aus <paramref name="target"/> ermitteln).</param>
+    /// <param name="isNew">Neuer eigener Eintrag: wird beim Speichern hinzugefügt.</param>
+    public ProfilesViewModel(AppController app, LaunchItem item, AppSettings target, bool saveImmediately,
+        CustomEntry? customEntry = null, bool isNew = false, string? initialGroup = null, IEnumerable<string>? initialTags = null)
     {
         _app = app;
         Item = item;
         _target = target;
         _saveImmediately = saveImmediately;
+        IsNew = isNew;
+        customEntry ??= item.Source != null ? target.CustomEntries.FirstOrDefault(c => c.Id == item.Source.Id) ?? item.Source : null;
+        if (customEntry != null)
+        {
+            _originalKey = customEntry.Key;
+            Entry = new CustomEntryViewModel(customEntry, groups: GroupManager.All(target), allTags: Core.Config.Tags.All(target));
+        }
         var entry = target.FindEntry(item.FullPath);
         _displayName = entry?.DisplayName ?? string.Empty;
         _description = entry?.Description ?? string.Empty;
-        _category = entry?.Category ?? string.Empty;
+        _category = entry?.Category ?? initialGroup ?? string.Empty;
         _notes = entry?.Notes ?? string.Empty;
-        _tags = Core.Config.Tags.Format(entry?.Tags ?? new List<string>());
-        Categories = target.CategoryOrder
-            .Concat(target.Entries.Select(e => e.Category))
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Distinct(StringComparer.CurrentCultureIgnoreCase)
-            .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+        _singleClick = entry?.SingleClick ?? false;
+        _tags = Core.Config.Tags.Format(entry?.Tags ?? initialTags?.ToList() ?? new List<string>());
+        Categories = GroupManager.All(target);
 
         var profiles = entry != null && entry.Profiles.Count > 0
             ? entry.Profiles.Select(p => p.Clone()).ToList()
@@ -272,8 +278,25 @@ public sealed class ProfilesViewModel : ObservableObject
     }
 
     public LaunchItem Item { get; }
-    public string Title => Item.FileName;
-    public string PathText => Item.FullPath;
+    public bool IsNew { get; }
+    private readonly string? _originalKey;
+
+    /// <summary>Felder des eigenen Eintrags (Art, Ziel, Code …); null bei Dateien aus Ordnern.</summary>
+    public CustomEntryViewModel? Entry { get; }
+    public bool HasEntry => Entry != null;
+    public string Title => IsNew ? "Neuer Eintrag" : Entry != null ? Entry.Title : Item.FileName;
+    public string PathText => Entry != null ? CustomEntry.KindLabel(Entry.Kind) + (Item.IsCustom && Item.CustomKind == CustomEntryKind.File ? " · " + Item.FullPath : string.Empty) : Item.FullPath;
+    public string WindowTitle => (Entry != null ? "Eintrag – " : "Startprofile – ") + Title;
+
+    private bool _singleClick;
+    /// <summary>Ein Klick im Panel startet sofort (statt aufzuklappen).</summary>
+    public bool SingleClick { get => _singleClick; set => Set(ref _singleClick, value); }
+
+    /// <summary>Vorhandene Schlagworte (global) für Vorschläge.</summary>
+    public IReadOnlyList<string> AllTagsList => Core.Config.Tags.All(_target);
+
+    private string _error = string.Empty;
+    public string Error { get => _error; private set => Set(ref _error, value); }
     public bool IsPowerShell => Item.IsPowerShell;
     public bool IsProgram => !Item.IsPowerShell;
     public bool HasParameters => Item.Parameters.Count > 0;
@@ -363,22 +386,44 @@ public sealed class ProfilesViewModel : ObservableObject
 
     private void Save()
     {
+        var key = Item.FullPath;
+        if (Entry != null)
+        {
+            if (Entry.Validate() is { } problem)
+            {
+                Error = problem;
+                return;
+            }
+            var edited = Entry.ToEntry();
+            var index = _target.CustomEntries.FindIndex(c => c.Id == edited.Id);
+            if (index >= 0) _target.CustomEntries[index] = edited;
+            else _target.CustomEntries.Add(edited);
+            key = edited.Key;
+            // Datei-Eintrag mit neuem Pfad: alte Einstellungen wandern mit
+            if (_originalKey != null && !_originalKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+                _target.Entries.RemoveAll(e => e.Path.Equals(_originalKey, StringComparison.OrdinalIgnoreCase));
+        }
         var entry = new EntryConfig
         {
-            Path = Item.FullPath,
+            Path = key,
             DisplayName = DisplayName.Trim(),
             Description = Description.Trim(),
-            Category = Category.Trim(),
+            Category = GroupManager.Normalize(Category),
             Notes = Notes.Trim(),
             Tags = Core.Config.Tags.Parse(TagsText),
+            SingleClick = SingleClick,
             Profiles = Profiles.Select(p => p.ToProfile()).ToList()
         };
         if (entry.Category.Length > 0 && !_target.CategoryOrder.Contains(entry.Category, StringComparer.CurrentCultureIgnoreCase))
-            _target.CategoryOrder.Add(entry.Category);
-        _target.Entries.RemoveAll(e => string.Equals(e.Path, Item.FullPath, StringComparison.OrdinalIgnoreCase));
+            _target.CategoryOrder = GroupManager.All(_target).Append(entry.Category).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+        _target.Entries.RemoveAll(e => string.Equals(e.Path, key, StringComparison.OrdinalIgnoreCase));
         _target.Entries.Add(entry);
+        SavedKey = key;
         if (_saveImmediately) _app.OnProfilesSaved();
         Saved?.Invoke();
         CloseRequested?.Invoke();
     }
+
+    /// <summary>Schlüssel des gespeicherten Eintrags (nach dem Speichern).</summary>
+    public string? SavedKey { get; private set; }
 }

@@ -212,19 +212,24 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void AddWithEditor(CustomEntry template, string group)
     {
-        var r = Views.CustomEntryWindow.Edit(_groups(), template, isNew: true, group, Array.Empty<string>(), Owner());
-        if (r == null) return;
-        var row = new CustomEntryRowViewModel(this, r.Entry, r.Group, r.Tags);
-        Rows.Add(row);
+        ApplyTo(_s); // Liste → Arbeitskopie, damit der Dialog den aktuellen Stand sieht
+        var key = Views.ProfilesWindow.EditEntry(_app, _s, template, isNew: true, saveImmediately: false, group, null, Owner());
+        if (key == null) return;
+        var e = _s.CustomEntries.First(c => c.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        Rows.Add(new CustomEntryRowViewModel(this, e.Clone(), GroupManager.GroupOf(_s, key), Core.Config.Tags.Of(_s, key).ToList()));
         CountsChanged();
     }
 
+    /// <summary>⚙: derselbe Eintragsdialog wie im Panel (Eintrag, Gruppe, Schlagworte, Notiz, Startprofile).</summary>
     internal void Edit(CustomEntryRowViewModel row)
     {
-        var r = Views.CustomEntryWindow.Edit(_groups(), row.Entry, isNew: false, row.Group, row.Tags, Owner());
-        if (r == null) return;
-        if (!r.Entry.Key.Equals(row.Entry.Key, StringComparison.OrdinalIgnoreCase)) _removedKeys.Add(row.Entry.Key);
-        row.Update(r.Entry, r.Group, r.Tags);
+        ApplyTo(_s);
+        var oldKey = row.Entry.Key;
+        var key = Views.ProfilesWindow.EditEntry(_app, _s, row.Entry, isNew: false, saveImmediately: false, owner: Owner());
+        if (key == null) return;
+        if (!key.Equals(oldKey, StringComparison.OrdinalIgnoreCase)) _removedKeys.Add(oldKey);
+        var e = _s.CustomEntries.First(c => c.Id == row.Entry.Id);
+        row.Update(e.Clone(), GroupManager.GroupOf(_s, key), Core.Config.Tags.Of(_s, key).ToList());
         row.SetHealth(null);
         Refilter();
         CountsChanged();

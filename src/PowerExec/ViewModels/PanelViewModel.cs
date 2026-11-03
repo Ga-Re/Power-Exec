@@ -94,21 +94,26 @@ public sealed class PanelViewModel : ObservableObject
 
     private void RaiseLayout()
     {
-        foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsLarge), nameof(ItemSize), nameof(ItemSizeText), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
     }
 
-    /// <summary>Kompakt: Liste einzeilig, Raster mit kleineren Kacheln.</summary>
-    public bool IsCompact
+    /// <summary>Elementgröße: Klein (Liste einzeilig, kleine Kacheln), Mittel, Groß.</summary>
+    public ItemSize ItemSize
     {
-        get => _host.Config.Compact;
+        get => _host.Config.ItemSize;
         set
         {
-            if (_host.Config.Compact == value) return;
-            _host.Config.Compact = value;
+            if (_host.Config.ItemSize == value) return;
+            _host.Config.ItemSize = value;
             _app.SaveSettings();
             RaiseLayout();
         }
     }
+
+    public bool IsCompact => ItemSize == ItemSize.Small;
+    public bool IsLarge => ItemSize == ItemSize.Large;
+    public string ItemSizeText => ItemSize switch { ItemSize.Small => "Klein", ItemSize.Large => "Groß", _ => "Mittel" };
+    public ICommand SetItemSizeCommand => new RelayCommand(p => { if (Enum.TryParse<ItemSize>(p?.ToString(), out var size)) ItemSize = size; });
 
     public bool IsGrid
     {
@@ -124,7 +129,7 @@ public sealed class PanelViewModel : ObservableObject
 
     public ICommand SetLayoutCommand { get; }
     public ICommand ToggleGridCommand => new RelayCommand(() => IsGrid = !IsGrid);
-    public ICommand ToggleCompactCommand => new RelayCommand(() => IsCompact = !IsCompact);
+    public ICommand NewSmartGroupCommand => new RelayCommand(() => _app.CreateSmartGroup());
 
     // Rechtsklick auf freie Fläche
     public ICommand NewEntryCommand => new RelayCommand(p =>
@@ -165,6 +170,7 @@ public sealed class PanelViewModel : ObservableObject
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
+    public string EmptyHint => "Noch keine Gruppen. Lege eine smarte Gruppe mit einem Ordner an oder füge eigene Einträge hinzu.";
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
@@ -206,20 +212,19 @@ public sealed class PanelViewModel : ObservableObject
         var pending = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var visible = new List<LaunchItem>();
         var cfg = _host.Config;
-        // Inhaltsauswahl des Panels: eine angehakte Gruppe umfasst auch ihre Untergruppen
-        bool GroupSelected(string path) => cfg.Categories.Count == 0 ||
-            (path.Length == 0 ? cfg.ShowsCategory(string.Empty) : cfg.Categories.Any(c => c.Length > 0 && GroupManager.IsSameOrBelow(path, GroupManager.Normalize(c))));
-        bool CategoryOk(LaunchItem i) => GroupSelected(GroupManager.GroupOf(settings, i.FullPath));
+        // Gruppe eines Eintrags: ausdrücklich zugeordnet, sonst smarte Gruppe seines Ordners (ggf. mit Unterordner)
+        string GroupOf(LaunchItem i) => SmartGroups.EffectiveGroup(settings, i.FullPath, i.RootFolder);
+        // Arbeitsbereich: ausgeblendete Gruppen (samt Untergruppen) erscheinen nicht
+        bool CategoryOk(LaunchItem i) => WorkspaceManager.ShowsGroup(settings, GroupOf(i));
         foreach (var i in repo.Items)
         {
-            if (!folderByPath.TryGetValue(i.RootFolder, out var folder) || !cfg.ShowsFolder(folder.Path)) continue;
+            if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
             var state = FolderVisibility.State(folder, FolderVisibility.RelativePath(folder, i.FullPath));
             if (state == EntryVisibility.Visible) { if (CategoryOk(i)) visible.Add(i); }
             else if (state == EntryVisibility.Pending) pending[folder.Path] = pending.GetValueOrDefault(folder.Path) + 1;
         }
         // Eigene Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle)
         var customItems = new List<LaunchItem>();
-        if (cfg.ShowsFolder(PanelConfig.CustomEntriesKey))
         {
             var seen = new HashSet<string>(visible.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
             foreach (var c in settings.CustomEntries)
@@ -291,46 +296,56 @@ public sealed class PanelViewModel : ObservableObject
             if (favs.Count > 0 && cfg.ShowFavorites) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
         }
 
-        // Eigene Gruppen: gruppierte Einträge erscheinen in ihrer Gruppe statt in ihrem Ordner
-        string GroupOf(LaunchItem i) => GroupManager.GroupOf(settings, i.FullPath);
+        // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
         bool showEmpty = !searching && _filter == TypeFilter.All;
-        // Baum: jede Gruppe mit ihren Einträgen, Untergruppen darunter (Reihenfolge wie in den Einstellungen)
-        var nodes = new Dictionary<string, GroupViewModel>(StringComparer.CurrentCultureIgnoreCase);
-        foreach (var path in GroupManager.All(settings))
+        var byGroup = pool.GroupBy(GroupOf, StringComparer.CurrentCultureIgnoreCase).ToDictionary(g => g.Key, g => g.ToList(), StringComparer.CurrentCultureIgnoreCase);
+        var paths = GroupManager.All(settings).ToList();
+        var virtualPaths = new List<string>();
+        foreach (var g in byGroup.Keys.Where(k => k.Length > 0))
+            for (var p = g; p != null; p = GroupManager.ParentOf(p))
+                if (!paths.Contains(p, StringComparer.CurrentCultureIgnoreCase) && !virtualPaths.Contains(p, StringComparer.CurrentCultureIgnoreCase)) virtualPaths.Add(p);
+        paths.AddRange(virtualPaths.OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase));
+
+        (string? Folder, string? Error) FolderInfo(string path)
         {
-            bool visibleGroup = GroupSelected(path) || cfg.Categories.Any(c => GroupManager.IsSameOrBelow(GroupManager.Normalize(c), path));
-            if (!visibleGroup) continue;
-            var items = GroupSelected(path) ? pool.Where(i => GroupOf(i).Equals(path, StringComparison.CurrentCultureIgnoreCase)).ToList() : new List<LaunchItem>();
-            var node = MakeGroup(GroupManager.GroupKey(path), path, "group", null, items);
-            nodes[path] = node;
-            if (GroupManager.ParentOf(path) is { } parent && nodes.TryGetValue(parent, out var p)) p.Children.Add(node);
-            else if (GroupManager.ParentOf(path) == null) groups.Add(node);
+            if (SmartGroups.FolderOf(settings, path) is { } f)
+            {
+                var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, f.Path, StringComparison.OrdinalIgnoreCase));
+                return (f.Path, status?.Error);
+            }
+            // Unterordner einer smarten Gruppe
+            for (var parent = GroupManager.ParentOf(path); parent != null; parent = GroupManager.ParentOf(parent))
+                if (SmartGroups.FolderOf(settings, parent) is { SubfoldersAsGroups: true } pf)
+                    return (Path.Combine(pf.Path, path[(parent.Length + 1)..].Replace(GroupManager.Separator, '\\')), null);
+            return (null, null);
         }
-        // Leere Zweige bei Suche/Filter weglassen
+
+        var nodes = new Dictionary<string, GroupViewModel>(StringComparer.CurrentCultureIgnoreCase);
+        foreach (var path in paths)
+        {
+            if (!WorkspaceManager.ShowsGroup(settings, path)) continue;
+            var items = byGroup.GetValueOrDefault(path) ?? new List<LaunchItem>();
+            var (folderPath, error) = FolderInfo(path);
+            var kind = virtualPaths.Contains(path, StringComparer.CurrentCultureIgnoreCase) ? "subfolder" : "group";
+            var node = MakeGroup(GroupManager.GroupKey(path), path, kind, folderPath, items, error);
+            nodes[path] = node;
+            if (GroupManager.ParentOf(path) is { } parentPath)
+            {
+                if (nodes.TryGetValue(parentPath, out var parentNode)) parentNode.Children.Add(node);
+            }
+            else groups.Add(node);
+        }
+        // Leere Zweige bei Suche/Filter weglassen (fehlerhafte Ordner bleiben sichtbar)
         bool Prune(GroupViewModel g)
         {
             g.Children.RemoveAll(c => !Prune(c));
-            return showEmpty || g.TotalCount > 0;
+            return showEmpty || g.TotalCount > 0 || g.HasError;
         }
-        groups.RemoveAll(g => g.IsUserGroup && !Prune(g));
-        var rest = pool.Where(i => GroupOf(i).Length == 0).ToList();
+        groups.RemoveAll(g => g.GroupPath != null && !Prune(g));
 
-        if (settings.Grouping == GroupingMode.Category)
-        {
-            if (rest.Count > 0) groups.Add(MakeGroup(GroupManager.KeyPrefix, "Ohne Gruppe", "ungrouped", null, rest));
-        }
-        else
-        {
-            foreach (var folder in settings.Folders.Where(f => cfg.ShowsFolder(f.Path) && (f.ShowGroup || searching)))
-            {
-                var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, folder.Path, StringComparison.OrdinalIgnoreCase));
-                var items = rest.Where(i => string.Equals(i.RootFolder, folder.Path, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (items.Count == 0 && (searching || _filter != TypeFilter.All || status?.Error == null)) continue;
-                groups.Add(MakeGroup("folder:" + folder.Path, folder.Path, "folder", folder.Path, items, status?.Error));
-            }
-            var customVisible = rest.Where(i => i.IsCustom).ToList();
-            if (customVisible.Count > 0) groups.Add(MakeGroup("custom", "Eigene Einträge", "custom", null, customVisible));
-        }
+        // Eigene Einträge ohne Gruppe
+        var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
+        if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
 
         Groups.Clear();
         foreach (var g in groups) Groups.Add(g);
@@ -415,6 +430,9 @@ public sealed class PanelViewModel : ObservableObject
         if (!target.AcceptsItems) return;
         var current = GroupManager.GroupOf(_app.Settings, path);
         var wanted = target.GroupName ?? string.Empty;
+        // Zurück in die eigene smarte Gruppe bzw. ihren Unterordner: ausdrückliche Zuordnung entfernen
+        if (_app.FindItem(path) is { } found && SmartGroups.ImplicitGroup(_app.Settings, found.FullPath, found.RootFolder)
+                .Equals(wanted, StringComparison.CurrentCultureIgnoreCase)) wanted = string.Empty;
         if (current.Equals(wanted, StringComparison.CurrentCultureIgnoreCase) && near == null) return;
         _app.AssignGroup(path, wanted, target.Key, near?.Item.FullPath, after, target.Items.Select(i => i.Item.FullPath).ToList());
     }

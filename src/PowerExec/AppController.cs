@@ -43,7 +43,6 @@ public sealed partial class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
         SetupSnippetFolder();
-        CustomEntryWindow.KnownTags = () => Tags.All(Settings);
 
         Icons = new IconService(Application.Current.Dispatcher);
         Health = new HealthService(Application.Current.Dispatcher);
@@ -462,8 +461,10 @@ public sealed partial class AppController : IDisposable
     {
         var name = GroupManager.LeafOf(path);
         var subs = GroupManager.DescendantCount(Settings, path);
+        var folders = Settings.Folders.Where(f => f.Group.Length > 0 && GroupManager.IsSameOrBelow(f.Group, path)).Select(f => f.Path).ToList();
         var text = $"Gruppe „{name}“" + (subs > 0 ? $" mit {subs} {(subs == 1 ? "Untergruppe" : "Untergruppen")}" : string.Empty) + " löschen?" +
-                   (count > 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrem Ordner bzw. unter „Eigene Einträge“." : string.Empty);
+                   (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
+                   (count > 0 && folders.Count == 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“." : string.Empty);
         if (!Confirm(text, "Gruppe löschen")) return;
         GroupManager.Delete(Settings, path);
         CommitUserChange();
@@ -487,6 +488,31 @@ public sealed partial class AppController : IDisposable
         if (position == GroupDropPosition.Into)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(target), StringComparison.OrdinalIgnoreCase));
         CommitUserChange();
+    }
+
+    /// <summary>Gruppe im aktiven Arbeitsbereich ausblenden (wieder einblenden: Einstellungen › Arbeitsbereiche).</summary>
+    public void HideGroupInWorkspace(string groupPath)
+    {
+        WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(Settings), groupPath, true);
+        CommitUserChange();
+        _tray?.ShowBalloon("Gruppe ausgeblendet", $"„{GroupManager.LeafOf(groupPath)}“ ist im Arbeitsbereich „{Settings.ActiveWorkspace}“ ausgeblendet. Wieder einblenden: Einstellungen › Arbeitsbereiche.");
+    }
+
+    /// <summary>Smarte Gruppe für einen Ordner anlegen (Ordnerauswahl).</summary>
+    public string? CreateSmartGroup(string? parent = null)
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner für die smarte Gruppe auswählen" };
+        if (WithDialog(() => dlg.ShowDialog()) != true) return null;
+        if (Settings.Folders.FirstOrDefault(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        {
+            MessageBox.Show($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
+            return null;
+        }
+        var folder = SmartGroups.Add(Settings, dlg.FolderName, null, parent);
+        SaveSettings();
+        Repository.UpdateSettings(Settings);
+        CommitUserChange();
+        return folder.Group;
     }
 
     /// <summary>Ordner als Gruppe im Panel zeigen oder ausblenden (Einträge bleiben in Gruppen, Favoriten und Suche).</summary>
@@ -527,61 +553,30 @@ public sealed partial class AppController : IDisposable
     /// <summary>Neuen eigenen Eintrag in einer Gruppe anlegen (Dialog).</summary>
     public void NewCustomEntry(CustomEntryKind kind, string? group) => NewCustomEntry(new CustomEntry { Kind = kind }, group);
 
-    /// <summary>Eintrag vorbelegt anlegen (Zwischenablage, Vorlage, Duplikat) – der Dialog zeigt ihn zum Bestätigen.</summary>
-    public bool NewCustomEntry(CustomEntry template, string? group)
+    /// <summary>Eintrag vorbelegt anlegen (Zwischenablage, Vorlage, Duplikat) – der Eintragsdialog zeigt ihn zum Bestätigen.</summary>
+    public bool NewCustomEntry(CustomEntry template, string? group, IEnumerable<string>? tags = null)
     {
-        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), template, isNew: true, group, Array.Empty<string>()));
-        if (result == null) return false;
-        Settings.CustomEntries.Add(result.Entry);
-        ApplyEditResult(result);
+        var key = WithDialog(() => ProfilesWindow.EditEntry(this, Settings, template, isNew: true, saveImmediately: false, group, tags));
+        if (key == null) return false;
         CommitUserChange();
         return true;
     }
 
-    private void ApplyEditResult(CustomEntryEditResult r)
-    {
-        GroupManager.Assign(Settings, r.Entry.Key, r.Group);
-        Tags.Set(Settings, r.Entry.Key, r.Tags);
-    }
+    /// <summary>Eigenen Eintrag bearbeiten – im selben Dialog wie die Startprofile.</summary>
+    public void EditCustomEntry(LaunchItem item) => ShowProfiles(item);
 
-    public void EditCustomEntry(LaunchItem item)
-    {
-        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
-        if (entry != null) EditCustomEntry(entry);
-    }
-
-    public bool EditCustomEntry(CustomEntry entry)
-    {
-        var oldKey = entry.Key;
-        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), entry, isNew: false, GroupManager.GroupOf(Settings, oldKey), Tags.Of(Settings, oldKey)));
-        if (result == null) return false;
-        var i = Settings.CustomEntries.FindIndex(c => c.Id == entry.Id);
-        if (i < 0) return false;
-        Settings.CustomEntries[i] = result.Entry;
-        if (!result.Entry.Key.Equals(oldKey, StringComparison.OrdinalIgnoreCase))
-        {
-            // Datei-Eintrag mit neuem Pfad: Gruppe, Profile und Favorit mitnehmen
-            PathMigration.Apply(Settings, new PathMove(oldKey, result.Entry.Key));
-        }
-        ApplyEditResult(result);
-        Health.Forget(result.Entry.Key);
-        CommitUserChange();
-        return true;
-    }
-
-    /// <summary>Kopie eines eigenen Eintrags anlegen (gleiche Gruppe, Schlagworte), Dialog zum Anpassen.</summary>
+    /// <summary>Kopie eines eigenen Eintrags anlegen (gleiche Gruppe, Schlagworte, Profile), Dialog zum Anpassen.</summary>
     public void DuplicateCustomEntry(LaunchItem item)
     {
         var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         if (entry == null || entry.Kind == CustomEntryKind.File) return;
         var copy = entry.Duplicate();
-        var result = WithDialog(() => CustomEntryWindow.Edit(GroupManager.All(Settings), copy, isNew: true, GroupManager.GroupOf(Settings, entry.Key), Tags.Of(Settings, entry.Key)));
-        if (result == null) return;
-        Settings.CustomEntries.Add(result.Entry);
-        ApplyEditResult(result);
+        var key = WithDialog(() => ProfilesWindow.EditEntry(this, Settings, copy, isNew: true, saveImmediately: false,
+            GroupManager.GroupOf(Settings, entry.Key), Tags.Of(Settings, entry.Key)));
+        if (key == null) return;
         var source = Settings.FindEntry(entry.Key);
-        if (source != null && source.Profiles.Count > 0)
-            (Settings.FindEntry(result.Entry.Key) ?? AddEntry(result.Entry.Key)).Profiles = source.Profiles.Select(p => p.Clone()).ToList();
+        if (source != null && source.Profiles.Count > 0 && Settings.FindEntry(key) is { Profiles.Count: 0 } target)
+            target.Profiles = source.Profiles.Select(p => p.Clone()).ToList();
         CommitUserChange();
     }
 
@@ -594,8 +589,7 @@ public sealed partial class AppController : IDisposable
 
     public void ToggleSingleClick(LaunchItem item)
     {
-        var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
-        if (entry == null) return;
+        var entry = Settings.FindEntry(item.FullPath) ?? AddEntry(item.FullPath);
         entry.SingleClick = !entry.SingleClick;
         CommitUserChange();
     }

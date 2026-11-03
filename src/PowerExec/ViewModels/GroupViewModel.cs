@@ -16,9 +16,10 @@ public sealed class GroupViewModel : ObservableObject
         _panel = panel;
         Key = key;
         // Eigene Gruppe: „title“ ist der Pfad („Server/Exchange“), angezeigt wird der letzte Teil
-        GroupPath = kind == "group" ? title : null;
-        Title = kind == "group" ? Core.Config.GroupManager.LeafOf(title) : title;
-        Depth = kind == "group" ? Core.Config.GroupManager.DepthOf(title) : 0;
+        // „subfolder“: Unterordner einer smarten Gruppe (nicht gespeichert, ergibt sich aus dem Ordner)
+        GroupPath = kind is "group" or "subfolder" ? title : null;
+        Title = GroupPath != null ? Core.Config.GroupManager.LeafOf(title) : title;
+        Depth = GroupPath != null ? Core.Config.GroupManager.DepthOf(title) : 0;
         IsFavorites = isFavorites;
         FolderPath = folderPath;
         Items = items;
@@ -31,7 +32,7 @@ public sealed class GroupViewModel : ObservableObject
         CollapseOthersCommand = new RelayCommand(() => _panel.CollapseAllExcept(this));
         CollapseAllCommand = new RelayCommand(() => _panel.SetAllExpanded(false));
         ExpandAllCommand = new RelayCommand(() => _panel.SetAllExpanded(true));
-        FolderSettingsCommand = new RelayCommand(() => app.ShowSettings(FolderPath));
+        FolderSettingsCommand = new RelayCommand(() => app.ShowSettings(GroupPath, "groups"));
         ResetOrderCommand = new RelayCommand(() => _panel.ResetOrder(this), () => AllowReorder && app.Settings.CustomOrder.ContainsKey(Key));
 
         // Eigene Gruppen
@@ -41,7 +42,8 @@ public sealed class GroupViewModel : ObservableObject
         MoveDownCommand = new RelayCommand(() => app.MoveGroup(GroupPath!, 1), () => IsUserGroup);
         NewGroupCommand = new RelayCommand(() => app.CreateGroup());
         NewSubgroupCommand = new RelayCommand(() => app.CreateGroup(GroupPath), () => IsUserGroup);
-        HideFolderCommand = new RelayCommand(() => app.SetFolderGroupVisible(FolderPath!, false), () => FolderPath != null);
+        HideFolderCommand = new RelayCommand(() => app.HideGroupInWorkspace(GroupPath!), () => GroupPath != null);
+        IsSmartGroup = GroupPath != null && Core.Config.SmartGroups.FolderOf(app.Settings, GroupPath) != null;
         ChooseIconCommand = new RelayCommand(() => app.ChooseGroupIcon(GroupPath!), () => IsUserGroup);
         ExportCommand = new RelayCommand(() => app.ExportGroup(GroupPath!), () => IsUserGroup);
         ImportCommand = new RelayCommand(() => app.ImportEntries(GroupPath), () => IsUserGroup || Kind == "custom");
@@ -71,7 +73,7 @@ public sealed class GroupViewModel : ObservableObject
     public bool IsUserGroup => Kind == "group";
 
     /// <summary>Gruppen, in die man Einträge ziehen kann (eigene Gruppen, Ordner, „Eigene Einträge“, „Ohne Gruppe“, Favoriten).</summary>
-    public bool AcceptsItems => Kind is "group" or "folder" or "custom" or "ungrouped" or "fav";
+    public bool AcceptsItems => Kind is "group" or "subfolder" or "folder" or "custom" or "ungrouped" or "fav";
 
     /// <summary>Gruppe für Zuordnungen: eigene Gruppe = ihr Pfad, sonst null (= aus der Gruppe nehmen).</summary>
     public string? GroupName => GroupPath;
@@ -95,6 +97,8 @@ public sealed class GroupViewModel : ObservableObject
     public bool IsEmptyUserGroup => IsUserGroup && Items.Count == 0 && Children.Count == 0;
     public bool ShowDropHint => IsEmptyUserGroup && IsExpanded;
     public bool IsUserGroupOrCustom => IsUserGroup || Kind == "custom";
+    /// <summary>Gruppe mit hinterlegtem Ordner.</summary>
+    public bool IsSmartGroup { get; }
 
     public ICommand RenameCommand { get; }
     public ICommand DeleteCommand { get; }
@@ -127,7 +131,9 @@ public sealed class GroupViewModel : ObservableObject
     {
         "fav" => "\uE735",
         "recent" => "\uE81C",
+        "category" or "group" when FolderPath != null => "\uE8B7",
         "category" or "group" => "\uE8EC",
+        "subfolder" => "\uE8B7",
         "ungrouped" => "\uE8FD",
         "custom" => "\uE71B",
         _ => "\uE8B7"

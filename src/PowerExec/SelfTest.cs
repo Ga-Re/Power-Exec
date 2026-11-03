@@ -95,7 +95,8 @@ public sealed partial class AppController
             Settings.CustomEntries.Add(new CustomEntry { Name = "Ping", Kind = CustomEntryKind.Snippet, Code = "param([string]$Ziel = 'localhost')\nTest-Connection $Ziel -Count 1", Icon = "hero:signal" });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Signatur", Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Viele Grüße\n{{Name}}" });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Linux", Kind = CustomEntryKind.Ssh, Target = "srv", User = "root", Port = 2222, Icon = "emoji:🐧" });
-            Settings.CustomEntries.Add(new CustomEntry { Name = "AD", Kind = CustomEntryKind.Tool, Target = "dsa.msc", Icon = "fluent:people_team", SingleClick = true });
+            Settings.CustomEntries.Add(new CustomEntry { Id = "ad", Name = "AD", Kind = CustomEntryKind.Tool, Target = "dsa.msc", Icon = "fluent:people_team" });
+            Settings.Entries.Add(new EntryConfig { Path = "custom:ad", SingleClick = true });
             Settings.CustomEntries.Add(new CustomEntry { Name = "Ticket", Kind = CustomEntryKind.Url, Target = "https://example.com/{{Nr}}", Browser = BrowserChoice.Edge, Private = true, Icon = "glyph:E8EC" });
             Settings.Favorites.Add(Path.Combine(dir, "Cleanup.cmd"));
             Settings.Entries.Add(new EntryConfig { Path = Path.Combine(dir, "Cleanup.cmd"), Notes = "Nur nach Rücksprache" });
@@ -103,6 +104,8 @@ public sealed partial class AppController
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel" });
             Settings.Panels.Add(new PanelConfig { Name = "Zweites", Edge = ScreenEdge.Left, Folders = [PanelConfig.CustomEntriesKey] });
             WorkspaceManager.EnsureInitialized(Settings);
+            SmartGroups.EnsureFolderGroups(Settings);
+            Settings.DataVersion = 13;
             WorkspaceManager.Create(Settings, "Kunde A", copyCurrent: true);
             ThemeService.Apply(Settings.Theme);
 
@@ -200,7 +203,7 @@ public sealed partial class AppController
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
             foreach (var kind in Enum.GetValues<CustomEntryKind>())
-                await ShowAndClose(CustomEntryWindow.ForTest(new CustomEntry { Kind = kind, Target = "x" }, GroupManager.All(Settings)));
+                await ShowAndClose(ProfilesWindow.ForTest(this, new CustomEntry { Kind = kind, Target = "x", Code = "Get-Date" }));
 
             Step("Snippets");
             // Eigene Einträge: Snippet-Datei, Platzhalter, Ein-Klick
