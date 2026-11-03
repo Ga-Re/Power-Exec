@@ -102,6 +102,14 @@ public sealed class CustomEntry
 
     public CustomEntry Clone() => (CustomEntry)MemberwiseClone();
 
+    /// <summary>Kopie mit den Startoptionen eines Profils (null = unverändert).</summary>
+    public CustomEntry WithProfile(LaunchProfile? profile)
+    {
+        var c = Clone();
+        profile?.Options?.ApplyTo(c);
+        return c;
+    }
+
     /// <summary>Kopie mit neuer Kennung (Duplizieren).</summary>
     public CustomEntry Duplicate()
     {
@@ -392,11 +400,35 @@ public sealed class CustomEntry
 
     // ---- Ordner ----------------------------------------------------------------
 
+    /// <summary>Ist Windows Terminal installiert? (setzt die App; sonst PowerShell-Konsole)</summary>
+    public static Func<bool> TerminalAvailable { get; set; } = () => true;
+
+    /// <summary>
+    /// Pfad für Befehlszeilen: ohne abschließenden Backslash (sonst maskiert er das Anführungszeichen),
+    /// Laufwerkswurzel als „C:\.“.
+    /// </summary>
+    public static string CommandLinePath(string path)
+    {
+        var p = path.Trim().Trim('"');
+        if (p.Length > 3 || p.StartsWith(@"\\")) p = p.TrimEnd('\\', '/');
+        if (p.Length == 2 && p[1] == ':') p += @"\.";
+        else if (p.Length == 3 && p[1] == ':' && p[2] is '\\' or '/') p = p[..2] + @"\.";
+        return p;
+    }
+
+    /// <summary>Terminal in diesem Ordner: Windows Terminal (-d), sonst eine PowerShell-Konsole mit Set-Location.</summary>
+    private static (ItemType, string, string) TerminalCommand(string target)
+    {
+        var p = CommandLinePath(target);
+        if (TerminalAvailable()) return (ItemType.Executable, "wt.exe", "-d \"" + p + "\"");
+        return (ItemType.Executable, "powershell.exe", "-NoExit -NoLogo -Command \"Set-Location -LiteralPath '" + p.Replace("'", "''") + "'\"");
+    }
+
     private (ItemType, string, string) FolderCommand(string target) => OpenWith switch
     {
-        FolderOpener.NewWindow => (ItemType.Executable, "explorer.exe", "/n," + Quote(target, always: true)),
-        FolderOpener.Terminal => (ItemType.Executable, "wt.exe", "-d " + Quote(target, always: true)),
-        FolderOpener.Program when OpenWithProgram.Trim().Length > 0 => (ItemType.Executable, OpenWithProgram.Trim(), Quote(target, always: true)),
+        FolderOpener.NewWindow => (ItemType.Executable, "explorer.exe", "/n,\"" + CommandLinePath(target) + "\""),
+        FolderOpener.Terminal => TerminalCommand(target),
+        FolderOpener.Program when OpenWithProgram.Trim().Length > 0 => (ItemType.Executable, OpenWithProgram.Trim(), "\"" + CommandLinePath(target) + "\""),
         _ => (ItemType.Other, target, string.Empty)
     };
 

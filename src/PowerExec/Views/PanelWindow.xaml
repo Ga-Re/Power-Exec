@@ -56,9 +56,6 @@
                     <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="Symbol ändern …" Command="{Binding ChooseIconCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE790;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
             <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>

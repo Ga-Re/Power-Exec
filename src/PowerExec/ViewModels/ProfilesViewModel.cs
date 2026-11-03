@@ -114,7 +114,22 @@ public sealed class ProfileEditViewModel : ObservableObject
         foreach (var param in owner.Item.Parameters)
             Parameters.Add(new ProfileParamViewModel(this, param, ProfileResolver.SettingFor(p, param), _key));
         SelectCommand = new RelayCommand(() => _owner.Selected = this);
+        if (owner.Entry != null)
+        {
+            // Startoptionen dieses Profils (Browser, RDP-Anzeige …); ohne eigene Werte die des Eintrags
+            Options = new CustomEntryViewModel(owner.Entry.Current.WithProfile(p), owner.App, optionsOnly: true);
+            Options.Changed += () => { OnPropertyChanged(nameof(Detail)); OnChanged(); };
+        }
     }
+
+    /// <summary>Startoptionen eines eigenen Eintrags (null bei Dateien aus Ordnern).</summary>
+    public CustomEntryViewModel? Options { get; }
+    public bool HasOptions => Options?.HasOptions == true;
+
+    /// <summary>Kurzinfo in der Profilliste, z. B. „Edge · Arbeit“ bzw. „Admin · 2 Rechner“.</summary>
+    public string Detail => Options is { HasOptions: true } o && o.OptionsSummary.Length > 0
+        ? o.OptionsSummary + (_runAsAdmin ? " · Admin" : _runAsOther ? " · anderer Benutzer" : string.Empty)
+        : Summary;
 
     private readonly string _key;
 
@@ -188,6 +203,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     public bool ConfirmBeforeRun { get => _confirm; set { if (Set(ref _confirm, value)) OnChanged(); } }
 
     public string Summary => ProfileResolver.Summary(ToProfile(), _owner.Item);
+    public bool CanBeDeleted => _owner.Profiles.Count > 1;
 
     public string DialogHint
     {
@@ -210,8 +226,8 @@ public sealed class ProfileEditViewModel : ObservableObject
     {
         get
         {
-            var item = _owner.Item;
             var p = ToProfile();
+            var item = _owner.ItemFor(p);
             ParameterValueConverter.TryConvert(item.Parameters, ProfileResolver.InitialValues(p, item), out var values);
             var request = new ExecutionRequest
             {
@@ -234,6 +250,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     {
         _owner.OnProfileChanged(this);
         OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(Detail));
         OnPropertyChanged(nameof(DialogHint));
         OnPropertyChanged(nameof(Preview));
     }
@@ -253,7 +270,8 @@ public sealed class ProfileEditViewModel : ObservableObject
             Machines = MachineList.ParseNames(_machines).ToList(),
             Dialog = _dialog,
             Arguments = _arguments.Trim(),
-            ConfirmBeforeRun = _confirm
+            ConfirmBeforeRun = _confirm,
+            Options = Options is { HasOptions: true } o ? EntryOptions.From(o.Current) : null
         };
         foreach (var param in Parameters.Where(x => !x.IsSecure))
             p.Parameters[param.Name] = param.ToSetting();
@@ -320,7 +338,7 @@ public sealed class ProfilesViewModel : ObservableObject
         AddCommand = new RelayCommand(Add);
         DuplicateCommand = new RelayCommand(Duplicate, () => Selected != null);
         DeleteCommand = new RelayCommand(Delete, () => Profiles.Count > 1);
-        SaveCommand = new RelayCommand(Save, () => !ShowKindPicker && (Entry == null || Entry.IsValid));
+        SaveCommand = new RelayCommand(Save, () => !ShowKindPicker && (Entry == null || Entry.IsValid) && Profiles.All(p => p.Options?.OptionsValid != false));
         PickKindCommand = new RelayCommand(p => PickKind(p?.ToString()));
         ChangeKindCommand = new RelayCommand(() => ShowKindPicker = true, () => Entry != null);
         BackToFormCommand = new RelayCommand(() => ShowKindPicker = false, () => !IsNew || _kindChosen);
@@ -338,6 +356,17 @@ public sealed class ProfilesViewModel : ObservableObject
 
     private LaunchItem _item;
     private bool _kindChosen;
+
+    internal AppController App => _app;
+
+    /// <summary>Element mit den Startoptionen eines Profils (für die Befehlsvorschau).</summary>
+    internal LaunchItem ItemFor(LaunchProfile p)
+    {
+        if (Entry == null || p.Options == null) return Item;
+        var item = Entry.Current.WithProfile(p).ToLaunchItem();
+        if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { } }
+        return item;
+    }
     private string _lastParams = string.Empty;
 
     /// <summary>Der Eintrag als startbares Element (für Vorschau und Parameter); folgt den Eingaben.</summary>
@@ -354,6 +383,7 @@ public sealed class ProfilesViewModel : ObservableObject
         {
             if (!Set(ref _showKindPicker, value)) return;
             OnPropertyChanged(nameof(ShowForm));
+            OnPropertyChanged(nameof(FirstError));
             OnPropertyChanged(nameof(Title));
             OnPropertyChanged(nameof(WindowTitle));
             if (value) LoadClipboardSuggestion();
@@ -449,17 +479,19 @@ public sealed class ProfilesViewModel : ObservableObject
     public string FileParametersText => Item.Parameters.Count == 0 ? "Keine Parameter" : "Parameter: " + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? " (Pflicht)" : string.Empty)));
     public ICommand OpenFileLocationCommand => new RelayCommand(() => Launcher.OpenLocation(Item.FullPath));
 
-    /// <summary>Abschnitt „Start“ (Standardverhalten) – nicht bei Webseite, SSH, Remotedesktop, Text-Snippet.</summary>
-    public bool ShowStartSection => EntryKind is null or CustomEntryKind.Command or CustomEntryKind.Tool or CustomEntryKind.File or CustomEntryKind.Folder
-                                    || (EntryKind == CustomEntryKind.Snippet && Entry!.IsPsSnippet);
+    /// <summary>Startprofile gibt es für alle Arten.</summary>
+    public bool ShowStartSection => true;
+    /// <summary>„Ausführen als“ nur, wo es Sinn ergibt (Programme, Scripte, Ordner).</summary>
+    public bool ShowRunAs => EntryKind is null or CustomEntryKind.Command or CustomEntryKind.Tool or CustomEntryKind.File or CustomEntryKind.Folder
+                             || (EntryKind == CustomEntryKind.Snippet && Entry!.IsPsSnippet && !Entry.CopyInsteadOfRun);
     /// <summary>PowerShell: Ziel (lokal/remote), Engine, Konsole, Dialog, Parameter.</summary>
     public bool ShowPsOptions => ShowStartSection && Item.IsPowerShell && !(Entry?.CopyInsteadOfRun ?? false);
     /// <summary>Programme und Batch: Argumente.</summary>
-    public bool ShowProgramArgs => ShowStartSection && !Item.IsPowerShell && EntryKind != CustomEntryKind.Folder;
+    public bool ShowProgramArgs => !Item.IsPowerShell && EntryKind is null or CustomEntryKind.Command or CustomEntryKind.Tool or CustomEntryKind.File;
     /// <summary>Ordner kennen nur „normal“ und „anderer Benutzer“.</summary>
     public bool ShowAdminMode => EntryKind != CustomEntryKind.Folder;
     /// <summary>„Weitere Startprofile“ – nur wo Varianten sinnvoll sind.</summary>
-    public bool ShowMoreProfiles => ShowStartSection && EntryKind != CustomEntryKind.Folder;
+    public bool ShowMoreProfiles => true;
 
     public ProfileEditViewModel? DefaultProfile => Profiles.FirstOrDefault(p => p.IsDefault);
 
@@ -472,7 +504,7 @@ public sealed class ProfilesViewModel : ObservableObject
 
     private void RaiseKindDependent()
     {
-        foreach (var p in new[] { nameof(ShowStartSection), nameof(ShowPsOptions), nameof(ShowProgramArgs), nameof(ShowAdminMode), nameof(ShowMoreProfiles),
+        foreach (var p in new[] { nameof(ShowStartSection), nameof(ShowPsOptions), nameof(ShowProgramArgs), nameof(ShowAdminMode), nameof(ShowMoreProfiles), nameof(ShowRunAs),
                      nameof(PathText), nameof(Title), nameof(WindowTitle), nameof(HeaderNameHint), nameof(SupportsNoExit), nameof(IsPowerShell), nameof(IsProgram), nameof(HasParameters) })
             OnPropertyChanged(p);
     }
@@ -497,7 +529,7 @@ public sealed class ProfilesViewModel : ObservableObject
             foreach (var p in Profiles) p.RefreshParameters();
             OnPropertyChanged(nameof(HasParameters));
         }
-        foreach (var p in Profiles) p.OnChanged();
+        foreach (var p in Profiles) { p.Options?.SyncBaseFrom(Entry.Current); p.OnChanged(); }
         OnPropertyChanged(nameof(HeaderNameHint));
         OnPropertyChanged(nameof(HeaderName));
         OnPropertyChanged(nameof(Title));
@@ -505,8 +537,7 @@ public sealed class ProfilesViewModel : ObservableObject
         OnPropertyChanged(nameof(PreviewText));
         OnPropertyChanged(nameof(ShowPsOptions));
         OnPropertyChanged(nameof(ShowProgramArgs));
-        OnPropertyChanged(nameof(ShowStartSection));
-        OnPropertyChanged(nameof(ShowMoreProfiles));
+        OnPropertyChanged(nameof(ShowRunAs));
     }
 
     private bool _inProfileChange;
@@ -537,7 +568,8 @@ public sealed class ProfilesViewModel : ObservableObject
     public string Error { get => _error; private set => Set(ref _error, value); }
     public bool IsPowerShell => Item.IsPowerShell;
     public bool IsProgram => !Item.IsPowerShell;
-    public string FirstError => Entry?.FirstError ?? string.Empty;
+    /// <summary>Erster Eingabefehler – nicht in Schritt 1 (dort ist noch nichts eingegeben).</summary>
+    public string FirstError => ShowKindPicker ? string.Empty : Entry?.FirstError ?? string.Empty;
     public bool HasParameters => Item.Parameters.Count > 0;
     public bool SupportsNoExit => Item.Type is ItemType.PowerShell or ItemType.Batch;
     public string SaveLabel => _saveImmediately ? "Speichern" : "Übernehmen";
@@ -639,6 +671,8 @@ public sealed class ProfilesViewModel : ObservableObject
                 return;
             }
             var edited = Entry.ToEntry();
+            // Startoptionen des Standardprofils gelten auch für den Eintrag selbst (Symbol, Prüfung, Start ohne Profil)
+            if ((DefaultProfile ?? Profiles[0]).Options is { HasOptions: true } def) EntryOptions.From(def.Current).ApplyTo(edited);
             // Name/Beschreibung stehen beim eigenen Eintrag selbst, nicht doppelt in der Eintragskonfiguration
             DisplayName = string.Empty;
             Description = string.Empty;

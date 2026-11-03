@@ -285,7 +285,7 @@ public sealed class ItemViewModel : ObservableObject
 
     private void OpenLocation()
     {
-        if (Item.CustomKind == CustomEntryKind.Folder) Services.Launcher.OpenLocation(Item.LaunchTarget ?? string.Empty, isFolder: true);
+        if (Item.CustomKind == CustomEntryKind.Folder) Services.Launcher.OpenLocation(Item.Source?.Target.Trim() ?? Item.LaunchTarget ?? string.Empty, isFolder: true);
         else Services.Launcher.OpenLocation(Item.FullPath);
     }
 

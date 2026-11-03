@@ -39,9 +39,11 @@ public sealed class CustomEntryViewModel : ObservableObject
     private string _autoTitle = string.Empty;
     private int _checkVersion;
 
-    public CustomEntryViewModel(CustomEntry entry, AppController? app = null)
+    /// <param name="optionsOnly">Nur die Startoptionen eines Profils bearbeiten (ohne Ziel/Code, ohne Netzwerkprüfungen).</param>
+    public CustomEntryViewModel(CustomEntry entry, AppController? app = null, bool optionsOnly = false)
     {
         _app = app;
+        _optionsOnly = optionsOnly;
         _e = entry.Clone();
         _useRdpFile = _e.RdpFile.Trim().Length > 0;
         BrowseCommand = new RelayCommand(Browse, () => CanBrowse);
@@ -58,8 +60,33 @@ public sealed class CustomEntryViewModel : ObservableObject
         _checkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
         _checkTimer.Tick += (_, _) => { _checkTimer.Stop(); RunDelayedChecks(); };
         Revalidate();
-        RunDelayedChecks();
+        if (!optionsOnly) RunDelayedChecks();
     }
+
+    private readonly bool _optionsOnly;
+    /// <summary>Felder des Eintrags (Ziel, Code …) anzeigen.</summary>
+    public bool ShowBase => !_optionsOnly;
+    /// <summary>Startoptionen anzeigen (im Profil-Editor).</summary>
+    public bool ShowOptions => _optionsOnly;
+
+    /// <summary>Hat diese Art Startoptionen, die je Profil verschieden sein können?</summary>
+    public bool HasOptions => _e.Kind is not CustomEntryKind.Snippet || _e.Language == SnippetLanguage.Text;
+
+    /// <summary>Profil-Editor: Grundwerte (Ziel, Art, Code …) vom Eintrag übernehmen, Startoptionen behalten.</summary>
+    public void SyncBaseFrom(CustomEntry b)
+    {
+        var opts = EntryOptions.From(_e);
+        var kindChanged = b.Kind != _e.Kind || b.Language != _e.Language;
+        _e = b.Clone();
+        opts.ApplyTo(_e);
+        if (kindChanged) OnPropertyChanged(string.Empty);
+        else foreach (var p in new[] { nameof(UseRdpFile), nameof(UseRdpFields), nameof(Target) }) OnPropertyChanged(p);
+        _useRdpFile = _e.RdpFile.Trim().Length > 0;
+        Revalidate();
+    }
+
+    /// <summary>Fehler in Startoptionen (für Profile).</summary>
+    public bool OptionsValid => !_issues.Any(i => i.IsError && i.Field is EntryField.ScreenSize or EntryField.PortForward or EntryField.OpenWithProgram);
 
     // ---- Art -------------------------------------------------------------------
 
@@ -140,10 +167,22 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     // ---- Webseite --------------------------------------------------------------
 
-    public BrowserChoice Browser { get => _e.Browser; set { _e.Browser = value; Touch(); OnPropertyChanged(nameof(HasBrowserOptions)); OnPropertyChanged(nameof(AppWindowHint)); } }
+    public BrowserChoice Browser
+    {
+        get => _e.Browser;
+        set
+        {
+            if (_e.Browser != value) _e.BrowserProfile = string.Empty; // Profile gehören zum Browser
+            _e.Browser = value;
+            Touch();
+            foreach (var p in new[] { nameof(HasBrowserOptions), nameof(AppWindowHint), nameof(BrowserProfile), nameof(BrowserProfileList), nameof(HasBrowserProfiles) }) OnPropertyChanged(p);
+        }
+    }
     public bool HasBrowserOptions => _e.Browser != BrowserChoice.Default;
     public bool Private { get => _e.Private; set { _e.Private = value; Touch(); } }
     public string BrowserProfile { get => _e.BrowserProfile; set { _e.BrowserProfile = value ?? string.Empty; Touch(); } }
+    /// <summary>Kurzinfo der Startoptionen (Profilliste).</summary>
+    public string OptionsSummary => EntryOptions.From(_e).Summary(_e.Kind, BrowserCatalog.ProfileDisplay);
     public bool AppWindow { get => _e.AppWindow; set { _e.AppWindow = value; Touch(); OnPropertyChanged(nameof(AppWindowHint)); } }
     public string AppWindowHint => !_e.AppWindow ? string.Empty
         : _e.Browser == BrowserChoice.Firefox ? "Firefox kennt kein App-Fenster – die Seite öffnet in einem eigenen Fenster."
@@ -155,7 +194,25 @@ public sealed class CustomEntryViewModel : ObservableObject
         new KeyValuePair<BrowserChoice, string>(BrowserChoice.Chrome, "Google Chrome"),
         new KeyValuePair<BrowserChoice, string>(BrowserChoice.Firefox, "Mozilla Firefox")
     };
-    public IReadOnlyList<KeyValuePair<BrowserChoice, string>> BrowserList => Browsers;
+    /// <summary>Nur installierte Browser (plus der gespeicherte, falls er fehlt).</summary>
+    public IReadOnlyList<KeyValuePair<BrowserChoice, string>> BrowserList =>
+        BrowserCatalog.Installed.Append(_e.Browser).Distinct()
+            .Select(b => new KeyValuePair<BrowserChoice, string>(b, BrowserCatalog.DisplayName(b) + (BrowserCatalog.Installed.Contains(b) ? string.Empty : " (nicht installiert)")))
+            .ToList();
+
+    /// <summary>Gefundene Profile des gewählten Browsers; leer = Standardprofil des Browsers.</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> BrowserProfileList
+    {
+        get
+        {
+            var list = new List<KeyValuePair<string, string>> { new(string.Empty, "Standardprofil") };
+            list.AddRange(BrowserCatalog.ProfilesOf(_e.Browser).Select(p => new KeyValuePair<string, string>(p.Id, p.Display)));
+            if (_e.BrowserProfile.Length > 0 && !list.Any(x => x.Key.Equals(_e.BrowserProfile, StringComparison.OrdinalIgnoreCase)))
+                list.Add(new(_e.BrowserProfile, _e.BrowserProfile + " (nicht gefunden)"));
+            return list;
+        }
+    }
+    public bool HasBrowserProfiles => BrowserProfileList.Count > 1;
 
     private string _titleStatus = string.Empty;
     public string TitleStatus { get => _titleStatus; private set => Set(ref _titleStatus, value); }
@@ -322,6 +379,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     {
         _issues = EntryValidation.Check(_e);
         foreach (var p in IssueProps) OnPropertyChanged(p);
+        OnPropertyChanged(nameof(OptionsSummary));
+        OnPropertyChanged(nameof(OptionsValid));
         CommandManager.InvalidateRequerySuggested();
         Changed?.Invoke();
     }
@@ -350,6 +409,7 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     private void ScheduleChecks()
     {
+        if (_optionsOnly) return;
         _checkTimer.Stop();
         _checkTimer.Start();
     }

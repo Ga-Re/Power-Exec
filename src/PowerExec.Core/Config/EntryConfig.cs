@@ -38,6 +38,9 @@ public sealed class LaunchProfile
     /// <summary>Vor dem Start eine Sicherheitsabfrage zeigen.</summary>
     public bool ConfirmBeforeRun { get; set; }
 
+    /// <summary>Startoptionen eigener Einträge (Browser, RDP-Anzeige …); null = die des Eintrags.</summary>
+    public EntryOptions? Options { get; set; }
+
     /// <summary>true = automatisch erzeugtes Profil ohne gespeicherte Konfiguration.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsImplicit { get; set; }
@@ -57,6 +60,7 @@ public sealed class LaunchProfile
         Parameters = Parameters.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.OrdinalIgnoreCase),
         Arguments = Arguments,
         ConfirmBeforeRun = ConfirmBeforeRun,
+        Options = Options?.Clone(),
         IsImplicit = IsImplicit
     };
 }

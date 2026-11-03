@@ -43,6 +43,7 @@ public sealed partial class AppController : IDisposable
         }
         ThemeService.Apply(Settings.Theme);
         SetupSnippetFolder();
+        CustomEntry.TerminalAvailable = () => IconService.ResolveProgram("wt.exe") != null;
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
 
@@ -879,17 +880,18 @@ public sealed partial class AppController : IDisposable
     /// Startet ein Profil. <paramref name="overrideMode"/> erzwingt einmalig Admin oder anderes Konto
     /// (Knöpfe „Admin“ und „Als …“ im Panel).
     /// </summary>
+    /// <param name="record">false = Test aus dem Eintragsdialog: nicht in „Zuletzt ausgeführt“, ungespeicherten Stand verwenden.</param>
     public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null, bool record = true)
     {
+        profile ??= ProfileResolver.GetDefault(Settings, item);
+        item = WithProfileOptions(record ? Refresh(item) : item, profile); // Parameter könnten sich geändert haben; Browser, Anzeige … des Profils
         if (item.Source?.CopiesToClipboard == true)
         {
             CopySnippet(item, record);
             return;
         }
-        item = Refresh(item); // Parameter könnten sich geändert haben
         if (ResolvePlaceholders(item) is not { } resolvedItem) return;
         item = resolvedItem;
-        profile ??= ProfileResolver.GetDefault(Settings, item);
         bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
         var mode = Requirements.ModeFor(item, overrideMode ?? ProfileMode(profile), remote);
         var targets = remote ? MachineList.Resolve(Settings, profile.Machines) : Array.Empty<string>();
@@ -990,6 +992,14 @@ public sealed partial class AppController : IDisposable
     {
         RecentRunList.Add(Settings, item.FullPath, profile.IsImplicit ? "Standard" : profile.Name);
         CommitUserChange();
+    }
+
+    /// <summary>Eigener Eintrag mit den Startoptionen des Profils (Browser und Browserprofil, RDP-Anzeige, SSH-Optionen …).</summary>
+    private LaunchItem WithProfileOptions(LaunchItem item, LaunchProfile profile)
+    {
+        if (profile.Options == null || item.Source == null || item.PlaceholdersResolved) return item;
+        var result = DescribeCustom(item.Source.WithProfile(profile));
+        return result;
     }
 
     /// <summary>Startmodus eines Profils: Administrator, anderer Benutzer (Anmeldung beim Start) oder aktuelles Konto.</summary>
