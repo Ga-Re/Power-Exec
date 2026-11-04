@@ -107,6 +107,7 @@ oder remote auf einem oder vielen Rechnern.
 - Ausführen als: aktueller Benutzer, Administrator (UAC) oder anderer Benutzer
 - PowerShell 7 oder Windows PowerShell 5.1, `-NoExit`, `-NoProfile`
 - Befehlsvorschau zeigt, was tatsächlich gestartet wird
+- **Parameter direkt im Panel:** beim Aufklappen eines Scripts erscheint ein kleines Formular (Text, Auswahl, Schalter; Kennwörter fragt das Script selbst) mit „Mit diesen Werten“ starten; **„Speichern als …“** legt die Werte als **Parameter-Set** an – ein Startprofil mit festen Werten, startbar über den Pfeil am Ausführen-Knopf (abschaltbar unter Ausführung › Start)
 - **Parameter-Verlauf:** die zuletzt verwendeten Werte je Script und Parameter stehen im Dialog als Vorschläge bereit (nie bei Kennwörtern, `PSCredential` oder `SecureString`)
 - **`#Requires` wird ausgewertet:** `-RunAsAdministrator` startet lokal automatisch als Administrator, `-Version 7` verwendet PowerShell 7, fehlende Module aus `-Modules` werden beim Aufklappen gemeldet
 

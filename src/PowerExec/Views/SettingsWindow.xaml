@@ -1267,6 +1267,10 @@
                     <TextBlock Text="PowerShell" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Standardwerte für den Start von Scripten. Startprofile eines Eintrags (⚙) können sie überschreiben." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
                     <TextBlock Text="Start" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE70F;" Header="Parameter direkt im Panel"
+                                    Description="Beim Aufklappen eines Scripts erscheint ein kleines Formular mit seinen Parametern. „Speichern als …“ legt ein Parameter-Set als Startprofil an.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding InlineParameters}" AutomationProperties.Name="Parameter direkt im Panel"/>
+                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE756;" Header="Standard-PowerShell (lokal)" Description="Fehlt PowerShell 7, wird automatisch Windows PowerShell 5.1 verwendet.">
                         <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding EnginesList}" SelectedValue="{Binding DefaultEngine}"/>
                     </c:SettingsCard>

@@ -299,6 +299,51 @@
                     </DockPanel>
                     <TextBlock x:Name="Sig" Text="{Binding SignatureText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,0,8"
                                Visibility="{Binding SignatureText, Converter={StaticResource Vis}}"/>
+                    <!-- Parameter direkt im Panel; „Speichern als …“ legt ein Parameter-Set (Startprofil) an -->
+                    <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                            Visibility="{Binding HasInlineForm, Converter={StaticResource Vis}}">
+                        <StackPanel DataContext="{Binding Inline}">
+                            <ItemsControl ItemsSource="{Binding Fields}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,6">
+                                            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,2"
+                                                       Visibility="{Binding IsSwitch, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                                            <TextBox x:Name="Field" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Height="28" Padding="6,0" FontSize="12"
+                                                     Tag="{Binding Placeholder}" ToolTip="{Binding Help}" Visibility="{Binding IsText, Converter={StaticResource Vis}}"
+                                                     AutomationProperties.Name="{Binding Name}"/>
+                                            <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" Height="28" FontSize="12"
+                                                      Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{Binding Name}"/>
+                                            <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" FontSize="12" ToolTip="{Binding Help}"
+                                                      Visibility="{Binding IsSwitch, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Text="fragt das Script beim Start selbst (wird nie gespeichert)" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"
+                                                       Visibility="{Binding IsSecure, Converter={StaticResource Vis}}"/>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                <Setter TargetName="Field" Property="BorderBrush" Value="{DynamicResource Status.Error}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding Error}" FontSize="11.5" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="28" MinHeight="28" Padding="10,0" FontSize="12"
+                                        ToolTip="Mit diesen Werten starten (Rechte und Ziel aus dem Standardprofil)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Mit diesen Werten"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource Btn.Subtle}" Command="{Binding SaveSetCommand}" Height="28" MinHeight="28" Padding="8,0" Margin="6,0,0,0"
+                                        ToolTip="Als Parameter-Set speichern – erscheint als Startprofil am Ausführen-Knopf">
+                                    <TextBlock Text="Speichern als …" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                     <WrapPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
                             <!-- Ein Profil: normaler Button -->

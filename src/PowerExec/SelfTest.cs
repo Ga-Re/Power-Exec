@@ -356,6 +356,30 @@ public sealed partial class AppController
                 SpotlightStaysOpen = false;
             }
 
+            Step("Parameter im Panel und Parameter-Sets");
+            {
+                var host = _hosts[0];
+                var withParams = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && i.Item.HasParameters && !i.IsSingleClick);
+                if (withParams == null) Fail("Parameter im Panel: kein Script mit Parametern");
+                else
+                {
+                    host.ViewModel.Select(withParams);
+                    if (withParams.Inline == null || withParams.Inline.Fields.Count != withParams.Item.Parameters.Count) Fail("Parameter im Panel: Formular fehlt");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement formRoot) Screenshot(formRoot, "panel-parameter");
+                    var before = PowerExec.Core.Profiles.ProfileResolver.GetProfiles(Settings, withParams.Item).Count;
+                    AskForTest = () => "Selbsttest-Set";
+                    foreach (var f in withParams.Inline!.Fields.Where(f => f.IsText && f.Text.Length == 0)) f.Text = "x";
+                    withParams.Inline.SaveSetCommand.Execute(null);
+                    AskForTest = null;
+                    var after = PowerExec.Core.Profiles.ProfileResolver.GetProfiles(Settings, withParams.Item);
+                    if (!after.Any(p => p.Name == "Selbsttest-Set")) Fail($"Parameter-Set: wird nicht als Startprofil gespeichert ({before} → {after.Count})");
+                    host.Window.HidePanel();
+                    await Settle();
+                }
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

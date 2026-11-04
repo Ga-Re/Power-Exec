@@ -37,6 +37,9 @@ public sealed partial class AppController
         foreach (var h in _hosts) h.ViewModel.RefreshWhatsNew();
     }
 
+    /// <summary>Selbsttest: Namenseingabe ohne Dialog beantworten.</summary>
+    internal Func<string?>? AskForTest { get; set; }
+
     /// <summary>Für den Selbsttest: Karte mit einer bestimmten Version zeigen.</summary>
     internal void ShowWhatsNewForTest(ReleaseNote note)
     {

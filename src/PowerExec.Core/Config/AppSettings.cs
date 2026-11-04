@@ -115,6 +115,9 @@ public sealed class AppSettings
     /// <summary>Hintergrund von Einstellungen und Dialogen: deckend oder Mica (Windows 11).</summary>
     public WindowBackdrop WindowBackdrop { get; set; } = WindowBackdrop.Solid;
 
+    /// <summary>Parameter-Formular direkt im aufgeklappten Eintrag statt nur im Ausführen-Dialog.</summary>
+    public bool InlineParameters { get; set; } = true;
+
     /// <summary>Zuletzt gesehene Version (für „Neu in dieser Version“); leer = noch nie.</summary>
     public string LastSeenVersion { get; set; } = string.Empty;
 

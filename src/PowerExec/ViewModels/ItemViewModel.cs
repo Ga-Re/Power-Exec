@@ -272,6 +272,11 @@ public sealed class ItemViewModel : ObservableObject
         }
     }
 
+    private InlineParametersViewModel? _inline;
+    /// <summary>Parameter-Formular direkt im Panel (nur PowerShell-Scripte mit Parametern).</summary>
+    public InlineParametersViewModel? Inline => HasInlineForm ? _inline ??= new InlineParametersViewModel(_app, this) : null;
+    public bool HasInlineForm => Item.IsPowerShell && Item.HasParameters && Item.ParseError == null && !Item.IsCustom && _app.Settings.InlineParameters;
+
     /// <summary>Signatur, Voraussetzungen und Ordnerinfo im Hintergrund laden (Aufklappen, Vorschau).</summary>
     public void LoadDetails() { LoadSignature(); LoadRequirements(); LoadFolderInfo(); }
 

@@ -1084,6 +1084,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool NoProfile { get => _s.NoProfile; set { _s.NoProfile = value; OnPropertyChanged(); } }
     public bool NoExit { get => _s.NoExit; set { _s.NoExit = value; OnPropertyChanged(); } }
+    public bool InlineParameters { get => _s.InlineParameters; set { _s.InlineParameters = value; OnPropertyChanged(); } }
     public int ThrottleLimit { get => _s.ThrottleLimit; set { _s.ThrottleLimit = value; OnPropertyChanged(); } }
     public int RemoteTimeoutSeconds { get => _s.RemoteTimeoutSeconds; set { _s.RemoteTimeoutSeconds = value; OnPropertyChanged(); } }
     public bool RemoteUseSsl { get => _s.RemoteUseSsl; set { _s.RemoteUseSsl = value; OnPropertyChanged(); } }
