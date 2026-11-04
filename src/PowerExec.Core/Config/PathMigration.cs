@@ -109,6 +109,8 @@ public static class PathMigration
                 if (order[i].Equals(m.OldPath, StringComparison.OrdinalIgnoreCase)) order[i] = m.NewPath;
         foreach (var r in s.RecentRuns.Where(r => r.Path.Equals(m.OldPath, StringComparison.OrdinalIgnoreCase))) r.Path = m.NewPath;
         RunStats.Rename(s, m.OldPath, m.NewPath);
+        foreach (var sch in s.Schedules.Where(x => x.Path.Equals(m.OldPath, StringComparison.OrdinalIgnoreCase))) sch.Path = m.NewPath;
+        foreach (var step in s.CustomEntries.SelectMany(c => c.Steps).Where(x => x.Path.Equals(m.OldPath, StringComparison.OrdinalIgnoreCase))) step.Path = m.NewPath;
         var key = s.Fingerprints.Keys.FirstOrDefault(k => k.Equals(m.OldPath, StringComparison.OrdinalIgnoreCase));
         if (key != null)
         {

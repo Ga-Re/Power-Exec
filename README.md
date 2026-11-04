@@ -45,6 +45,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Aktivitäten-Leiste** unten im Panel: laufende und gerade beendete Starts mit Laufzeit; Remote-Läufe mit Fortschritt (z. B. „28 / 40 Rechner · 2 Fehler“), **Abbrechen** und **Ausgabe** (öffnet die Ergebnisliste); lokale Scripte mit Ende und Exit-Code. Solange etwas läuft, **pulsiert die Hover-Zone**. Beendete Einträge bleiben 15 Minuten stehen (höchstens drei)
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
 - **Mini-Dock** (Panel › Darstellung, standardmäßig aus): schmale Leiste mit den ersten neun Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das Panel; ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft
+- **Zeitpläne** (Rechtsklick › „Planen …“): einmal, täglich an gewählten Wochentagen oder alle n Minuten, mit Startprofil; am Eintrag erscheint ein Chip („Mo–Fr 07:00“). Läuft, solange Power-Exec läuft (mit Autostart dauerhaft); verpasste Termine auf Wunsch nachholen; Benachrichtigung auf Wunsch nur bei Fehlern, Ergebnis im Verlauf. Abläufe lassen sich ebenso planen
 - **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panel öffnen, Arbeitsbereich wechseln
 
 **Arbeitsbereiche**

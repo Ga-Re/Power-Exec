@@ -159,6 +159,9 @@
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
+            <MenuItem Header="Planen …" Command="{Binding ScheduleCommand}" ToolTip="Einmal, täglich oder im Intervall starten">
+                <MenuItem.Icon><TextBlock Text="&#xE823;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Im Editor öffnen" Command="{Binding EditCommand}" Visibility="{Binding CanEdit, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -515,6 +518,13 @@
                                     <TextBlock x:Name="NameText" infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                                     <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Star}"
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
+                                    <Border Margin="6,0,0,0" Padding="5,0" CornerRadius="8" Background="{DynamicResource Bg.Chip}" VerticalAlignment="Center"
+                                            Visibility="{Binding HasSchedule, Converter={StaticResource Vis}}" ToolTip="{Binding ScheduleToolTip}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE823;" Style="{StaticResource Icon}" FontSize="9" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ScheduleText}" FontSize="10.5" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
                                                Visibility="{Binding HasParseError, Converter={StaticResource Vis}}" ToolTip="{Binding ParseError}"/>
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"

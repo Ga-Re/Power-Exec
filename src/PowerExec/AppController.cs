@@ -67,6 +67,7 @@ public sealed partial class AppController : IDisposable
         _hotkey.Pressed += id => ShowPanelFromHotkey(_hosts.FirstOrDefault(h => h.HotkeyId == id));
         var hotkeyError = CreateHosts();
         StartFullscreenWatch();
+        StartScheduler();
 
         _tray = new TrayIcon(this);
 

@@ -164,6 +164,9 @@ public sealed class AppSettings
     /// <summary>Zuletzt ausgeführte Einträge (neueste zuerst).</summary>
     public List<RecentRun> RecentRuns { get; set; } = new();
 
+    /// <summary>Geplante Starts (laufen, solange Power-Exec läuft).</summary>
+    public List<Schedule> Schedules { get; set; } = new();
+
     /// <summary>Häufigkeit und letzter Start je Eintrag (Sortierung der Suche).</summary>
     public Dictionary<string, RunStat> RunStats { get; set; } = new();
 

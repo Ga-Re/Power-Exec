@@ -408,6 +408,31 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Zeitpläne");
+            {
+                var host = _hosts[0];
+                var planned = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && !i.IsCustom);
+                if (planned == null) Fail("Zeitplan: kein Script");
+                else
+                {
+                    var scheduleVm = new ScheduleViewModel(this, planned.Item);
+                    if (scheduleVm.Error != null) Fail("Zeitplan: Standardwerte ungültig – " + scheduleVm.Error);
+                    await ShowAndClose(new ScheduleWindow(scheduleVm));
+                    var sch = new PowerExec.Core.Config.Schedule { Path = planned.Item.FullPath, Name = planned.DisplayName, Kind = PowerExec.Core.Config.ScheduleKind.Daily, TimeOfDay = new TimeSpan(23, 59, 0) };
+                    SaveSchedule(sch);
+                    if (sch.NextRunLocal == null) Fail("Zeitplan: kein nächster Termin berechnet");
+                    var again = host.ViewModel.AllItems.FirstOrDefault(i => i.Item.FullPath == planned.Item.FullPath);
+                    if (again == null || !again.HasSchedule || again.ScheduleText != "tägl. 23:59") Fail($"Zeitplan: Chip am Eintrag fehlt ({again?.ScheduleText})");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement schedRoot) Screenshot(schedRoot, "panel-zeitplan");
+                    host.Window.HidePanel();
+                    await Settle();
+                    RemoveSchedule(sch);
+                    if (Settings.Schedules.Count != 0) Fail("Zeitplan: lässt sich nicht entfernen");
+                }
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

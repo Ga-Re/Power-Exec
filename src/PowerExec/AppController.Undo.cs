@@ -75,6 +75,9 @@ public sealed partial class AppController
         restored.RunStats = new Dictionary<string, RunStat>(Settings.RunStats);
         restored.ParameterHistory = Settings.ParameterHistory.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));
         restored.Fingerprints = new Dictionary<string, string>(Settings.Fingerprints);
+        // Laufzeitstand der Zeitpläne (letzter/nächster Lauf) behalten
+        foreach (var sch in restored.Schedules)
+            if (Settings.Schedules.FirstOrDefault(x => x.Id == sch.Id) is { } current) { sch.LastRunLocal = current.LastRunLocal; sch.NextRunLocal = current.NextRunLocal; }
         _undoing = true;
         try { ApplySettings(restored); }
         finally { _undoing = false; }

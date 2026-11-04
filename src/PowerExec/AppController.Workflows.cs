@@ -84,7 +84,7 @@ public sealed partial class AppController
     }
 
     /// <summary>Einen Schritt starten und auf sein Ende warten (über den Verlaufseintrag).</summary>
-    private async Task<HistoryResult> RunStepAsync(WorkflowStep step, string workflowName, Func<bool> cancelled)
+    private async Task<HistoryResult> RunStepAsync(WorkflowStep step, string workflowName, Func<bool> cancelled, string originPrefix = "Ablauf ")
     {
         var item = FindItem(step.Path);
         if (item == null)
@@ -99,7 +99,7 @@ public sealed partial class AppController
         profile.NoExit = false; // sonst bliebe die Konsole offen und der Ablauf stünde
 
         var startedAfter = DateTime.UtcNow.AddSeconds(-1);
-        HistoryOrigin = "Ablauf " + workflowName;
+        HistoryOrigin = originPrefix + workflowName;
         try { RunProfile(item, profile); }
         finally { HistoryOrigin = string.Empty; }
 

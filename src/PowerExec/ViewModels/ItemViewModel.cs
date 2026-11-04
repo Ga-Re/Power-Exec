@@ -63,6 +63,7 @@ public sealed class ItemViewModel : ObservableObject
         DuplicateCommand = new RelayCommand(() => _app.DuplicateCustomEntry(Item), () => CanDuplicate);
         ToggleSingleClickCommand = new RelayCommand(() => _app.ToggleSingleClick(Item));
         OpenDetailsCommand = new RelayCommand(() => _panel.Select(this));
+        ScheduleCommand = new RelayCommand(() => _app.ShowSchedule(Item));
     }
 
     // ---- Eigene Einträge: Symbol, Ein-Klick, Snippets, Prüfung -------------------
@@ -136,6 +137,15 @@ public sealed class ItemViewModel : ObservableObject
     public string Key { get; }
 
     public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
+
+    // ---- Zeitplan --------------------------------------------------------------
+
+    public ICommand ScheduleCommand { get; }
+    private IReadOnlyList<Schedule> SchedulesOf => Schedules.For(_app.Settings, Item.FullPath).Where(s => s.Enabled).ToList();
+    public bool HasSchedule => SchedulesOf.Count > 0;
+    /// <summary>Chip am Eintrag, z. B. „Mo–Fr 07:00“ (bei mehreren: „+1“).</summary>
+    public string ScheduleText => SchedulesOf is { Count: > 0 } list ? Schedules.Describe(list[0]) + (list.Count > 1 ? $" +{list.Count - 1}" : string.Empty) : string.Empty;
+    public string ScheduleToolTip => string.Join("\n", SchedulesOf.Select(s => "Geplant: " + Schedules.Describe(s) + (s.NextRunLocal is { } n ? $" · nächster Start {n:ddd dd.MM. HH:mm}" : string.Empty)));
 
     private bool _isChecked;
     /// <summary>In der Mehrfachauswahl (Strg+Klick).</summary>
