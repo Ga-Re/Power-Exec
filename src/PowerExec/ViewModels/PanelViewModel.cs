@@ -733,6 +733,12 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Nach jedem Rebuild (das Fenster aktualisiert Sticky-Header und Sprungleiste).</summary>
     public event Action? Rebuilt;
 
+    /// <summary>Nur für die Leistungsmessung im Selbsttest: Wiederverwendung abschalten, um im selben Lauf zu vergleichen.</summary>
+    internal bool ReuseForSearch { get; set; } = true;
+
+    /// <summary>Änderungen an den Listen beim letzten Rebuild (Leistungsmessung).</summary>
+    internal CollectionSync.Stats LastSyncStats { get; } = new();
+
     /// <summary>Baut die Gruppen anhand von Suche, Filter und Favoriten neu auf.</summary>
     public void Rebuild() => Rebuild(reuse: false);
 
@@ -742,7 +748,9 @@ public sealed class PanelViewModel : ObservableObject
     /// </param>
     private void Rebuild(bool reuse)
     {
+        reuse &= ReuseForSearch;
         if (!reuse) { _itemCache.Clear(); _groupCache.Clear(); }
+        LastSyncStats.Reset();
         var settings = _app.Settings;
         var repo = _app.Repository;
         // Suchbegriffe (unscharf) und Filter: #schlagwort, typ:, gruppe:, ist:
@@ -922,12 +930,12 @@ public sealed class PanelViewModel : ObservableObject
                     Array.Empty<ItemViewModel>(), spec.Expanded, spec.Error, spec.Kind, spec.AllowReorder);
                 _groupCache[spec.Key] = g;
             }
-            CollectionSync.SyncTo(g.Items, spec.Items);
-            CollectionSync.SyncTo(g.Children, spec.Children.Select(Materialize).ToList());
+            CollectionSync.SyncTo(g.Items, spec.Items, LastSyncStats);
+            CollectionSync.SyncTo(g.Children, spec.Children.Select(Materialize).ToList(), LastSyncStats);
             g.RaiseContentChanged();
             return g;
         }
-        CollectionSync.SyncTo(Groups, groups.Select(Materialize).ToList());
+        CollectionSync.SyncTo(Groups, groups.Select(Materialize).ToList(), LastSyncStats);
         // Wiederverwendete Einträge behalten ihren Haken – mit der Mehrfachauswahl abgleichen
         if (_checked.Count > 0 || reuse) ApplyChecked();
         if (!reuse) StickyGroup = null;

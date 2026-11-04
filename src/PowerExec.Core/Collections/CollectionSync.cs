@@ -9,14 +9,24 @@ namespace PowerExec.Core.Collections;
 /// </summary>
 public static class CollectionSync
 {
+    /// <summary>Zählt die Änderungen eines oder mehrerer Abgleiche (für die Leistungsmessung).</summary>
+    public sealed class Stats
+    {
+        public int Inserted { get; set; }
+        public int Moved { get; set; }
+        public int Removed { get; set; }
+        public void Reset() { Inserted = 0; Moved = 0; Removed = 0; }
+        public override string ToString() => $"+{Inserted} ↕{Moved} −{Removed}";
+    }
+
     /// <returns>true, wenn sich etwas geändert hat.</returns>
-    public static bool SyncTo<T>(ObservableCollection<T> target, IReadOnlyList<T> desired) where T : class
+    public static bool SyncTo<T>(ObservableCollection<T> target, IReadOnlyList<T> desired, Stats? stats = null) where T : class
     {
         bool changed = false;
         // 1. Was nicht mehr gewünscht ist, entfernen (von hinten, damit die Indizes stimmen)
         var wanted = new HashSet<T>(desired, ReferenceEqualityComparer.Instance);
         for (int i = target.Count - 1; i >= 0; i--)
-            if (!wanted.Contains(target[i])) { target.RemoveAt(i); changed = true; }
+            if (!wanted.Contains(target[i])) { target.RemoveAt(i); changed = true; if (stats != null) stats.Removed++; }
 
         // 2. Reihenfolge herstellen: vorhandene Elemente verschieben, neue einfügen
         for (int i = 0; i < desired.Count; i++)
@@ -26,13 +36,13 @@ public static class CollectionSync
             int found = -1;
             for (int j = i + 1; j < target.Count; j++)
                 if (ReferenceEquals(target[j], item)) { found = j; break; }
-            if (found >= 0) target.Move(found, i);
-            else target.Insert(i, item);
+            if (found >= 0) { target.Move(found, i); if (stats != null) stats.Moved++; }
+            else { target.Insert(i, item); if (stats != null) stats.Inserted++; }
             changed = true;
         }
 
         // 3. Doppelte in der gewünschten Liste würden hier übrig bleiben – abschneiden
-        while (target.Count > desired.Count) { target.RemoveAt(target.Count - 1); changed = true; }
+        while (target.Count > desired.Count) { target.RemoveAt(target.Count - 1); changed = true; if (stats != null) stats.Removed++; }
         return changed;
     }
 }

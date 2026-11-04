@@ -28,12 +28,12 @@ jobs:
 
       - name: Oberflächen-Selbsttest (Panels, Einstellungen, Dialoge)
         shell: pwsh
-        timeout-minutes: 5
+        timeout-minutes: 7
         run: |
           $result = Join-Path $env:RUNNER_TEMP 'selftest.txt'
           $p = Start-Process -FilePath out\PowerExec.exe -ArgumentList '--selftest', $result -PassThru
           $null = $p.Handle  # Exitcode zuverlässig abrufbar machen
-          if (-not $p.WaitForExit(240000)) {
+          if (-not $p.WaitForExit(300000)) {
             $p.Kill()
             if (Test-Path "$result.progress") { Get-Content "$result.progress" | Select-Object -Last 15 }
             throw 'Selbsttest hat nicht rechtzeitig beendet.'

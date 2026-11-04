@@ -21,7 +21,10 @@ public sealed partial class AppController
 {
     private const int PerfRounds = 5;
 
-    private sealed record PerfSample(string Scenario, string Input, double SyncMs, double TotalMs);
+    private sealed record PerfSample(string Scenario, string Input, double SyncMs, double TotalMs, string Changes = "");
+
+    private const string TypingReuse = "Tippen";
+    private const string TypingFull = "Tippen ohne Wiederverwendung";
 
     private async Task RunPerformanceAsync(string baseDir)
     {
@@ -70,13 +73,22 @@ public sealed partial class AppController
                 if (round > 0) samples.Add(new PerfSample("Panel öffnen", "", t.Sync, t.Total)); // Runde 0 = Aufwärmen
             }
 
-            Step("Leistung: Tippen");
+            // A/B im selben Prozess (Runner schwanken stark): abwechselnd mit und ohne Wiederverwendung der ViewModels
+            Step("Leistung: Tippen (A/B)");
             for (int round = 0; round <= PerfRounds; round++)
-                foreach (var text in PerfDataset.TypingSequence)
+                foreach (var reuse in new[] { true, false })
                 {
-                    var t = await Measure(() => vm.SearchText = text);
-                    if (round > 0) samples.Add(new PerfSample("Tippen", text, t.Sync, t.Total));
+                    vm.ReuseForSearch = reuse;
+                    for (int i = 0; i < PerfDataset.TypingSequence.Count; i++)
+                    {
+                        var text = PerfDataset.TypingSequence[i];
+                        // Beim Löschen (zweite Hälfte) eigene Zeile: andere Richtung, andere Listenänderungen
+                        var label = i <= 3 ? text : (text.Length == 0 ? "leer" : text) + " ⌫";
+                        var t = await Measure(() => vm.SearchText = text);
+                        if (round > 0) samples.Add(new PerfSample(reuse ? TypingReuse : TypingFull, label, t.Sync, t.Total, vm.LastSyncStats.ToString()));
+                    }
                 }
+            vm.ReuseForSearch = true;
             vm.SearchText = "disk";
             if (!vm.AllItems.Any()) Fail("Leistung: „disk“ findet im Testbestand nichts");
             vm.SearchText = string.Empty;
@@ -86,7 +98,7 @@ public sealed partial class AppController
                 foreach (var filter in new[] { TypeFilter.Scripts, TypeFilter.All })
                 {
                     var t = await Measure(() => vm.Filter = filter);
-                    if (round > 0) samples.Add(new PerfSample("Filter", filter.ToString(), t.Sync, t.Total));
+                    if (round > 0) samples.Add(new PerfSample("Filter", filter.ToString(), t.Sync, t.Total, vm.LastSyncStats.ToString()));
                 }
 
             host.Window.HidePanel();
@@ -122,9 +134,11 @@ public sealed partial class AppController
             Count = g.Count(),
             SyncMedian = Percentile(g.Select(s => s.SyncMs), 0.5),
             TotalMedian = Percentile(g.Select(s => s.TotalMs), 0.5),
-            TotalMax = g.Max(s => s.TotalMs)
+            TotalMax = g.Max(s => s.TotalMs),
+            Changes = g.Last().Changes
         }).ToList();
-        var typing = samples.Where(s => s.Scenario == "Tippen").ToList();
+        var typing = samples.Where(s => s.Scenario == TypingReuse).ToList();
+        var typingFull = samples.Where(s => s.Scenario == TypingFull).ToList();
         var summary = new
         {
             Version = UpdateService.CurrentVersionText,
@@ -134,6 +148,7 @@ public sealed partial class AppController
             TypingMeanMs = typing.Count == 0 ? 0 : typing.Average(s => s.TotalMs),
             TypingP95Ms = Percentile(typing.Select(s => s.TotalMs), 0.95),
             TypingMaxMs = typing.Count == 0 ? 0 : typing.Max(s => s.TotalMs),
+            TypingFullMeanMs = typingFull.Count == 0 ? 0 : typingFull.Average(s => s.TotalMs),
             Rows = rows
         };
 
@@ -144,10 +159,13 @@ public sealed partial class AppController
         md.AppendLine();
         md.AppendLine($"**Tippen je Tastendruck (bis UI-Thread frei):** Mittel {F(summary.TypingMeanMs)} ms · p95 {F(summary.TypingP95Ms)} ms · Max {F(summary.TypingMaxMs)} ms · Ziel 0.17: < 50 ms");
         md.AppendLine();
-        md.AppendLine("| Szenario | Eingabe | Rebuild (Median) | bis frei (Median) | bis frei (Max) |");
-        md.AppendLine("|---|---|---:|---:|---:|");
+        md.AppendLine($"**A/B im selben Lauf:** ohne Wiederverwendung Mittel {F(summary.TypingFullMeanMs)} ms · mit {F(summary.TypingMeanMs)} ms" +
+                      (summary.TypingMeanMs > 0 ? $" · Faktor {summary.TypingFullMeanMs / summary.TypingMeanMs:0.00}" : string.Empty));
+        md.AppendLine();
+        md.AppendLine("| Szenario | Eingabe | Rebuild (Median) | bis frei (Median) | bis frei (Max) | Listenänderungen |");
+        md.AppendLine("|---|---|---:|---:|---:|---|");
         foreach (var r in rows)
-            md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms |");
+            md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
 
         var dir = _progressFile != null ? Path.GetDirectoryName(Path.GetFullPath(_progressFile))! : Path.GetTempPath();
         File.WriteAllText(Path.Combine(dir, "selftest-perf.md"), md.ToString(), new UTF8Encoding(false));
