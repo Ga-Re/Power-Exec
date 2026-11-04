@@ -29,41 +29,12 @@ public sealed class ItemViewModel : ObservableObject
         _entry = app.Settings.FindEntry(item.FullPath);
         Profiles = ProfileResolver.GetProfiles(app.Settings, item);
         DefaultProfile = fixedProfile ?? Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
-        ProfileMenu = Profiles.Select(p => new ProfileMenuItem(
-            p.Name, ProfileResolver.Summary(p, item), p.IsDefault, p.RunAsAdmin,
-            new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
 
         CustomIcon = item.Source?.Icon ?? string.Empty;
         if (app.Settings.ShowProgramIcons && CustomIcon.Length == 0) _icon = LoadIcon(app, item);
         _health = item.Source != null ? app.Health?.Get(item.Source.Key) : null;
-
-        // Eigene Einträge mit „Ein Klick startet“: sofort ausführen statt aufklappen
-        SelectCommand = new RelayCommand(() => { if (IsSingleClick) RunCommand?.Execute(null); else _panel.Select(this); });
-        RunCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
-        RunAdminCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator), () => CanElevate);
-        RunAsUserCommand = new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser), () => CanElevate);
-        RunRemoteCommand = new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
-            remote: true, DefaultProfile), () => Item.SupportsRemote);
-        ManageProfilesCommand = new RelayCommand(() => _app.ShowProfiles(Item));
-        EditCommand = new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
-        OpenLocationCommand = new RelayCommand(OpenLocation, () => Item.CustomKind is null or CustomEntryKind.Folder or CustomEntryKind.File);
-        CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
-        ToggleFavoriteCommand = new RelayCommand(() => _app.ToggleFavorite(Item));
-        HideCommand = new RelayCommand(() => _app.HideItem(Item), () => !Item.IsCustom);
-        EditCustomCommand = new RelayCommand(() => _app.EditCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
-        RemoveCustomCommand = new RelayCommand(() => _app.RemoveCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
-        RemoveFromGroupCommand = new RelayCommand(() => _app.AssignGroup(Item.FullPath, null), () => IsInGroup);
-        NewGroupWithItemCommand = new RelayCommand(() =>
-        {
-            var name = _app.CreateGroup();
-            if (name != null) _app.AssignGroup(Item.FullPath, name);
-        });
-        UnblockCommand = new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
-        CopySnippetCommand = new RelayCommand(() => _app.CopySnippet(Item), () => IsSnippet);
-        DuplicateCommand = new RelayCommand(() => _app.DuplicateCustomEntry(Item), () => CanDuplicate);
-        ToggleSingleClickCommand = new RelayCommand(() => _app.ToggleSingleClick(Item));
-        OpenDetailsCommand = new RelayCommand(() => _panel.Select(this));
-        ScheduleCommand = new RelayCommand(() => _app.ShowSchedule(Item));
+        // Commands und Profilmenü entstehen erst beim ersten Zugriff (Kontextmenü, ausgewählter Eintrag):
+        // eine Zeile im Panel braucht davon nur SelectCommand.
     }
 
     // ---- Eigene Einträge: Symbol, Ein-Klick, Snippets, Prüfung -------------------
@@ -101,10 +72,14 @@ public sealed class ItemViewModel : ObservableObject
         FolderInfo = await Services.FolderStats.GetAsync(path);
     }
 
-    public ICommand CopySnippetCommand { get; }
-    public ICommand DuplicateCommand { get; }
-    public ICommand ToggleSingleClickCommand { get; }
-    public ICommand OpenDetailsCommand { get; }
+    private ICommand? _copySnippetCommand;
+    public ICommand CopySnippetCommand => _copySnippetCommand ??= new RelayCommand(() => _app.CopySnippet(Item), () => IsSnippet);
+    private ICommand? _duplicateCommand;
+    public ICommand DuplicateCommand => _duplicateCommand ??= new RelayCommand(() => _app.DuplicateCustomEntry(Item), () => CanDuplicate);
+    private ICommand? _toggleSingleClickCommand;
+    public ICommand ToggleSingleClickCommand => _toggleSingleClickCommand ??= new RelayCommand(() => _app.ToggleSingleClick(Item));
+    private ICommand? _openDetailsCommand;
+    public ICommand OpenDetailsCommand => _openDetailsCommand ??= new RelayCommand(() => _panel.Select(this));
 
     /// <summary>
     /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
@@ -148,7 +123,8 @@ public sealed class ItemViewModel : ObservableObject
 
     // ---- Zeitplan --------------------------------------------------------------
 
-    public ICommand ScheduleCommand { get; }
+    private ICommand? _scheduleCommand;
+    public ICommand ScheduleCommand => _scheduleCommand ??= new RelayCommand(() => _app.ShowSchedule(Item));
     private IReadOnlyList<Schedule> SchedulesOf => Schedules.For(_app.Settings, Item.FullPath).Where(s => s.Enabled).ToList();
     public bool HasSchedule => SchedulesOf.Count > 0;
     /// <summary>Chip am Eintrag, z. B. „Mo–Fr 07:00“ (bei mehreren: „+1“).</summary>
@@ -197,7 +173,11 @@ public sealed class ItemViewModel : ObservableObject
 
     public IReadOnlyList<LaunchProfile> Profiles { get; }
     public LaunchProfile DefaultProfile { get; }
-    public IReadOnlyList<ProfileMenuItem> ProfileMenu { get; }
+    private IReadOnlyList<ProfileMenuItem>? _profileMenu;
+    /// <summary>Profile am Ausführen-Knopf – erst beim ersten Zugriff aufgebaut (Zusammenfassung je Profil kostet).</summary>
+    public IReadOnlyList<ProfileMenuItem> ProfileMenu => _profileMenu ??= Profiles.Select(p => new ProfileMenuItem(
+                p.Name, ProfileResolver.Summary(p, Item), p.IsDefault, p.RunAsAdmin,
+                new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
     public bool HasProfileMenu => Profiles.Count > 1;
     /// <summary>Info-Zeile; ohne Synopsis der Pfad relativ zum Ordner (unterscheidet gleichnamige Dateien).</summary>
     public string Synopsis => _subtitle != null ? _subtitle
@@ -344,10 +324,18 @@ public sealed class ItemViewModel : ObservableObject
         .ToList();
     public bool HasGroupChoices => GroupChoices.Count > 0;
 
-    public ICommand EditCustomCommand { get; }
-    public ICommand RemoveCustomCommand { get; }
-    public ICommand RemoveFromGroupCommand { get; }
-    public ICommand NewGroupWithItemCommand { get; }
+    private ICommand? _editCustomCommand;
+    public ICommand EditCustomCommand => _editCustomCommand ??= new RelayCommand(() => _app.EditCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
+    private ICommand? _removeCustomCommand;
+    public ICommand RemoveCustomCommand => _removeCustomCommand ??= new RelayCommand(() => _app.RemoveCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
+    private ICommand? _removeFromGroupCommand;
+    public ICommand RemoveFromGroupCommand => _removeFromGroupCommand ??= new RelayCommand(() => _app.AssignGroup(Item.FullPath, null), () => IsInGroup);
+    private ICommand? _newGroupWithItemCommand;
+    public ICommand NewGroupWithItemCommand => _newGroupWithItemCommand ??= new RelayCommand(() =>
+            {
+                var name = _app.CreateGroup();
+                if (name != null) _app.AssignGroup(Item.FullPath, name);
+            });
 
     private void OpenLocation()
     {
@@ -396,18 +384,32 @@ public sealed class ItemViewModel : ObservableObject
         RequirementsText = parts.Count > 0 ? string.Join("\n", parts) : string.Empty;
     }
 
-    public ICommand SelectCommand { get; }
-    public ICommand RunCommand { get; }
-    public ICommand RunAdminCommand { get; }
-    public ICommand RunAsUserCommand { get; }
-    public ICommand RunRemoteCommand { get; }
-    public ICommand EditCommand { get; }
-    public ICommand OpenLocationCommand { get; }
-    public ICommand CopyPathCommand { get; }
-    public ICommand ToggleFavoriteCommand { get; }
-    public ICommand HideCommand { get; }
-    public ICommand ManageProfilesCommand { get; }
-    public ICommand UnblockCommand { get; }
+    // Eigene Einträge mit „Ein Klick startet“: sofort ausführen statt aufklappen
+    private ICommand? _selectCommand;
+    public ICommand SelectCommand => _selectCommand ??= new RelayCommand(() => { if (IsSingleClick) RunCommand?.Execute(null); else _panel.Select(this); });
+    private ICommand? _runCommand;
+    public ICommand RunCommand => _runCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
+    private ICommand? _runAdminCommand;
+    public ICommand RunAdminCommand => _runAdminCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator), () => CanElevate);
+    private ICommand? _runAsUserCommand;
+    public ICommand RunAsUserCommand => _runAsUserCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser), () => CanElevate);
+    private ICommand? _runRemoteCommand;
+    public ICommand RunRemoteCommand => _runRemoteCommand ??= new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
+                remote: true, DefaultProfile), () => Item.SupportsRemote);
+    private ICommand? _editCommand;
+    public ICommand EditCommand => _editCommand ??= new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
+    private ICommand? _openLocationCommand;
+    public ICommand OpenLocationCommand => _openLocationCommand ??= new RelayCommand(OpenLocation, () => Item.CustomKind is null or CustomEntryKind.Folder or CustomEntryKind.File);
+    private ICommand? _copyPathCommand;
+    public ICommand CopyPathCommand => _copyPathCommand ??= new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
+    private ICommand? _toggleFavoriteCommand;
+    public ICommand ToggleFavoriteCommand => _toggleFavoriteCommand ??= new RelayCommand(() => _app.ToggleFavorite(Item));
+    private ICommand? _hideCommand;
+    public ICommand HideCommand => _hideCommand ??= new RelayCommand(() => _app.HideItem(Item), () => !Item.IsCustom);
+    private ICommand? _manageProfilesCommand;
+    public ICommand ManageProfilesCommand => _manageProfilesCommand ??= new RelayCommand(() => _app.ShowProfiles(Item));
+    private ICommand? _unblockCommand;
+    public ICommand UnblockCommand => _unblockCommand ??= new RelayCommand(() => _app.UnblockItem(Item), () => Item.IsBlocked);
 
     // ---- Sicherheit: Zonen-Kennung und Signatur ---------------------------
 
