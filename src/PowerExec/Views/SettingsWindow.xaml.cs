@@ -173,6 +173,7 @@ public partial class SettingsWindow : Window
         // Laufzeitstand (Favoriten, Verlauf …) behalten
         restored.Favorites = new List<string>(_app.Settings.Favorites);
         restored.RecentRuns = _app.Settings.RecentRuns.ToList();
+        restored.RunStats = new Dictionary<string, RunStat>(_app.Settings.RunStats);
         restored.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         _app.ApplySettings(restored);
         _reloading = false;

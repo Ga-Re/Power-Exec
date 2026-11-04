@@ -164,6 +164,7 @@ public sealed class GroupViewModel : ObservableObject
     {
         "fav" => "\uE735",
         "recent" => "\uE81C",
+        "best" => "\uE721",
         "category" or "group" when FolderPath != null => "\uE8B7",
         "category" or "group" => "\uE8EC",
         "subfolder" => "\uE8B7",

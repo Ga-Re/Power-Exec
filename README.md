@@ -15,14 +15,15 @@ oder remote auf einem oder vielen Rechnern.
 - **Darstellung:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), **Elementgröße Klein / Mittel / Groß** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
 - **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
-- Suche mit **`#schlagwort`** filtert nach Schlagworten
+- **Unscharfe Suche:** findet auch Anfangsbuchstaben (`gds` → *Get-DiskSpace*, `usr pw` → *Reset-ADUserPassword*) und einen Tippfehler (`dsik`); Treffer werden im Namen und in der Info-Zeile **hervorgehoben**; häufig und kürzlich gestartete Einträge stehen weiter oben, bei vielen Treffern zuerst als **„Beste Treffer“** (Enter startet den ersten)
+- **Filter im Suchfeld:** `#schlagwort`, `typ:ps1|cmd|exe|programm|web|ordner|rdp|ssh|snippet|befehl|werkzeug|datei`, `gruppe:Name` (auch `gruppe:"Kunde A"`), `ist:fav`, `ist:admin`, `ist:remote`, `ist:problem` – erkannte Filter erscheinen als **Chips** unter dem Suchfeld und lassen sich mit ✕ entfernen
 - „Zuletzt ausgeführt“ und „Favoriten“ ein- oder ausblendbar (Einstellungen › Gruppen)
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
 - Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
-- Suche über Dateiname, Synopsis und Beschreibung; Filter: Alle, Scripte, Programme, Favoriten
+- Suche über Name, Dateiname, Synopsis, Beschreibung, Notiz, Schlagworte und Snippet-Code; Filter: Alle, Scripte, Programme, Favoriten
 - Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel

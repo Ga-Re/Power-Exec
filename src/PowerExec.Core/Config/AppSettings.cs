@@ -146,6 +146,9 @@ public sealed class AppSettings
     /// <summary>Zuletzt ausgeführte Einträge (neueste zuerst).</summary>
     public List<RecentRun> RecentRuns { get; set; } = new();
 
+    /// <summary>Häufigkeit und letzter Start je Eintrag (Sortierung der Suche).</summary>
+    public Dictionary<string, RunStat> RunStats { get; set; } = new();
+
     /// <summary>Eigene Reihenfolge je Gruppe (Drag &amp; Drop): Gruppenschlüssel → Pfade.</summary>
     public Dictionary<string, List<string>> CustomOrder { get; set; } = new();
 

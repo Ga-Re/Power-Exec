@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
+        xmlns:infra="clr-namespace:PowerExec.Infrastructure"
         Title="Power-Exec"
         Style="{StaticResource AppWindow}"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
@@ -378,7 +379,7 @@
                             <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Star}"
                                        Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
                         </StackPanel>
-                        <TextBlock x:Name="TileName" Grid.Row="1" Text="{Binding DisplayName}" FontSize="11" TextAlignment="Center" TextWrapping="Wrap"
+                        <TextBlock x:Name="TileName" Grid.Row="1" infra:Highlight.Parts="{Binding NameParts}" FontSize="11" TextAlignment="Center" TextWrapping="Wrap"
                                    TextTrimming="CharacterEllipsis" MaxHeight="30" Margin="0,3,0,0" VerticalAlignment="Top"/>
                     </Grid>
                 </Button>
@@ -445,7 +446,7 @@
                             </Grid>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <DockPanel LastChildFill="False">
-                                    <TextBlock x:Name="NameText" Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                                    <TextBlock x:Name="NameText" infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                                     <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Star}"
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
@@ -459,7 +460,7 @@
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Error}"
                                                Visibility="{Binding HasHealthProblem, Converter={StaticResource Vis}}" ToolTip="{Binding HealthText}"/>
                                 </DockPanel>
-                                <TextBlock x:Name="Syn" Text="{Binding Synopsis}" FontSize="12" Margin="0,2,0,0" Foreground="{DynamicResource Text.Secondary}"
+                                <TextBlock x:Name="Syn" infra:Highlight.Parts="{Binding SynopsisParts}" FontSize="12" Margin="0,2,0,0" Foreground="{DynamicResource Text.Secondary}"
                                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                             </StackPanel>
                         </Grid>
@@ -742,8 +743,9 @@
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
-                         Padding="30,0,8,0" Tag="Scripte, Programme, Synopsis durchsuchen" PreviewKeyDown="SearchBox_PreviewKeyDown"
-                         AutomationProperties.Name="Suchen"/>
+                         Padding="30,0,8,0" Tag="Suchen … (typ:ps1, #schlagwort, ist:fav)" PreviewKeyDown="SearchBox_PreviewKeyDown"
+                         ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
+                         AutomationProperties.Name="Suchen" AutomationProperties.HelpText="{Binding SearchHelp}"/>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"
                            Foreground="{DynamicResource Text.Secondary}"/>
                 <Border HorizontalAlignment="Right" Margin="0,0,8,0" Padding="6,1" CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}"
@@ -771,7 +773,35 @@
             </Grid>
 
             <!-- Filter -->
-            <WrapPanel Grid.Row="3" Margin="16,10,16,4">
+            <StackPanel Grid.Row="3" Margin="16,10,16,4">
+            <!-- Erkannte Filter aus dem Suchfeld (typ:, gruppe:, ist:, #schlagwort); ✕ entfernt sie -->
+            <ItemsControl ItemsSource="{Binding SearchChips}" Margin="0,0,0,6" Focusable="False"
+                          Visibility="{Binding HasSearchChips, Converter={StaticResource Vis}}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="ChipBd" CornerRadius="12" Height="24" Padding="10,0,2,0" Margin="0,0,6,4" Background="{DynamicResource Bg.Chip}"
+                                BorderThickness="1" BorderBrush="{DynamicResource Accent}" ToolTip="{Binding ToolTip}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="ChipText" Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
+                                <Button Style="{StaticResource Btn.Icon}" Width="20" Height="20" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
+                                        ToolTip="Filter entfernen" AutomationProperties.Name="Filter entfernen">
+                                    <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsInvalid}" Value="True">
+                                <Setter TargetName="ChipBd" Property="Background" Value="{DynamicResource Warn.Bg}"/>
+                                <Setter TargetName="ChipBd" Property="BorderBrush" Value="{DynamicResource Warn.Border}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <WrapPanel>
                 <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="TypeFilter"
                              IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=All}"/>
                 <RadioButton Style="{StaticResource Chip}" Content="Scripte" GroupName="TypeFilter"
@@ -781,6 +811,7 @@
                 <RadioButton Style="{StaticResource Chip}" Content="Favoriten" GroupName="TypeFilter"
                              IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=Favorites}"/>
             </WrapPanel>
+            </StackPanel>
 
             <!-- Warnung: Ordner nicht erreichbar -->
             <Border Grid.Row="4" Margin="16,4,16,2" Padding="10,6" CornerRadius="6" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}"
@@ -845,7 +876,7 @@
                         <Button Style="{StaticResource Btn.Accent}" Content="Ordner hinzufügen …" Command="{Binding NewSmartGroupCommand}" HorizontalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
-                               Style="{StaticResource Caption}" Text="Keine Treffer. Die Suche umfasst Name, Synopsis und Beschreibung."/>
+                               Style="{StaticResource Caption}" Text="Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten – Filter: typ:ps1, gruppe:Name, ist:fav, #schlagwort."/>
 
                     <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}" Focusable="False"/>
                 </StackPanel>
@@ -899,9 +930,9 @@
                             <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="Auswahl aufheben" Click="ClearSelection_Click">
                                 <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                             </Button>
-                            <TextBlock Text="{Binding DisplayName}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <TextBlock infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                         </DockPanel>
-                        <TextBlock Text="{Binding Synopsis}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                        <TextBlock infra:Highlight.Parts="{Binding SynopsisParts}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"/>
                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource ItemDetails}" Focusable="False"/>
                     </StackPanel>
                 </ScrollViewer>

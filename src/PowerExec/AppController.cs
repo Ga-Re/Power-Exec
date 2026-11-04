@@ -782,6 +782,7 @@ public sealed partial class AppController : IDisposable
         Settings.Entries.RemoveAll(e => e.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.Favorites.RemoveAll(p => p.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.RecentRuns.RemoveAll(r => r.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
+        RunStats.Remove(Settings, entry.Key);
         CommitUserChange();
     }
 
@@ -1018,6 +1019,7 @@ public sealed partial class AppController : IDisposable
     public void RecordRun(LaunchItem item, LaunchProfile profile)
     {
         RecentRunList.Add(Settings, item.FullPath, profile.IsImplicit ? "Standard" : profile.Name);
+        RunStats.Record(Settings, item.FullPath);
         CommitUserChange();
     }
 

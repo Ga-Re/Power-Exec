@@ -185,15 +185,39 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand ClearSearchCommand { get; }
     public ICommand AddFolderCommand { get; }
 
+    // ---- Suche: Hervorhebung und Filter-Chips --------------------------------
+
+    private const int BestHitsCount = 5;
+
+    /// <summary>Suchbegriffe ohne Filter – für die Hervorhebung in Name und Info-Zeile.</summary>
+    public IReadOnlyList<string> HighlightTerms { get; private set; } = Array.Empty<string>();
+
+    private IReadOnlyList<SearchChip> _searchChips = Array.Empty<SearchChip>();
+    /// <summary>Erkannte Filter (typ:, gruppe:, ist:, #schlagwort) als Chips unter dem Suchfeld.</summary>
+    public IReadOnlyList<SearchChip> SearchChips { get => _searchChips; private set { if (Set(ref _searchChips, value)) OnPropertyChanged(nameof(HasSearchChips)); } }
+    public bool HasSearchChips => _searchChips.Count > 0;
+    public string SearchHelp => SearchQuery.Help;
+
+    private void UpdateSearchChips(SearchQuery query)
+    {
+        var chips = query.Operators
+            .Select(t => new SearchChip(t.Label, t.Kind == SearchTokenKind.Invalid,
+                t.Kind == SearchTokenKind.Invalid ? SearchQuery.Help : "Filter entfernen",
+                new RelayCommand(() => SearchText = SearchQuery.Remove(_searchText, t))))
+            .ToList();
+        SearchChips = chips; // immer neu: die Befehle verweisen auf die aktuelle Position im Text
+    }
+
     /// <summary>Baut die Gruppen anhand von Suche, Filter und Favoriten neu auf.</summary>
     public void Rebuild()
     {
         var settings = _app.Settings;
         var repo = _app.Repository;
-        // „#schlagwort“ filtert nach Schlagworten, der Rest ist normale Suche
-        var (tagFilter, query) = Tags.SplitQuery(_searchText.Trim());
-        bool tagsOk(LaunchItem i) => tagFilter.Count == 0 || Tags.Matches(Tags.Of(settings, i.FullPath), tagFilter);
-        bool searching = query.Length > 0 || tagFilter.Count > 0;
+        // Suchbegriffe (unscharf) und Filter: #schlagwort, typ:, gruppe:, ist:
+        var query = SearchQuery.Parse(_searchText);
+        HighlightTerms = query.Terms;
+        UpdateSearchChips(query);
+        bool searching = !query.IsEmpty;
         var collapsed = new HashSet<string>(settings.CollapsedGroups, StringComparer.OrdinalIgnoreCase);
 
         // Nur sichtbare Einträge (Haken in den Ordner-Einstellungen, neue Dateien ggf. erst nach Freigabe)
@@ -229,21 +253,41 @@ public sealed class PanelViewModel : ObservableObject
         visible.AddRange(customItems);
         UpdatePending(pending);
 
-        bool Matches(LaunchItem i)
+        // Bewertung: Name zählt am meisten, dann Dateiname und Schlagworte, dann Beschreibung, Notiz und Code
+        int? Score(LaunchItem i)
         {
-            if (ItemFilter.MatchesQuery(i, query)) return true;
             var e = settings.FindEntry(i.FullPath);
-            return e != null && query.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .All(t => (i.SearchText + " " + e.DisplayName + " " + e.Description + " " + e.Notes + " " + e.Category + " " + string.Join(' ', e.Tags) + " " + i.Source?.Code)
-                    .Contains(t, StringComparison.CurrentCultureIgnoreCase));
+            var fields = new List<(string?, int)>
+            {
+                (i.DisplayName, 3), (e?.DisplayName, 3), (i.FileName, 2), (e == null ? null : string.Join(' ', e.Tags), 2),
+                (i.Synopsis, 1), (i.Description, 1), (e?.Description, 1), (e?.Notes, 1), (e?.Category, 1), (i.Source?.Code, 1)
+            };
+            return SearchScoring.Score(fields, query.Terms);
+        }
+        bool FiltersOk(LaunchItem i)
+        {
+            var fav = _app.IsFavorite(i.FullPath);
+            return ItemFilter.MatchesType(i, _filter, fav) &&
+                   query.MatchesFilters(i, GroupOf(i), fav, Tags.Of(settings, i.FullPath),
+                       () => i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false });
         }
 
-        var pool = visible
-            .Where(i => ItemFilter.MatchesType(i, _filter, _app.IsFavorite(i.FullPath)) && tagsOk(i) && (query.Length == 0 || Matches(i)))
-            .ToList();
+        var scores = new Dictionary<LaunchItem, int>(ReferenceEqualityComparer.Instance);
+        var pool = new List<LaunchItem>();
+        foreach (var i in visible)
+        {
+            if (!FiltersOk(i)) continue;
+            if (query.HasTerms)
+            {
+                if (Score(i) is not { } score) continue;
+                // Häufig und kürzlich gestartete Einträge nach oben
+                scores[i] = score + SearchScoring.FrecencyBonus(RunStats.Frecency(settings, i.FullPath));
+            }
+            pool.Add(i);
+        }
 
-        IEnumerable<LaunchItem> Order(IEnumerable<LaunchItem> items) => searching
-            ? items.OrderBy(i => ItemFilter.Rank(i, query)).ThenBy(i => i.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+        IEnumerable<LaunchItem> Order(IEnumerable<LaunchItem> items) => query.HasTerms
+            ? items.OrderByDescending(i => scores.GetValueOrDefault(i)).ThenBy(i => i.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             : items.OrderBy(i => i.DisplayName, StringComparer.CurrentCultureIgnoreCase);
 
         // Eigene Reihenfolge (Drag & Drop) gilt nur ohne Suche
@@ -259,6 +303,11 @@ public sealed class PanelViewModel : ObservableObject
                 searching || !collapsed.Contains(key), error, kind, allowReorder: !searching);
 
         var groups = new List<GroupViewModel>();
+        // Bei vielen Treffern: die besten oben gesammelt (Enter startet den ersten)
+        if (query.HasTerms && pool.Count > BestHitsCount)
+            groups.Add(new GroupViewModel(this, _app, "best", "Beste Treffer", false, null,
+                Order(pool).Take(BestHitsCount).Select(i => new ItemViewModel(_app, this, i, "best")).ToList(),
+                true, null, "best", allowReorder: false));
         if (!searching && _filter == TypeFilter.All)
         {
             // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
@@ -548,3 +597,6 @@ public sealed class PanelViewModel : ObservableObject
 
     public void RefreshFavorites() => Rebuild();
 }
+
+/// <summary>Ein erkannter Filter unter dem Suchfeld; ✕ entfernt ihn aus dem Suchtext.</summary>
+public sealed record SearchChip(string Label, bool IsInvalid, string ToolTip, ICommand RemoveCommand);

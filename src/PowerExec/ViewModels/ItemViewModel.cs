@@ -137,6 +137,12 @@ public sealed class ItemViewModel : ObservableObject
 
     public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
 
+    private IReadOnlyList<TextPart>? _nameParts, _synopsisParts;
+    /// <summary>Name in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
+    public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, _panel.HighlightTerms);
+    /// <summary>Info-Zeile in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
+    public IReadOnlyList<TextPart> SynopsisParts => _synopsisParts ??= TextPart.Split(Synopsis, _panel.HighlightTerms);
+
     public IReadOnlyList<LaunchProfile> Profiles { get; }
     public LaunchProfile DefaultProfile { get; }
     public IReadOnlyList<ProfileMenuItem> ProfileMenu { get; }

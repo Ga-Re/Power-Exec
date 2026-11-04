@@ -148,6 +148,27 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Suche: unscharf, Operatoren, Hervorhebung");
+            {
+                var host = _hosts[0];
+                var vm = host.ViewModel;
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
+                vm.SearchText = "clnup";
+                var hit = vm.AllItems.FirstOrDefault(i => i.Item.FileName == "Cleanup.cmd");
+                if (hit == null) Fail("Unscharfe Suche: „clnup“ findet Cleanup.cmd nicht");
+                else if (!hit.NameParts.Any(part => part.IsHit)) Fail("Suche: Treffer im Namen werden nicht hervorgehoben");
+                vm.SearchText = "typ:cmd";
+                if (vm.SearchChips.Count != 1 || vm.SearchChips[0].IsInvalid) Fail("Suche: Filter-Chip für typ:cmd fehlt");
+                if (!vm.AllItems.Any() || vm.AllItems.Any(i => i.Item.Type != PowerExec.Core.Models.ItemType.Batch)) Fail("Suche: typ:cmd filtert nicht nach Batch");
+                await Settle();
+                if (host.Window.Content is FrameworkElement searchRoot) Screenshot(searchRoot, "panel-suche-operator");
+                vm.SearchChips[0].RemoveCommand.Execute(null);
+                if (vm.SearchText.Length != 0) Fail("Suche: ✕ am Chip entfernt den Filter nicht");
+                host.Window.HidePanel();
+                await Settle();
+            }
+
             Step("Gruppenfarbe und Darstellung je Gruppe");
             {
                 var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");

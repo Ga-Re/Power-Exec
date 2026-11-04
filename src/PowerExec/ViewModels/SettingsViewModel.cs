@@ -1256,6 +1256,7 @@ public sealed class SettingsViewModel : ObservableObject
         _s.ParameterHistory = _app.Settings.ParameterHistory.ToDictionary(kv => kv.Key, kv => new List<string>(kv.Value));
         ApplyWorkspaceRenames();
         _s.RecentRuns = _app.Settings.RecentRuns.ToList();
+        _s.RunStats = new Dictionary<string, RunStat>(_app.Settings.RunStats);
         _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
         _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         // In der Liste entfernte Gruppen löschen (Einträge kommen zurück in ihren Ordner)
