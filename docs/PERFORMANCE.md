@@ -3,6 +3,10 @@
 Ziel für 0.17: **ein Tastendruck im Suchfeld < 50 ms** bis der UI-Thread wieder frei ist,
 mit 500 Einträgen in rund 20 Gruppen.
 
+**Ergebnis 0.17.0:** Tippen im Mittel ~170 ms statt 600–940 ms (CI-Runner). Kleine Schritte (`dis`, `disk`, Löschen,
+Filter „Scripte“) liegen bei 23–34 ms und damit unter dem Ziel; große Sprünge (Suche an/aus, viele Einträge kommen
+zurück) bei 260–430 ms. **Grenzwert in der CI:** Tippen im Mittel ≤ 350 ms – darüber schlägt der Selbsttest fehl.
+
 ## Messen
 
 | Was | Wo | Aufruf |
@@ -87,6 +91,7 @@ In Stufe 2 entfallen ~3,4 ms auf Nachschlagen (LookupSnapshot) und ~6 ms auf die
 | … Gruppen auch bei Suche an/aus wiederverwenden | 89 | 372 ms | 1033 ms | 646 ms | 65 ms | 1033 ms | 1079 ms |
 | Messung mit A/B und Layout-Anteil (gleicher Code) | 91 / 92 | 364 / 273 ms | 1038 / 798 ms | 752 / 591 ms | 73 / 57 ms | 1038 / 798 ms | 957 / 704 ms |
 | **Darstellung nur bei Änderung melden** | 95 | **170 ms** | **483 ms** | 198 ms | **28 ms** | 461 ms | 119 ms |
+| Commands bei Bedarf, SettingsLookup | 97 | 167 ms | 432 ms | 263 ms | 26 ms | 432 ms | 158 ms |
 
 ### A/B im selben Lauf (CI-Lauf 90)
 
@@ -140,6 +145,15 @@ Seit Lauf 95 meldet `Rebuild()` die Darstellung nur bei einer Änderung: Rebuild
 Kleine Schritte liegen unter 50 ms. Teuer bleiben Sprünge, bei denen viele Einträge zurückkommen (neue Container,
 ~1,3 ms je Eintrag) oder bei denen die Suche an- bzw. ausgeht (Sortierung wechselt, ~277 Verschiebungen;
 ein `Move` erzeugt den Container in einem nicht virtualisierten Panel neu).
+
+## Offen für später
+
+- **Große Sprünge** (Suche an/aus, viele Einträge kommen zurück): nicht passende Einträge nur einklappen statt
+  entfernen und in Gruppen auch während der Suche die feste Reihenfolge behalten (Ranking über „Beste Treffer“) –
+  geschätzt alle Schritte < 50–80 ms, ändert aber die Sortierung während der Suche. Alternativ UI-Virtualisierung.
+- **Vorlage verschlanken:** Ein Eintrags-Container kostet ~1,3 ms (Symbole, Abzeichen, Tooltips).
+- Aus der Analyse, nicht im Tipp-Pfad: Einstellungen im Hintergrund speichern, versteckte Panels nur markieren,
+  Einstellungs-Fingerprint, Ordner parallel einlesen, Icon-Cache begrenzen, `File.Exists` je Snippet im Rebuild.
 
 ## Grenzen der Messung
 

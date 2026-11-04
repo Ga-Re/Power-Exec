@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 17, 0), "Spürbar schneller beim Tippen", new[]
+        {
+            "Suche im Panel im Mittel drei- bis fünfmal schneller (gemessen mit 500 Einträgen)",
+            "Filter wechseln und Weitertippen bauen die Liste nicht mehr komplett neu auf",
+            "Kontextmenüs entstehen erst beim Öffnen – weniger Speicher, schnelleres Einblenden",
+            "Auswahl, Haken der Mehrfachauswahl und Gruppenkopf bleiben beim Tippen stehen"
+        }),
         new ReleaseNote(new Version(0, 16, 2), "Acrylic passt sich dem Panel an", new[]
         {
             "Weichgezeichneter Hintergrund mit abgerundeten Ecken wie das Panel",

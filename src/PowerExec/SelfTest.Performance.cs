@@ -21,6 +21,13 @@ public sealed partial class AppController
 {
     private const int PerfRounds = 5;
 
+    /// <summary>
+    /// Grenzwert für die CI: Tippen im Mittel (mit Wiederverwendung). Rund das Doppelte des Stands von 0.17 (~170 ms),
+    /// damit Schwankungen der Runner (bis Faktor 1,6) keinen Fehlalarm auslösen, Rückfälle wie ein Neuaufbau aller
+    /// Container (600–900 ms) aber sicher auffallen.
+    /// </summary>
+    private const double PerfTypingLimitMs = 350;
+
     /// <summary>Rebuild (synchron), danach erzwungenes Layout, danach bis der UI-Thread frei ist (Rendern und Rest).</summary>
     private readonly record struct PerfTiming(double Sync, double Layout, double Total);
 
@@ -215,7 +222,7 @@ public sealed partial class AppController
         md.AppendLine();
         md.AppendLine($"{itemCount} Einträge · {summary.Machine} · Einlesen {F(scanMs)} ms · {PerfRounds} Runden nach einer Aufwärmrunde");
         md.AppendLine();
-        md.AppendLine($"**Tippen je Tastendruck (bis UI-Thread frei):** Mittel {F(summary.TypingMeanMs)} ms · p95 {F(summary.TypingP95Ms)} ms · Max {F(summary.TypingMaxMs)} ms · Ziel 0.17: < 50 ms");
+        md.AppendLine($"**Tippen je Tastendruck (bis UI-Thread frei):** Mittel {F(summary.TypingMeanMs)} ms · p95 {F(summary.TypingP95Ms)} ms · Max {F(summary.TypingMaxMs)} ms · Grenzwert Mittel ≤ {F(PerfTypingLimitMs)} ms");
         md.AppendLine();
         md.AppendLine($"**A/B im selben Lauf:** ohne Wiederverwendung Mittel {F(summary.TypingFullMeanMs)} ms · mit {F(summary.TypingMeanMs)} ms" +
                       (summary.TypingMeanMs > 0 ? $" · Faktor {summary.TypingFullMeanMs / summary.TypingMeanMs:0.00}" : string.Empty));
@@ -238,5 +245,7 @@ public sealed partial class AppController
         File.WriteAllText(Path.Combine(dir, "selftest-perf.md"), md.ToString(), new UTF8Encoding(false));
         File.WriteAllText(Path.Combine(dir, "selftest-perf.json"), JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
         Step($"Leistung: Tippen Mittel {F(summary.TypingMeanMs)} ms, p95 {F(summary.TypingP95Ms)} ms, Max {F(summary.TypingMaxMs)} ms");
+        if (summary.TypingMeanMs > PerfTypingLimitMs)
+            Fail($"Leistung: Tippen im Mittel {F(summary.TypingMeanMs)} ms – Grenzwert {F(PerfTypingLimitMs)} ms überschritten (Details: selftest-perf.md)");
     }
 }
