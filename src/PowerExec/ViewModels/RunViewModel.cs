@@ -444,7 +444,7 @@ public sealed class RunViewModel : ObservableObject
             MachineList.MarkUsed(_app.Settings, req.Targets.Where(t => !_fromGroup.Contains(t) ||
                 _app.Settings.Machines.Any(m => m.Name.Equals(t, StringComparison.OrdinalIgnoreCase))));
             _app.SaveSettings();
-            if (_app.StartRemote(req, OwnerWindow?.Invoke()))
+            if (_app.StartRemote(req, OwnerWindow?.Invoke(), RawValues(), Profile))
             {
                 _app.RecordParameters(Item, RawValues());
                 _app.RecordRun(Item, Profile);
@@ -452,7 +452,8 @@ public sealed class RunViewModel : ObservableObject
                 CloseRequested?.Invoke();
             }
         }
-        else if (_app.Launcher.StartLocal(req, OwnerWindow?.Invoke(), _app.TrackStarted(Item, req.Mode)))
+        else if (_app.Launcher.StartLocal(req, OwnerWindow?.Invoke(),
+                     _app.TrackLocal(Item, req.Mode, _app.BeginHistory(Item, Profile, req.Mode, req.Engine, null, RawValues()))))
         {
             _app.RecordParameters(Item, RawValues());
             _app.RecordRun(Item, Profile);

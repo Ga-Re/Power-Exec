@@ -33,7 +33,7 @@ public sealed partial class AppController
     }
 
     /// <summary>Für lokale Starts: Prozess in der Aktivitäten-Leiste verfolgen (nur Scripte), sonst null.</summary>
-    public Action<Process>? TrackStarted(LaunchItem item, ExecutionMode mode)
+    public Action<Process>? TrackStarted(LaunchItem item, ExecutionMode mode, Action<ActivityViewModel>? created = null)
     {
         if (!ActivityList.ShouldTrack(item)) return null;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
@@ -43,6 +43,6 @@ public sealed partial class AppController
             ExecutionMode.OtherUser => "lokal · als anderer Benutzer",
             _ => "lokal"
         };
-        return p => Activities.TrackProcess(item, name, p, detail);
+        return p => Activities.TrackProcess(item, name, p, detail, created);
     }
 }

@@ -56,6 +56,7 @@ public partial class PanelWindow : Window
             {
                 if (Vm.ShowGroupJump) { Vm.ShowGroupJump = false; SearchBox.Focus(); }
                 else if (Vm.ShowPeek) Vm.ClosePeek();
+                else if (Vm.ShowHistory) Vm.ShowHistory = false;
                 else if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
                 else if (Vm.IsSearching) Vm.SearchText = string.Empty;
                 else HidePanel();
@@ -681,6 +682,7 @@ public partial class PanelWindow : Window
 
         if (key == Key.F1 && mods == ModifierKeys.None) { Vm.ShowShortcuts = !Vm.ShowShortcuts; return true; }
         if (key == Key.K && mods == ModifierKeys.Control) { Vm.ShowGroupJump = !Vm.ShowGroupJump; return true; }
+        if (key == Key.H && mods == ModifierKeys.Control) { Vm.ShowHistory = !Vm.ShowHistory; return true; }
 
         // Leertaste: Vorschau (im Suchfeld nur, solange es leer ist – sonst ist es ein Leerzeichen)
         if (key == Key.Space && mods == ModifierKeys.None)

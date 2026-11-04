@@ -720,6 +720,10 @@
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
+                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding ShowHistory}" ToolTip="Verlauf (Strg+H)"
+                                  AutomationProperties.Name="Verlauf">
+                        <TextBlock Text="&#xE81C;" Style="{StaticResource Icon}" FontSize="15"/>
+                    </ToggleButton>
                     <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsPinned}" ToolTip="Anheften: Panel bleibt offen">
                         <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ToggleButton>
@@ -1147,6 +1151,82 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Verlauf (Strg+H): alle Starts mit Ergebnis; erneut mit gleichen Werten -->
+            <Border Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="28"
+                    Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
+                    Visibility="{Binding ShowHistory, Converter={StaticResource Vis}}" AutomationProperties.Name="Verlauf">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleHistoryCommand}"
+                                ToolTip="Schließen (Esc)" AutomationProperties.Name="Verlauf schließen">
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                        </Button>
+                        <TextBlock Text="Verlauf" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="12,0,12,6">
+                        <TextBox Height="32" Padding="8,0" Tag="Im Verlauf suchen (Name, Rechner, Parameter) …" Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="Im Verlauf suchen"/>
+                        <WrapPanel Margin="0,8,0,0">
+                            <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="Heute" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=today}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="Fehler" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=errors}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="Remote" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=remote}"/>
+                        </WrapPanel>
+                    </StackPanel>
+                    <Grid>
+                        <TextBlock Text="Noch keine passenden Starts." Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,24,0,0"
+                                   Visibility="{Binding HistoryEmpty, Converter={StaticResource Vis}}"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="8,0,8,8">
+                            <ItemsControl ItemsSource="{Binding HistoryRows}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="HRow" CornerRadius="6" Padding="8,6" Background="Transparent">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Time}" Width="72" FontSize="11.5" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Top" Margin="0,1,0,0"/>
+                                                <Ellipse x:Name="HDot" DockPanel.Dock="Left" Width="8" Height="8" Margin="0,5,8,0" VerticalAlignment="Top" Fill="{DynamicResource Text.Tertiary}"/>
+                                                <StackPanel>
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="6,0,0,0"/>
+                                                        <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                    </DockPanel>
+                                                    <TextBlock Text="{Binding Meta}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding ParametersText}" FontSize="11" FontFamily="Cascadia Mono, Consolas" Foreground="{DynamicResource Text.Tertiary}"
+                                                               TextTrimming="CharacterEllipsis" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}"/>
+                                                    <WrapPanel Margin="0,4,0,0">
+                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding RunAgainCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                                ToolTip="Mit genau denselben Werten, Rechnern und Rechten erneut starten">
+                                                            <TextBlock Text="↻ Gleiche Werte" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding RetryFailedCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                                Visibility="{Binding CanRetryFailed, Converter={StaticResource Vis}}">
+                                                            <TextBlock Text="{Binding RetryText}" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding OpenLogCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                                Visibility="{Binding HasLog, Converter={StaticResource Vis}}" ToolTip="Log-Datei im Explorer zeigen">
+                                                            <TextBlock Text="Log" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
+                                                        </Button>
+                                                    </WrapPanel>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsSuccess}" Value="True"><Setter TargetName="HDot" Property="Fill" Value="{DynamicResource Status.Success}"/></DataTrigger>
+                                            <DataTrigger Binding="{Binding IsWarning}" Value="True"><Setter TargetName="HDot" Property="Fill" Value="{DynamicResource Status.Warning}"/></DataTrigger>
+                                            <DataTrigger Binding="{Binding IsError}" Value="True"><Setter TargetName="HDot" Property="Fill" Value="{DynamicResource Status.Error}"/></DataTrigger>
+                                            <DataTrigger Binding="{Binding IsRunning}" Value="True"><Setter TargetName="HDot" Property="Fill" Value="{DynamicResource Accent}"/></DataTrigger>
+                                            <Trigger SourceName="HRow" Property="IsMouseOver" Value="True"><Setter TargetName="HRow" Property="Background" Value="{DynamicResource Bg.Hover}"/></Trigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
                 </DockPanel>
             </Border>
 

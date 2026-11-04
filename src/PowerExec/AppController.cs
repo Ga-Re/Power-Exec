@@ -931,6 +931,7 @@ public sealed partial class AppController : IDisposable
             foreach (var m in moves)
             {
                 PathMigration.Apply(Settings, m);
+                History.Rename(m.OldPath, m.NewPath);
                 AppLog.Info($"Umbenannt/verschoben erkannt: {m.OldPath} → {m.NewPath} (Profile und Favorit übernommen)");
             }
             Settings.Fingerprints = snapshot.Fingerprints;
@@ -992,6 +993,7 @@ public sealed partial class AppController : IDisposable
                 return;
             }
             var request = BuildRequest(item, profile, mode, values);
+            var raw = ProfileResolver.InitialValues(profile, item);
             if (!ConfirmRun(item, profile, targets.Count, null)) return;
             HidePanels();
             if (record) RecordRun(item, profile);
@@ -1006,11 +1008,12 @@ public sealed partial class AppController : IDisposable
                     Item = request.Item, Mode = request.Mode, Engine = Requirements.EngineFor(item, profile.Engine), NoExit = request.NoExit, NoProfile = request.NoProfile,
                     ExecutionPolicy = request.ExecutionPolicy, Parameters = request.Parameters, ResolvedPath = request.ResolvedPath,
                     Targets = targets.ToList(), CopyFolder = item.CopyFolderByDefault
-                }, null);
+                }, null, raw, profile);
             }
             else
             {
-                Launcher.StartLocal(request, null, TrackStarted(item, mode));
+                var entry = BeginHistory(item, profile, mode, request.Engine, null, raw, HistoryOrigin);
+                if (!Launcher.StartLocal(request, null, TrackLocal(item, mode, entry))) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
             }
             return;
         }
@@ -1019,11 +1022,13 @@ public sealed partial class AppController : IDisposable
         HidePanels();
         try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
         catch (Exception ex) { AppLog.Error("Start vorbereiten fehlgeschlagen", ex); }
-        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null, TrackStarted(item, mode)))
+        var plainEntry = BeginHistory(item, profile, mode, PsEngine.WindowsPowerShell, null, null, HistoryOrigin);
+        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null, TrackLocal(item, mode, plainEntry)))
         {
             if (record) RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
         }
+        else CompleteHistory(plainEntry, HistoryResult.Cancelled, "nicht gestartet");
     }
 
     /// <summary>Text-Parameterwerte für die Vorschläge im Ausführen-Dialog merken (nie geheime Werte).</summary>
@@ -1131,7 +1136,8 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Startet die Remote-/Massenausführung und öffnet die Ergebnisliste.</summary>
-    public bool StartRemote(ExecutionRequest request, Window? owner)
+    /// <param name="raw">Parameterwerte als Text für den Verlauf (null = aus den typisierten Werten).</param>
+    public bool StartRemote(ExecutionRequest request, Window? owner, IReadOnlyDictionary<string, string?>? raw = null, LaunchProfile? profile = null)
     {
         RunCredential? cred = null;
         if (request.Mode == ExecutionMode.OtherUser)
@@ -1142,13 +1148,19 @@ public sealed partial class AppController : IDisposable
         var account = cred?.Account ?? $"{Environment.UserDomainName}\\{Environment.UserName}";
         var vm = new ResultsViewModel(this, request, account);
         var w = new ResultsWindow(vm);
-        Activities.TrackRemote(vm, () =>
+        var history = BeginHistory(request.Item, profile, request.Mode, request.Engine, request.Targets,
+            raw ?? RunHistory.RawFrom(request.Parameters), HistoryOrigin);
+        var activity = Activities.TrackRemote(vm, () =>
         {
             if (!w.IsLoaded) { w = new ResultsWindow(vm); w.Show(); }
             if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
             HidePanels();
             w.Activate();
         });
+        activity.Completed += () => CompleteHistory(history,
+            vm.RunnerError != null ? HistoryResult.Error : vm.ErrorCount + vm.UnreachableCount > 0 ? HistoryResult.Warning : HistoryResult.Success,
+            activity.Detail, null,
+            vm.Rows.Where(r => r.Status is RemoteStatus.Error or RemoteStatus.Unreachable).Select(r => r.Computer), vm.LogFile);
         vm.Finished += () =>
         {
             if (!Settings.NotifyOnFinish || w.IsActive) return;

@@ -108,6 +108,7 @@ public sealed partial class AppController
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 13;
             WorkspaceManager.Create(Settings, "Kunde A", copyCurrent: true);
+            HistoryPath = Path.Combine(dir, "history.json");
             Views.WindowHelper.Settings = () => Settings;
             ThemeService.Apply(Settings);
 
@@ -301,6 +302,34 @@ public sealed partial class AppController
                 host.Config.ShowDock = false;
                 host.CreateTriggers(this);
                 if (host.Docks.Count > 0) Fail("Mini-Dock: lässt sich nicht ausschalten");
+            }
+
+            Step("Verlauf");
+            {
+                var host = _hosts[0];
+                var script = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell)?.Item;
+                if (script == null) Fail("Verlauf: kein Script zum Eintragen");
+                else
+                {
+                    var ok = BeginHistory(script, null, ExecutionMode.CurrentUser, PsEngine.WindowsPowerShell, null, new Dictionary<string, string?> { ["Pfad"] = "C:\\" });
+                    CompleteHistory(ok, PowerExec.Core.Execution.HistoryResult.Success, "beendet · Exit-Code 0", 0);
+                    var remote = BeginHistory(script, null, ExecutionMode.Administrator, PsEngine.WindowsPowerShell, new[] { "SRV-01", "SRV-02", "SRV-03" }, null);
+                    CompleteHistory(remote, PowerExec.Core.Execution.HistoryResult.Warning, "3 Rechner · 2 ✓ · 1 Fehler", null, new[] { "SRV-02" });
+                    host.ViewModel.ShowHistory = true;
+                    if (host.ViewModel.HistoryRows.Count < 2) Fail("Verlauf: Einträge erscheinen nicht");
+                    else if (!host.ViewModel.HistoryRows[0].CanRetryFailed) Fail("Verlauf: „Nur fehlgeschlagene“ fehlt beim Remote-Lauf");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement histRoot) Screenshot(histRoot, "panel-verlauf");
+                    host.ViewModel.HistoryFilter = "errors";
+                    if (host.ViewModel.HistoryRows.Count != 1) Fail("Verlauf: Filter „Fehler“ greift nicht");
+                    host.ViewModel.HistoryFilter = "all";
+                    host.ViewModel.ShowHistory = false;
+                    host.Window.HidePanel();
+                    await Settle();
+                    SaveHistory();
+                    if (!File.Exists(HistoryPath)) Fail("Verlauf: wird nicht gespeichert");
+                }
             }
 
             Step("Rückgängig");

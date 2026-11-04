@@ -35,6 +35,7 @@ public sealed class PanelViewModel : ObservableObject
         _app.Update.PropertyChanged += OnUpdateChanged;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
         AddFolderCommand = new RelayCommand(() => _app.ShowSettings(section: "groups"));
+        _app.HistoryChanged += OnHistoryChanged;
     }
 
     public ObservableCollection<GroupViewModel> Groups { get; } = new();
@@ -176,7 +177,11 @@ public sealed class PanelViewModel : ObservableObject
     }
 
     /// <summary>Beim Entfernen des Panels: Ereignisse abmelden.</summary>
-    public void Detach() => _app.Update.PropertyChanged -= OnUpdateChanged;
+    public void Detach()
+    {
+        _app.Update.PropertyChanged -= OnUpdateChanged;
+        _app.HistoryChanged -= OnHistoryChanged;
+    }
 
     public ICommand SettingsCommand { get; }
     public ICommand RescanCommand { get; }
@@ -228,6 +233,7 @@ public sealed class PanelViewModel : ObservableObject
         new("Leertaste", "Vorschau: Code, Parameter, Signatur"),
         new("Strg+E", "Im Editor öffnen"),
         new("Strg+Umschalt+C", "Pfad kopieren"),
+        new("Strg+H", "Verlauf: erneut ausführen, nur Fehlgeschlagene"),
         new("Strg+Z", "Letzte Änderung rückgängig"),
         new("Strg+V", "Eintrag aus Zwischenablage"),
         new("Esc", "Suche leeren / Panel schließen"),
@@ -320,6 +326,33 @@ public sealed class PanelViewModel : ObservableObject
         if (_groupJumpSelected != null) JumpTo(_groupJumpSelected.Group);
         else ShowGroupJump = false;
     }
+
+    // ---- Verlauf (Strg+H) ---------------------------------------------------------
+
+    private bool _showHistory;
+    public bool ShowHistory
+    {
+        get => _showHistory;
+        set { if (Set(ref _showHistory, value) && value) RefreshHistory(); }
+    }
+    public ICommand ToggleHistoryCommand => _toggleHistoryCommand ??= new RelayCommand(() => ShowHistory = !ShowHistory);
+    private ICommand? _toggleHistoryCommand;
+
+    private string _historyFilter = "all";
+    /// <summary>„all“, „today“, „errors“ oder „remote“.</summary>
+    public string HistoryFilter { get => _historyFilter; set { if (Set(ref _historyFilter, value ?? "all")) RefreshHistory(); } }
+
+    private string _historySearch = string.Empty;
+    public string HistorySearch { get => _historySearch; set { if (Set(ref _historySearch, value ?? string.Empty)) RefreshHistory(); } }
+
+    private IReadOnlyList<HistoryRowViewModel> _historyRows = Array.Empty<HistoryRowViewModel>();
+    public IReadOnlyList<HistoryRowViewModel> HistoryRows { get => _historyRows; private set { if (Set(ref _historyRows, value)) OnPropertyChanged(nameof(HistoryEmpty)); } }
+    public bool HistoryEmpty => _historyRows.Count == 0;
+
+    private void OnHistoryChanged() { if (_showHistory) RefreshHistory(); }
+
+    public void RefreshHistory() =>
+        HistoryRows = _app.History.Filter(_historyFilter, _historySearch).Take(200).Select(e => new HistoryRowViewModel(_app, e)).ToList();
 
     // ---- Vorschau (Leertaste) -----------------------------------------------------
 
@@ -791,6 +824,7 @@ public sealed class PanelViewModel : ObservableObject
         ShowShortcuts = false;
         ShowGroupJump = false;
         Peek = null;
+        ShowHistory = false;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(IsSearching));
         OnPropertyChanged(nameof(Filter));

@@ -100,6 +100,12 @@ public sealed class ActivityViewModel : ObservableObject
 
     internal void Tick() => OnPropertyChanged(nameof(TimeText));
 
+    /// <summary>Exit-Code eines lokalen Prozesses (falls lesbar).</summary>
+    public int? ExitCode { get; internal set; }
+
+    /// <summary>Wird einmal ausgelöst, wenn der Start beendet ist.</summary>
+    public event Action? Completed;
+
     public void Complete(ActivityState state, string? detail = null)
     {
         if (!IsRunning) return;
@@ -107,6 +113,7 @@ public sealed class ActivityViewModel : ObservableObject
         if (detail != null) Detail = detail;
         State = state;
         OnPropertyChanged(nameof(HasProgress));
+        Completed?.Invoke();
     }
 }
 
@@ -174,9 +181,10 @@ public sealed class ActivityList
     /// Lokal gestarteten Prozess verfolgen (Scripte): Ende und Exit-Code. Programme mit Fenster werden nicht verfolgt,
     /// sie würden dauerhaft als „läuft“ erscheinen.
     /// </summary>
-    public void TrackProcess(LaunchItem item, string displayName, Process process, string detail)
+    public void TrackProcess(LaunchItem item, string displayName, Process process, string detail, Action<ActivityViewModel>? created = null)
     {
         var activity = Add(new ActivityViewModel(displayName, detail, BadgeOf(item)));
+        created?.Invoke(activity);
         try
         {
             process.EnableRaisingEvents = true;
@@ -198,12 +206,13 @@ public sealed class ActivityList
         int? code = null;
         try { code = process.ExitCode; } catch { /* erhöhter Prozess: Exit-Code nicht lesbar */ }
         process.Dispose();
+        activity.ExitCode = code;
         if (code is null or 0) activity.Complete(ActivityState.Success, code == null ? "beendet" : "beendet · Exit-Code 0");
         else activity.Complete(ActivityState.Error, $"beendet · Exit-Code {code}");
     }
 
     /// <summary>Remote-/Massenlauf aus der Ergebnisliste anzeigen.</summary>
-    public void TrackRemote(ResultsViewModel results, Action open)
+    public ActivityViewModel TrackRemote(ResultsViewModel results, Action open)
     {
         var activity = Add(new ActivityViewModel(results.Title, RemoteDetail(results), "PS", open, () => results.CancelCommand.Execute(null)));
         activity.Progress = 0;
@@ -221,6 +230,7 @@ public sealed class ActivityList
             activity.Complete(results.RunnerError != null ? ActivityState.Error : problems > 0 ? ActivityState.Warning : ActivityState.Success,
                 results.RunnerError ?? RemoteDetail(results));
         };
+        return activity;
     }
 
     private static string RemoteDetail(ResultsViewModel r)
