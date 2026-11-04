@@ -169,6 +169,22 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Rückgängig");
+            {
+                var cleanupPath = Path.Combine(dir, "Cleanup.cmd");
+                var cleanup = FindItem(cleanupPath);
+                if (cleanup == null) Fail("Rückgängig: Cleanup.cmd nicht gefunden");
+                else
+                {
+                    ToggleFavorite(cleanup); // ist Favorit → wird entfernt
+                    if (IsFavorite(cleanupPath) || UndoToast == null) Fail("Rückgängig: kein Hinweis nach dem Entfernen des Favoriten");
+                    if (_hosts[0].Window.Content is FrameworkElement undoRoot) { await Settle(); Screenshot(undoRoot, "panel-rueckgaengig"); }
+                    Undo();
+                    if (!IsFavorite(cleanupPath)) Fail("Rückgängig: Favorit wurde nicht wiederhergestellt");
+                    if (UndoToast != null) Fail("Rückgängig: Hinweis bleibt nach dem Zurücknehmen stehen");
+                }
+            }
+
             Step("Gruppenfarbe und Darstellung je Gruppe");
             {
                 var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");

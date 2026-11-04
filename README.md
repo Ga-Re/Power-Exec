@@ -27,6 +27,7 @@ oder remote auf einem oder vielen Rechnern.
 - Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - Tastatur: Pfeiltasten wählen aus, Enter startet, Esc leert die Suche bzw. schließt das Panel
+- **Rückgängig:** nach Ausblenden, Entfernen, Verschieben (Drag & Drop), Favorit entfernen sowie Gruppen löschen, umbenennen, verschieben oder ausblenden erscheint unten im Panel ein Hinweis mit „Rückgängig“ (8 Sekunden, bleibt stehen, solange die Maus darüber ist) – oder **Strg+Z**. Die Rückfragen beim Entfernen eigener Einträge und leerer Gruppen entfallen dafür
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
 - **Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** in jede Gruppe verschieben oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
 - **Gruppenfarben:** Palette oder eigene Farbe; die Gruppe erscheint als getönte Karte mit farbigem Symbol, Untergruppen erben die Farbe

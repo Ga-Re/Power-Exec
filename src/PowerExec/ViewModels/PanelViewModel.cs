@@ -185,6 +185,31 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand ClearSearchCommand { get; }
     public ICommand AddFolderCommand { get; }
 
+    // ---- Rückgängig ---------------------------------------------------------
+
+    /// <summary>Hinweis nach einer Änderung im Panel („„X“ ausgeblendet · Rückgängig“).</summary>
+    public string? UndoToast => _app.UndoToast;
+    public bool HasUndoToast => _app.UndoToast != null;
+    public ICommand UndoCommand => _undoCommand ??= new RelayCommand(() => _app.Undo());
+    public ICommand DismissUndoCommand => _dismissUndoCommand ??= new RelayCommand(() => _app.DismissUndoToast());
+    private ICommand? _undoCommand, _dismissUndoCommand;
+
+    public void RefreshUndo()
+    {
+        OnPropertyChanged(nameof(UndoToast));
+        OnPropertyChanged(nameof(HasUndoToast));
+    }
+
+    /// <summary>Strg+Z im Panel.</summary>
+    public bool TryUndo()
+    {
+        if (!_app.CanUndo) return false;
+        _app.Undo();
+        return true;
+    }
+
+    public void PauseUndoToast(bool paused) => _app.PauseUndoToast(paused);
+
     // ---- Suche: Hervorhebung und Filter-Chips --------------------------------
 
     private const int BestHitsCount = 5;
@@ -446,9 +471,11 @@ public sealed class PanelViewModel : ObservableObject
         var group = AllGroups.FirstOrDefault(g => g.Items.Contains(dragged));
         if (group == null || !group.AllowReorder || !group.Items.Contains(target) || ReferenceEquals(dragged, target)) return;
         var current = group.Items.Select(i => i.Item.FullPath).ToList();
+        _app.RememberForUndo("Reihenfolge geändert");
         _app.Settings.CustomOrder[group.Key] = ItemOrdering.Move(current, dragged.Item.FullPath, target.Item.FullPath, after);
         _app.SaveSettings();
         Rebuild();
+        _app.ShowUndoToast($"„{dragged.DisplayName}“ verschoben");
     }
 
     /// <summary>

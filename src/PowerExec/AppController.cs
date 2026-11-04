@@ -120,6 +120,7 @@ public sealed partial class AppController : IDisposable
     /// <returns>Fehlermeldung zum Tastenkürzel oder null.</returns>
     public string? ApplySettings(AppSettings updated)
     {
+        ClearUndo();
         var foldersChanged = !FoldersEqual(Settings, updated);
         var panelsChanged = PanelKey(Settings) != PanelKey(updated);
         var themeChanged = Settings.Theme != updated.Theme;
@@ -244,6 +245,7 @@ public sealed partial class AppController : IDisposable
     {
         if (name.Equals(Settings.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)) return;
         if (!WorkspaceManager.Switch(Settings, name)) return;
+        ClearUndo();
         SaveSettings();
         AppLog.Info($"Arbeitsbereich gewechselt: {Settings.ActiveWorkspace}");
         Repository.UpdateSettings(Settings);
@@ -465,9 +467,12 @@ public sealed partial class AppController : IDisposable
         var parent = GroupManager.ParentOf(path);
         var newName = WithDialog(() => InputWindow.Ask("Gruppe umbenennen", string.Empty, GroupManager.LeafOf(path), "Umbenennen", n => GroupNameError(n, parent, path)));
         if (newName == null || newName == GroupManager.LeafOf(path)) return;
+        var before = SettingsStore.Clone(Settings);
         if (GroupManager.Rename(Settings, path, newName))
         {
+            _undo.Push(before, "Gruppe umbenannt");
             CommitUserChange();
+            ShowUndoToast($"Gruppe in „{GroupManager.CleanName(newName)}“ umbenannt");
         }
     }
 
@@ -479,13 +484,17 @@ public sealed partial class AppController : IDisposable
         var text = $"Gruppe „{name}“" + (subs > 0 ? $" mit {subs} {(subs == 1 ? "Untergruppe" : "Untergruppen")}" : string.Empty) + " löschen?" +
                    (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
                    (count > 0 && folders.Count == 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“." : string.Empty);
-        if (!Confirm(text, "Gruppe löschen")) return;
+        // Mit Rückgängig statt Rückfrage; nur bei Untergruppen oder Ordnern zusätzlich nachfragen
+        if ((subs > 0 || folders.Count > 0) && !Confirm(text, "Gruppe löschen")) return;
+        RememberForUndo($"Gruppe „{name}“ gelöscht");
         GroupManager.Delete(Settings, path);
         CommitUserChange();
+        ShowUndoToast($"Gruppe „{name}“ gelöscht");
     }
 
     public void MoveGroup(string path, int delta)
     {
+        RememberForUndo("Gruppe verschoben");
         GroupManager.Move(Settings, path, delta);
         CommitUserChange();
     }
@@ -493,6 +502,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Drag &amp; Drop einer Gruppe auf eine andere: davor, dahinter oder hinein (Untergruppe).</summary>
     public void MoveGroupTo(string path, string target, GroupDropPosition position)
     {
+        var before = SettingsStore.Clone(Settings);
         var result = GroupManager.MoveGroup(Settings, path, target, position);
         if (result == null)
         {
@@ -501,15 +511,20 @@ public sealed partial class AppController : IDisposable
         }
         if (position == GroupDropPosition.Into)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(target), StringComparison.OrdinalIgnoreCase));
+        _undo.Push(before, "Gruppe verschoben");
         CommitUserChange();
+        ShowUndoToast(position == GroupDropPosition.Into
+            ? $"„{GroupManager.LeafOf(path)}“ nach „{GroupManager.LeafOf(target)}“ verschoben"
+            : $"„{GroupManager.LeafOf(path)}“ verschoben");
     }
 
     /// <summary>Gruppe im aktiven Arbeitsbereich ausblenden (wieder einblenden: Einstellungen › Arbeitsbereiche).</summary>
     public void HideGroupInWorkspace(string groupPath)
     {
+        RememberForUndo("Gruppe ausgeblendet");
         WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(Settings), groupPath, true);
         CommitUserChange();
-        _tray?.ShowBalloon("Gruppe ausgeblendet", $"„{GroupManager.LeafOf(groupPath)}“ ist im Arbeitsbereich „{Settings.ActiveWorkspace}“ ausgeblendet. Wieder einblenden: Einstellungen › Arbeitsbereiche.");
+        ShowUndoToast($"„{GroupManager.LeafOf(groupPath)}“ im Arbeitsbereich „{Settings.ActiveWorkspace}“ ausgeblendet");
     }
 
     /// <summary>Smarte Gruppe für einen Ordner anlegen (Ordnerauswahl).</summary>
@@ -532,6 +547,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>
     public void AssignGroup(string path, string? group, string? targetKey = null, string? beforeOrAfterPath = null, bool after = false, IReadOnlyList<string>? targetOrder = null)
     {
+        RememberForUndo("Eintrag verschoben");
         GroupManager.Assign(Settings, path, group);
         if (targetKey != null && beforeOrAfterPath != null && targetOrder != null)
         {
@@ -539,6 +555,8 @@ public sealed partial class AppController : IDisposable
             Settings.CustomOrder[targetKey] = ItemOrdering.Move(order, path, beforeOrAfterPath, after);
         }
         CommitUserChange();
+        var label = FindItem(path) is { } moved ? DisplayNameOf(moved) : "Eintrag";
+        ShowUndoToast(group == null ? $"„{label}“ aus der Gruppe genommen" : $"„{label}“ nach „{GroupManager.LeafOf(group)}“ verschoben");
     }
 
     /// <summary>Aus dem Explorer oder Browser gezogene Ziele übernehmen.</summary>
@@ -776,25 +794,31 @@ public sealed partial class AppController : IDisposable
         var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         if (entry == null) return;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
-        if (!Confirm($"„{name}“ aus Power-Exec entfernen?" + (entry.Kind is CustomEntryKind.File or CustomEntryKind.Folder ? "\n\nDie Datei bzw. der Ordner selbst bleibt unverändert." : string.Empty),
-                "Eintrag entfernen")) return;
+        // Keine Rückfrage mehr: der Hinweis bietet „Rückgängig“
+        RememberForUndo($"„{name}“ entfernt");
         Settings.CustomEntries.Remove(entry);
         Settings.Entries.RemoveAll(e => e.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.Favorites.RemoveAll(p => p.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.RecentRuns.RemoveAll(r => r.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         RunStats.Remove(Settings, entry.Key);
         CommitUserChange();
+        ShowUndoToast($"„{name}“ entfernt" + (entry.Kind is CustomEntryKind.File or CustomEntryKind.Folder ? " (Datei bzw. Ordner bleibt erhalten)" : string.Empty));
     }
 
     public bool IsFavorite(string path) => Settings.Favorites.Contains(path, StringComparer.OrdinalIgnoreCase);
 
     public void ToggleFavorite(LaunchItem item)
     {
-        if (IsFavorite(item.FullPath))
+        var wasFavorite = IsFavorite(item.FullPath);
+        if (wasFavorite)
+        {
+            RememberForUndo("Favorit entfernt");
             Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
+        }
         else
             Settings.Favorites.Add(item.FullPath);
         CommitUserChange();
+        if (wasFavorite) ShowUndoToast($"„{DisplayNameOf(item)}“ ist kein Favorit mehr");
     }
 
     public FolderConfig? FolderOf(LaunchItem item) =>
@@ -805,10 +829,11 @@ public sealed partial class AppController : IDisposable
     {
         var folder = FolderOf(item);
         if (folder == null) return;
+        RememberForUndo($"„{item.FileName}“ ausgeblendet");
         FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         CommitUserChange();
-        _tray?.ShowBalloon("Ausgeblendet", $"{item.FileName} wird nicht mehr angezeigt. Wieder einblenden: Einstellungen › Gruppen › smarte Gruppe aufklappen (Haken setzen).");
+        ShowUndoToast($"„{DisplayNameOf(item)}“ ausgeblendet");
     }
 
     /// <summary>

@@ -51,6 +51,12 @@ public partial class PanelWindow : Window
                 else HidePanel();
                 e.Handled = true;
             }
+            // Strg+Z: letzte Änderung im Panel zurücknehmen (im Suchfeld mit Text gilt das Rückgängig des Textfelds)
+            else if (e.Key == Key.Z && Keyboard.Modifiers == ModifierKeys.Control &&
+                     !(Keyboard.FocusedElement is TextBox { Text.Length: > 0 }) && Vm.TryUndo())
+            {
+                e.Handled = true;
+            }
             // Strg+V außerhalb eines Textfelds bzw. Strg+Umschalt+V: Zwischenablage als neuen Eintrag übernehmen
             else if (e.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) &&
                      (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || Keyboard.FocusedElement is not TextBox))
@@ -629,6 +635,9 @@ public partial class PanelWindow : Window
         menu.Items.Add(new MenuItem { Header = "Profile verwalten …", Command = item.ManageProfilesCommand });
         menu.IsOpen = true;
     }
+
+    private void UndoToast_MouseEnter(object sender, MouseEventArgs e) => Vm.PauseUndoToast(true);
+    private void UndoToast_MouseLeave(object sender, MouseEventArgs e) => Vm.PauseUndoToast(false);
 
     private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {

@@ -908,6 +908,29 @@
                 </Thumb.Template>
             </Thumb>
 
+            <!-- Hinweis nach einer Änderung mit „Rückgängig“ (Strg+Z) -->
+            <Border x:Name="UndoToast" Grid.Row="5" VerticalAlignment="Bottom" Margin="12,0,12,10" Panel.ZIndex="20"
+                    Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
+                    Padding="12,6,4,6" Visibility="{Binding HasUndoToast, Converter={StaticResource Vis}}"
+                    MouseEnter="UndoToast_MouseEnter" MouseLeave="UndoToast_MouseLeave"
+                    AutomationProperties.LiveSetting="Polite" AutomationProperties.Name="{Binding UndoToast}">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding DismissUndoCommand}"
+                            ToolTip="Hinweis schließen" AutomationProperties.Name="Hinweis schließen">
+                        <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="28" Padding="10,0" Margin="8,0,2,0"
+                            Command="{Binding UndoCommand}" ToolTip="Rückgängig (Strg+Z)">
+                        <TextBlock Text="Rückgängig" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                    </Button>
+                    <TextBlock Text="{Binding UndoToast}" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12.5" MaxHeight="40"
+                               TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+
             <!-- Raster: Details des ausgewählten Eintrags -->
             <Border Grid.Row="6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="16,10,12,4" MaxHeight="320">
                 <Border.Style>
