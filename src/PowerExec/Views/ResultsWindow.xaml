@@ -70,6 +70,22 @@
                             <TextBlock Text="{Binding UnreachableCount, StringFormat={}{0} nicht erreichbar}"/>
                         </StackPanel>
                     </RadioButton>
+                    <!-- Ansicht: Liste oder Kachelkarte -->
+                    <Border Width="1" Height="20" Margin="6,0,12,0" Background="{DynamicResource Border.Default}" VerticalAlignment="Center"/>
+                    <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowList, Mode=OneWay}"
+                                 Command="{Binding SetViewCommand}" CommandParameter="list" ToolTip="Liste mit Ausgabe je Rechner">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                            <TextBlock Text="Liste"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowTiles, Mode=OneWay}"
+                                 Command="{Binding SetViewCommand}" CommandParameter="tiles" ToolTip="Eine Kachel je Rechner – Stand auf einen Blick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE80A;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                            <TextBlock Text="Kacheln"/>
+                        </StackPanel>
+                    </RadioButton>
                 </WrapPanel>
 
                 <ProgressBar Height="4" Margin="0,12,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
@@ -88,7 +104,76 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <DockPanel>
+            <!-- Kachelkarte: eine Kachel je Rechner, Probleme zuerst; Klick zeigt die Ausgabe darunter -->
+            <DockPanel Visibility="{Binding ShowTiles, Converter={StaticResource Vis}}">
+                <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" MaxHeight="300"
+                        Visibility="{Binding HasSelectedTile, Converter={StaticResource Vis}}" DataContext="{Binding SelectedTile}">
+                    <DockPanel Margin="24,10,24,12">
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" Foreground="{DynamicResource Text.Secondary}"/>
+                            <TextBlock Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding StatusText, StringFormat=' · {0}'}" Foreground="{DynamicResource Text.Secondary}"/>
+                        </DockPanel>
+                        <Border Padding="12,10" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4">
+                            <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="12" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
+                                     Foreground="{DynamicResource Text.Secondary}"/>
+                        </Border>
+                    </DockPanel>
+                </Border>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,14,24,14">
+                    <ItemsControl ItemsSource="{Binding TilesView}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="92" Height="40" Margin="0,0,6,6" Padding="0" Cursor="Hand" ToolTip="{Binding TileToolTip}"
+                                        Command="{Binding DataContext.SelectTileCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                        AutomationProperties.Name="{Binding TileToolTip}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Tile" CornerRadius="5" Background="{DynamicResource Bg.Chip}" BorderThickness="2" BorderBrush="Transparent" Padding="6,2">
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock x:Name="TileName" Text="{Binding Computer}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource Text.Primary}"/>
+                                                    <TextBlock x:Name="TileStatus" Text="{Binding StatusText}" FontSize="10" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource Text.Secondary}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="Success">
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Success}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Error}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Unreachable">
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Unreachable}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Running}"/>
+                                                </DataTrigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource Border.Control}"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                </DataTrigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <DockPanel Visibility="{Binding ShowList, Converter={StaticResource Vis}}">
                 <Grid DockPanel.Dock="Top" Height="34" Margin="8,0,16,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="40"/>

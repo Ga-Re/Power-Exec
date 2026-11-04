@@ -43,10 +43,26 @@ public sealed class ResultRowViewModel : ObservableObject
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
     public ICommand ToggleCommand { get; }
 
+    /// <summary>Sortierung der Kachelkarte: Probleme zuerst, dann laufende, dann erfolgreiche.</summary>
+    public int StatusOrder => _result.Status switch
+    {
+        RemoteStatus.Error => 0,
+        RemoteStatus.Unreachable => 1,
+        RemoteStatus.Running => 2,
+        _ => 3
+    };
+
+    /// <summary>Kurzinfo an der Kachel.</summary>
+    public string TileToolTip => $"{Computer} · {StatusText}" + (FirstLine.Length > 0 && _result.Status != RemoteStatus.Running ? $"\n{FirstLine}" : string.Empty);
+
+    private bool _isSelected;
+    /// <summary>In der Kachelkarte ausgewählt (Details unten).</summary>
+    public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }
+
     public void Update(RemoteResult r)
     {
         _result = r;
-        foreach (var p in new[] { nameof(Status), nameof(StatusText), nameof(Duration), nameof(Output), nameof(FirstLine), nameof(Result) })
+        foreach (var p in new[] { nameof(Status), nameof(StatusText), nameof(Duration), nameof(Output), nameof(FirstLine), nameof(Result), nameof(StatusOrder), nameof(TileToolTip) })
             OnPropertyChanged(p);
     }
 }
@@ -72,6 +88,12 @@ public sealed class ResultsViewModel : ObservableObject
         foreach (var t in request.Targets) Rows.Add(new ResultRowViewModel(t));
         RowsView = CollectionViewSource.GetDefaultView(Rows);
         RowsView.Filter = o => o is ResultRowViewModel r && MatchesFilter(r);
+        // Kachelkarte: eigene Ansicht, Probleme zuerst
+        TilesView = new ListCollectionView(Rows) { Filter = o => o is ResultRowViewModel r && MatchesFilter(r) };
+        TilesView.SortDescriptions.Add(new SortDescription(nameof(ResultRowViewModel.StatusOrder), ListSortDirection.Ascending));
+        _showTiles = request.Targets.Count >= TilesThreshold;
+        SelectTileCommand = new RelayCommand(p => SelectedTile = p as ResultRowViewModel);
+        SetViewCommand = new RelayCommand(p => ShowTiles = p?.ToString() == "tiles");
 
         ToggleLogCommand = new RelayCommand(() => ShowLog = !ShowLog);
         ExportCsvCommand = new RelayCommand(ExportCsv, () => !IsRunning && Rows.Count > 0);
@@ -83,6 +105,32 @@ public sealed class ResultsViewModel : ObservableObject
 
     public ObservableCollection<ResultRowViewModel> Rows { get; } = new();
     public ICollectionView RowsView { get; }
+    public ListCollectionView TilesView { get; }
+
+    /// <summary>Ab so vielen Rechnern startet die Ergebnisliste als Kachelkarte.</summary>
+    public const int TilesThreshold = 16;
+
+    private bool _showTiles;
+    /// <summary>Kachelkarte (eine Kachel je Rechner) statt Liste.</summary>
+    public bool ShowTiles { get => _showTiles; set { if (Set(ref _showTiles, value)) OnPropertyChanged(nameof(ShowList)); } }
+    public bool ShowList => !_showTiles;
+    public ICommand SetViewCommand { get; }
+
+    private ResultRowViewModel? _selectedTile;
+    /// <summary>Ausgewählte Kachel: Ausgabe erscheint unter der Karte.</summary>
+    public ResultRowViewModel? SelectedTile
+    {
+        get => _selectedTile;
+        set
+        {
+            if (_selectedTile != null) _selectedTile.IsSelected = false;
+            if (ReferenceEquals(_selectedTile, value)) value = null; // zweiter Klick hebt die Auswahl auf
+            if (Set(ref _selectedTile, value) && value != null) value.IsSelected = true;
+            OnPropertyChanged(nameof(HasSelectedTile));
+        }
+    }
+    public bool HasSelectedTile => _selectedTile != null;
+    public ICommand SelectTileCommand { get; }
 
     public string Title => _request.Item.DisplayName;
     public string Meta => $"Gestartet {_started:HH:mm} · {Rows.Count} {(Rows.Count == 1 ? "Rechner" : "Rechner")} · als {_account} · " +
@@ -99,7 +147,7 @@ public sealed class ResultsViewModel : ObservableObject
     public string Filter
     {
         get => _filter;
-        set { if (Set(ref _filter, value)) RowsView.Refresh(); }
+        set { if (Set(ref _filter, value)) { RowsView.Refresh(); TilesView.Refresh(); } }
     }
 
     public bool IsRunning { get => _isRunning; private set { if (Set(ref _isRunning, value)) OnPropertyChanged(nameof(StatusLine)); } }
@@ -156,6 +204,7 @@ public sealed class ResultsViewModel : ObservableObject
         if (Rows.Count == 1) row.IsExpanded = true; // Bei einem Rechner direkt die Ausgabe zeigen
         RaiseCounts();
         RowsView.Refresh();
+        TilesView.Refresh();
     }
 
     /// <summary>Wird ausgelöst, wenn alle Rechner fertig sind (oder der Lauf abgebrochen wurde).</summary>

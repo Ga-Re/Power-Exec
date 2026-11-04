@@ -336,6 +336,22 @@ public sealed partial class AppController
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: true)));
             var request = new ExecutionRequest { Item = item, Targets = ["WEB1", "WEB2"] };
             await ShowAndClose(new ResultsWindow(new ResultsViewModel(this, request, "TEST\\user")));
+            // Kachelkarte: ab 16 Rechnern automatisch, Probleme zuerst
+            {
+                var many = new ExecutionRequest { Item = item, Targets = Enumerable.Range(1, 24).Select(k => $"SRV-{k:00}").ToList() };
+                var tilesVm = new ResultsViewModel(this, many, "TEST\\user");
+                if (!tilesVm.ShowTiles) Fail("Ergebnisliste: ab 16 Rechnern startet sie nicht als Kachelkarte");
+                for (int n = 0; n < tilesVm.Rows.Count; n++)
+                {
+                    var tileStatus = n % 8 == 3 ? RemoteStatus.Error : n % 8 == 5 ? RemoteStatus.Unreachable : n > 18 ? RemoteStatus.Running : RemoteStatus.Success;
+                    tilesVm.Rows[n].Update(new RemoteResult { Computer = tilesVm.Rows[n].Computer, Status = tileStatus, DurationMs = 800 + n * 37, Output = "C: 42 % frei", Error = tileStatus == RemoteStatus.Error ? "Zugriff verweigert" : string.Empty });
+                }
+                tilesVm.TilesView.Refresh();
+                var firstTile = tilesVm.TilesView.Cast<ResultRowViewModel>().First();
+                if (firstTile.Status != RemoteStatus.Error) Fail("Kachelkarte: Fehler stehen nicht vorne");
+                tilesVm.SelectedTile = firstTile;
+                await ShowAndClose(new ResultsWindow(tilesVm));
+            }
             await ShowAndClose(IconPickerWindow.ForTest());
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));

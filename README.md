@@ -113,6 +113,7 @@ oder remote auf einem oder vielen Rechnern.
 - Remote wird standardmäßig Windows PowerShell 5.1 verwendet; PowerShell 7 nur, wenn der Endpunkt `PowerShell.7` existiert
 - **Scriptordner mitsenden:** kopiert Begleitdateien und Module über die Remote-Sitzung in einen Temp-Ordner auf dem Ziel und löscht ihn danach. Das vermeidet das Double-Hop-Problem, weil der Zielrechner nicht selbst auf die Freigabe zugreifen muss. Dauerhaft aktivierbar mit der Zeile `PowerExec: CopyFolder` unter `.NOTES`.
 - Ergebnisliste mit Status (Erfolgreich / Fehler / Nicht erreichbar), aufklappbarer Ausgabe, Log, CSV-Export und „Fehlgeschlagene wiederholen“
+- **Kachelkarte:** eine Kachel je Rechner in der Statusfarbe, Fehler und nicht erreichbare Rechner zuerst, live während des Laufs; Klick zeigt die Ausgabe darunter. Ab 16 Rechnern startet die Ergebnisliste so, umschaltbar mit „Liste / Kacheln“
 - CredSSP wird bewusst nicht unterstützt (Anmeldedaten würden an den Zielrechner weitergegeben)
 - **Verbindungstest** je Rechner im Dialog: WinRM erreichbar, Anmeldung, PowerShell-Version, PowerShell 7; Option **HTTPS (5986)**; verständliche Hinweise bei TrustedHosts- und DNS-Problemen
 - **Windows-Benachrichtigung**, wenn ein Remote-Lauf fertig ist (Klick öffnet die Ergebnisliste)
