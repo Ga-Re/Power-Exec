@@ -33,6 +33,8 @@ public partial class PanelWindow : Window
         _host = host;
         InitializeComponent();
         DataContext = host.ViewModel;
+        // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
+        AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
         host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
         host.ViewModel.Groups.CollectionChanged += (_, _) =>
         {
@@ -432,12 +434,42 @@ public partial class PanelWindow : Window
 
     private void MenuButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is Button { ContextMenu: { } menu } button)
+        if (sender is Button { ContextMenu: { } menu } button) OpenMenuBelow(menu, button);
+    }
+
+    /// <summary>
+    /// Kontextmenü unter einem Element öffnen (⋯-Knopf, Tastatur). ItemMenu und GroupMenu gibt es nur einmal je Fenster:
+    /// Ziel und Lage werden beim Schließen zurückgesetzt, damit der nächste Rechtsklick wieder am Mauszeiger öffnet.
+    /// Der DataContext folgt dort per Bindung dem Ziel; nur Menüs ohne diese Bindung bekommen ihn direkt.
+    /// </summary>
+    private static void OpenMenuBelow(ContextMenu menu, FrameworkElement target, double horizontalOffset = 0)
+    {
+        menu.PlacementTarget = target;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.HorizontalOffset = horizontalOffset;
+        if (System.Windows.Data.BindingOperations.GetBindingExpression(menu, DataContextProperty) == null)
+            menu.DataContext = target.DataContext;
+        void Reset(object? s, RoutedEventArgs a)
         {
-            menu.PlacementTarget = button;
-            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-            menu.DataContext = button.DataContext;
-            menu.IsOpen = true;
+            menu.Closed -= Reset;
+            menu.ClearValue(ContextMenu.PlacementTargetProperty);
+            menu.ClearValue(ContextMenu.PlacementProperty);
+            menu.ClearValue(ContextMenu.HorizontalOffsetProperty);
+        }
+        menu.Closed += Reset;
+        menu.IsOpen = true;
+    }
+
+    /// <summary>Rechtsklick: geteiltes Menü an das Element hängen, dem es gehört (Zeile, Kachel, Gruppenkopf).</summary>
+    private static void OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        for (var d = e.OriginalSource as DependencyObject; d != null; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+        {
+            if (d is FrameworkElement { ContextMenu: { } menu } owner)
+            {
+                if (!ReferenceEquals(menu.PlacementTarget, owner)) menu.PlacementTarget = owner;
+                return;
+            }
         }
     }
 
@@ -895,16 +927,16 @@ public partial class PanelWindow : Window
         }
     }
 
+    /// <summary>Das geteilte Menü aller Einträge dieses Fensters (für den Selbsttest).</summary>
+    internal ContextMenu ItemMenu => (ContextMenu)FindResource("ItemMenu");
+
     /// <summary>Kontextmenü eines Eintrags per Tastatur öffnen (erster Menüpunkt hat den Fokus).</summary>
-    private bool OpenItemMenu(ViewModels.ItemViewModel item)
+    internal bool OpenItemMenu(ViewModels.ItemViewModel item)
     {
         var container = FindContainer(ListScroll, item) ?? FindContainer(this, item);
         var button = container == null ? null : FindDescendant<Button>(container, b => b.ContextMenu != null);
         if (button?.ContextMenu is not { } menu) return false;
-        menu.PlacementTarget = button;
-        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        menu.HorizontalOffset = 40;
-        menu.IsOpen = true;
+        OpenMenuBelow(menu, button, horizontalOffset: 40);
         menu.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
             if (menu.Items.OfType<MenuItem>().FirstOrDefault(m => m.IsVisible && m.IsEnabled) is { } first) first.Focus();
