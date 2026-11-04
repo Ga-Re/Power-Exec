@@ -24,6 +24,7 @@ oder remote auf einem oder vielen Rechnern.
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
 - Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
 - Suche über Name, Dateiname, Synopsis, Beschreibung, Notiz, Schlagworte und Snippet-Code; Filter: Alle, Scripte, Programme, Favoriten
+- **Navigation in langen Listen:** der Kopf der aktuellen Gruppe bleibt beim Scrollen oben stehen (mit Pfad, z. B. „Kunde A › AD“; Klick springt zum Gruppenkopf); ab vier Gruppen zeigt eine **Sprungleiste** rechts einen Punkt je Gruppe in ihrer Farbe; **Strg+K** sucht eine Gruppe und springt hin
 - Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - **Tastatur:** Pfeiltasten wählen aus, Enter startet, **Strg+Enter** als Administrator, **Strg+Umschalt+Enter** als anderer Benutzer, **Strg+R** remote, **→ oder Tab** öffnet alle Aktionen des Eintrags als Menü, **Alt+1 … 9** startet die Favoriten (Taste steht in der Gruppe „Favoriten“ am Eintrag), **Strg+D** Favorit, **F2** bearbeiten/Startprofile, **Strg+E** Editor, **Strg+Umschalt+C** Pfad kopieren, Esc leert die Suche bzw. schließt das Panel; **F1** oder **?** im leeren Suchfeld zeigt alle Kürzel

@@ -181,6 +181,18 @@ public sealed partial class AppController
                 await Settle();
                 if (host.Window.Content is FrameworkElement keysRoot) Screenshot(keysRoot, "panel-tastenkuerzel");
                 vm.ShowShortcuts = false;
+
+                // Strg+K: Gruppe suchen und anspringen
+                vm.ShowGroupJump = true;
+                vm.GroupJumpText = "ad";
+                await Settle();
+                if (host.Window.Content is FrameworkElement jumpRoot) Screenshot(jumpRoot, "panel-gruppe-springen");
+                var target = vm.GroupJumpSelected?.Group;
+                if (target?.GroupPath != "Admin/AD") Fail($"Strg+K: „ad“ findet nicht die Gruppe Admin/AD, sondern {target?.GroupPath ?? "nichts"}");
+                if (target != null && target.Breadcrumb != "Admin › AD") Fail("Gruppenpfad wird nicht als „Admin › AD“ angezeigt");
+                vm.ConfirmGroupJump();
+                await Settle();
+                if (vm.ShowGroupJump) Fail("Strg+K: Auswahl schließt die Gruppensuche nicht");
                 host.Window.HidePanel();
                 await Settle();
             }

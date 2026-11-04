@@ -9,6 +9,15 @@
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False"
         Width="400" Height="700">
     <Window.Resources>
+        <!-- Punkt in der Gruppenfarbe (ohne Farbe: neutral) -->
+        <Style x:Key="GroupDot" TargetType="Ellipse">
+            <Setter Property="Fill" Value="{DynamicResource Text.Tertiary}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasColor}" Value="True">
+                    <Setter Property="Fill" Value="{Binding AccentBrush}"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
 
         <!-- Menü einer Gruppe (Ordner/Favoriten) -->
         <ContextMenu x:Key="GroupMenu" x:Shared="False">
@@ -830,8 +839,19 @@
             </Border>
 
             <!-- Liste -->
-            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="8,0,8,8"
-                          Background="Transparent">
+            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Background="Transparent" ScrollChanged="ListScroll_ScrollChanged">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="Padding" Value="8,0,8,8"/>
+                        <Style.Triggers>
+                            <!-- Platz für die Sprungleiste -->
+                            <DataTrigger Binding="{Binding ShowJumpRail}" Value="True">
+                                <Setter Property="Padding" Value="8,0,20,8"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
                 <ScrollViewer.ContextMenu>
                     <ContextMenu>
                         <MenuItem Header="Neue Gruppe …" Command="{Binding NewGroupCommand}">
@@ -914,6 +934,102 @@
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
+
+            <!-- Fixierter Kopf der aktuellen Gruppe (mit Pfad); Klick springt zum Gruppenkopf -->
+            <Button Grid.Row="5" VerticalAlignment="Top" Margin="8,0,20,0" Panel.ZIndex="10" Style="{StaticResource RowButton}"
+                    DataContext="{Binding StickyGroup}" Command="{Binding DataContext.JumpToGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}" ToolTip="Zum Gruppenkopf springen"
+                    Visibility="{Binding DataContext.HasStickyGroup, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
+                <Border Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="8,6">
+                    <Border Background="{Binding CardBackground}" Margin="-8,-6" Padding="8,6">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding IconGlyph}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
+                                        <Setter Property="Foreground" Value="{DynamicResource Text.Secondary}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasColor}" Value="True">
+                                                <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding Breadcrumb}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+                </Border>
+            </Button>
+
+            <!-- Sprungleiste: ein Punkt je Gruppe (Gruppenfarbe), Klick springt hin -->
+            <ItemsControl Grid.Row="5" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,4,8" Panel.ZIndex="11" Focusable="False"
+                          ItemsSource="{Binding Groups}" Visibility="{Binding ShowJumpRail, Converter={StaticResource Vis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Width="14" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding Title}" Focusable="False"
+                                Command="{Binding DataContext.JumpToGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                AutomationProperties.Name="{Binding Title}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid Background="Transparent">
+                                        <Ellipse x:Name="Dot" Width="7" Height="7" Opacity="0.75" Style="{StaticResource GroupDot}"/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Dot" Property="Width" Value="10"/>
+                                            <Setter TargetName="Dot" Property="Height" Value="10"/>
+                                            <Setter TargetName="Dot" Property="Opacity" Value="1"/>
+                                        </Trigger>
+                                        <DataTrigger Value="True">
+                                            <DataTrigger.Binding>
+                                                <MultiBinding Converter="{StaticResource StringEquals}">
+                                                    <Binding Path="Key"/>
+                                                    <Binding Path="DataContext.StickyTopKey" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                </MultiBinding>
+                                            </DataTrigger.Binding>
+                                            <Setter TargetName="Dot" Property="Width" Value="10"/>
+                                            <Setter TargetName="Dot" Property="Height" Value="10"/>
+                                            <Setter TargetName="Dot" Property="Opacity" Value="1"/>
+                                        </DataTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Strg+K: Gruppe suchen und anspringen -->
+            <Border Grid.Row="2" Grid.RowSpan="4" Margin="12,0,12,12" Panel.ZIndex="31" VerticalAlignment="Top"
+                    Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
+                    Padding="8" Visibility="{Binding ShowGroupJump, Converter={StaticResource Vis}}" IsVisibleChanged="GroupJump_IsVisibleChanged">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <DockPanel>
+                    <TextBox x:Name="GroupJumpBox" DockPanel.Dock="Top" Height="34" Padding="8,0" Tag="Gruppe suchen … (Enter springt hin, Esc schließt)"
+                             Text="{Binding GroupJumpText, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="GroupJumpBox_PreviewKeyDown"
+                             AutomationProperties.Name="Gruppe suchen"/>
+                    <ListBox x:Name="GroupJumpList" ItemsSource="{Binding GroupJumpResults}" SelectedItem="{Binding GroupJumpSelected}" Margin="0,6,0,0"
+                             MaxHeight="320" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             MouseUp="GroupJumpList_MouseUp">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="2,3">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center" DataContext="{Binding Group}" Style="{StaticResource GroupDot}"/>
+                                    <StackPanel>
+                                        <TextBlock infra:Highlight.Parts="{Binding TitleParts}" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding PathText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding HasPath, Converter={StaticResource Vis}}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
 
             <!-- Übersicht der Tastenkürzel (F1 oder „?“) -->
             <Border Grid.Row="4" Grid.RowSpan="2" Margin="12,4,12,12" Panel.ZIndex="30" VerticalAlignment="Top"

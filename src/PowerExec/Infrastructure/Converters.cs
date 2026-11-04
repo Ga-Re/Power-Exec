@@ -87,3 +87,12 @@ public sealed class TagBrushConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>Mehrfachbindung: true, wenn alle Werte gleich (und nicht null) sind.</summary>
+public sealed class AllEqualConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture) =>
+        values.Length > 1 && values[0] != null && values[0] != DependencyProperty.UnsetValue && values.Skip(1).All(v => Equals(v, values[0]));
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}

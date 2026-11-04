@@ -33,6 +33,12 @@ public partial class PanelWindow : Window
         _host = host;
         InitializeComponent();
         DataContext = host.ViewModel;
+        host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
+        host.ViewModel.Groups.CollectionChanged += (_, _) =>
+        {
+            _groupContainers = null;
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => UpdateStickyGroup());
+        };
         ApplyAppearance();
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
@@ -48,7 +54,8 @@ public partial class PanelWindow : Window
             if (HandleShortcut(e)) e.Handled = true;
             else if (e.Key == Key.Escape)
             {
-                if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
+                if (Vm.ShowGroupJump) { Vm.ShowGroupJump = false; SearchBox.Focus(); }
+                else if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
                 else if (Vm.IsSearching) Vm.SearchText = string.Empty;
                 else HidePanel();
                 e.Handled = true;
@@ -654,6 +661,7 @@ public partial class PanelWindow : Window
         if (mods == ModifierKeys.Alt && key is >= Key.NumPad1 and <= Key.NumPad9) return Vm.RunQuickItem(key - Key.NumPad0);
 
         if (key == Key.F1 && mods == ModifierKeys.None) { Vm.ShowShortcuts = !Vm.ShowShortcuts; return true; }
+        if (key == Key.K && mods == ModifierKeys.Control) { Vm.ShowGroupJump = !Vm.ShowGroupJump; return true; }
 
         var item = Vm.CurrentItem;
         if (item == null) return false;
@@ -678,6 +686,85 @@ public partial class PanelWindow : Window
                 return OpenItemMenu(Vm.SelectedItem!);
         }
         return false;
+    }
+
+    // ---- Fixierter Gruppenkopf, Sprungleiste, Strg+K ---------------------------
+
+    private List<(ViewModels.GroupViewModel Group, FrameworkElement Element)>? _groupContainers;
+
+    private List<(ViewModels.GroupViewModel Group, FrameworkElement Element)> GroupContainers()
+    {
+        if (_groupContainers != null) return _groupContainers;
+        var list = new List<(ViewModels.GroupViewModel Group, FrameworkElement Element)>();
+        void Walk(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is ContentPresenter { Content: ViewModels.GroupViewModel g } cp) list.Add((g, cp));
+                Walk(child);
+            }
+        }
+        Walk(ListScroll);
+        return _groupContainers = list;
+    }
+
+    private void ListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateStickyGroup();
+
+    /// <summary>Innerste Gruppe, deren Kopf oben herausgescrollt ist, deren Inhalt aber noch sichtbar ist.</summary>
+    private void UpdateStickyGroup()
+    {
+        if (!IsLoaded || ListScroll.VerticalOffset < 1) { Vm.StickyGroup = null; return; }
+        const double headerHeight = 34;
+        ViewModels.GroupViewModel? best = null;
+        double bestTop = double.MinValue;
+        foreach (var (group, element) in GroupContainers())
+        {
+            if (!element.IsVisible) continue; // eingeklappte Untergruppe
+            if (!element.IsDescendantOf(ListScroll)) { _groupContainers = null; continue; }
+            var top = element.TranslatePoint(new Point(0, 0), ListScroll).Y;
+            if (top < 0 && top + element.ActualHeight > headerHeight && top > bestTop && group.IsExpanded)
+            {
+                best = group;
+                bestTop = top;
+            }
+        }
+        Vm.StickyGroup = best;
+    }
+
+    private void ScrollToGroup(ViewModels.GroupViewModel group)
+    {
+        // Nach dem Aufklappen erst das Layout abwarten
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            _groupContainers = null;
+            var element = GroupContainers().FirstOrDefault(x => ReferenceEquals(x.Group, group)).Element;
+            if (element == null) return;
+            var top = element.TranslatePoint(new Point(0, 0), ListScroll).Y;
+            ListScroll.ScrollToVerticalOffset(Math.Max(0, ListScroll.VerticalOffset + top));
+            if (!Vm.ShowGroupJump && !SearchBox.IsKeyboardFocusWithin) SearchBox.Focus();
+        });
+    }
+
+    private void GroupJump_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true) Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { GroupJumpBox.Focus(); Keyboard.Focus(GroupJumpBox); });
+        else if (IsOpen) SearchBox.Focus();
+    }
+
+    private void GroupJumpBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Down: Vm.MoveGroupJumpSelection(1); GroupJumpList.ScrollIntoView(Vm.GroupJumpSelected); e.Handled = true; break;
+            case Key.Up: Vm.MoveGroupJumpSelection(-1); GroupJumpList.ScrollIntoView(Vm.GroupJumpSelected); e.Handled = true; break;
+            case Key.Enter: Vm.ConfirmGroupJump(); e.Handled = true; break;
+        }
+    }
+
+    private void GroupJumpList_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left && Vm.GroupJumpSelected != null) Vm.ConfirmGroupJump();
     }
 
     /// <summary>„?“ im leeren Suchfeld zeigt die Übersicht der Tastenkürzel statt danach zu suchen (unabhängig vom Tastaturlayout).</summary>

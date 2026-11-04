@@ -76,6 +76,9 @@ public sealed class GroupViewModel : ObservableObject
     /// <summary>Ebene (0 = oberste Ebene).</summary>
     public int Depth { get; }
 
+    /// <summary>Pfad für die Anzeige („Kunde A › AD“); bei Sondergruppen der Titel.</summary>
+    public string Breadcrumb => GroupPath != null ? string.Join(" › ", GroupPath.Split(GroupManager.Separator)) : Title;
+
     /// <summary>Untergruppen (nur bei eigenen Gruppen).</summary>
     public List<GroupViewModel> Children { get; } = new();
     public bool HasChildren => Children.Count > 0;

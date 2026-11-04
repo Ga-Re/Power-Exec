@@ -227,6 +227,93 @@ public sealed class PanelViewModel : ObservableObject
         new("F1 oder ?", "Diese Übersicht"),
     };
 
+    // ---- Navigation: fixierter Gruppenkopf, Sprungleiste, Strg+K ------------------
+
+    private GroupViewModel? _stickyGroup;
+    /// <summary>Gruppe, deren Kopf oben aus dem sichtbaren Bereich gescrollt ist (wird oben fixiert angezeigt).</summary>
+    public GroupViewModel? StickyGroup
+    {
+        get => _stickyGroup;
+        set { if (Set(ref _stickyGroup, value)) { OnPropertyChanged(nameof(HasStickyGroup)); OnPropertyChanged(nameof(StickyTopKey)); } }
+    }
+    public bool HasStickyGroup => _stickyGroup != null;
+    /// <summary>Oberste Gruppe zur fixierten Gruppe (für die Markierung in der Sprungleiste).</summary>
+    public string? StickyTopKey => _stickyGroup == null ? null
+        : Groups.FirstOrDefault(g => g.SelfAndDescendants.Contains(_stickyGroup))?.Key;
+
+    /// <summary>Sprungleiste rechts: ab 4 Gruppen auf oberster Ebene, nicht während der Suche.</summary>
+    public bool ShowJumpRail => Groups.Count >= 4 && !IsSearching;
+
+    /// <summary>Wird ausgelöst, wenn die Ansicht zu einer Gruppe scrollen soll.</summary>
+    public event Action<GroupViewModel>? ScrollToGroupRequested;
+
+    public ICommand JumpToGroupCommand => _jumpToGroupCommand ??= new RelayCommand(p => { if (p is GroupViewModel g) JumpTo(g); });
+    private ICommand? _jumpToGroupCommand;
+
+    /// <summary>Gruppe samt übergeordneten Gruppen aufklappen und hinscrollen.</summary>
+    public void JumpTo(GroupViewModel group)
+    {
+        for (var parent = group.GroupPath == null ? null : GroupManager.ParentOf(group.GroupPath); parent != null; parent = GroupManager.ParentOf(parent))
+            if (AllGroups.FirstOrDefault(g => parent.Equals(g.GroupPath, StringComparison.CurrentCultureIgnoreCase)) is { IsExpanded: false } p)
+                p.IsExpanded = true;
+        if (!group.IsExpanded) group.IsExpanded = true;
+        ShowGroupJump = false;
+        ScrollToGroupRequested?.Invoke(group);
+    }
+
+    private bool _showGroupJump;
+    /// <summary>Strg+K: Gruppe per Suche anspringen.</summary>
+    public bool ShowGroupJump
+    {
+        get => _showGroupJump;
+        set
+        {
+            if (!Set(ref _showGroupJump, value)) return;
+            if (value) { _groupJumpText = string.Empty; OnPropertyChanged(nameof(GroupJumpText)); UpdateGroupJump(); }
+        }
+    }
+
+    private string _groupJumpText = string.Empty;
+    public string GroupJumpText
+    {
+        get => _groupJumpText;
+        set { if (Set(ref _groupJumpText, value ?? string.Empty)) UpdateGroupJump(); }
+    }
+
+    private IReadOnlyList<GroupJumpItem> _groupJumpResults = Array.Empty<GroupJumpItem>();
+    public IReadOnlyList<GroupJumpItem> GroupJumpResults { get => _groupJumpResults; private set => Set(ref _groupJumpResults, value); }
+
+    private GroupJumpItem? _groupJumpSelected;
+    public GroupJumpItem? GroupJumpSelected { get => _groupJumpSelected; set => Set(ref _groupJumpSelected, value); }
+
+    private void UpdateGroupJump()
+    {
+        var terms = _groupJumpText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var list = AllGroups
+            .Select(g => (Group: g, Score: terms.Length == 0 ? 0 : SearchScoring.Score(new (string?, int)[] { (g.Title, 2), (g.Breadcrumb, 1) }, terms)))
+            .Where(x => x.Score != null)
+            .OrderByDescending(x => x.Score)
+            .Select(x => new GroupJumpItem(x.Group, TextPart.Split(x.Group.Title, terms),
+                x.Group.Depth > 0 ? x.Group.Breadcrumb : string.Empty, x.Group.AccentBrush, x.Group.CountText))
+            .ToList();
+        GroupJumpResults = list;
+        GroupJumpSelected = list.FirstOrDefault();
+    }
+
+    /// <summary>Pfeiltasten in der Gruppensuche.</summary>
+    public void MoveGroupJumpSelection(int delta)
+    {
+        if (_groupJumpResults.Count == 0) return;
+        var idx = _groupJumpSelected == null ? -1 : _groupJumpResults.ToList().IndexOf(_groupJumpSelected);
+        GroupJumpSelected = _groupJumpResults[Math.Clamp(idx + delta, 0, _groupJumpResults.Count - 1)];
+    }
+
+    public void ConfirmGroupJump()
+    {
+        if (_groupJumpSelected != null) JumpTo(_groupJumpSelected.Group);
+        else ShowGroupJump = false;
+    }
+
     // ---- Rückgängig ---------------------------------------------------------
 
     /// <summary>Hinweis nach einer Änderung im Panel („„X“ ausgeblendet · Rückgängig“).</summary>
@@ -464,6 +551,8 @@ public sealed class PanelViewModel : ObservableObject
 
         Groups.Clear();
         foreach (var g in groups) Groups.Add(g);
+        StickyGroup = null;
+        OnPropertyChanged(nameof(ShowJumpRail));
         OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
 
         // Auswahl wiederherstellen
@@ -628,6 +717,8 @@ public sealed class PanelViewModel : ObservableObject
         _searchText = string.Empty;
         _filter = _host.Config.DefaultFilter;
         _selectedKey = null;
+        ShowShortcuts = false;
+        ShowGroupJump = false;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(IsSearching));
         OnPropertyChanged(nameof(Filter));
@@ -682,3 +773,8 @@ public sealed record SearchChip(string Label, bool IsInvalid, string ToolTip, IC
 /// <summary>Eine Zeile im Spickzettel der Tastenkürzel.</summary>
 public sealed record ShortcutInfo(string Keys, string Action);
 
+/// <summary>Treffer in der Gruppensuche (Strg+K).</summary>
+public sealed record GroupJumpItem(GroupViewModel Group, IReadOnlyList<TextPart> TitleParts, string PathText, System.Windows.Media.Brush? Color, string CountText)
+{
+    public bool HasPath => PathText.Length > 0;
+}
