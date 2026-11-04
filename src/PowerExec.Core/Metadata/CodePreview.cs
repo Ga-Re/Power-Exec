@@ -50,7 +50,15 @@ public static class CodePreview
         var result = new List<CodeSegment>();
         if (string.IsNullOrEmpty(code)) return result;
         Token[] tokens;
-        try { Parser.ParseInput(code, out tokens, out _); }
+        var commandStarts = new HashSet<int>();
+        try
+        {
+            var ast = Parser.ParseInput(code, out tokens, out _);
+            // Befehlsnamen über den Syntaxbaum (das Token-Merkmal CommandName ist nicht immer gesetzt)
+            foreach (var cmd in ast.FindAll(a => a is CommandAst, true).Cast<CommandAst>())
+                if (cmd.CommandElements.Count > 0 && cmd.CommandElements[0] is StringConstantExpressionAst name)
+                    commandStarts.Add(name.Extent.StartOffset);
+        }
         catch { return new[] { new CodeSegment(code, CodeTokenKind.Text) }; }
 
         int pos = 0;
@@ -59,7 +67,7 @@ public static class CodePreview
             int start = t.Extent.StartOffset, end = t.Extent.EndOffset;
             if (start < pos || end > code.Length || end <= start) continue;
             if (start > pos) result.Add(new CodeSegment(code[pos..start], CodeTokenKind.Text));
-            result.Add(new CodeSegment(code[start..end], KindOf(t)));
+            result.Add(new CodeSegment(code[start..end], commandStarts.Contains(start) && t is not StringToken { Kind: not TokenKind.Generic } ? CodeTokenKind.Command : KindOf(t)));
             pos = end;
         }
         if (pos < code.Length) result.Add(new CodeSegment(code[pos..], CodeTokenKind.Text));
