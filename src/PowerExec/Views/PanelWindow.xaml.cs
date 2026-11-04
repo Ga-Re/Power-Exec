@@ -778,7 +778,7 @@ public partial class PanelWindow : Window
     }
 
     /// <summary>Kontextmenü eines Eintrags per Tastatur öffnen (erster Menüpunkt hat den Fokus).</summary>
-    private bool OpenItemMenu(ItemViewModel item)
+    private bool OpenItemMenu(ViewModels.ItemViewModel item)
     {
         var container = FindContainer(ListScroll, item) ?? FindContainer(this, item);
         var button = container == null ? null : FindDescendant<Button>(container, b => b.ContextMenu != null);
