@@ -68,7 +68,8 @@ public sealed class Launcher
     }
 
     /// <returns>true, wenn der Prozess gestartet wurde.</returns>
-    public bool StartLocal(ExecutionRequest request, Window? owner)
+    /// <param name="started">Erhält den gestarteten Prozess (dann gibt der Aufrufer ihn frei), z. B. für die Aktivitäten-Leiste.</param>
+    public bool StartLocal(ExecutionRequest request, Window? owner, Action<Process>? started = null)
     {
         var spec = CommandBuilder.BuildLocal(request);
         RunCredential? cred = null;
@@ -101,7 +102,9 @@ public sealed class Launcher
 
         try
         {
-            Process.Start(psi)?.Dispose();
+            var process = Process.Start(psi);
+            if (process != null && started != null) started(process);
+            else process?.Dispose();
             return true;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)

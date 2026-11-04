@@ -982,7 +982,7 @@ public sealed partial class AppController : IDisposable
             }
             else
             {
-                Launcher.StartLocal(request, null);
+                Launcher.StartLocal(request, null, TrackStarted(item, mode));
             }
             return;
         }
@@ -991,7 +991,7 @@ public sealed partial class AppController : IDisposable
         HidePanels();
         try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
         catch (Exception ex) { AppLog.Error("Start vorbereiten fehlgeschlagen", ex); }
-        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null))
+        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null, TrackStarted(item, mode)))
         {
             if (record) RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
@@ -1114,6 +1114,13 @@ public sealed partial class AppController : IDisposable
         var account = cred?.Account ?? $"{Environment.UserDomainName}\\{Environment.UserName}";
         var vm = new ResultsViewModel(this, request, account);
         var w = new ResultsWindow(vm);
+        Activities.TrackRemote(vm, () =>
+        {
+            if (!w.IsLoaded) { w = new ResultsWindow(vm); w.Show(); }
+            if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+            HidePanels();
+            w.Activate();
+        });
         vm.Finished += () =>
         {
             if (!Settings.NotifyOnFinish || w.IsActive) return;

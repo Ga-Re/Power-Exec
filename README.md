@@ -37,6 +37,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
 - Neue Einträge direkt in einer Gruppe anlegen: Webseite, Ordner, Remotedesktop, SSH, Snippet, Werkzeug, Befehl, Dateien, aus Vorlagen oder aus der Zwischenablage
 - Doppelklick startet das Standardprofil; Split-Button für weitere Profile
+- **Aktivitäten-Leiste** unten im Panel: laufende und gerade beendete Starts mit Laufzeit; Remote-Läufe mit Fortschritt (z. B. „28 / 40 Rechner · 2 Fehler“), **Abbrechen** und **Ausgabe** (öffnet die Ergebnisliste); lokale Scripte mit Ende und Exit-Code. Solange etwas läuft, **pulsiert die Hover-Zone**. Beendete Einträge bleiben 15 Minuten stehen (höchstens drei)
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
 - **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panel öffnen, Arbeitsbereich wechseln
 

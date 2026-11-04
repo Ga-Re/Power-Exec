@@ -314,6 +314,19 @@ public sealed class PanelViewModel : ObservableObject
         else ShowGroupJump = false;
     }
 
+    // ---- Aktivitäten -----------------------------------------------------------
+
+    /// <summary>Laufende und gerade beendete Starts (für alle Panels gleich).</summary>
+    public System.Collections.ObjectModel.ObservableCollection<ActivityViewModel> Activities => _app.Activities.Items;
+    public bool HasActivities => _app.Activities.Items.Count > 0;
+    public string ActivitiesHeader => _app.Activities.RunningCount is var n and > 0 ? $"Läuft · {n}" : "Zuletzt beendet";
+
+    public void RefreshActivities()
+    {
+        OnPropertyChanged(nameof(HasActivities));
+        OnPropertyChanged(nameof(ActivitiesHeader));
+    }
+
     // ---- Rückgängig ---------------------------------------------------------
 
     /// <summary>Hinweis nach einer Änderung im Panel („„X“ ausgeblendet · Rückgängig“).</summary>

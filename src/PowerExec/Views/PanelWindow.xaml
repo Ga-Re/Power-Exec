@@ -1128,6 +1128,63 @@
 
             <!-- Fußzeile -->
             <Border Grid.Row="7" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}">
+                <StackPanel>
+                <!-- Aktivitäten: laufende und gerade beendete Starts -->
+                <StackPanel Margin="12,8,8,2" Visibility="{Binding HasActivities, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{Binding ActivitiesHeader}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="4,0,0,4"
+                               Typography.Capitals="AllSmallCaps"/>
+                    <ItemsControl ItemsSource="{Binding Activities}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="ActRow" CornerRadius="6" Padding="4,4,2,4" Background="Transparent">
+                                    <DockPanel>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding CancelCommand}"
+                                                ToolTip="Abbrechen" AutomationProperties.Name="Abbrechen" Visibility="{Binding CanCancel, Converter={StaticResource Vis}}">
+                                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                        </Button>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding DismissCommand}"
+                                                ToolTip="Aus der Liste entfernen" AutomationProperties.Name="Entfernen"
+                                                Visibility="{Binding IsRunning, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Text.Tertiary}"/>
+                                        </Button>
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="8,0" Command="{Binding OpenCommand}"
+                                                Visibility="{Binding CanOpen, Converter={StaticResource Vis}}" ToolTip="Ergebnisliste öffnen">
+                                            <TextBlock Text="Ausgabe" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                        </Button>
+                                        <Grid Width="22" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock x:Name="ActGlyph" Text="{Binding StatusGlyph}" Style="{StaticResource Icon}" FontSize="13" HorizontalAlignment="Center"
+                                                       Foreground="{DynamicResource Accent}"/>
+                                        </Grid>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding TimeText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="6,0,0,0"/>
+                                                <TextBlock Text="{Binding Title}" FontSize="12.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                            <ProgressBar Height="3" Margin="0,4,0,0" Minimum="0" Maximum="100" Value="{Binding ProgressValue, Mode=OneWay}"
+                                                         Visibility="{Binding HasProgress, Converter={StaticResource Vis}}"
+                                                         Foreground="{DynamicResource Accent}" Background="{DynamicResource Bg.Chip}" BorderThickness="0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                        <Setter TargetName="ActGlyph" Property="Foreground" Value="{DynamicResource Status.Success}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                        <Setter TargetName="ActGlyph" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                        <Setter TargetName="ActGlyph" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                                    </DataTrigger>
+                                    <Trigger SourceName="ActRow" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ActRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                    </Trigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
                 <DockPanel Margin="16,4,8,4">
                     <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="Ordner neu einlesen">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="13"/>
@@ -1137,6 +1194,7 @@
                     </Button>
                     <TextBlock Text="{Binding Footer}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
+                </StackPanel>
             </Border>
         </Grid>
     </Border>

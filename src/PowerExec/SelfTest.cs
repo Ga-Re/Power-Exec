@@ -197,6 +197,34 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Aktivitäten-Leiste");
+            {
+                // Echter Prozess: Ende und Exit-Code werden erkannt
+                var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c exit 3") { CreateNoWindow = true, UseShellExecute = false });
+                var batch = new PowerExec.Core.Models.LaunchItem { FullPath = Path.Combine(dir, "Cleanup.cmd"), RootFolder = dir, Type = PowerExec.Core.Models.ItemType.Batch };
+                if (proc == null) Fail("Aktivitäten: Testprozess startet nicht");
+                else
+                {
+                    Activities.TrackProcess(batch, "Exit-Test", proc, "lokal");
+                    var tracked = Activities.Items[0];
+                    for (int wait = 0; wait < 100 && tracked.IsRunning; wait++) await Task.Delay(100);
+                    if (tracked.IsRunning) Fail("Aktivitäten: Prozessende wird nicht erkannt");
+                    else if (!tracked.IsError || !tracked.Detail.Contains('3')) Fail($"Aktivitäten: Exit-Code 3 nicht erkannt ({tracked.State}, {tracked.Detail})");
+                }
+                var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
+                remoteDemo.Progress = 0.7;
+                var host = _hosts[0];
+                if (!host.ViewModel.HasActivities) Fail("Aktivitäten: Panel zeigt keine Aktivitäten");
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
+                if (host.Window.Content is FrameworkElement actRoot) Screenshot(actRoot, "panel-aktivitaeten");
+                remoteDemo.Complete(ActivityState.Warning);
+                foreach (var a in Activities.Items.ToList()) Activities.Remove(a);
+                if (host.ViewModel.HasActivities) Fail("Aktivitäten: Liste wird nach dem Entfernen nicht leer");
+                host.Window.HidePanel();
+                await Settle();
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

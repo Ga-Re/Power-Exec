@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
@@ -65,6 +66,8 @@ public sealed class EdgeTriggerWindow : Window
             VerticalAlignment = VerticalAlignment.Stretch
         };
         Content = strip;
+        _strip = strip;
+        _baseOpacity = strip.Opacity;
 
         _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(1, app.Settings.HoverDelayMs)) };
         _hoverTimer.Tick += (_, _) =>
@@ -106,6 +109,25 @@ public sealed class EdgeTriggerWindow : Window
     public MonitorInfo Monitor => _monitor;
 
     private bool _suspended;
+    private readonly Border _strip;
+    private readonly double _baseOpacity;
+    private bool _busy;
+
+    /// <summary>Solange ein Start läuft, pulsiert die Hover-Zone (bei „Animation aus“ leuchtet sie nur kräftiger).</summary>
+    public void SetBusy(bool busy)
+    {
+        if (_busy == busy) return;
+        _busy = busy;
+        _strip.BeginAnimation(OpacityProperty, null);
+        if (!busy) { _strip.Opacity = _baseOpacity; return; }
+        if (_app.Settings.Animation == AnimationMode.Off || !SystemParameters.ClientAreaAnimation) { _strip.Opacity = 1; return; }
+        _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(Math.Min(_baseOpacity, 0.45), 1, TimeSpan.FromMilliseconds(900))
+        {
+            AutoReverse = true,
+            RepeatBehavior = RepeatBehavior.Forever,
+            EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
+        });
+    }
 
     /// <summary>Hover-Zone vorübergehend deaktivieren (Vollbild-Programm auf diesem Monitor).</summary>
     public void SetSuspended(bool suspended)
