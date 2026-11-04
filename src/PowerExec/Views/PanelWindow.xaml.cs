@@ -36,11 +36,9 @@ public partial class PanelWindow : Window
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
         AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
         host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
-        host.ViewModel.Groups.CollectionChanged += (_, _) =>
-        {
-            _groupContainers = null;
-            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => UpdateStickyGroup());
-        };
+        // Der Abgleich beim Tippen meldet viele kleine Änderungen: Sticky-Header nur einmal danach neu bestimmen
+        host.ViewModel.Groups.CollectionChanged += (_, _) => ScheduleStickyUpdate();
+        host.ViewModel.Rebuilt += ScheduleStickyUpdate;
         ApplyAppearance();
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
@@ -839,6 +837,20 @@ public partial class PanelWindow : Window
     }
 
     // ---- Fixierter Gruppenkopf, Sprungleiste, Strg+K ---------------------------
+
+    private bool _stickyUpdatePending;
+
+    private void ScheduleStickyUpdate()
+    {
+        _groupContainers = null;
+        if (_stickyUpdatePending) return;
+        _stickyUpdatePending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            _stickyUpdatePending = false;
+            UpdateStickyGroup();
+        });
+    }
 
     private List<(ViewModels.GroupViewModel Group, FrameworkElement Element)>? _groupContainers;
 

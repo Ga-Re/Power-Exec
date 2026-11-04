@@ -172,6 +172,23 @@ public sealed class ItemViewModel : ObservableObject
     /// <summary>Eigene Suchbegriffe für die Hervorhebung (Spotlight); null = die des Panels.</summary>
     public IReadOnlyList<string>? HighlightTerms { get; init; }
 
+    /// <summary>
+    /// Wiederverwendung beim nächsten Rebuild (Suche, Filter): Hervorhebung neu berechnen, falls sich die Suchbegriffe
+    /// des Panels geändert haben. Alles andere (Eintrag, Profile, Symbol) bleibt – Einstellungen verwerfen den Cache.
+    /// </summary>
+    internal void RefreshHighlight()
+    {
+        if (HighlightTerms != null || (_nameParts == null && _synopsisParts == null)) return;
+        _nameParts = null;
+        _synopsisParts = null;
+        OnPropertyChanged(nameof(NameParts));
+        OnPropertyChanged(nameof(SynopsisParts));
+    }
+
+    /// <summary>Stellt dieses ViewModel denselben Eintrag dar? (Eigene Einträge werden bei jedem Rebuild neu beschrieben.)</summary>
+    internal bool Represents(LaunchItem item) =>
+        ReferenceEquals(Item, item) || (item.Source != null && ReferenceEquals(Item.Source, item.Source) && Item.FullPath == item.FullPath);
+
     public IReadOnlyList<LaunchProfile> Profiles { get; }
     public LaunchProfile DefaultProfile { get; }
     public IReadOnlyList<ProfileMenuItem> ProfileMenu { get; }
