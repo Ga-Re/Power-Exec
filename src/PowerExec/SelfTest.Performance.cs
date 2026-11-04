@@ -116,6 +116,8 @@ public sealed partial class AppController
             var invalid = new List<string>();
             foreach (var (label, action) in new (string, Action)[]
             {
+                ("Rebuild ohne Änderung", () => vm.RebuildUnchangedForTest()),
+                ("nur RaiseLayout", () => vm.RaiseLayoutForTest()),
                 ("Filter Scripte", () => vm.Filter = TypeFilter.Scripts),
                 ("Filter Alle", () => vm.Filter = TypeFilter.All),
                 ("Tippen „dis“", () => vm.SearchText = "dis"),
@@ -147,13 +149,14 @@ public sealed partial class AppController
     /// <summary>Elemente mit ungültiger Messung zählen, nach Typ (die häufigsten zuerst).</summary>
     private static string CountInvalid(DependencyObject root)
     {
-        int total = 0, invalidCount = 0;
+        int total = 0, invalidCount = 0, untemplated = 0;
         var byType = new Dictionary<string, int>();
         void Walk(DependencyObject d)
         {
             if (d is UIElement e)
             {
                 total++;
+                if (e is System.Windows.Controls.ContentPresenter && System.Windows.Media.VisualTreeHelper.GetChildrenCount(e) == 0) untemplated++;
                 if (!e.IsMeasureValid)
                 {
                     invalidCount++;
@@ -166,7 +169,7 @@ public sealed partial class AppController
         }
         Walk(root);
         var top = string.Join(", ", byType.OrderByDescending(kv => kv.Value).Take(6).Select(kv => $"{kv.Key} {kv.Value}"));
-        return $"{invalidCount} von {total} | {top}";
+        return $"{invalidCount} von {total} | {untemplated} | {top}";
     }
 
     private void WritePerformanceReport(List<PerfSample> samples, int itemCount, double scanMs, List<string> invalid)
@@ -227,8 +230,8 @@ public sealed partial class AppController
         md.AppendLine();
         md.AppendLine("**Ungültig nach dem Rebuild** (müssen neu gemessen werden):");
         md.AppendLine();
-        md.AppendLine("| Aktion | ungültig | häufigste Typen |");
-        md.AppendLine("|---|---|---|");
+        md.AppendLine("| Aktion | ungültig | ContentPresenter ohne Vorlage (neu) | häufigste Typen |");
+        md.AppendLine("|---|---|---:|---|");
         foreach (var line in invalid) md.AppendLine(line);
 
         var dir = _progressFile != null ? Path.GetDirectoryName(Path.GetFullPath(_progressFile))! : Path.GetTempPath();

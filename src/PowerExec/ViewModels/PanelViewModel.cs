@@ -742,6 +742,12 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Baut die Gruppen anhand von Suche, Filter und Favoriten neu auf.</summary>
     public void Rebuild() => Rebuild(reuse: false);
 
+    /// <summary>Nur für die Diagnose im Selbsttest: Rebuild wie beim Tippen, ohne dass sich etwas ändert.</summary>
+    internal void RebuildUnchangedForTest() => Rebuild(reuse: true);
+
+    /// <summary>Nur für die Diagnose im Selbsttest.</summary>
+    internal void RaiseLayoutForTest() => RaiseLayout();
+
     /// <param name="reuse">
     /// true bei Suche und Filter: vorhandene ViewModels weiterverwenden und die Listen nur abgleichen,
     /// damit WPF nur für neue Treffer Container erzeugt. false: alles neu (Einstellungen haben sich geändert).
