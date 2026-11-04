@@ -83,7 +83,6 @@ In Stufe 2 entfallen ~3,4 ms auf Nachschlagen (LookupSnapshot) und ~6 ms auf die
 | 0.16.2 | 84 | 599 ms | 1595 ms | 1083 ms | 160 ms | 1595 ms | 1908 ms |
 | 0.16.2 (Wiederholung) | 85 | 937 ms | 2410 ms | 1731 ms | 273 ms | 2410 ms | 2867 ms |
 | Schritt 2: Kontextmenüs einmal je Fenster | 86 | 226 ms | 630 ms | 381 ms | 69 ms | 630 ms | 652 ms |
-
 | Schritt 3: ViewModels wiederverwenden, Listen abgleichen | 88 | 277 ms | 816 ms | 488 ms | 59 ms | 816 ms | 825 ms |
 | … Gruppen auch bei Suche an/aus wiederverwenden | 89 | 372 ms | 1033 ms | 646 ms | 65 ms | 1033 ms | 1079 ms |
 
