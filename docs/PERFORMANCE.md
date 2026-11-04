@@ -84,6 +84,26 @@ In Stufe 2 entfallen ~3,4 ms auf Nachschlagen (LookupSnapshot) und ~6 ms auf die
 | 0.16.2 (Wiederholung) | 85 | 937 ms | 2410 ms | 1731 ms | 273 ms | 2410 ms | 2867 ms |
 | Schritt 2: Kontextmenüs einmal je Fenster | 86 | 226 ms | 630 ms | 381 ms | 69 ms | 630 ms | 652 ms |
 
+| Schritt 3: ViewModels wiederverwenden, Listen abgleichen | 88 | 277 ms | 816 ms | 488 ms | 59 ms | 816 ms | 825 ms |
+| … Gruppen auch bei Suche an/aus wiederverwenden | 89 | 372 ms | 1033 ms | 646 ms | 65 ms | 1033 ms | 1079 ms |
+
+### A/B im selben Lauf (CI-Lauf 90)
+
+| Tastendruck | ohne Wiederverwendung | mit | Listenänderungen (mit) |
+|---|---:|---:|---|
+| `d` (von leer) | 562 ms | 618 ms | +6 ↕278 −188 |
+| `di` | 184 ms | 122 ms | +4 ↕8 −289 |
+| `dis` | 109 ms | 54 ms | +1 −2 |
+| `disk` | 74 ms | 66 ms | −2 |
+| `d` (zurück von `di`) | 445 ms | 405 ms | +289 ↕8 −4 |
+| leer (von `d`) | 782 ms | 773 ms | +188 ↕276 −1 |
+| Filter Scripte | – | 595 ms | −96 |
+
+Mittel 290 ms ohne, 273 ms mit Wiederverwendung (Faktor 1,06). Kleine Schritte werden bis zu 50 % schneller.
+Beim Ein- und Ausschalten der Suche ändert sich die Sortierung in fast jeder Gruppe (Bewertung statt alphabetisch);
+ein `Move` kostet so viel wie ein neuer Container. „Filter Scripte“ entfernt nur Einträge und braucht trotzdem
+fast 600 ms – die Zeit steckt also nicht (nur) im Erzeugen der Container.
+
 Läufe 84 und 85 haben denselben Code: Die Runner schwanken um etwa den Faktor 1,5.
 Einzelne Läufe deshalb nur grob vergleichen; ein Grenzwert in der CI braucht Abstand oder mehrere Läufe.
 

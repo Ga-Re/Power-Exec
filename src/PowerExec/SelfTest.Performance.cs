@@ -21,7 +21,15 @@ public sealed partial class AppController
 {
     private const int PerfRounds = 5;
 
-    private sealed record PerfSample(string Scenario, string Input, double SyncMs, double TotalMs, string Changes = "");
+    /// <summary>Rebuild (synchron), danach erzwungenes Layout, danach bis der UI-Thread frei ist (Rendern und Rest).</summary>
+    private readonly record struct PerfTiming(double Sync, double Layout, double Total);
+
+    private sealed record PerfSample(string Scenario, string Input, PerfTiming Time, string Changes = "")
+    {
+        public double SyncMs => Time.Sync;
+        public double LayoutMs => Time.Layout;
+        public double TotalMs => Time.Total;
+    }
 
     private const string TypingReuse = "Tippen";
     private const string TypingFull = "Tippen ohne Wiederverwendung";
@@ -36,13 +44,15 @@ public sealed partial class AppController
         var animation = Settings.Animation;
         var health = Health;
 
-        async Task<(double Sync, double Total)> Measure(Action action)
+        async Task<PerfTiming> Measure(Action action)
         {
             var sw = Stopwatch.StartNew();
             action();
             var sync = sw.Elapsed.TotalMilliseconds;
+            host.Window.UpdateLayout(); // Container und Layout jetzt statt beim nächsten Durchlauf
+            var layout = sw.Elapsed.TotalMilliseconds - sync;
             await dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
-            return (sync, sw.Elapsed.TotalMilliseconds);
+            return new PerfTiming(sync, layout, sw.Elapsed.TotalMilliseconds);
         }
 
         try
@@ -70,7 +80,7 @@ public sealed partial class AppController
                 host.Window.HidePanel();
                 await Settle();
                 var t = await Measure(() => host.Window.ShowPanel(monitor, viaHotkey: true));
-                if (round > 0) samples.Add(new PerfSample("Panel öffnen", "", t.Sync, t.Total)); // Runde 0 = Aufwärmen
+                if (round > 0) samples.Add(new PerfSample("Panel öffnen", "", t)); // Runde 0 = Aufwärmen
             }
 
             // A/B im selben Prozess (Runner schwanken stark): abwechselnd mit und ohne Wiederverwendung der ViewModels
@@ -85,7 +95,7 @@ public sealed partial class AppController
                         // Beim Löschen (zweite Hälfte) eigene Zeile: andere Richtung, andere Listenänderungen
                         var label = i <= 3 ? text : (text.Length == 0 ? "leer" : text) + " ⌫";
                         var t = await Measure(() => vm.SearchText = text);
-                        if (round > 0) samples.Add(new PerfSample(reuse ? TypingReuse : TypingFull, label, t.Sync, t.Total, vm.LastSyncStats.ToString()));
+                        if (round > 0) samples.Add(new PerfSample(reuse ? TypingReuse : TypingFull, label, t, vm.LastSyncStats.ToString()));
                     }
                 }
             vm.ReuseForSearch = true;
@@ -98,7 +108,7 @@ public sealed partial class AppController
                 foreach (var filter in new[] { TypeFilter.Scripts, TypeFilter.All })
                 {
                     var t = await Measure(() => vm.Filter = filter);
-                    if (round > 0) samples.Add(new PerfSample("Filter", filter.ToString(), t.Sync, t.Total, vm.LastSyncStats.ToString()));
+                    if (round > 0) samples.Add(new PerfSample("Filter", filter.ToString(), t, vm.LastSyncStats.ToString()));
                 }
 
             host.Window.HidePanel();
@@ -133,6 +143,7 @@ public sealed partial class AppController
             Input = g.Key.Input,
             Count = g.Count(),
             SyncMedian = Percentile(g.Select(s => s.SyncMs), 0.5),
+            LayoutMedian = Percentile(g.Select(s => s.LayoutMs), 0.5),
             TotalMedian = Percentile(g.Select(s => s.TotalMs), 0.5),
             TotalMax = g.Max(s => s.TotalMs),
             Changes = g.Last().Changes
@@ -142,7 +153,8 @@ public sealed partial class AppController
         var summary = new
         {
             Version = UpdateService.CurrentVersionText,
-            Machine = $"{Environment.OSVersion.VersionString} · {Environment.ProcessorCount} Kerne",
+            Machine = $"{Environment.OSVersion.VersionString} · {Environment.ProcessorCount} Kerne · Render-Stufe {System.Windows.Media.RenderCapability.Tier >> 16}" +
+                      ((System.Windows.Media.RenderCapability.Tier >> 16) == 0 ? " (Software)" : " (Grafikkarte)"),
             Items = itemCount,
             ScanMs = scanMs,
             TypingMeanMs = typing.Count == 0 ? 0 : typing.Average(s => s.TotalMs),
@@ -162,10 +174,12 @@ public sealed partial class AppController
         md.AppendLine($"**A/B im selben Lauf:** ohne Wiederverwendung Mittel {F(summary.TypingFullMeanMs)} ms · mit {F(summary.TypingMeanMs)} ms" +
                       (summary.TypingMeanMs > 0 ? $" · Faktor {summary.TypingFullMeanMs / summary.TypingMeanMs:0.00}" : string.Empty));
         md.AppendLine();
-        md.AppendLine("| Szenario | Eingabe | Rebuild (Median) | bis frei (Median) | bis frei (Max) | Listenänderungen |");
-        md.AppendLine("|---|---|---:|---:|---:|---|");
+        md.AppendLine("Rebuild = ViewModels und Listen (synchron) · Layout = erzwungenes `UpdateLayout()` (Container, Vorlagen, Messen) · bis frei = alles bis `ApplicationIdle` (inkl. Rendern)");
+        md.AppendLine();
+        md.AppendLine("| Szenario | Eingabe | Rebuild | Layout | bis frei (Median) | bis frei (Max) | Listenänderungen |");
+        md.AppendLine("|---|---|---:|---:|---:|---:|---|");
         foreach (var r in rows)
-            md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
+            md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.LayoutMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
 
         var dir = _progressFile != null ? Path.GetDirectoryName(Path.GetFullPath(_progressFile))! : Path.GetTempPath();
         File.WriteAllText(Path.Combine(dir, "selftest-perf.md"), md.ToString(), new UTF8Encoding(false));
