@@ -111,9 +111,27 @@ public sealed partial class AppController
                     if (round > 0) samples.Add(new PerfSample("Filter", filter.ToString(), t, vm.LastSyncStats.ToString()));
                 }
 
+            // Diagnose: Welche Elemente erklärt ein Rebuild für ungültig (müssen neu gemessen werden)?
+            Step("Leistung: ungültige Elemente");
+            var invalid = new List<string>();
+            foreach (var (label, action) in new (string, Action)[]
+            {
+                ("Filter Scripte", () => vm.Filter = TypeFilter.Scripts),
+                ("Filter Alle", () => vm.Filter = TypeFilter.All),
+                ("Tippen „dis“", () => vm.SearchText = "dis"),
+                ("Tippen „disk“", () => vm.SearchText = "disk"),
+                ("Suche leeren", () => vm.SearchText = string.Empty),
+            })
+            {
+                await dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                action();
+                invalid.Add($"| {label} | {CountInvalid(host.Window)} |");
+                host.Window.UpdateLayout();
+            }
+
             host.Window.HidePanel();
             await Settle();
-            WritePerformanceReport(samples, visibleCount, scanWatch.Elapsed.TotalMilliseconds);
+            WritePerformanceReport(samples, visibleCount, scanWatch.Elapsed.TotalMilliseconds, invalid);
         }
         catch (Exception ex)
         {
@@ -126,7 +144,32 @@ public sealed partial class AppController
         }
     }
 
-    private void WritePerformanceReport(List<PerfSample> samples, int itemCount, double scanMs)
+    /// <summary>Elemente mit ungültiger Messung zählen, nach Typ (die häufigsten zuerst).</summary>
+    private static string CountInvalid(DependencyObject root)
+    {
+        int total = 0, invalidCount = 0;
+        var byType = new Dictionary<string, int>();
+        void Walk(DependencyObject d)
+        {
+            if (d is UIElement e)
+            {
+                total++;
+                if (!e.IsMeasureValid)
+                {
+                    invalidCount++;
+                    var name = e.GetType().Name;
+                    byType[name] = byType.GetValueOrDefault(name) + 1;
+                }
+            }
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+                Walk(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(root);
+        var top = string.Join(", ", byType.OrderByDescending(kv => kv.Value).Take(6).Select(kv => $"{kv.Key} {kv.Value}"));
+        return $"{invalidCount} von {total} | {top}";
+    }
+
+    private void WritePerformanceReport(List<PerfSample> samples, int itemCount, double scanMs, List<string> invalid)
     {
         static double Percentile(IEnumerable<double> values, double p)
         {
@@ -180,6 +223,13 @@ public sealed partial class AppController
         md.AppendLine("|---|---|---:|---:|---:|---:|---|");
         foreach (var r in rows)
             md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.LayoutMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
+
+        md.AppendLine();
+        md.AppendLine("**Ungültig nach dem Rebuild** (müssen neu gemessen werden):");
+        md.AppendLine();
+        md.AppendLine("| Aktion | ungültig | häufigste Typen |");
+        md.AppendLine("|---|---|---|");
+        foreach (var line in invalid) md.AppendLine(line);
 
         var dir = _progressFile != null ? Path.GetDirectoryName(Path.GetFullPath(_progressFile))! : Path.GetTempPath();
         File.WriteAllText(Path.Combine(dir, "selftest-perf.md"), md.ToString(), new UTF8Encoding(false));
