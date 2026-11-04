@@ -7,6 +7,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 16, 2), "Acrylic passt sich dem Panel an", new[]
+        {
+            "Weichgezeichneter Hintergrund mit abgerundeten Ecken wie das Panel",
+            "Hintergrund fährt beim Ein- und Ausfahren mit dem Panel mit"
+        }),
         new ReleaseNote(new Version(0, 16, 1), "Feinschliff nach den ersten Rückmeldungen", new[]
         {
             "Vorschläge beim Tippen: #schlagwort, typ:, gruppe:, ist: – nur Vorhandenes, mit Anzahl",
