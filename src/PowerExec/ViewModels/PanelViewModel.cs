@@ -94,8 +94,22 @@ public sealed class PanelViewModel : ObservableObject
         }
     }
 
+    /// <summary>Stand der Darstellung bei der letzten Meldung (Liste/Raster, Elementgröße).</summary>
+    private string? _raisedLayoutKey;
+    private string LayoutKey => $"{Layout}|{ItemSize}|{IsGrid}|{IsCompact}|{IsLarge}";
+
+    /// <summary>
+    /// Nur melden, wenn sich die Darstellung geändert hat: <c>IsGrid</c> steuert über einen DataTrigger ItemTemplate und
+    /// ItemsPanel jeder Gruppe – jede Meldung lässt WPF alle Eintrags-Container neu erzeugen (bis 0.16.2 bei jedem Tastendruck).
+    /// </summary>
+    private void RaiseLayoutIfChanged()
+    {
+        if (LayoutKey != _raisedLayoutKey) RaiseLayout();
+    }
+
     private void RaiseLayout()
     {
+        _raisedLayoutKey = LayoutKey;
         foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsLarge), nameof(ItemSize), nameof(ItemSizeText), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
         foreach (var g in AllGroups) g.RefreshLayout();
     }
@@ -972,7 +986,7 @@ public sealed class PanelViewModel : ObservableObject
         OnPropertyChanged(nameof(HotkeyHint));
         OnPropertyChanged(nameof(HasHotkey));
         OnPropertyChanged(nameof(IsPinned));
-        RaiseLayout();
+        RaiseLayoutIfChanged(); // neue Gruppen lesen ihre Darstellung selbst
         OnPropertyChanged(nameof(Workspaces));
         OnPropertyChanged(nameof(ActiveWorkspace));
         OnPropertyChanged(nameof(HasWorkspaces));
