@@ -182,6 +182,20 @@ public sealed partial class AppController
                 if (host.Window.Content is FrameworkElement keysRoot) Screenshot(keysRoot, "panel-tastenkuerzel");
                 vm.ShowShortcuts = false;
 
+                // Leertaste: Vorschau eines Scripts
+                var psItem = vm.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && !i.IsSingleClick);
+                if (psItem == null) Fail("Vorschau: kein PowerShell-Script im Panel");
+                else
+                {
+                    vm.Select(psItem);
+                    if (!vm.TogglePeek() || vm.Peek == null) Fail("Vorschau: öffnet nicht");
+                    else if (!vm.Peek.HasCode) Fail("Vorschau: kein Code für ein PowerShell-Script");
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement peekRoot) Screenshot(peekRoot, "panel-vorschau");
+                    vm.TogglePeek();
+                    if (vm.ShowPeek) Fail("Vorschau: zweite Leertaste schließt nicht");
+                }
+
                 // Strg+K: Gruppe suchen und anspringen
                 vm.ShowGroupJump = true;
                 vm.GroupJumpText = "ad";

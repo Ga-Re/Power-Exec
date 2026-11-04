@@ -107,7 +107,7 @@
             <!-- Kachelkarte: eine Kachel je Rechner, Probleme zuerst; Klick zeigt die Ausgabe darunter -->
             <DockPanel Visibility="{Binding ShowTiles, Converter={StaticResource Vis}}">
                 <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" MaxHeight="300"
-                        Visibility="{Binding HasSelectedTile, Converter={StaticResource Vis}}" DataContext="{Binding SelectedTile}">
+                        Visibility="{Binding DataContext.HasSelectedTile, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}" DataContext="{Binding SelectedTile}">
                     <DockPanel Margin="24,10,24,12">
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" Foreground="{DynamicResource Text.Secondary}"/>

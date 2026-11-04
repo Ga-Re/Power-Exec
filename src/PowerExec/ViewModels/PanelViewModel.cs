@@ -219,6 +219,7 @@ public sealed class PanelViewModel : ObservableObject
         new("Alt+1 … 9", "Favorit 1 … 9 starten"),
         new("Strg+D", "Favorit an/aus"),
         new("F2", "Eintrag bearbeiten / Startprofile"),
+        new("Leertaste", "Vorschau: Code, Parameter, Signatur"),
         new("Strg+E", "Im Editor öffnen"),
         new("Strg+Umschalt+C", "Pfad kopieren"),
         new("Strg+Z", "Letzte Änderung rückgängig"),
@@ -313,6 +314,35 @@ public sealed class PanelViewModel : ObservableObject
         if (_groupJumpSelected != null) JumpTo(_groupJumpSelected.Group);
         else ShowGroupJump = false;
     }
+
+    // ---- Vorschau (Leertaste) -----------------------------------------------------
+
+    private PeekViewModel? _peek;
+    /// <summary>Schnellansicht des ausgewählten Eintrags; null = geschlossen.</summary>
+    public PeekViewModel? Peek { get => _peek; private set { if (Set(ref _peek, value)) OnPropertyChanged(nameof(ShowPeek)); } }
+    public bool ShowPeek => _peek != null;
+    public ICommand ClosePeekCommand => _closePeekCommand ??= new RelayCommand(() => Peek = null);
+    private ICommand? _closePeekCommand;
+
+    /// <summary>Vorschau für den ausgewählten (sonst ersten) Eintrag öffnen bzw. schließen.</summary>
+    public bool TogglePeek()
+    {
+        if (_peek != null) { Peek = null; return true; }
+        var item = CurrentItem;
+        if (item == null) return false;
+        if (!item.IsSelected && !item.IsSingleClick) Select(item);
+        Peek = new PeekViewModel(_app, item);
+        return true;
+    }
+
+    /// <summary>Pfeiltasten bei offener Vorschau: zum nächsten Eintrag wechseln.</summary>
+    public void MovePeek(int delta)
+    {
+        var next = MoveSelection(delta);
+        if (next != null) Peek = new PeekViewModel(_app, next);
+    }
+
+    public void ClosePeek() => Peek = null;
 
     // ---- Aktivitäten -----------------------------------------------------------
 
@@ -732,6 +762,7 @@ public sealed class PanelViewModel : ObservableObject
         _selectedKey = null;
         ShowShortcuts = false;
         ShowGroupJump = false;
+        Peek = null;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(IsSearching));
         OnPropertyChanged(nameof(Filter));

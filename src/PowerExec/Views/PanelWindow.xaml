@@ -1031,6 +1031,102 @@
                 </DockPanel>
             </Border>
 
+            <!-- Vorschau (Leertaste): Code mit Syntaxfarben, Parameter, Signatur, letzter Start -->
+            <Border Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="29"
+                    Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
+                    Visibility="{Binding DataContext.ShowPeek, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}" DataContext="{Binding Peek}"
+                    AutomationProperties.Name="Vorschau">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <DockPanel>
+                    <!-- Kopf -->
+                    <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
+                                Command="{Binding DataContext.ClosePeekCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ToolTip="Schließen (Leertaste oder Esc)" AutomationProperties.Name="Vorschau schließen">
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                        </Button>
+                        <Border DockPanel.Dock="Left" Style="{StaticResource Badge}" DataContext="{Binding Item}" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Item.DisplayName}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="↑ ↓ nächster Eintrag · Leertaste schließt" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <!-- Aktionen -->
+                    <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="12,8">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource Btn.Standard}" Command="{Binding Item.EditCommand}" Margin="0,0,8,0"
+                                    Visibility="{Binding Item.CanEdit, Converter={StaticResource Vis}}" ToolTip="Strg+E">
+                                <TextBlock Text="Im Editor öffnen"/>
+                            </Button>
+                            <Button Style="{StaticResource Btn.Accent}" Command="{Binding Item.RunCommand}" ToolTip="Enter">
+                                <TextBlock Text="{Binding Item.RunLabel}"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="14,0,14,10">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Description}" FontSize="12.5" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,8"
+                                       Visibility="{Binding Description, Converter={StaticResource Vis}}"/>
+                            <!-- Fakten -->
+                            <ItemsControl ItemsSource="{Binding Facts}" Focusable="False" Grid.IsSharedSizeScope="True">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,1">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="PeekLabel"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Label}" FontSize="11.5" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,12,0"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11.5" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding Item.SignatureText}" FontSize="11.5" Margin="0,2,0,0" TextWrapping="Wrap"
+                                       Visibility="{Binding Item.SignatureText, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Secondary}"/>
+                            <TextBlock Text="{Binding Item.RequirementsText}" FontSize="11.5" Margin="0,2,0,0" TextWrapping="Wrap"
+                                       Visibility="{Binding Item.RequirementsText, Converter={StaticResource Vis}}" Foreground="{DynamicResource Status.Warning}"/>
+                            <TextBlock Text="{Binding Item.FolderInfo}" FontSize="11.5" Margin="0,2,0,0" TextWrapping="Wrap"
+                                       Visibility="{Binding Item.FolderInfo, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Secondary}"/>
+                            <!-- Parameter -->
+                            <StackPanel Margin="0,10,0,0" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}">
+                                <TextBlock Text="Parameter" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <ItemsControl ItemsSource="{Binding Parameters}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,5">
+                                                <TextBlock FontSize="12">
+                                                    <Run Text="{Binding Name, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas" Foreground="{DynamicResource Code.Parameter}"/>
+                                                    <Run Text="{Binding Summary, Mode=OneWay}" Foreground="{DynamicResource Text.Tertiary}" FontSize="11"/>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Help}" FontSize="11.5" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}"
+                                                           Visibility="{Binding HasHelp, Converter={StaticResource Vis}}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                            <!-- Code -->
+                            <Border Margin="0,10,0,0" Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                                    Visibility="{Binding HasCode, Converter={StaticResource Vis}}">
+                                <StackPanel>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                        <TextBlock infra:CodeView.Segments="{Binding Code}" FontFamily="Cascadia Mono, Consolas" FontSize="11.5"
+                                                   Foreground="{DynamicResource Text.Primary}"/>
+                                    </ScrollViewer>
+                                    <TextBlock Text="… gekürzt – vollständig im Editor" FontSize="10.5" Margin="0,6,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                               Visibility="{Binding CodeTruncated, Converter={StaticResource Vis}}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
             <!-- Übersicht der Tastenkürzel (F1 oder „?“) -->
             <Border Grid.Row="4" Grid.RowSpan="2" Margin="12,4,12,12" Panel.ZIndex="30" VerticalAlignment="Top"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"

@@ -270,6 +270,9 @@ public sealed class ItemViewModel : ObservableObject
         }
     }
 
+    /// <summary>Signatur, Voraussetzungen und Ordnerinfo im Hintergrund laden (Aufklappen, Vorschau).</summary>
+    public void LoadDetails() { LoadSignature(); LoadRequirements(); LoadFolderInfo(); }
+
     public void RefreshFavorite() => OnPropertyChanged(nameof(IsFavorite));
 
     /// <summary>Admin / anderer Benutzer ergibt nur bei Programmen und Scripten Sinn (nicht bei Webseiten und Ordnern).</summary>

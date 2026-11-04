@@ -27,6 +27,15 @@
     <SolidColorBrush x:Key="Tile.Error" Color="#5C2329"/>
     <SolidColorBrush x:Key="Tile.Unreachable" Color="#4A3F14"/>
     <SolidColorBrush x:Key="Tile.Running" Color="#1F3A4D"/>
+    <SolidColorBrush x:Key="Code.Keyword" Color="#569CD6"/>
+    <SolidColorBrush x:Key="Code.Variable" Color="#9CDCFE"/>
+    <SolidColorBrush x:Key="Code.String" Color="#CE9178"/>
+    <SolidColorBrush x:Key="Code.Comment" Color="#6A9955"/>
+    <SolidColorBrush x:Key="Code.Command" Color="#DCDCAA"/>
+    <SolidColorBrush x:Key="Code.Type" Color="#4EC9B0"/>
+    <SolidColorBrush x:Key="Code.Number" Color="#B5CEA8"/>
+    <SolidColorBrush x:Key="Code.Operator" Color="#C8C8C8"/>
+    <SolidColorBrush x:Key="Code.Parameter" Color="#C586C0"/>
     <SolidColorBrush x:Key="Search.Highlight" Color="#5560CDFF"/>
     <SolidColorBrush x:Key="Info.Bg" Color="#1F3346"/>
     <SolidColorBrush x:Key="Info.Border" Color="#2F4B65"/>

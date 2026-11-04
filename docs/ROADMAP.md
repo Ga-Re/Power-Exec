@@ -13,7 +13,7 @@ Ausgewählt aus dem Ideenkatalog (16 Vorschläge, Stand 0.15). Reihenfolge = gep
 
 Offen aus Phase 1: globaler Hotkey je Eintrag (A3, optional) – noch nicht umgesetzt.
 
-## Phase 2 – Rückmeldung beim Ausführen (0.17)
+## Phase 2 – Rückmeldung beim Ausführen (0.17) – umgesetzt
 
 | Kürzel | Vorschlag | Kern |
 |---|---|---|

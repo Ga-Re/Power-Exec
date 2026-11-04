@@ -55,6 +55,7 @@ public partial class PanelWindow : Window
             else if (e.Key == Key.Escape)
             {
                 if (Vm.ShowGroupJump) { Vm.ShowGroupJump = false; SearchBox.Focus(); }
+                else if (Vm.ShowPeek) Vm.ClosePeek();
                 else if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
                 else if (Vm.IsSearching) Vm.SearchText = string.Empty;
                 else HidePanel();
@@ -662,6 +663,18 @@ public partial class PanelWindow : Window
 
         if (key == Key.F1 && mods == ModifierKeys.None) { Vm.ShowShortcuts = !Vm.ShowShortcuts; return true; }
         if (key == Key.K && mods == ModifierKeys.Control) { Vm.ShowGroupJump = !Vm.ShowGroupJump; return true; }
+
+        // Leertaste: Vorschau (im Suchfeld nur, solange es leer ist – sonst ist es ein Leerzeichen)
+        if (key == Key.Space && mods == ModifierKeys.None)
+        {
+            var onItem = Keyboard.FocusedElement is FrameworkElement { DataContext: ViewModels.ItemViewModel };
+            if (Vm.ShowPeek || onItem || (inSearch && SearchBox.Text.Length == 0)) return Vm.TogglePeek();
+        }
+        if (Vm.ShowPeek && mods == ModifierKeys.None && key is Key.Up or Key.Down)
+        {
+            Vm.MovePeek(key == Key.Down ? 1 : -1);
+            return true;
+        }
 
         var item = Vm.CurrentItem;
         if (item == null) return false;
