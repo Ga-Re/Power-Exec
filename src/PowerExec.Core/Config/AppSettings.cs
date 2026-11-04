@@ -108,6 +108,15 @@ public sealed class AppSettings
     public int PanelWidth { get; set; } = 400;
     public AnimationMode Animation { get; set; } = AnimationMode.Smooth;
     public ThemeMode Theme { get; set; } = ThemeMode.System;
+
+    /// <summary>Akzentfarbe von Windows übernehmen (statt der festen Akzentfarbe des Designs).</summary>
+    public bool UseWindowsAccent { get; set; }
+
+    /// <summary>Hintergrund von Einstellungen und Dialogen: deckend oder Mica (Windows 11).</summary>
+    public WindowBackdrop WindowBackdrop { get; set; } = WindowBackdrop.Solid;
+
+    /// <summary>Größe von Schrift und Bedienelementen in Prozent (80–150).</summary>
+    public int UiScalePercent { get; set; } = 100;
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";
     public bool StartWithWindows { get; set; }
     public bool Pinned { get; set; }

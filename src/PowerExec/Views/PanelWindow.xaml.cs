@@ -153,21 +153,33 @@ public partial class PanelWindow : Window
     public void ApplyAppearance()
     {
         var s = Cfg;
+        if (PanelBorder.Child is FrameworkElement panelContent) WindowHelper.ApplyContentScale(panelContent);
         Resources.MergedDictionaries.Clear();
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
         // Acrylic: Hintergrund muss durchscheinen, damit die Weichzeichnung sichtbar ist
-        if (s.Acrylic) opacity = Math.Min(opacity, 0.72);
-        Interop.Acrylic.Apply(_hwnd, s.Acrylic);
+        if (s.Acrylic && !ThemeService.IsHighContrast) opacity = Math.Min(opacity, 0.72);
+        if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
+        Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast);
 
-        if (PanelColors.TryParse(s.PanelColor, out var rgb))
+        if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
         {
             bool light = PanelColors.IsLight(rgb);
             if (light == ThemeService.IsDark)
+            {
                 Resources.MergedDictionaries.Add(new ResourceDictionary
                 {
                     Source = new Uri(light ? "pack://application:,,,/Themes/Light.xaml" : "pack://application:,,,/Themes/Dark.xaml")
                 });
+                // Windows-Akzentfarbe auch im Panel mit Gegen-Design behalten (passend aufgehellt bzw. abgedunkelt)
+                if (_app.Settings.UseWindowsAccent && ThemeService.WindowsAccent() is { } accent)
+                {
+                    var a = Appearance.Derive(accent, dark: !light);
+                    Resources.MergedDictionaries[^1]["Accent"] = Freeze(new SolidColorBrush(Color.FromRgb(a.Accent.R, a.Accent.G, a.Accent.B)));
+                    Resources.MergedDictionaries[^1]["Accent.Hover"] = Freeze(new SolidColorBrush(Color.FromRgb(a.Hover.R, a.Hover.G, a.Hover.B)));
+                    Resources.MergedDictionaries[^1]["OnAccent"] = Freeze(new SolidColorBrush(Color.FromRgb(a.OnAccent.R, a.OnAccent.G, a.OnAccent.B)));
+                }
+            }
             var d = PanelColors.Derive(rgb);
             Resources["Bg.Panel"] = Solid(rgb, opacity);
             Resources["Bg.Hover"] = Solid(d.Hover, Math.Max(opacity, 0.85));
@@ -182,6 +194,12 @@ public partial class PanelWindow : Window
             var c = themeBrush.Color;
             Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
         }
+    }
+
+    private static Brush Freeze(Brush b)
+    {
+        b.Freeze();
+        return b;
     }
 
     private static SolidColorBrush Solid(Rgb c, double opacity)

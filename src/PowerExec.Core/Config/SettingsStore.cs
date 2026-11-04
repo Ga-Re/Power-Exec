@@ -69,6 +69,7 @@ public sealed class SettingsStore
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
         s.MaxRecentMachines = Math.Clamp(s.MaxRecentMachines, 1, 200);
         s.RecentRunsCount = Math.Clamp(s.RecentRunsCount, 0, 20);
+        s.UiScalePercent = Math.Clamp(s.UiScalePercent == 0 ? 100 : s.UiScalePercent, Appearance.MinScale, Appearance.MaxScale);
         s.ScanTimeoutSeconds = Math.Clamp(s.ScanTimeoutSeconds, 2, 120);
         foreach (var f in s.Folders) FolderVisibility.MigrateLegacyExcludes(f);
         if (s.Panels.Count == 0) s.Panels.Add(PanelConfig.FromLegacy(s));

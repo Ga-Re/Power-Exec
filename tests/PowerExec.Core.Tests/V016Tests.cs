@@ -180,4 +180,33 @@ public class V016Tests
         Assert.True(truncated);
         Assert.Equal(10, head.Split('\n').Length);
     }
+
+    [Fact]
+    public void AccentIsReadableInBothThemes()
+    {
+        var darkBlue = new Rgb(0x00, 0x33, 0x99); // zu dunkel für das dunkle Design
+        var dark = Appearance.Derive(darkBlue, dark: true);
+        Assert.True(PanelColors.Contrast(dark.Accent, new Rgb(0x20, 0x20, 0x20)) >= 3.0);
+        var yellow = new Rgb(0xFF, 0xD7, 0x00); // zu hell für das helle Design
+        var light = Appearance.Derive(yellow, dark: false);
+        Assert.True(PanelColors.Contrast(light.Accent, new Rgb(0xF3, 0xF3, 0xF3)) >= 3.0);
+        Assert.True(PanelColors.Contrast(light.OnAccent, light.Accent) >= PanelColors.Contrast(new Rgb(255 - light.OnAccent.R, 255 - light.OnAccent.G, 255 - light.OnAccent.B), light.Accent));
+        Assert.Equal(new Rgb(0x10, 0x20, 0x30), Appearance.FromAbgr(0xFF302010));
+    }
+
+    [Fact]
+    public void DesignPresetAppliesAndIsRecognized()
+    {
+        var s = new AppSettings();
+        s.Panels.Add(new PanelConfig());
+        var glass = Appearance.Presets.Single(p => p.Key == "glass");
+        Appearance.Apply(s, glass);
+        Assert.True(s.Panels[0].Acrylic);
+        Assert.True(s.UseWindowsAccent);
+        Assert.Equal(WindowBackdrop.Mica, s.WindowBackdrop);
+        Assert.Equal("glass", Appearance.Current(s)?.Key);
+        s.Panels[0].PanelOpacity = 60;
+        Assert.Null(Appearance.Current(s));
+    }
 }
+

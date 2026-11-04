@@ -12,6 +12,7 @@ oder remote auf einem oder vielen Rechnern.
 - Panel: Breite, Höhe (30–100 %) und Lage entlang der Kante (an der Hover-Zone, oben, mittig, unten) einstellbar, ebenso Verweilzeit, Einklappzeit und Animation
 - **Größe per Ziehen** am Innenrand des Panels (Breite und Höhe werden gespeichert)
 - **Acrylic:** Hintergrund hinter dem Panel weichzeichnen (Panel › Darstellung)
+- **Designvorlagen** (Fluent, Glas, Graphit, Papier, Mitternacht): Design, Panelfarbe, Deckkraft, Acrylic, Akzentfarbe und Fensterhintergrund mit einem Klick; **Akzentfarbe von Windows übernehmen** (passend aufgehellt bzw. abgedunkelt, folgt Änderungen in Windows sofort); **Mica** für Einstellungen und Dialoge (Windows 11 22H2+); **Schrift- und Elementgröße** 80–150 %; ein **Kontrastdesign** von Windows wird automatisch übernommen
 - **Darstellung:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), **Elementgröße Klein / Mittel / Groß** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
 - **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor

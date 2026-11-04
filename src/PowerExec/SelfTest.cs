@@ -108,7 +108,8 @@ public sealed partial class AppController
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 13;
             WorkspaceManager.Create(Settings, "Kunde A", copyCurrent: true);
-            ThemeService.Apply(Settings.Theme);
+            Views.WindowHelper.Settings = () => Settings;
+            ThemeService.Apply(Settings);
 
             Icons = new IconService(dispatcher);
             Health = new HealthService(dispatcher);
@@ -237,6 +238,19 @@ public sealed partial class AppController
                 if (host.ViewModel.HasActivities) Fail("Aktivitäten: Liste wird nach dem Entfernen nicht leer");
                 host.Window.HidePanel();
                 await Settle();
+            }
+
+            Step("Darstellung: Windows-Akzentfarbe und Größe");
+            {
+                Settings.UseWindowsAccent = true;
+                ThemeService.Apply(Settings);
+                if (!ThemeService.Overrides.ContainsKey("Accent")) Fail("Akzentfarbe: Windows-Akzent wird nicht übernommen");
+                Settings.UseWindowsAccent = false;
+                ThemeService.Apply(Settings);
+                if (ThemeService.Overrides.ContainsKey("Accent")) Fail("Akzentfarbe: bleibt nach dem Ausschalten aktiv");
+                Settings.UiScalePercent = 120;
+                await ShowAndClose(CatalogWindow.ForTest());
+                Settings.UiScalePercent = 100;
             }
 
             Step("Rückgängig");

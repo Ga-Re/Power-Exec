@@ -41,7 +41,9 @@ public sealed partial class AppController : IDisposable
             Settings.StartWithWindows = AutostartService.IsEnabled();
             SaveSettings();
         }
-        ThemeService.Apply(Settings.Theme);
+        Views.WindowHelper.Settings = () => Settings;
+        ThemeService.Apply(Settings);
+        ThemeService.SystemChanged += OnSystemThemeChanged;
         SetupSnippetFolder();
         Controls.MachineBox.GroupSource = () => Settings.MachineGroups;
         Infrastructure.TagBrushConverter.Lookup = t => Tags.ColorOf(Settings, t);
@@ -123,11 +125,11 @@ public sealed partial class AppController : IDisposable
         ClearUndo();
         var foldersChanged = !FoldersEqual(Settings, updated);
         var panelsChanged = PanelKey(Settings) != PanelKey(updated);
-        var themeChanged = Settings.Theme != updated.Theme;
+        var themeChanged = AppearanceKey(Settings) != AppearanceKey(updated);
         var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
         SaveSettings();
-        if (themeChanged) ThemeService.Apply(Settings.Theme);
+        if (themeChanged) ThemeService.Apply(Settings);
         if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
         string? hotkeyError = null;
         if (panelsChanged || themeChanged || _hosts.Count == 0) hotkeyError = CreateHosts();
@@ -138,6 +140,17 @@ public sealed partial class AppController : IDisposable
             RebuildPanels();
         }
         return hotkeyError;
+    }
+
+    /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
+    private static string AppearanceKey(AppSettings s) => $"{s.Theme}|{s.UseWindowsAccent}|{s.WindowBackdrop}|{s.UiScalePercent}";
+
+    /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
+    private void OnSystemThemeChanged()
+    {
+        var before = ThemeService.StateKey;
+        ThemeService.Apply(Settings);
+        if (before != ThemeService.StateKey) CreateHosts();
     }
 
     /// <summary>Alles, was Panelfenster und Hover-Zonen betrifft (ohne „angeheftet“).</summary>

@@ -1062,9 +1062,74 @@
                     <TextBlock Text="Alles rund um das Aussehen: Design, Einträge, Panel und Hover-Zone." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Allgemein" Style="{StaticResource SettingsSection}"/>
-                    <c:SettingsCard Icon="&#xE790;" Header="Design" Description="Hell oder dunkel für alle Fenster.">
+                    <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Deckkraft, Acrylic und Akzent -->
+                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="16,12" Margin="0,0,0,4">
+                        <StackPanel>
+                            <TextBlock Text="Designvorlagen" FontWeight="SemiBold"/>
+                            <TextBlock Text="Setzt Design, Panelfarbe, Deckkraft, Acrylic, Akzentfarbe und Fensterhintergrund auf einmal – einzeln anpassbar." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                            <ItemsControl ItemsSource="{Binding DesignPresets}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding ApplyCommand}" Width="150" Margin="0,0,8,8" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
+                                                AutomationProperties.Name="{Binding Name}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Card" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
+                                                        <StackPanel>
+                                                            <Border Height="44" CornerRadius="4" Background="{Binding Swatch}" Padding="8,6">
+                                                                <StackPanel>
+                                                                    <Border Height="5" Width="54" HorizontalAlignment="Left" CornerRadius="2" Background="{DynamicResource Accent}"/>
+                                                                    <Border Height="4" Width="80" HorizontalAlignment="Left" CornerRadius="2" Margin="0,6,0,0" Background="{Binding Ink}" Opacity="0.5"/>
+                                                                    <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding Ink}" Opacity="0.3"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Border.Control}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                                            <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                            <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                    <c:SettingsCard Icon="&#xE790;" Header="Design" Description="Hell oder dunkel für alle Fenster. Ist in Windows ein Kontrastdesign aktiv, verwendet Power-Exec automatisch dessen Farben.">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
                     </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE2B1;" Header="Akzentfarbe von Windows übernehmen"
+                                    Description="Knöpfe, Auswahl und Hover-Zone nutzen die Akzentfarbe aus den Windows-Einstellungen (Personalisierung › Farben) – passend aufgehellt bzw. abgedunkelt.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding UseWindowsAccent}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE81E;" Header="Mica in Fenstern" Description="{Binding MicaDescription}">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding UseMica}" IsEnabled="{Binding IsMicaSupported}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8D3;" Header="Schrift- und Elementgröße" Description="Vergrößert Schrift und Bedienelemente im Panel und in allen Fenstern (zusätzlich zur Windows-Skalierung).">
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="180" Minimum="80" Maximum="150" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding UiScalePercent}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Schrift- und Elementgröße"/>
+                                <TextBlock Text="{Binding UiScalePercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                    </c:SettingsCard>
+                    <Border Margin="0,0,0,4" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1"
+                            Visibility="{Binding IsHighContrast, Converter={StaticResource Vis}}">
+                        <TextBlock Text="Kontrastdesign von Windows ist aktiv: Panelfarbe, Deckkraft, Acrylic und Akzentfarbe werden ignoriert, damit alles gut lesbar bleibt." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Info.Text}"/>
+                    </Border>
                     <c:SettingsCard Icon="&#xE916;" Header="Animation" Description="Wie das Panel aus- und einfährt.">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
                     </c:SettingsCard>

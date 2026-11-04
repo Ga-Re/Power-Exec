@@ -770,13 +770,59 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<AnimationMode, string>(AnimationMode.Off, "Aus")
     };
 
-    public ThemeMode Theme { get => _s.Theme; set { _s.Theme = value; OnPropertyChanged(); } }
+    public ThemeMode Theme { get => _s.Theme; set { _s.Theme = value; OnPropertyChanged(); RaisePresets(); } }
     public IReadOnlyList<KeyValuePair<ThemeMode, string>> Themes { get; } = new[]
     {
         new KeyValuePair<ThemeMode, string>(ThemeMode.System, "Wie Windows"),
         new KeyValuePair<ThemeMode, string>(ThemeMode.Dark, "Dunkel"),
         new KeyValuePair<ThemeMode, string>(ThemeMode.Light, "Hell")
     };
+
+    // ---- Darstellung: Akzent, Mica, Größe, Vorlagen ---------------------------------
+
+    public bool UseWindowsAccent { get => _s.UseWindowsAccent; set { _s.UseWindowsAccent = value; OnPropertyChanged(); RaisePresets(); } }
+
+    /// <summary>Mica als Hintergrund von Einstellungen und Dialogen (Windows 11 22H2+).</summary>
+    public bool UseMica
+    {
+        get => _s.WindowBackdrop == WindowBackdrop.Mica;
+        set { _s.WindowBackdrop = value ? WindowBackdrop.Mica : WindowBackdrop.Solid; OnPropertyChanged(); RaisePresets(); }
+    }
+    public bool IsMicaSupported => Views.WindowHelper.IsMicaSupported;
+    public string MicaDescription => IsMicaSupported
+        ? "Einstellungen und Dialoge nehmen die Desktopfarbe dezent auf (wie der Explorer). Gilt für neu geöffnete Fenster."
+        : "Benötigt Windows 11 (22H2 oder neuer). Für das Panel gibt es Acrylic unter „Panel“.";
+
+    public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
+
+    public bool IsHighContrast => Services.ThemeService.IsHighContrast;
+
+    /// <summary>Designvorlagen: Design, Panelfarbe, Deckkraft, Acrylic und Akzent mit einem Klick.</summary>
+    public IReadOnlyList<DesignPresetChoice> DesignPresets => Appearance.Presets.Select(p => new DesignPresetChoice(p,
+        CurrentPresetKey == p.Key, new RelayCommand(() => ApplyPreset(p)))).ToList();
+
+    private string? CurrentPresetKey
+    {
+        get
+        {
+            var probe = SettingsStore.Clone(_s);
+            probe.Panels = new List<PanelConfig> { Panel.ToConfig() };
+            return Appearance.Current(probe)?.Key;
+        }
+    }
+
+    private void ApplyPreset(DesignPreset p)
+    {
+        Theme = p.Theme;
+        UseWindowsAccent = p.WindowsAccent;
+        UseMica = p.Backdrop == WindowBackdrop.Mica;
+        Panel.PanelColor = p.PanelColor;
+        Panel.PanelOpacity = p.Opacity;
+        Panel.Acrylic = p.Acrylic;
+        RaisePresets();
+    }
+
+    private void RaisePresets() => OnPropertyChanged(nameof(DesignPresets));
 
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
@@ -1270,3 +1316,17 @@ public sealed class SettingsViewModel : ObservableObject
         return _s;
     }
 }
+
+/// <summary>Kachel einer Designvorlage in den Einstellungen.</summary>
+public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICommand ApplyCommand)
+{
+    public string Name => Preset.Name;
+    public string Description => Preset.Description;
+    /// <summary>Vorschau: Panelfarbe bzw. Grundfarbe des Designs.</summary>
+    public Brush Swatch { get; } = new SolidColorBrush(PanelColors.TryParse(Preset.PanelColor, out var c)
+        ? Color.FromRgb(c.R, c.G, c.B)
+        : Preset.Theme == ThemeMode.Light ? Color.FromRgb(0xF3, 0xF3, 0xF3) : Color.FromRgb(0x2B, 0x2B, 0x2B));
+    public Brush Ink { get; } = new SolidColorBrush(PanelColors.TryParse(Preset.PanelColor, out var c) && PanelColors.IsLight(c) || Preset.Theme == ThemeMode.Light && Preset.PanelColor.Length == 0
+        ? Colors.Black : Colors.White);
+}
+
