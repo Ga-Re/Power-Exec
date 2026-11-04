@@ -550,6 +550,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         CustomEntryKind.Ssh => "SSH",
         CustomEntryKind.Snippet => language == SnippetLanguage.Text ? "TXT" : "PS",
         CustomEntryKind.Tool => "WIN",
+        CustomEntryKind.Workflow => "FLOW",
         CustomEntryKind.File => Path.GetExtension(target).TrimStart('.').ToUpperInvariant() is { Length: > 0 } ext ? ext : "DAT",
         _ => "CMD"
     };

@@ -442,6 +442,11 @@
                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
+                <!-- Mehrfachauswahl (Strg+Klick) -->
+                <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource Search.Highlight}"/>
+                    <Setter TargetName="Row" Property="BorderThickness" Value="2"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
                 </DataTrigger>
@@ -535,6 +540,11 @@
                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
+                <!-- Mehrfachauswahl (Strg+Klick) -->
+                <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                    <Setter TargetName="Row" Property="Background" Value="{DynamicResource Search.Highlight}"/>
+                    <Setter TargetName="Row" Property="BorderThickness" Value="2"/>
+                </DataTrigger>
                 <MultiDataTrigger>
                     <MultiDataTrigger.Conditions>
                         <Condition Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=Window}}" Value="True"/>
@@ -1373,6 +1383,24 @@
             <!-- Fußzeile -->
             <Border Grid.Row="7" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}">
                 <StackPanel>
+                <!-- Mehrfachauswahl: nacheinander starten oder als Ablauf speichern -->
+                <Border Margin="10,8,8,0" Padding="10,6,4,6" CornerRadius="6" Background="{DynamicResource Bg.Chip}"
+                        Visibility="{Binding HasMultiSelection, Converter={StaticResource Vis}}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding ClearCheckedCommand}"
+                                ToolTip="Auswahl aufheben" AutomationProperties.Name="Auswahl aufheben">
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                        </Button>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding RunCheckedCommand}" Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="6,0,4,0"
+                                ToolTip="In der Reihenfolge der Auswahl starten; jeder wartet auf den vorigen, bei Fehler Abbruch">
+                            <TextBlock Text="▶ Nacheinander"/>
+                        </Button>
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding SaveCheckedAsWorkflowCommand}" Height="26" MinHeight="26" Padding="6,0">
+                            <TextBlock Text="Als Ablauf speichern" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                        </Button>
+                        <TextBlock Text="{Binding MultiSelectionText}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
+                </Border>
                 <!-- Aktivitäten: laufende und gerade beendete Starts -->
                 <StackPanel Margin="12,8,8,2" Visibility="{Binding HasActivities, Converter={StaticResource Vis}}">
                     <TextBlock Text="{Binding ActivitiesHeader}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="4,0,0,4"

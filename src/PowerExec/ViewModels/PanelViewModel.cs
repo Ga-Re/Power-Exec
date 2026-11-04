@@ -219,7 +219,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var c in settings.CustomEntries)
         {
             // Snippets haben kein Ziel, nur Code
-            if (c.Target.Trim().Length == 0 && (c.Kind != CustomEntryKind.Snippet || c.Code.Trim().Length == 0)) continue;
+            if (c.Kind == CustomEntryKind.Workflow ? c.Steps.Count == 0 : c.Target.Trim().Length == 0 && (c.Kind != CustomEntryKind.Snippet || c.Code.Trim().Length == 0)) continue;
             var li = _app.DescribeCustom(c);
             if (!seen.Add(li.FullPath)) continue; // Datei liegt bereits in einem durchsuchten Ordner
             if (CategoryOk(li)) visible.Add(li);
@@ -320,6 +320,7 @@ public sealed class PanelViewModel : ObservableObject
         new("Strg+E", "Im Editor öffnen"),
         new("Strg+Umschalt+C", "Pfad kopieren"),
         new("Strg+H", "Verlauf: erneut ausführen, nur Fehlgeschlagene"),
+        new("Strg+Klick", "Mehrere auswählen: nacheinander starten, als Ablauf speichern"),
         new("Strg+Z", "Letzte Änderung rückgängig"),
         new("Strg+V", "Eintrag aus Zwischenablage"),
         new("Esc", "Suche leeren / Panel schließen"),
@@ -412,6 +413,61 @@ public sealed class PanelViewModel : ObservableObject
         if (_groupJumpSelected != null) JumpTo(_groupJumpSelected.Group);
         else ShowGroupJump = false;
     }
+
+    // ---- Mehrfachauswahl und Abläufe (Strg+Klick) -----------------------------------
+
+    private readonly List<string> _checked = new();
+
+    /// <summary>Ausgewählte Einträge in Reihenfolge der Auswahl (Strg+Klick).</summary>
+    public IReadOnlyList<LaunchItem> CheckedItems => _checked
+        .Select(p => AllItems.FirstOrDefault(i => i.Item.FullPath.Equals(p, StringComparison.OrdinalIgnoreCase))?.Item ?? _app.FindItem(p))
+        .Where(i => i != null).Cast<LaunchItem>().ToList();
+    public bool HasMultiSelection => _checked.Count > 0;
+    public string MultiSelectionText => _checked.Count == 1 ? "1 ausgewählt" : $"{_checked.Count} ausgewählt";
+
+    public void ToggleChecked(ItemViewModel item)
+    {
+        var path = item.Item.FullPath;
+        var i = _checked.FindIndex(p => p.Equals(path, StringComparison.OrdinalIgnoreCase));
+        if (i >= 0) _checked.RemoveAt(i);
+        else if (item.Item.Source?.Kind != CustomEntryKind.Workflow) _checked.Add(path); // keine verschachtelten Abläufe
+        ApplyChecked();
+    }
+
+    public void ClearChecked()
+    {
+        _checked.Clear();
+        ApplyChecked();
+    }
+
+    private void ApplyChecked()
+    {
+        foreach (var vm in AllItems) vm.IsChecked = _checked.Contains(vm.Item.FullPath, StringComparer.OrdinalIgnoreCase);
+        OnPropertyChanged(nameof(HasMultiSelection));
+        OnPropertyChanged(nameof(MultiSelectionText));
+    }
+
+    public ICommand ClearCheckedCommand => _clearCheckedCommand ??= new RelayCommand(ClearChecked);
+    public ICommand RunCheckedCommand => _runCheckedCommand ??= new RelayCommand(() =>
+    {
+        var items = CheckedItems;
+        if (items.Count == 0) return;
+        var steps = items.Select(i => new WorkflowStep { Path = i.FullPath, Name = i.DisplayName }).ToList();
+        ClearChecked();
+        _ = _app.RunWorkflowAsync($"{steps.Count} Einträge nacheinander", steps, stopOnError: true);
+    });
+    public ICommand SaveCheckedAsWorkflowCommand => _saveWorkflowCommand ??= new RelayCommand(() =>
+    {
+        var items = CheckedItems;
+        if (items.Count == 0) return;
+        var name = _app.AskForTest?.Invoke() ?? Views.InputWindow.Ask("Als Ablauf speichern",
+            $"{items.Count} Schritte: {string.Join(" → ", items.Select(i => i.DisplayName))}. Der Ablauf erscheint als eigener Eintrag – auch in Suche, Favoriten und Mini-Dock.",
+            "Neuer Ablauf", "Speichern", n => n.Trim().Length == 0 ? "Bitte einen Namen eingeben." : null);
+        if (name == null) return;
+        ClearChecked();
+        _app.CreateWorkflow(name, items, GroupOfItem(items[0]) is { Length: > 0 } g && GroupManager.Exists(_app.Settings, g) ? g : null);
+    });
+    private ICommand? _clearCheckedCommand, _runCheckedCommand, _saveWorkflowCommand;
 
     // ---- Verlauf (Strg+H) ---------------------------------------------------------
 
@@ -697,6 +753,7 @@ public sealed class PanelViewModel : ObservableObject
 
         Groups.Clear();
         foreach (var g in groups) Groups.Add(g);
+        if (_checked.Count > 0) ApplyChecked();
         StickyGroup = null;
         OnPropertyChanged(nameof(ShowJumpRail));
         OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));

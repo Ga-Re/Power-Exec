@@ -380,6 +380,34 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Mehrfachauswahl und Abläufe");
+            {
+                var host = _hosts[0];
+                var pick = host.ViewModel.VisibleItems.Where(i => !i.IsCustom).Take(2).ToList();
+                if (pick.Count < 2) Fail("Abläufe: zu wenige Einträge für die Mehrfachauswahl");
+                else
+                {
+                    foreach (var p in pick) host.ViewModel.ToggleChecked(p);
+                    if (!host.ViewModel.HasMultiSelection || host.ViewModel.CheckedItems.Count != 2) Fail("Mehrfachauswahl: Strg+Klick wählt nicht aus");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement multiRoot) Screenshot(multiRoot, "panel-mehrfachauswahl");
+                    AskForTest = () => "Selbsttest-Ablauf";
+                    host.ViewModel.SaveCheckedAsWorkflowCommand.Execute(null);
+                    AskForTest = null;
+                    var wf = Settings.CustomEntries.FirstOrDefault(c => c.Kind == CustomEntryKind.Workflow && c.Name == "Selbsttest-Ablauf");
+                    if (wf == null || wf.Steps.Count != 2) Fail("Ablauf: wird nicht mit zwei Schritten gespeichert");
+                    else
+                    {
+                        if (host.ViewModel.HasMultiSelection) Fail("Mehrfachauswahl: bleibt nach dem Speichern bestehen");
+                        if (!host.ViewModel.AllItems.Any(i => i.Item.FullPath == wf.Key)) Fail("Ablauf: erscheint nicht im Panel");
+                        await ShowAndClose(new WorkflowWindow(new WorkflowEditorViewModel(this, wf)));
+                    }
+                    host.Window.HidePanel();
+                    await Settle();
+                }
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

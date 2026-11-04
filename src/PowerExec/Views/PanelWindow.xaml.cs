@@ -55,6 +55,7 @@ public partial class PanelWindow : Window
             else if (e.Key == Key.Escape)
             {
                 if (Vm.ShowGroupJump) { Vm.ShowGroupJump = false; SearchBox.Focus(); }
+                else if (Vm.HasMultiSelection && !Vm.ShowPeek && !Vm.ShowHistory) Vm.ClearChecked();
                 else if (Vm.ShowPeek) Vm.ClosePeek();
                 else if (Vm.ShowHistory) Vm.ShowHistory = false;
                 else if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
@@ -384,6 +385,13 @@ public partial class PanelWindow : Window
 
     private void Row_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        // Strg+Klick: zur Mehrfachauswahl hinzufügen bzw. entfernen (statt aufklappen oder starten)
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (sender as FrameworkElement)?.DataContext is ViewModels.ItemViewModel checkedItem)
+        {
+            Vm.ToggleChecked(checkedItem);
+            e.Handled = true;
+            return;
+        }
         _dragStart = e.GetPosition(this);
         _dragCandidate = (sender as FrameworkElement)?.DataContext as ViewModels.ItemViewModel;
     }

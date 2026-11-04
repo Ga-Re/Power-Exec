@@ -668,7 +668,11 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Eigenen Eintrag bearbeiten – im selben Dialog wie die Startprofile.</summary>
-    public void EditCustomEntry(LaunchItem item) => ShowProfiles(item);
+    public void EditCustomEntry(LaunchItem item)
+    {
+        if (item.Source is { Kind: CustomEntryKind.Workflow } wf) EditWorkflow(wf);
+        else ShowProfiles(item);
+    }
 
     /// <summary>Kopie eines eigenen Eintrags anlegen (gleiche Gruppe, Schlagworte, Profile), Dialog zum Anpassen.</summary>
     public void DuplicateCustomEntry(LaunchItem item)
@@ -970,6 +974,7 @@ public sealed partial class AppController : IDisposable
     /// <param name="record">false = Test aus dem Eintragsdialog: nicht in „Zuletzt ausgeführt“, ungespeicherten Stand verwenden.</param>
     public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null, bool record = true)
     {
+        if (item.Source is { Kind: CustomEntryKind.Workflow } workflow) { RunWorkflowEntry(item, workflow); return; }
         profile ??= ProfileResolver.GetDefault(Settings, item);
         item = WithProfileOptions(record ? Refresh(item) : item, profile); // Parameter könnten sich geändert haben; Browser, Anzeige … des Profils
         if (item.Source?.CopiesToClipboard == true)
@@ -1126,6 +1131,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Profil-Dialog aus dem Panel: arbeitet direkt auf den Einstellungen und speichert sofort.</summary>
     public void ShowProfiles(LaunchItem item)
     {
+        if (item.Source is { Kind: CustomEntryKind.Workflow } wf) { EditWorkflow(wf); return; }
         HidePanels(force: true);
         item = Refresh(item);
         var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);

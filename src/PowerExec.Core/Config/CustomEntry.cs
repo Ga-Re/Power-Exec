@@ -2,7 +2,19 @@ using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Config;
 
-public enum CustomEntryKind { Url, Folder, Rdp, Command, File, Snippet, Ssh, Tool }
+public enum CustomEntryKind { Url, Folder, Rdp, Command, File, Snippet, Ssh, Tool, Workflow }
+
+/// <summary>Ein Schritt eines Ablaufs: Eintrag (Pfad bzw. „custom:Id“) und Startprofil.</summary>
+public sealed class WorkflowStep
+{
+    public string Path { get; set; } = string.Empty;
+    /// <summary>Anzeigename beim Anlegen (falls der Eintrag später fehlt).</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Startprofil; leer = Standardprofil.</summary>
+    public string ProfileName { get; set; } = string.Empty;
+
+    public WorkflowStep Clone() => new() { Path = Path, Name = Name, ProfileName = ProfileName };
+}
 
 public enum SnippetLanguage { PowerShell, Text }
 
@@ -100,7 +112,18 @@ public sealed class CustomEntry
     /// <summary>Ein Klick im Panel startet sofort (statt den Eintrag aufzuklappen).</summary>
     public bool SingleClick { get; set; }
 
-    public CustomEntry Clone() => (CustomEntry)MemberwiseClone();
+    /// <summary>Ablauf: Schritte, die nacheinander starten.</summary>
+    public List<WorkflowStep> Steps { get; set; } = new();
+
+    /// <summary>Ablauf: bei einem Fehler (Exit-Code ≠ 0, Remote-Fehler, abgebrochen) die restlichen Schritte nicht starten.</summary>
+    public bool StopOnError { get; set; } = true;
+
+    public CustomEntry Clone()
+    {
+        var c = (CustomEntry)MemberwiseClone();
+        c.Steps = Steps.Select(s => s.Clone()).ToList();
+        return c;
+    }
 
     /// <summary>Kopie mit den Startoptionen eines Profils (null = unverändert).</summary>
     public CustomEntry WithProfile(LaunchProfile? profile)
@@ -232,6 +255,20 @@ public sealed class CustomEntry
             };
         }
 
+        if (Kind == CustomEntryKind.Workflow)
+        {
+            return new LaunchItem
+            {
+                FullPath = Key,
+                RootFolder = PanelConfig.CustomEntriesKey,
+                Type = ItemType.Other,
+                DisplayName = string.IsNullOrWhiteSpace(Name) ? "Ablauf" : Name.Trim(),
+                Synopsis = Description.Trim().Length > 0 ? Description.Trim() : SummaryText(),
+                CustomKind = Kind,
+                Source = this
+            };
+        }
+
         var (type, launch, args) = Kind switch
         {
             CustomEntryKind.Rdp => (ItemType.Executable, "mstsc.exe", RdpArguments()),
@@ -266,6 +303,7 @@ public sealed class CustomEntry
         CustomEntryKind.Ssh => "SSH · " + SshTarget() + (Port > 0 && Port != 22 ? ":" + Port : string.Empty),
         CustomEntryKind.Command => (Target.Trim() + " " + Arguments.Trim()).Trim(),
         CustomEntryKind.Tool => (Target.Trim() + " " + Arguments.Trim()).Trim(),
+        CustomEntryKind.Workflow => $"Ablauf · {Steps.Count} {(Steps.Count == 1 ? "Schritt" : "Schritte")}: " + string.Join(" → ", Steps.Select(s => s.Name.Length > 0 ? s.Name : System.IO.Path.GetFileName(s.Path))),
         _ => Target.Trim()
     };
 

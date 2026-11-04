@@ -137,6 +137,10 @@ public sealed class ItemViewModel : ObservableObject
 
     public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
 
+    private bool _isChecked;
+    /// <summary>In der Mehrfachauswahl (Strg+Klick).</summary>
+    public bool IsChecked { get => _isChecked; set => Set(ref _isChecked, value); }
+
     private string? _quickKeyText;
     /// <summary>Schnellstart-Taste in der Gruppe „Favoriten“ (z. B. „Alt+1“), sonst null.</summary>
     public string? QuickKeyText { get => _quickKeyText; set { if (Set(ref _quickKeyText, value)) OnPropertyChanged(nameof(HasQuickKey)); } }
