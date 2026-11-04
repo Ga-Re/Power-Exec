@@ -76,6 +76,17 @@ in die lineare Suche über alle Schlüssel.
 In Stufe 2 entfallen ~3,4 ms auf Nachschlagen (LookupSnapshot) und ~6 ms auf die Bewertung
 (`FuzzyMatcher`, kulturabhängiger Vergleich). Gemessen an 160–1600 ms in der Oberfläche fällt beides kaum ins Gewicht.
 
+## Verlauf (Selbsttest, Windows-CI)
+
+| Stand | CI-Lauf | Tippen Mittel | Tippen p95 | `d` | `disk` | leer | Filter Alle |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 0.16.2 | 84 | 599 ms | 1595 ms | 1083 ms | 160 ms | 1595 ms | 1908 ms |
+| 0.16.2 (Wiederholung) | 85 | 937 ms | 2410 ms | 1731 ms | 273 ms | 2410 ms | 2867 ms |
+| Schritt 2: Kontextmenüs einmal je Fenster | 86 | 226 ms | 630 ms | 381 ms | 69 ms | 630 ms | 652 ms |
+
+Läufe 84 und 85 haben denselben Code: Die Runner schwanken um etwa den Faktor 1,5.
+Einzelne Läufe deshalb nur grob vergleichen; ein Grenzwert in der CI braucht Abstand oder mehrere Läufe.
+
 ## Grenzen der Messung
 
 - CI-Runner sind virtuelle Maschinen und schwanken; ein Arbeitsplatz-PC ist meist deutlich schneller.
