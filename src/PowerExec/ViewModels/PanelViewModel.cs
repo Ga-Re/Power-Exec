@@ -234,19 +234,21 @@ public sealed class PanelViewModel : ObservableObject
     public bool SuggestionsTakeKeys { get; private set; }
 
     /// <summary>Was die sichtbaren Einträge hergeben (Schlagworte, Arten, Gruppen, Merkmale) – nur das wird vorgeschlagen.</summary>
-    private SuggestionSource BuildSuggestionSource()
+    private SuggestionSource BuildSuggestionSource() => WithLookup(BuildSuggestionSourceCore);
+
+    private SuggestionSource BuildSuggestionSourceCore()
     {
         var src = new SuggestionSource();
         var settings = _app.Settings;
         foreach (var i in CollectVisible())
         {
-            foreach (var t in Tags.Of(settings, i.FullPath)) src.Tags[t] = src.Tags.GetValueOrDefault(t) + 1;
+            foreach (var t in TagsOf(i.FullPath)) src.Tags[t] = src.Tags.GetValueOrDefault(t) + 1;
             var kind = SearchQuery.KindOf(i);
             src.Kinds[kind] = src.Kinds.GetValueOrDefault(kind) + 1;
             var g = GroupOfItem(i);
             if (g.Length > 0)
                 for (var p = g; p != null; p = GroupManager.ParentOf(p)) src.Groups[p] = src.Groups.GetValueOrDefault(p) + 1;
-            if (_app.IsFavorite(i.FullPath)) src.Favorites++;
+            if (IsFav(i.FullPath)) src.Favorites++;
             if (i.RequiresAdmin) src.Admin++;
             if (i.SupportsRemote) src.Remote++;
             if (i.ParseError != null || i.IsBlocked || (i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false })) src.Problems++;
@@ -272,7 +274,27 @@ public sealed class PanelViewModel : ObservableObject
     // ---- Suche als Bausteine (Panel und Spotlight-Modus) ---------------------------
 
     /// <summary>Gruppe eines Eintrags: ausdrücklich zugeordnet, sonst smarte Gruppe seines Ordners (ggf. mit Unterordner).</summary>
-    public string GroupOfItem(LaunchItem i) => SmartGroups.EffectiveGroup(_app.Settings, i.FullPath, i.RootFolder);
+    public string GroupOfItem(LaunchItem i) =>
+        _lookup?.EffectiveGroup(i.FullPath, i.RootFolder) ?? SmartGroups.EffectiveGroup(_app.Settings, i.FullPath, i.RootFolder);
+
+    // ---- Nachschlagen: während Rebuild, Spotlight und Suchvorschlägen über eine Momentaufnahme (O(1)) ----------
+
+    private SettingsLookup? _lookup;
+
+    /// <summary>Führt <paramref name="work"/> mit einer frischen Momentaufnahme der Einstellungen aus.</summary>
+    private T WithLookup<T>(Func<T> work)
+    {
+        var previous = _lookup;
+        _lookup = new SettingsLookup(_app.Settings);
+        try { return work(); }
+        finally { _lookup = previous; }
+    }
+
+    private bool IsFav(string path) => _lookup?.IsFavorite(path) ?? _app.IsFavorite(path);
+    private IReadOnlyList<string> TagsOf(string path) => _lookup?.TagsOf(path) ?? Tags.Of(_app.Settings, path);
+    private EntryConfig? EntryOf(string path) => _lookup != null ? _lookup.Entry(path) : _app.Settings.FindEntry(path);
+    private double FrecencyOf(string path) => _lookup?.Frecency(path) ?? RunStats.Frecency(_app.Settings, path);
+    private bool ShowsGroup(string groupPath) => _lookup?.ShowsGroup(groupPath) ?? WorkspaceManager.ShowsGroup(_app.Settings, groupPath);
 
     /// <summary>
     /// Alle Einträge, die das Panel zeigt: Haken in den Ordner-Einstellungen, freigegebene neue Dateien,
@@ -284,7 +306,7 @@ public sealed class PanelViewModel : ObservableObject
         var folderByPath = settings.Folders.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var visible = new List<LaunchItem>();
-        bool CategoryOk(LaunchItem i) => WorkspaceManager.ShowsGroup(settings, GroupOfItem(i));
+        bool CategoryOk(LaunchItem i) => ShowsGroup(GroupOfItem(i));
         foreach (var i in _app.Repository.Items)
         {
             if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
@@ -308,7 +330,7 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Bewertung: Name zählt am meisten, dann Dateiname und Schlagworte, dann Beschreibung, Notiz und Code; null = kein Treffer.</summary>
     public int? ScoreItem(LaunchItem i, SearchQuery query)
     {
-        var e = _app.Settings.FindEntry(i.FullPath);
+        var e = EntryOf(i.FullPath);
         var fields = new List<(string?, int)>
         {
             (i.DisplayName, 3), (e?.DisplayName, 3), (i.FileName, 2), (e == null ? null : string.Join(' ', e.Tags), 2),
@@ -319,9 +341,9 @@ public sealed class PanelViewModel : ObservableObject
 
     public bool FilterItem(LaunchItem i, SearchQuery query, TypeFilter filter)
     {
-        var fav = _app.IsFavorite(i.FullPath);
+        var fav = IsFav(i.FullPath);
         return ItemFilter.MatchesType(i, filter, fav) &&
-               query.MatchesFilters(i, GroupOfItem(i), fav, Tags.Of(_app.Settings, i.FullPath),
+               query.MatchesFilters(i, GroupOfItem(i), fav, TagsOf(i.FullPath),
                    () => i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false });
     }
 
@@ -329,7 +351,9 @@ public sealed class PanelViewModel : ObservableObject
     /// Flache Trefferliste (Spotlight-Modus): beste Treffer nach Bewertung und Häufigkeit;
     /// ohne Suchtext die meistgenutzten Einträge, dann Favoriten.
     /// </summary>
-    public IReadOnlyList<LaunchItem> SearchFlat(string text, int max)
+    public IReadOnlyList<LaunchItem> SearchFlat(string text, int max) => WithLookup(() => SearchFlatCore(text, max));
+
+    private IReadOnlyList<LaunchItem> SearchFlatCore(string text, int max)
     {
         var query = SearchQuery.Parse(text);
         var settings = _app.Settings;
@@ -337,7 +361,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var i in CollectVisible())
         {
             if (!FilterItem(i, query, TypeFilter.All)) continue;
-            var frecency = RunStats.Frecency(settings, i.FullPath);
+            var frecency = FrecencyOf(i.FullPath);
             if (query.HasTerms)
             {
                 if (ScoreItem(i, query) is not { } score) continue;
@@ -345,7 +369,7 @@ public sealed class PanelViewModel : ObservableObject
             }
             else
             {
-                var fav = _app.IsFavorite(i.FullPath);
+                var fav = IsFav(i.FullPath);
                 if (frecency <= 0 && !fav && !query.HasFilters) continue;
                 scored.Add((i, frecency * 10 + (fav ? 5 : 0)));
             }
@@ -766,7 +790,9 @@ public sealed class PanelViewModel : ObservableObject
     /// true bei Suche und Filter: vorhandene ViewModels weiterverwenden und die Listen nur abgleichen,
     /// damit WPF nur für neue Treffer Container erzeugt. false: alles neu (Einstellungen haben sich geändert).
     /// </param>
-    private void Rebuild(bool reuse)
+    private void Rebuild(bool reuse) => WithLookup(() => { RebuildCore(reuse); return true; });
+
+    private void RebuildCore(bool reuse)
     {
         reuse &= ReuseForSearch;
         if (!reuse) { _itemCache.Clear(); _groupCache.Clear(); }
@@ -797,7 +823,7 @@ public sealed class PanelViewModel : ObservableObject
             {
                 if (Score(i) is not { } score) continue;
                 // Häufig und kürzlich gestartete Einträge nach oben
-                scores[i] = score + SearchScoring.FrecencyBonus(RunStats.Frecency(settings, i.FullPath));
+                scores[i] = score + SearchScoring.FrecencyBonus(FrecencyOf(i.FullPath));
             }
             pool.Add(i);
         }
@@ -867,7 +893,7 @@ public sealed class PanelViewModel : ObservableObject
                     });
             }
 
-            var favs = pool.Where(i => _app.IsFavorite(i.FullPath)).ToList();
+            var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
             if (favs.Count > 0 && cfg.ShowFavorites) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
         }
 
@@ -898,7 +924,7 @@ public sealed class PanelViewModel : ObservableObject
         var nodes = new Dictionary<string, GroupSpec>(StringComparer.CurrentCultureIgnoreCase);
         foreach (var path in paths)
         {
-            if (!WorkspaceManager.ShowsGroup(settings, path)) continue;
+            if (!ShowsGroup(path)) continue;
             var items = byGroup.GetValueOrDefault(path) ?? new List<LaunchItem>();
             var (folderPath, error) = FolderInfo(path);
             var kind = virtualPaths.Contains(path, StringComparer.CurrentCultureIgnoreCase) ? "subfolder" : "group";
@@ -923,7 +949,7 @@ public sealed class PanelViewModel : ObservableObject
         if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
-        var favorites = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).ToList();
+        var favorites = Arrange("fav", visible.Where(i => IsFav(i.FullPath))).ToList();
         var quickChanged = !favorites.Select(q => q.FullPath).SequenceEqual(_favoriteItems.Select(q => q.FullPath), StringComparer.OrdinalIgnoreCase);
         _favoriteItems = favorites;
         _quickItems = favorites.Take(9).ToList();

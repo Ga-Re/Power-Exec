@@ -115,3 +115,41 @@ public class LookupBenchmarks : PanelBenchmarkBase
     [Benchmark(Description = "WorkspaceManager.ShowsGroup × 500")]
     public int ShowsGroup() { int n = 0; foreach (var i in Items) if (WorkspaceManager.ShowsGroup(Settings, "Scripte/AD")) n++; return n; }
 }
+
+/// <summary>Alle Nachschlagungen eines Rebuilds für 500 Einträge: einzeln (bis 0.16.2) gegen <see cref="SettingsLookup"/> (0.17).</summary>
+[MemoryDiagnoser]
+public class SettingsLookupBenchmarks : PanelBenchmarkBase
+{
+    [Benchmark(Baseline = true, Description = "einzeln (linear)")]
+    public double Single()
+    {
+        double sum = 0;
+        foreach (var i in Items)
+        {
+            var g = SmartGroups.EffectiveGroup(Settings, i.FullPath, i.RootFolder);
+            if (WorkspaceManager.ShowsGroup(Settings, g)) sum++;
+            if (Settings.Favorites.Contains(i.FullPath, StringComparer.OrdinalIgnoreCase)) sum++;
+            sum += Tags.Of(Settings, i.FullPath).Count;
+            if (Settings.FindEntry(i.FullPath) != null) sum++;
+            sum += RunStats.Frecency(Settings, i.FullPath);
+        }
+        return sum;
+    }
+
+    [Benchmark(Description = "SettingsLookup (inkl. Aufbau)")]
+    public double Snapshot()
+    {
+        var l = new SettingsLookup(Settings);
+        double sum = 0;
+        foreach (var i in Items)
+        {
+            var g = l.EffectiveGroup(i.FullPath, i.RootFolder);
+            if (l.ShowsGroup(g)) sum++;
+            if (l.IsFavorite(i.FullPath)) sum++;
+            sum += l.TagsOf(i.FullPath).Count;
+            if (l.Entry(i.FullPath) != null) sum++;
+            sum += l.Frecency(i.FullPath);
+        }
+        return sum;
+    }
+}
