@@ -165,10 +165,13 @@ public sealed class ItemViewModel : ObservableObject
     public bool HasQuickKey => _quickKeyText != null;
 
     private IReadOnlyList<TextPart>? _nameParts, _synopsisParts;
+    /// <summary>Suchbegriffe, mit denen die Abschnitte berechnet wurden.</summary>
+    private IReadOnlyList<string>? _partsTerms;
+    private IReadOnlyList<string> CurrentTerms => HighlightTerms ?? _panel.HighlightTerms;
     /// <summary>Name in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
-    public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, HighlightTerms ?? _panel.HighlightTerms);
+    public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, _partsTerms ??= CurrentTerms);
     /// <summary>Info-Zeile in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
-    public IReadOnlyList<TextPart> SynopsisParts => _synopsisParts ??= TextPart.Split(Synopsis, HighlightTerms ?? _panel.HighlightTerms);
+    public IReadOnlyList<TextPart> SynopsisParts => _synopsisParts ??= TextPart.Split(Synopsis, _partsTerms ??= CurrentTerms);
     /// <summary>Eigene Suchbegriffe für die Hervorhebung (Spotlight); null = die des Panels.</summary>
     public IReadOnlyList<string>? HighlightTerms { get; init; }
 
@@ -179,8 +182,11 @@ public sealed class ItemViewModel : ObservableObject
     internal void RefreshHighlight()
     {
         if (HighlightTerms != null || (_nameParts == null && _synopsisParts == null)) return;
+        // Gleiche Begriffe (z. B. nur der Filter hat gewechselt): nichts neu zeichnen
+        if (_partsTerms != null && _partsTerms.SequenceEqual(_panel.HighlightTerms, StringComparer.CurrentCultureIgnoreCase)) return;
         _nameParts = null;
         _synopsisParts = null;
+        _partsTerms = null;
         OnPropertyChanged(nameof(NameParts));
         OnPropertyChanged(nameof(SynopsisParts));
     }

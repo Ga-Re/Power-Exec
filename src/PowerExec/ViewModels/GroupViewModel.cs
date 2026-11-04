@@ -161,7 +161,9 @@ public sealed class GroupViewModel : ObservableObject
     public bool IsFavorites { get; }
     public bool IsFolder => FolderPath != null;
     public string Kind { get; }
-    public bool AllowReorder { get; }
+    private bool _allowReorder;
+    /// <summary>Reihenfolge per Drag &amp; Drop änderbar (nicht während der Suche) – ändert sich beim Wiederverwenden.</summary>
+    public bool AllowReorder { get => _allowReorder; internal set => Set(ref _allowReorder, value); }
 
     /// <summary>Symbol im Gruppenkopf (Segoe Fluent Icons).</summary>
     /// <summary>Tooltip am Punkt der Sprungleiste.</summary>
@@ -199,10 +201,10 @@ public sealed class GroupViewModel : ObservableObject
     }
 
     /// <summary>Kann diese Gruppe für einen neuen Rebuild weiterverwendet werden? (Alles, was im Konstruktor feststeht, ist gleich.)</summary>
-    internal bool CanReuseFor(string title, string kind, bool isFavorites, string? folderPath, string? error, bool allowReorder) =>
+    internal bool CanReuseFor(string title, string kind, bool isFavorites, string? folderPath, string? error) =>
         Title == (kind is "group" or "subfolder" ? GroupManager.LeafOf(title) : title) &&
         GroupPath == (kind is "group" or "subfolder" ? title : null) &&
-        Kind == kind && IsFavorites == isFavorites && FolderPath == folderPath && Error == error && AllowReorder == allowReorder;
+        Kind == kind && IsFavorites == isFavorites && FolderPath == folderPath && Error == error;
 
     /// <summary>Nach dem Abgleich von Einträgen und Untergruppen: abhängige Anzeigen aktualisieren.</summary>
     internal void RaiseContentChanged()

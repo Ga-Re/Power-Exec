@@ -910,9 +910,11 @@ public sealed class PanelViewModel : ObservableObject
         GroupViewModel Materialize(GroupSpec spec)
         {
             if (_groupCache.TryGetValue(spec.Key, out var g) &&
-                g.CanReuseFor(spec.Title, spec.Kind, spec.IsFavorites, spec.FolderPath, spec.Error, spec.AllowReorder))
+                g.CanReuseFor(spec.Title, spec.Kind, spec.IsFavorites, spec.FolderPath, spec.Error))
             {
+                // Suche an/aus: aufklappen und Drag & Drop umschalten, ohne die Gruppe neu zu erzeugen
                 if (g.IsExpanded != spec.Expanded) g.SetExpandedSilently(spec.Expanded);
+                g.AllowReorder = spec.AllowReorder;
             }
             else
             {
