@@ -185,6 +185,9 @@ public sealed class PanelSettingsViewModel : ObservableObject
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
     public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }
 
+    /// <summary>Tastenkürzel öffnet die Suche in der Bildschirmmitte statt des Panels.</summary>
+    public bool HotkeyOpensSpotlight { get => _c.HotkeyOpensSpotlight; set { _c.HotkeyOpensSpotlight = value; OnPropertyChanged(); } }
+
     public int PanelOpacity
     {
         get => _c.PanelOpacity;

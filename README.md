@@ -20,6 +20,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Filter im Suchfeld:** `#schlagwort`, `typ:ps1|cmd|exe|programm|web|ordner|rdp|ssh|snippet|befehl|werkzeug|datei`, `gruppe:Name` (auch `gruppe:"Kunde A"`), `ist:fav`, `ist:admin`, `ist:remote`, `ist:problem` – erkannte Filter erscheinen als **Chips** unter dem Suchfeld und lassen sich mit ✕ entfernen
 - „Zuletzt ausgeführt“ und „Favoriten“ ein- oder ausblendbar (Einstellungen › Gruppen)
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
+- **Spotlight-Modus** (Panel › Verhalten): das Tastenkürzel öffnet stattdessen eine schwebende Suche in der Bildschirmmitte mit den acht besten Treffern (ohne Suchtext: meistgenutzte Einträge und Favoriten); Enter, Strg+Enter (Admin), Strg+Umschalt+Enter, Strg+R wie im Panel, **Tab** wechselt ins volle Panel
 - Anheften, damit das Panel offen bleibt
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)

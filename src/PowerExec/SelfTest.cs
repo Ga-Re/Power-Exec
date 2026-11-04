@@ -332,6 +332,30 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Spotlight-Modus");
+            {
+                var host = _hosts[0];
+                host.Config.HotkeyOpensSpotlight = true;
+                SpotlightStaysOpen = true;
+                ShowPanelFromHotkey(host);
+                await Settle();
+                if (Spotlight == null) Fail("Spotlight: Tastenkürzel öffnet kein Suchfenster");
+                else
+                {
+                    if (host.Window.IsOpen) Fail("Spotlight: Panel öffnet zusätzlich");
+                    if (Spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
+                    Spotlight.ViewModel.SearchText = "clnup";
+                    await Settle();
+                    if (Spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");
+                    if (Spotlight.Content is FrameworkElement spotRoot) Screenshot(spotRoot, "spotlight");
+                    ShowPanelFromHotkey(host); // zweites Mal schließt
+                    await Settle();
+                    if (Spotlight != null) Fail("Spotlight: Tastenkürzel schließt das Suchfenster nicht");
+                }
+                host.Config.HotkeyOpensSpotlight = false;
+                SpotlightStaysOpen = false;
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

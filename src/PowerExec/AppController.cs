@@ -284,10 +284,15 @@ public sealed partial class AppController : IDisposable
     public void ShowPanelFromTrigger(PanelHost host, MonitorInfo monitor) => host.Window.ShowPanel(monitor, viaHotkey: false);
 
     /// <summary>Tastenkürzel oder Tray: Panel öffnen bzw. wieder schließen.</summary>
-    public void ShowPanelFromHotkey(PanelHost? host = null)
+    public void ShowPanelFromHotkey(PanelHost? host = null, bool forcePanel = false)
     {
         host ??= _hosts.FirstOrDefault();
         if (host == null) return;
+        if (host.Config.HotkeyOpensSpotlight && !forcePanel)
+        {
+            ToggleSpotlight(host);
+            return;
+        }
         var w = host.Window;
         if (w.IsOpen && w.OpenedViaHotkey)
         {

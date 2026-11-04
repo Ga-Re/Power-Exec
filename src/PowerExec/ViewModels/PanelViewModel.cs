@@ -190,6 +190,92 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand ClearSearchCommand { get; }
     public ICommand AddFolderCommand { get; }
 
+
+    // ---- Suche als Bausteine (Panel und Spotlight-Modus) ---------------------------
+
+    /// <summary>Gruppe eines Eintrags: ausdrücklich zugeordnet, sonst smarte Gruppe seines Ordners (ggf. mit Unterordner).</summary>
+    public string GroupOfItem(LaunchItem i) => SmartGroups.EffectiveGroup(_app.Settings, i.FullPath, i.RootFolder);
+
+    /// <summary>
+    /// Alle Einträge, die das Panel zeigt: Haken in den Ordner-Einstellungen, freigegebene neue Dateien,
+    /// eigene Einträge, im Arbeitsbereich eingeblendete Gruppen.
+    /// </summary>
+    public List<LaunchItem> CollectVisible(Dictionary<string, int>? pending = null)
+    {
+        var settings = _app.Settings;
+        var folderByPath = settings.Folders.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var visible = new List<LaunchItem>();
+        bool CategoryOk(LaunchItem i) => WorkspaceManager.ShowsGroup(settings, GroupOfItem(i));
+        foreach (var i in _app.Repository.Items)
+        {
+            if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
+            var state = FolderVisibility.State(folder, FolderVisibility.RelativePath(folder, i.FullPath));
+            if (state == EntryVisibility.Visible) { if (CategoryOk(i)) visible.Add(i); }
+            else if (state == EntryVisibility.Pending && pending != null) pending[folder.Path] = pending.GetValueOrDefault(folder.Path) + 1;
+        }
+        // Eigene Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle)
+        var seen = new HashSet<string>(visible.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
+        foreach (var c in settings.CustomEntries)
+        {
+            // Snippets haben kein Ziel, nur Code
+            if (c.Target.Trim().Length == 0 && (c.Kind != CustomEntryKind.Snippet || c.Code.Trim().Length == 0)) continue;
+            var li = _app.DescribeCustom(c);
+            if (!seen.Add(li.FullPath)) continue; // Datei liegt bereits in einem durchsuchten Ordner
+            if (CategoryOk(li)) visible.Add(li);
+        }
+        return visible;
+    }
+
+    /// <summary>Bewertung: Name zählt am meisten, dann Dateiname und Schlagworte, dann Beschreibung, Notiz und Code; null = kein Treffer.</summary>
+    public int? ScoreItem(LaunchItem i, SearchQuery query)
+    {
+        var e = _app.Settings.FindEntry(i.FullPath);
+        var fields = new List<(string?, int)>
+        {
+            (i.DisplayName, 3), (e?.DisplayName, 3), (i.FileName, 2), (e == null ? null : string.Join(' ', e.Tags), 2),
+            (i.Synopsis, 1), (i.Description, 1), (e?.Description, 1), (e?.Notes, 1), (e?.Category, 1), (i.Source?.Code, 1)
+        };
+        return SearchScoring.Score(fields, query.Terms);
+    }
+
+    public bool FilterItem(LaunchItem i, SearchQuery query, TypeFilter filter)
+    {
+        var fav = _app.IsFavorite(i.FullPath);
+        return ItemFilter.MatchesType(i, filter, fav) &&
+               query.MatchesFilters(i, GroupOfItem(i), fav, Tags.Of(_app.Settings, i.FullPath),
+                   () => i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false });
+    }
+
+    /// <summary>
+    /// Flache Trefferliste (Spotlight-Modus): beste Treffer nach Bewertung und Häufigkeit;
+    /// ohne Suchtext die meistgenutzten Einträge, dann Favoriten.
+    /// </summary>
+    public IReadOnlyList<LaunchItem> SearchFlat(string text, int max)
+    {
+        var query = SearchQuery.Parse(text);
+        var settings = _app.Settings;
+        var scored = new List<(LaunchItem Item, double Score)>();
+        foreach (var i in CollectVisible())
+        {
+            if (!FilterItem(i, query, TypeFilter.All)) continue;
+            var frecency = RunStats.Frecency(settings, i.FullPath);
+            if (query.HasTerms)
+            {
+                if (ScoreItem(i, query) is not { } score) continue;
+                scored.Add((i, score + SearchScoring.FrecencyBonus(frecency)));
+            }
+            else
+            {
+                var fav = _app.IsFavorite(i.FullPath);
+                if (frecency <= 0 && !fav && !query.HasFilters) continue;
+                scored.Add((i, frecency * 10 + (fav ? 5 : 0)));
+            }
+        }
+        return scored.OrderByDescending(x => x.Score).ThenBy(x => x.Item.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .Take(max).Select(x => x.Item).ToList();
+    }
+
     // ---- Tastatur ------------------------------------------------------------
 
     private List<LaunchItem> _quickItems = new();
@@ -475,57 +561,13 @@ public sealed class PanelViewModel : ObservableObject
         bool searching = !query.IsEmpty;
         var collapsed = new HashSet<string>(settings.CollapsedGroups, StringComparer.OrdinalIgnoreCase);
 
-        // Nur sichtbare Einträge (Haken in den Ordner-Einstellungen, neue Dateien ggf. erst nach Freigabe)
-        var folderByPath = settings.Folders.GroupBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var pending = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        var visible = new List<LaunchItem>();
         var cfg = _host.Config;
-        // Gruppe eines Eintrags: ausdrücklich zugeordnet, sonst smarte Gruppe seines Ordners (ggf. mit Unterordner)
-        string GroupOf(LaunchItem i) => SmartGroups.EffectiveGroup(settings, i.FullPath, i.RootFolder);
-        // Arbeitsbereich: ausgeblendete Gruppen (samt Untergruppen) erscheinen nicht
-        bool CategoryOk(LaunchItem i) => WorkspaceManager.ShowsGroup(settings, GroupOf(i));
-        foreach (var i in repo.Items)
-        {
-            if (!folderByPath.TryGetValue(i.RootFolder, out var folder)) continue;
-            var state = FolderVisibility.State(folder, FolderVisibility.RelativePath(folder, i.FullPath));
-            if (state == EntryVisibility.Visible) { if (CategoryOk(i)) visible.Add(i); }
-            else if (state == EntryVisibility.Pending) pending[folder.Path] = pending.GetValueOrDefault(folder.Path) + 1;
-        }
-        // Eigene Einträge ohne Datei (Webseiten, Ordner, RDP, Befehle)
-        var customItems = new List<LaunchItem>();
-        {
-            var seen = new HashSet<string>(visible.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
-            foreach (var c in settings.CustomEntries)
-            {
-                // Snippets haben kein Ziel, nur Code
-                if (c.Target.Trim().Length == 0 && (c.Kind != CustomEntryKind.Snippet || c.Code.Trim().Length == 0)) continue;
-                var li = _app.DescribeCustom(c);
-                if (!seen.Add(li.FullPath)) continue; // Datei liegt bereits in einem durchsuchten Ordner
-                if (CategoryOk(li)) customItems.Add(li);
-            }
-        }
-        visible.AddRange(customItems);
+        string GroupOf(LaunchItem i) => GroupOfItem(i);
+        var visible = CollectVisible(pending);
         UpdatePending(pending);
-
-        // Bewertung: Name zählt am meisten, dann Dateiname und Schlagworte, dann Beschreibung, Notiz und Code
-        int? Score(LaunchItem i)
-        {
-            var e = settings.FindEntry(i.FullPath);
-            var fields = new List<(string?, int)>
-            {
-                (i.DisplayName, 3), (e?.DisplayName, 3), (i.FileName, 2), (e == null ? null : string.Join(' ', e.Tags), 2),
-                (i.Synopsis, 1), (i.Description, 1), (e?.Description, 1), (e?.Notes, 1), (e?.Category, 1), (i.Source?.Code, 1)
-            };
-            return SearchScoring.Score(fields, query.Terms);
-        }
-        bool FiltersOk(LaunchItem i)
-        {
-            var fav = _app.IsFavorite(i.FullPath);
-            return ItemFilter.MatchesType(i, _filter, fav) &&
-                   query.MatchesFilters(i, GroupOf(i), fav, Tags.Of(settings, i.FullPath),
-                       () => i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false });
-        }
+        int? Score(LaunchItem i) => ScoreItem(i, query);
+        bool FiltersOk(LaunchItem i) => FilterItem(i, query, _filter);
 
         var scores = new Dictionary<LaunchItem, int>(ReferenceEqualityComparer.Instance);
         var pool = new List<LaunchItem>();

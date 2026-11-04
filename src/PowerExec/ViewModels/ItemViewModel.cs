@@ -144,9 +144,11 @@ public sealed class ItemViewModel : ObservableObject
 
     private IReadOnlyList<TextPart>? _nameParts, _synopsisParts;
     /// <summary>Name in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
-    public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, _panel.HighlightTerms);
+    public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, HighlightTerms ?? _panel.HighlightTerms);
     /// <summary>Info-Zeile in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
-    public IReadOnlyList<TextPart> SynopsisParts => _synopsisParts ??= TextPart.Split(Synopsis, _panel.HighlightTerms);
+    public IReadOnlyList<TextPart> SynopsisParts => _synopsisParts ??= TextPart.Split(Synopsis, HighlightTerms ?? _panel.HighlightTerms);
+    /// <summary>Eigene Suchbegriffe für die Hervorhebung (Spotlight); null = die des Panels.</summary>
+    public IReadOnlyList<string>? HighlightTerms { get; init; }
 
     public IReadOnlyList<LaunchProfile> Profiles { get; }
     public LaunchProfile DefaultProfile { get; }

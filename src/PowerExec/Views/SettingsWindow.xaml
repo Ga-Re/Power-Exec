@@ -1050,6 +1050,10 @@
                                 <Button Style="{StaticResource Btn.Standard}" Content="Entfernen" Margin="8,0,0,0" Command="{Binding ClearHotkeyCommand}"/>
                             </StackPanel>
                         </c:SettingsCard>
+                        <c:SettingsCard Icon="&#xE721;" Header="Tastenkürzel öffnet die Suche in der Bildschirmmitte"
+                                        Description="Spotlight-Modus: ein schwebendes Suchfenster mit den besten Treffern – ohne Mausweg zum Rand. Tab wechselt ins volle Panel. Die Hover-Zone öffnet weiter das Panel.">
+                            <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HotkeyOpensSpotlight}" AutomationProperties.Name="Spotlight-Modus"/>
+                        </c:SettingsCard>
                         <TextBlock Text="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Error}"
                                    FontSize="12" Margin="4,0,0,6" Visibility="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
                         <c:SettingsCard Icon="&#xE71C;" Header="Vorausgewählter Filter" Description="Dieser Filter ist ausgewählt, wenn das Panel aufgeht.">
