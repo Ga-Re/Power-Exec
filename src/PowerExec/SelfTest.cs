@@ -169,6 +169,22 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Tastatur: Schnellstart und Übersicht");
+            {
+                var host = _hosts[0];
+                var vm = host.ViewModel;
+                vm.Rebuild();
+                if (!vm.AllItems.Any(i => i.QuickKeyText == "Alt+1")) Fail("Tastatur: Favorit ohne Schnellstart-Taste Alt+1");
+                if (vm.RunQuickItem(0) || vm.RunQuickItem(10)) Fail("Tastatur: ungültige Schnellstart-Nummer wird angenommen");
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                vm.ShowShortcuts = true;
+                await Settle();
+                if (host.Window.Content is FrameworkElement keysRoot) Screenshot(keysRoot, "panel-tastenkuerzel");
+                vm.ShowShortcuts = false;
+                host.Window.HidePanel();
+                await Settle();
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

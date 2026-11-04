@@ -185,6 +185,48 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand ClearSearchCommand { get; }
     public ICommand AddFolderCommand { get; }
 
+    // ---- Tastatur ------------------------------------------------------------
+
+    private List<LaunchItem> _quickItems = new();
+
+    /// <summary>Alt+1 … 9: n-ten Favoriten mit seinem Standardprofil starten.</summary>
+    public bool RunQuickItem(int number)
+    {
+        if (number < 1 || number > _quickItems.Count) return false;
+        var item = _quickItems[number - 1];
+        _app.RunProfile(item, ProfileResolver.GetDefault(_app.Settings, item));
+        return true;
+    }
+
+    /// <summary>Ziel der Tastenkürzel: ausgewählter Eintrag, sonst der erste sichtbare.</summary>
+    public ItemViewModel? CurrentItem => SelectedItem ?? VisibleItems.FirstOrDefault();
+
+    private bool _showShortcuts;
+    /// <summary>Spickzettel mit allen Tastenkürzeln (F1 oder „?“).</summary>
+    public bool ShowShortcuts { get => _showShortcuts; set => Set(ref _showShortcuts, value); }
+    public ICommand ToggleShortcutsCommand => _toggleShortcutsCommand ??= new RelayCommand(() => ShowShortcuts = !ShowShortcuts);
+    private ICommand? _toggleShortcutsCommand;
+
+    /// <summary>Einträge des Spickzettels (Taste, Wirkung).</summary>
+    public IReadOnlyList<ShortcutInfo> Shortcuts { get; } = new ShortcutInfo[]
+    {
+        new("↑ ↓", "Eintrag auswählen"),
+        new("Enter", "Starten (Standardprofil)"),
+        new("Strg+Enter", "Als Administrator starten"),
+        new("Strg+Umschalt+Enter", "Als anderer Benutzer starten"),
+        new("Strg+R", "Remote ausführen …"),
+        new("→ / Tab", "Alle Aktionen des Eintrags"),
+        new("Alt+1 … 9", "Favorit 1 … 9 starten"),
+        new("Strg+D", "Favorit an/aus"),
+        new("F2", "Eintrag bearbeiten / Startprofile"),
+        new("Strg+E", "Im Editor öffnen"),
+        new("Strg+Umschalt+C", "Pfad kopieren"),
+        new("Strg+Z", "Letzte Änderung rückgängig"),
+        new("Strg+V", "Eintrag aus Zwischenablage"),
+        new("Esc", "Suche leeren / Panel schließen"),
+        new("F1 oder ?", "Diese Übersicht"),
+    };
+
     // ---- Rückgängig ---------------------------------------------------------
 
     /// <summary>Hinweis nach einer Änderung im Panel („„X“ ausgeblendet · Rückgängig“).</summary>
@@ -411,6 +453,15 @@ public sealed class PanelViewModel : ObservableObject
         var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
         if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
 
+        // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
+        _quickItems = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).Take(9).ToList();
+        foreach (var favGroup in groups.Where(x => x.Kind == "fav"))
+            foreach (var favVm in favGroup.Items)
+            {
+                var quickIndex = _quickItems.FindIndex(q => q.FullPath.Equals(favVm.Item.FullPath, StringComparison.OrdinalIgnoreCase));
+                if (quickIndex >= 0) favVm.QuickKeyText = $"Alt+{quickIndex + 1}";
+            }
+
         Groups.Clear();
         foreach (var g in groups) Groups.Add(g);
         OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
@@ -627,3 +678,7 @@ public sealed class PanelViewModel : ObservableObject
 
 /// <summary>Ein erkannter Filter unter dem Suchfeld; ✕ entfernt ihn aus dem Suchtext.</summary>
 public sealed record SearchChip(string Label, bool IsInvalid, string ToolTip, ICommand RemoveCommand);
+
+/// <summary>Eine Zeile im Spickzettel der Tastenkürzel.</summary>
+public sealed record ShortcutInfo(string Keys, string Action);
+

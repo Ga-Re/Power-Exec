@@ -137,6 +137,11 @@ public sealed class ItemViewModel : ObservableObject
 
     public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
 
+    private string? _quickKeyText;
+    /// <summary>Schnellstart-Taste in der Gruppe „Favoriten“ (z. B. „Alt+1“), sonst null.</summary>
+    public string? QuickKeyText { get => _quickKeyText; set { if (Set(ref _quickKeyText, value)) OnPropertyChanged(nameof(HasQuickKey)); } }
+    public bool HasQuickKey => _quickKeyText != null;
+
     private IReadOnlyList<TextPart>? _nameParts, _synopsisParts;
     /// <summary>Name in Abschnitten; Treffer der Suche werden hervorgehoben.</summary>
     public IReadOnlyList<TextPart> NameParts => _nameParts ??= TextPart.Split(DisplayName, _panel.HighlightTerms);

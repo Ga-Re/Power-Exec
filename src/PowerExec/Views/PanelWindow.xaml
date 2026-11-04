@@ -433,7 +433,14 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
+                            <!-- Schnellstart-Taste (Favoriten) -->
+                            <Border Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0" Padding="5,1" CornerRadius="4" BorderThickness="1"
+                                    BorderBrush="{DynamicResource Border.Control}" Visibility="{Binding HasQuickKey, Converter={StaticResource Vis}}"
+                                    ToolTip="Schnellstart mit dieser Taste – auch ohne den Eintrag auszuwählen">
+                                <TextBlock Text="{Binding QuickKeyText}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
+                            </Border>
                             <Grid x:Name="BadgeBox" Width="36" VerticalAlignment="Top" Margin="0,1,0,0">
                                 <Border Style="{StaticResource Badge}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                     <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -743,7 +750,7 @@
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
-                         Padding="30,0,8,0" Tag="Suchen … (typ:ps1, #schlagwort, ist:fav)" PreviewKeyDown="SearchBox_PreviewKeyDown"
+                         Padding="30,0,8,0" Tag="Suchen … (typ:ps1, #schlagwort, ist:fav)" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
                          ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
                          AutomationProperties.Name="Suchen" AutomationProperties.HelpText="{Binding SearchHelp}"/>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"
@@ -907,6 +914,48 @@
                     </ControlTemplate>
                 </Thumb.Template>
             </Thumb>
+
+            <!-- Übersicht der Tastenkürzel (F1 oder „?“) -->
+            <Border Grid.Row="4" Grid.RowSpan="2" Margin="12,4,12,12" Panel.ZIndex="30" VerticalAlignment="Top"
+                    Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
+                    Padding="14,10,6,12" Visibility="{Binding ShowShortcuts, Converter={StaticResource Vis}}"
+                    AutomationProperties.Name="Tastenkürzel">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+                </Border.Effect>
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleShortcutsCommand}"
+                                ToolTip="Schließen (Esc)" AutomationProperties.Name="Schließen">
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                        </Button>
+                        <TextBlock Text="Tastenkürzel" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="460">
+                    <ItemsControl ItemsSource="{Binding Shortcuts}" Focusable="False" Margin="0,0,8,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" SharedSizeGroup="ShortcutKeys"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Padding="6,1" CornerRadius="4" BorderThickness="1,1,1,2" BorderBrush="{DynamicResource Border.Control}"
+                                            Background="{DynamicResource Bg.Input}" HorizontalAlignment="Left" Margin="0,0,12,0">
+                                        <TextBlock Text="{Binding Keys}" FontSize="11.5" FontFamily="Cascadia Mono, Consolas"/>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{Binding Action}" FontSize="12.5" VerticalAlignment="Center" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource Text.Secondary}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Grid.IsSharedSizeScope="True"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
 
             <!-- Hinweis nach einer Änderung mit „Rückgängig“ (Strg+Z) -->
             <Border x:Name="UndoToast" Grid.Row="5" VerticalAlignment="Bottom" Margin="12,0,12,10" Panel.ZIndex="20"

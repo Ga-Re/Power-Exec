@@ -45,9 +45,11 @@ public partial class PanelWindow : Window
         Deactivated += (_, _) => OnDeactivated();
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape)
+            if (HandleShortcut(e)) e.Handled = true;
+            else if (e.Key == Key.Escape)
             {
-                if (Vm.IsSearching) Vm.SearchText = string.Empty;
+                if (Vm.ShowShortcuts) Vm.ShowShortcuts = false;
+                else if (Vm.IsSearching) Vm.SearchText = string.Empty;
                 else HidePanel();
                 e.Handled = true;
             }
@@ -634,6 +636,87 @@ public partial class PanelWindow : Window
         menu.Items.Add(new Separator());
         menu.Items.Add(new MenuItem { Header = "Profile verwalten …", Command = item.ManageProfilesCommand });
         menu.IsOpen = true;
+    }
+
+    /// <summary>
+    /// Tastenkürzel im Panel (Übersicht mit F1 oder „?“). Gelten im Suchfeld und auf Einträgen,
+    /// nicht in anderen Textfeldern.
+    /// </summary>
+    private bool HandleShortcut(KeyEventArgs e)
+    {
+        var mods = Keyboard.Modifiers;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        var inSearch = ReferenceEquals(Keyboard.FocusedElement, SearchBox);
+        if (Keyboard.FocusedElement is TextBox && !inSearch) return false;
+
+        // Alt+1 … 9: Favoriten starten
+        if (mods == ModifierKeys.Alt && key is >= Key.D1 and <= Key.D9) return Vm.RunQuickItem(key - Key.D0);
+        if (mods == ModifierKeys.Alt && key is >= Key.NumPad1 and <= Key.NumPad9) return Vm.RunQuickItem(key - Key.NumPad0);
+
+        if (key == Key.F1 && mods == ModifierKeys.None) { Vm.ShowShortcuts = !Vm.ShowShortcuts; return true; }
+
+        var item = Vm.CurrentItem;
+        if (item == null) return false;
+        bool Exec(ICommand command)
+        {
+            if (!command.CanExecute(null)) return false;
+            command.Execute(null);
+            return true;
+        }
+        switch (key)
+        {
+            case Key.Enter when mods == (ModifierKeys.Control | ModifierKeys.Shift): return Exec(item.RunAsUserCommand);
+            case Key.Enter when mods == ModifierKeys.Control: return Exec(item.RunAdminCommand);
+            case Key.R when mods == ModifierKeys.Control: return Exec(item.RunRemoteCommand);
+            case Key.E when mods == ModifierKeys.Control: return Exec(item.EditCommand);
+            case Key.D when mods == ModifierKeys.Control: return Exec(item.ToggleFavoriteCommand);
+            case Key.C when mods == (ModifierKeys.Control | ModifierKeys.Shift): return Exec(item.CopyPathCommand);
+            case Key.F2 when mods == ModifierKeys.None: return Exec(item.ManageProfilesCommand);
+            // → am Ende des Suchtexts oder Tab: Aktionen des Eintrags als Menü
+            case Key.Right when mods == ModifierKeys.None && (!inSearch || SearchBox.CaretIndex == SearchBox.Text.Length) && Vm.SelectedItem != null:
+            case Key.Tab when mods == ModifierKeys.None && inSearch && Vm.SelectedItem != null:
+                return OpenItemMenu(Vm.SelectedItem!);
+        }
+        return false;
+    }
+
+    /// <summary>„?“ im leeren Suchfeld zeigt die Übersicht der Tastenkürzel statt danach zu suchen (unabhängig vom Tastaturlayout).</summary>
+    private void SearchBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (e.Text == "?" && SearchBox.Text.Length == 0)
+        {
+            Vm.ShowShortcuts = !Vm.ShowShortcuts;
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Kontextmenü eines Eintrags per Tastatur öffnen (erster Menüpunkt hat den Fokus).</summary>
+    private bool OpenItemMenu(ItemViewModel item)
+    {
+        var container = FindContainer(ListScroll, item) ?? FindContainer(this, item);
+        var button = container == null ? null : FindDescendant<Button>(container, b => b.ContextMenu != null);
+        if (button?.ContextMenu is not { } menu) return false;
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.HorizontalOffset = 40;
+        menu.IsOpen = true;
+        menu.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+        {
+            if (menu.Items.OfType<MenuItem>().FirstOrDefault(m => m.IsVisible && m.IsEnabled) is { } first) first.Focus();
+        });
+        return true;
+    }
+
+    private static T? FindDescendant<T>(DependencyObject parent, Func<T, bool> match) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T t && match(t)) return t;
+            var found = FindDescendant(child, match);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private void UndoToast_MouseEnter(object sender, MouseEventArgs e) => Vm.PauseUndoToast(true);
