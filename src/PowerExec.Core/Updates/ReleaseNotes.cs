@@ -7,6 +7,15 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 16, 1), "Feinschliff nach den ersten Rückmeldungen", new[]
+        {
+            "Vorschläge beim Tippen: #schlagwort, typ:, gruppe:, ist: – nur Vorhandenes, mit Anzahl",
+            "Farbwähler für Gruppen- und Panelfarbe; Farbmenü zeigt wieder alle Farben",
+            "Gruppen in den Einstellungen per Drag & Drop sortieren",
+            "Sprungleiste: zweiter Klick klappt zu; Sprungleiste und Scrollbalken abschaltbar",
+            "Mini-Dock ersetzt die Hover-Zone, Anzahl der Favoriten einstellbar",
+            "Dateiendungen mit Semikolon getrennt"
+        }),
         new ReleaseNote(new Version(0, 16, 0), "Schneller finden, sehen was läuft", new[]
         {
             "Unscharfe Suche mit Hervorhebung, „Beste Treffer“ und Filtern wie typ:ps1, gruppe:, ist:fav",
