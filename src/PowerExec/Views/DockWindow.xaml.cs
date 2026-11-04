@@ -67,6 +67,7 @@ public partial class DockWindow : Window
     private readonly DispatcherTimer _hoverTimer;
     private IntPtr _hwnd;
     private bool _suspended;
+    private bool _closed;
     private int _slotCount = 1;
 
     public static readonly DependencyProperty OrientationProperty =
@@ -95,7 +96,15 @@ public partial class DockWindow : Window
         _hoverTimer.Tick += (_, _) => { _hoverTimer.Stop(); OpenPanel(); };
 
         host.ViewModel.QuickItemsChanged += Rebuild;
-        host.Window.IsVisibleChanged += (_, _) => UpdateVisibility();
+        host.Window.IsVisibleChanged += OnPanelVisibleChanged;
+        // Nach dem Schließen (Dock ausgeschaltet, Panels neu erzeugt) nicht mehr reagieren
+        Closed += (_, _) =>
+        {
+            _closed = true;
+            _hoverTimer.Stop();
+            host.ViewModel.QuickItemsChanged -= Rebuild;
+            host.Window.IsVisibleChanged -= OnPanelVisibleChanged;
+        };
 
         SourceInitialized += (_, _) =>
         {
@@ -114,8 +123,11 @@ public partial class DockWindow : Window
     private void OpenPanel() => _app.ShowPanelFromTrigger(_host, _monitor);
 
     /// <summary>Favoriten neu einlesen (Reihenfolge wie in der Gruppe „Favoriten“).</summary>
+    private void OnPanelVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility();
+
     public void Rebuild()
     {
+        if (_closed) return;
         var slots = _host.ViewModel.QuickItems
             .Select((item, i) => new DockSlot(new ItemViewModel(_app, _host.ViewModel, item, "dock"), i + 1))
             .ToList();
@@ -142,6 +154,7 @@ public partial class DockWindow : Window
 
     private void UpdateVisibility()
     {
+        if (_closed) return;
         if (_suspended || _host.Window.IsVisible) { _hoverTimer.Stop(); Hide(); }
         else { Show(); Place(); }
     }
