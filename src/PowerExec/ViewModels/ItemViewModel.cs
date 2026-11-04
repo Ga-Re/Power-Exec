@@ -50,8 +50,8 @@ public sealed class ItemViewModel : ObservableObject
         CopyPathCommand = new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
         ToggleFavoriteCommand = new RelayCommand(() => _app.ToggleFavorite(Item));
         HideCommand = new RelayCommand(() => _app.HideItem(Item), () => !Item.IsCustom);
-        EditCustomCommand = new RelayCommand(() => _app.EditCustomEntry(Item), () => Item.IsCustom);
-        RemoveCustomCommand = new RelayCommand(() => _app.RemoveCustomEntry(Item), () => Item.IsCustom);
+        EditCustomCommand = new RelayCommand(() => _app.EditCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
+        RemoveCustomCommand = new RelayCommand(() => _app.RemoveCustomEntry(Item), () => Item.IsCustom && !IsFromCatalog);
         RemoveFromGroupCommand = new RelayCommand(() => _app.AssignGroup(Item.FullPath, null), () => IsInGroup);
         NewGroupWithItemCommand = new RelayCommand(() =>
         {
@@ -137,6 +137,14 @@ public sealed class ItemViewModel : ObservableObject
     public string Key { get; }
 
     public string DisplayName => string.IsNullOrWhiteSpace(_entry?.DisplayName) ? Item.DisplayName : _entry!.DisplayName;
+
+    // ---- Team-Katalog ----------------------------------------------------------
+
+    /// <summary>Aus einem abonnierten Team-Katalog: schreibgeschützt (Duplizieren legt eine eigene Kopie an).</summary>
+    public bool IsFromCatalog => Item.Source?.IsFromCatalog == true;
+    public string CatalogToolTip => _app.CatalogOf(Item.Source) is { } c
+        ? $"Aus dem Team-Katalog „{c.Name}“ – schreibgeschützt. Duplizieren legt eine eigene, änderbare Kopie an."
+        : string.Empty;
 
     // ---- Zeitplan --------------------------------------------------------------
 

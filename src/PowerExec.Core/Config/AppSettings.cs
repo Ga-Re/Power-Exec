@@ -164,6 +164,9 @@ public sealed class AppSettings
     /// <summary>Zuletzt ausgeführte Einträge (neueste zuerst).</summary>
     public List<RecentRun> RecentRuns { get; set; } = new();
 
+    /// <summary>Abonnierte Team-Kataloge.</summary>
+    public List<CatalogSubscription> Catalogs { get; set; } = new();
+
     /// <summary>Geplante Starts (laufen, solange Power-Exec läuft).</summary>
     public List<Schedule> Schedules { get; set; } = new();
 

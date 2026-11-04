@@ -518,6 +518,8 @@
                                     <TextBlock x:Name="NameText" infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                                     <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Star}"
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
+                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="10.5" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                               Visibility="{Binding IsFromCatalog, Converter={StaticResource Vis}}" ToolTip="{Binding CatalogToolTip}"/>
                                     <Border Margin="6,0,0,0" Padding="5,0" CornerRadius="8" Background="{DynamicResource Bg.Chip}" VerticalAlignment="Center"
                                             Visibility="{Binding HasSchedule, Converter={StaticResource Vis}}" ToolTip="{Binding ScheduleToolTip}">
                                         <StackPanel Orientation="Horizontal">
@@ -800,6 +802,16 @@
 
             <!-- Update-Hinweis -->
             <StackPanel Grid.Row="1">
+            <!-- Team-Katalog: Änderungen zum Übernehmen -->
+            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding CatalogPending, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Übernehmen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                            Command="{Binding ApplyCatalogsCommand}" MinHeight="26" Height="26" Padding="8,0"/>
+                    <TextBlock Text="{Binding CatalogPending}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Info.Text}"/>
+                </DockPanel>
+            </Border>
             <!-- Neu in dieser Version -->
             <Border Margin="16,0,16,10" Padding="12,10,6,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">

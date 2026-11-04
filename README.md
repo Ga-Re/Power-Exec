@@ -74,6 +74,7 @@ oder remote auf einem oder vielen Rechnern.
 - Infos ohne Wiederholungen: bei Webseiten Titel und Adresse, bei Ordnern Anzahl Dateien und Unterordner, Größe und letzte Änderung
 - Einstellungen › Eigene Einträge: kompakte, durchsuchbare Liste mit echten Symbolen und Filtern (Art, Gruppe, Schlagwort, Probleme), ⚙ zum Bearbeiten, **Mehrfachauswahl** (verschieben, exportieren, löschen)
 - **Teilen:** Einträge oder ganze Gruppen als Datei exportieren und bei Kollegen importieren (samt Gruppen, Symbolen, Schlagworten und Profilen – ohne Kennwörter)
+- **Team-Kataloge** (Einstellungen › Allgemein): eine exportierte Gruppe auf einer Freigabe ablegen und abonnieren. Power-Exec prüft beim Start und alle 30 Minuten auf Änderungen und übernimmt sie (oder meldet „3 neu, 1 geändert“ im Panel zum Übernehmen). Katalogeinträge erscheinen unter einer eigenen Gruppe mit Schloss, sind schreibgeschützt (Duplizieren legt eine eigene Kopie an); Favoriten, Zeitpläne und eigene Einträge in der Gruppe bleiben lokal
 
 **Smarte Gruppen (Ordner)**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC); Anzeigename frei wählbar, Symbol wie bei jeder Gruppe

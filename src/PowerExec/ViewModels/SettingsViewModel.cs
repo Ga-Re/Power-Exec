@@ -827,6 +827,29 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ICommand ShowWelcomeCommand { get; }
 
+    // ---- Team-Kataloge (live, nicht über „Änderungen verwerfen“) -----------------------
+
+    public IReadOnlyList<CatalogRow> CatalogRows => _app.Settings.Catalogs.Select(c => new CatalogRow(_app, c, () => OnPropertyChanged(nameof(CatalogRows)))).ToList();
+    public bool HasCatalogs => _app.Settings.Catalogs.Count > 0;
+    private string? _catalogError;
+    public string? CatalogError { get => _catalogError; private set => Set(ref _catalogError, value); }
+
+    public ICommand SubscribeCatalogCommand => _subscribeCatalog ??= new RelayCommand(async () =>
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Team-Katalog abonnieren (Exportdatei, z. B. auf einer Freigabe)", Filter = EntryShare.FileFilter };
+        if (dlg.ShowDialog() != true) return;
+        CatalogError = await _app.SubscribeCatalogAsync(dlg.FileName);
+        RaiseCatalogs();
+    });
+    public ICommand CheckCatalogsCommand => _checkCatalogs ??= new RelayCommand(async () => { await _app.CheckCatalogsAsync(); RaiseCatalogs(); });
+    private ICommand? _subscribeCatalog, _checkCatalogs;
+
+    private void RaiseCatalogs()
+    {
+        OnPropertyChanged(nameof(CatalogRows));
+        OnPropertyChanged(nameof(HasCatalogs));
+    }
+
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
 
@@ -1308,6 +1331,7 @@ public sealed class SettingsViewModel : ObservableObject
         _s.RecentRuns = _app.Settings.RecentRuns.ToList();
         _s.RunStats = new Dictionary<string, RunStat>(_app.Settings.RunStats);
         _s.Schedules = _app.Settings.Schedules.Select(x => x.Clone()).ToList(); // werden im Panel verwaltet
+        _s.Catalogs = _app.Settings.Catalogs.ToList(); // Abos verwaltet die App (Einstellungen › Allgemein)
         _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
         _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         // In der Liste entfernte Gruppen löschen (Einträge kommen zurück in ihren Ordner)
@@ -1333,5 +1357,42 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
         : Preset.Theme == ThemeMode.Light ? Color.FromRgb(0xF3, 0xF3, 0xF3) : Color.FromRgb(0x2B, 0x2B, 0x2B));
     public Brush Ink { get; } = new SolidColorBrush(PanelColors.TryParse(Preset.PanelColor, out var c) && PanelColors.IsLight(c) || Preset.Theme == ThemeMode.Light && Preset.PanelColor.Length == 0
         ? Colors.Black : Colors.White);
+}
+
+/// <summary>Ein abonnierter Team-Katalog in den Einstellungen.</summary>
+public sealed class CatalogRow
+{
+    private readonly AppController _app;
+    private readonly Action _changed;
+
+    public CatalogRow(AppController app, CatalogSubscription sub, Action changed)
+    {
+        _app = app;
+        Subscription = sub;
+        _changed = changed;
+        RemoveCommand = new RelayCommand(() => { _app.UnsubscribeCatalog(sub); _changed(); });
+        ApplyCommand = new RelayCommand(async () => { await _app.ApplyPendingCatalogsAsync(); _changed(); }, () => sub.PendingSummary.Length > 0);
+    }
+
+    public CatalogSubscription Subscription { get; }
+    public string Name => Subscription.Name;
+    public string Path => Subscription.Path;
+    public int Count => TeamCatalogs.EntriesOf(_app.Settings, Subscription).Count();
+    public string Status => Subscription.LastError.Length > 0 ? "Problem: " + Subscription.LastError
+        : Subscription.PendingSummary.Length > 0 ? "Änderungen verfügbar: " + Subscription.PendingSummary
+        : $"{Count} Einträge" + (Subscription.LastAppliedUtc is { } t ? $" · aktualisiert {RecentRunList.Ago(t)}" : string.Empty)
+          + (Subscription.LastCheckedUtc is { } c ? $" · geprüft {RecentRunList.Ago(c)}" : string.Empty);
+    public bool HasProblem => Subscription.LastError.Length > 0;
+    public bool HasPending => Subscription.PendingSummary.Length > 0;
+
+    /// <summary>Änderungen sofort übernehmen (sonst Hinweis im Panel).</summary>
+    public bool AutoApply
+    {
+        get => Subscription.AutoApply;
+        set { Subscription.AutoApply = value; _app.SaveSettings(); }
+    }
+
+    public ICommand RemoveCommand { get; }
+    public ICommand ApplyCommand { get; }
 }
 

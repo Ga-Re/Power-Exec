@@ -68,6 +68,7 @@ public sealed partial class AppController : IDisposable
         var hotkeyError = CreateHosts();
         StartFullscreenWatch();
         StartScheduler();
+        StartCatalogs();
 
         _tray = new TrayIcon(this);
 

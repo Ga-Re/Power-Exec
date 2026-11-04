@@ -525,6 +525,15 @@ public sealed class PanelViewModel : ObservableObject
 
     public void ClosePeek() => Peek = null;
 
+    // ---- Team-Kataloge -------------------------------------------------------------
+
+    /// <summary>Gemeldete, noch nicht übernommene Katalog-Änderungen.</summary>
+    public string? CatalogPending => _app.Settings.Catalogs.Where(c => c.PendingSummary.Length > 0)
+        .Select(c => $"Team-Katalog „{c.Name}“: {c.PendingSummary}").FirstOrDefault();
+    public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _ = _app.ApplyPendingCatalogsAsync());
+    private ICommand? _applyCatalogsCommand;
+    public void RefreshCatalogs() => OnPropertyChanged(nameof(CatalogPending));
+
     // ---- Neu in dieser Version -----------------------------------------------------
 
     public bool WhatsNewVisible => _app.WhatsNew != null;

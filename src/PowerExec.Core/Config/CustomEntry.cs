@@ -112,6 +112,15 @@ public sealed class CustomEntry
     /// <summary>Ein Klick im Panel startet sofort (statt den Eintrag aufzuklappen).</summary>
     public bool SingleClick { get; set; }
 
+    /// <summary>Aus einem Team-Katalog (Kennung des Abos), leer = eigener Eintrag. Katalogeinträge sind schreibgeschützt.</summary>
+    public string CatalogId { get; set; } = string.Empty;
+
+    /// <summary>Stand beim letzten Übernehmen (für „geändert“).</summary>
+    public string CatalogFingerprint { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsFromCatalog => CatalogId.Length > 0;
+
     /// <summary>Ablauf: Schritte, die nacheinander starten.</summary>
     public List<WorkflowStep> Steps { get; set; } = new();
 
@@ -139,6 +148,8 @@ public sealed class CustomEntry
         var c = Clone();
         c.Id = Guid.NewGuid().ToString("N");
         c.Name = (string.IsNullOrWhiteSpace(Name) ? Target : Name) + " (Kopie)";
+        c.CatalogId = string.Empty; // Kopie gehört dem Benutzer
+        c.CatalogFingerprint = string.Empty;
         return c;
     }
 

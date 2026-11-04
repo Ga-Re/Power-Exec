@@ -163,7 +163,10 @@ public sealed class GroupViewModel : ObservableObject
     public bool AllowReorder { get; }
 
     /// <summary>Symbol im Gruppenkopf (Segoe Fluent Icons).</summary>
-    public string IconGlyph => Kind switch
+    /// <summary>Gruppe eines abonnierten Team-Katalogs.</summary>
+    public bool IsCatalog => GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.IsSameOrBelow(GroupPath, GroupManager.Normalize(c.Name)));
+
+    public string IconGlyph => IsCatalog && GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.Normalize(c.Name).Equals(GroupPath, StringComparison.CurrentCultureIgnoreCase)) ? "\uE72E" : Kind switch
     {
         "fav" => "\uE735",
         "recent" => "\uE81C",

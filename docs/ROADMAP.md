@@ -29,6 +29,8 @@ Offen aus Phase 1: globaler Hotkey je Eintrag (A3, optional) – noch nicht umge
 | D2 | Assistent & Neuerungen | Einführung beim ersten Start (Ordner, Rand, Hotkey, Beispiel) und Karte „Neu in dieser Version“ nach Updates |
 | C1 | Mini-Dock am Rand | Schmale Symbolleiste mit Favoriten am Rand; **in den Einstellungen ein- und ausschaltbar** (Standard: aus) |
 
-## Nicht ausgewählt (vorerst)
+## Nachträglich umgesetzt
 
 A1 Spotlight-Modus · B2 Parameter im Panel / Parameter-Sets · B3 Verlauf mit „Erneut ausführen“ · C3 Mehrfachauswahl & Abläufe · D3 Team-Katalog · D4 Geplante Ausführung
+
+Offen: globaler Hotkey je Eintrag (A3, optional).

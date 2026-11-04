@@ -175,6 +175,7 @@ public partial class SettingsWindow : Window
         restored.RecentRuns = _app.Settings.RecentRuns.ToList();
         restored.RunStats = new Dictionary<string, RunStat>(_app.Settings.RunStats);
         restored.Schedules = _app.Settings.Schedules.Select(x => x.Clone()).ToList();
+        restored.Catalogs = _app.Settings.Catalogs.ToList();
         restored.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         _app.ApplySettings(restored);
         _reloading = false;

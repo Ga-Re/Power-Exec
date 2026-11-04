@@ -433,6 +433,39 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Team-Katalog");
+            {
+                var host = _hosts[0];
+                var publisher = new AppSettings();
+                publisher.CustomEntries.Add(new CustomEntry { Id = "kat1", Kind = CustomEntryKind.Url, Name = "Team-Wiki", Target = "https://wiki.example.com" });
+                var catalogPath = Path.Combine(dir, "team.pxentries.json");
+                File.WriteAllText(catalogPath, EntryShare.Export(publisher, publisher.CustomEntries));
+                var error = await SubscribeCatalogAsync(catalogPath, "IT-Team");
+                if (error != null) Fail("Team-Katalog: Abonnieren fehlgeschlagen – " + error);
+                var sub = Settings.Catalogs.FirstOrDefault();
+                if (sub == null || TeamCatalogs.EntriesOf(Settings, sub).Count() != 1) Fail("Team-Katalog: Eintrag wird nicht übernommen");
+                else
+                {
+                    var catItem = host.ViewModel.AllItems.FirstOrDefault(i => i.IsFromCatalog);
+                    if (catItem == null) Fail("Team-Katalog: Eintrag erscheint nicht im Panel");
+                    else if (catItem.RemoveCustomCommand.CanExecute(null)) Fail("Team-Katalog: Eintrag ist nicht schreibgeschützt");
+                    sub.AutoApply = false;
+                    publisher.CustomEntries.Add(new CustomEntry { Id = "kat2", Kind = CustomEntryKind.Folder, Name = "Ablage", Target = dir });
+                    File.WriteAllText(catalogPath, EntryShare.Export(publisher, publisher.CustomEntries));
+                    await CheckCatalogsAsync();
+                    if (host.ViewModel.CatalogPending == null) Fail("Team-Katalog: Änderung wird nicht gemeldet");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement catRoot) Screenshot(catRoot, "panel-team-katalog");
+                    await ApplyPendingCatalogsAsync();
+                    if (TeamCatalogs.EntriesOf(Settings, sub).Count() != 2) Fail("Team-Katalog: „Übernehmen“ übernimmt nicht");
+                    host.Window.HidePanel();
+                    await Settle();
+                    UnsubscribeCatalog(sub);
+                    if (Settings.CustomEntries.Any(c => c.IsFromCatalog)) Fail("Team-Katalog: Abbestellen entfernt die Einträge nicht");
+                }
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

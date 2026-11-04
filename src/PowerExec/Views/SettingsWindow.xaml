@@ -604,6 +604,56 @@
                 <!-- Allgemein -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
                     <TextBlock Text="Allgemein" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Team-Kataloge" Style="{StaticResource SettingsSection}"/>
+                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="16,12" Margin="0,0,0,4">
+                        <StackPanel>
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button Style="{StaticResource Btn.Subtle}" Content="Jetzt prüfen" Command="{Binding CheckCatalogsCommand}" Foreground="{DynamicResource Accent}" Margin="0,0,8,0"
+                                            Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}}"/>
+                                    <Button Style="{StaticResource Btn.Accent}" Content="Abonnieren …" Command="{Binding SubscribeCatalogCommand}"/>
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Gemeinsame Einträge vom Team" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                               Text="Eine exportierte Gruppe (Rechtsklick › Exportieren) auf einer Freigabe ablegen und hier abonnieren. Power-Exec prüft beim Start und alle 30 Minuten auf Änderungen. Katalogeinträge sind schreibgeschützt; Favoriten und eigene Einträge in der Gruppe bleiben lokal."/>
+                                </StackPanel>
+                            </DockPanel>
+                            <TextBlock Text="{Binding CatalogError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Visibility="{Binding CatalogError, Converter={StaticResource Vis}}"/>
+                            <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="6" Background="{DynamicResource Bg.CardAlt}">
+                                            <DockPanel>
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Style="{StaticResource Btn.Subtle}" Content="Übernehmen" Command="{Binding ApplyCommand}" Foreground="{DynamicResource Accent}"
+                                                            Visibility="{Binding HasPending, Converter={StaticResource Vis}}"/>
+                                                    <CheckBox Content="automatisch übernehmen" IsChecked="{Binding AutoApply}" VerticalAlignment="Center" Margin="8,0" FontSize="12"/>
+                                                    <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="Abbestellen (Einträge werden entfernt)">
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    </Button>
+                                                </StackPanel>
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold">
+                                                        <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                                                        <Run Text="{Binding Name, Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Path}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding HasProblem}" Value="True">
+                                                <Setter TargetName="CatStatus" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
                     <TextBlock Text="Version und Updates" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsExpander Icon="&#xE895;" Header="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Description="{Binding UpdateStatus}">
                         <c:SettingsExpander.HeaderContent>
