@@ -694,6 +694,9 @@ public sealed partial class AppController
             // Arbeitsbereich wechseln
             SwitchWorkspace("Kunde A");
             await Settle();
+
+            // Zuletzt: Leistungsmessung mit 500 Einträgen (verändert Einstellungen und Ordner)
+            await RunPerformanceAsync(dir);
         }
         catch (Exception ex)
         {

@@ -42,6 +42,26 @@ jobs:
           if (Test-Path $result) { Get-Content $result }
           if ($p.ExitCode -ne 0) { throw "Selbsttest fehlgeschlagen (Code $($p.ExitCode))." }
 
+      - name: Leistungsmessung des Selbsttests
+        if: always()
+        shell: pwsh
+        run: |
+          $perf = Join-Path $env:RUNNER_TEMP 'selftest-perf.md'
+          if (Test-Path $perf) {
+            Get-Content $perf
+            Get-Content $perf | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else { Write-Host 'Keine Leistungsmessung vorhanden.' }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selftest-perf
+          path: |
+            ${{ runner.temp }}/selftest-perf.md
+            ${{ runner.temp }}/selftest-perf.json
+          retention-days: 30
+          if-no-files-found: ignore
+
       - name: Bildschirmfotos des Selbsttests
         if: always()
         uses: actions/upload-artifact@v4
