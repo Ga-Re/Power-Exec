@@ -307,13 +307,13 @@ public sealed partial class AppController
             Step("Verlauf");
             {
                 var host = _hosts[0];
-                var script = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell)?.Item;
-                if (script == null) Fail("Verlauf: kein Script zum Eintragen");
+                var histScript = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell)?.Item;
+                if (histScript == null) Fail("Verlauf: kein Script zum Eintragen");
                 else
                 {
-                    var ok = BeginHistory(script, null, ExecutionMode.CurrentUser, PsEngine.WindowsPowerShell, null, new Dictionary<string, string?> { ["Pfad"] = "C:\\" });
+                    var ok = BeginHistory(histScript, null, ExecutionMode.CurrentUser, PsEngine.WindowsPowerShell, null, new Dictionary<string, string?> { ["Pfad"] = "C:\\" });
                     CompleteHistory(ok, PowerExec.Core.Execution.HistoryResult.Success, "beendet · Exit-Code 0", 0);
-                    var remote = BeginHistory(script, null, ExecutionMode.Administrator, PsEngine.WindowsPowerShell, new[] { "SRV-01", "SRV-02", "SRV-03" }, null);
+                    var remote = BeginHistory(histScript, null, ExecutionMode.Administrator, PsEngine.WindowsPowerShell, new[] { "SRV-01", "SRV-02", "SRV-03" }, null);
                     CompleteHistory(remote, PowerExec.Core.Execution.HistoryResult.Warning, "3 Rechner · 2 ✓ · 1 Fehler", null, new[] { "SRV-02" });
                     host.ViewModel.ShowHistory = true;
                     if (host.ViewModel.HistoryRows.Count < 2) Fail("Verlauf: Einträge erscheinen nicht");
