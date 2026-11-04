@@ -85,6 +85,8 @@ In Stufe 2 entfallen ~3,4 ms auf Nachschlagen (LookupSnapshot) und ~6 ms auf die
 | Schritt 2: Kontextmenüs einmal je Fenster | 86 | 226 ms | 630 ms | 381 ms | 69 ms | 630 ms | 652 ms |
 | Schritt 3: ViewModels wiederverwenden, Listen abgleichen | 88 | 277 ms | 816 ms | 488 ms | 59 ms | 816 ms | 825 ms |
 | … Gruppen auch bei Suche an/aus wiederverwenden | 89 | 372 ms | 1033 ms | 646 ms | 65 ms | 1033 ms | 1079 ms |
+| Messung mit A/B und Layout-Anteil (gleicher Code) | 91 / 92 | 364 / 273 ms | 1038 / 798 ms | 752 / 591 ms | 73 / 57 ms | 1038 / 798 ms | 957 / 704 ms |
+| **Darstellung nur bei Änderung melden** | 95 | **170 ms** | **483 ms** | 198 ms | **28 ms** | 461 ms | 119 ms |
 
 ### A/B im selben Lauf (CI-Lauf 90)
 
@@ -105,6 +107,39 @@ fast 600 ms – die Zeit steckt also nicht (nur) im Erzeugen der Container.
 
 Läufe 84 und 85 haben denselben Code: Die Runner schwanken um etwa den Faktor 1,5.
 Einzelne Läufe deshalb nur grob vergleichen; ein Grenzwert in der CI braucht Abstand oder mehrere Läufe.
+
+### Ursache der unnötigen Neuaufbauten (CI-Lauf 94)
+
+Diagnose im Selbsttest: Wie viele Elemente sind nach einer Aktion ungültig, und wie viele Eintrags-Container
+haben noch keine Vorlage (= neu erzeugt)?
+
+| Aktion | neu erzeugte Container |
+|---|---:|
+| Rebuild ohne jede Änderung | 539 |
+| nur `RaiseLayout()` | 539 |
+
+`Rebuild()` rief bei jedem Tastendruck `RaiseLayout()` auf; das meldete `IsGrid` je Gruppe neu, und über den
+DataTrigger der Eintragsliste (ItemTemplate, ItemsPanel) erzeugte WPF alle Container neu – auch in 0.16.2.
+Seit Lauf 95 meldet `Rebuild()` die Darstellung nur bei einer Änderung: Rebuild ohne Änderung erzeugt 0 Container.
+
+### Stand nach Lauf 95
+
+| Tastendruck | Rebuild | Layout | bis frei | Listenänderungen |
+|---|---:|---:|---:|---|
+| `d` (von leer) | 99.9 ms | 85.3 ms | 197.9 ms | +6 ↕278 −189 |
+| `di` | 49.9 ms | 13.6 ms | 66.1 ms | +4 ↕8 −288 |
+| `dis` | 16.3 ms | 5.9 ms | 27.7 ms | +1 −2 |
+| `disk` | 17.3 ms | 4.5 ms | 27.9 ms | −2 |
+| `dis` ⌫ | 13.7 ms | 8.1 ms | 25.7 ms | +2 |
+| `di` ⌫ | 12.5 ms | 17.8 ms | 35.1 ms | +2 −1 |
+| `d` ⌫ | 18.3 ms | 394.6 ms | 479.0 ms | +288 ↕8 −4 |
+| leer ⌫ | 70.9 ms | 350.8 ms | 461.0 ms | +189 ↕277 −1 |
+| Filter Scripte | 25.5 ms | 1.7 ms | 32.6 ms | −96 |
+| Filter Alle | 9.4 ms | 98.3 ms | 118.8 ms | +96 |
+
+Kleine Schritte liegen unter 50 ms. Teuer bleiben Sprünge, bei denen viele Einträge zurückkommen (neue Container,
+~1,3 ms je Eintrag) oder bei denen die Suche an- bzw. ausgeht (Sortierung wechselt, ~277 Verschiebungen;
+ein `Move` erzeugt den Container in einem nicht virtualisierten Panel neu).
 
 ## Grenzen der Messung
 
