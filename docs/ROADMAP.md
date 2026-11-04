@@ -21,7 +21,7 @@ Offen aus Phase 1: globaler Hotkey je Eintrag (A3, optional) – noch nicht umge
 | B4 | Remote-Kachelkarte | Eine Kachel je Zielrechner, live während des Laufs (erfolgreich / läuft / Fehler / nicht erreichbar), Klick öffnet die Ausgabe |
 | A4 | Vorschau (Peek) | Leertaste zeigt Code mit Syntaxfarben, Parameter, Signatur und letzten Lauf; bei Webseiten Titel, bei Ordnern Inhalt |
 
-## Phase 3 – Darstellung und Einstieg (0.18)
+## Phase 3 – Darstellung und Einstieg – umgesetzt (zusammen mit Phase 1 und 2 als Version 0.16.0)
 
 | Kürzel | Vorschlag | Kern |
 |---|---|---|

@@ -189,6 +189,12 @@ public sealed class PanelViewModel : ObservableObject
 
     private List<LaunchItem> _quickItems = new();
 
+    /// <summary>Favoriten 1 … 9 in Panel-Reihenfolge (Alt+1 … 9, Mini-Dock).</summary>
+    public IReadOnlyList<LaunchItem> QuickItems => _quickItems;
+
+    /// <summary>Die Favoriten haben sich geändert (Mini-Dock neu aufbauen).</summary>
+    public event Action? QuickItemsChanged;
+
     /// <summary>Alt+1 … 9: n-ten Favoriten mit seinem Standardprofil starten.</summary>
     public bool RunQuickItem(int number)
     {
@@ -603,7 +609,10 @@ public sealed class PanelViewModel : ObservableObject
         if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
-        _quickItems = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).Take(9).ToList();
+        var quick = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).Take(9).ToList();
+        var quickChanged = !quick.Select(q => q.FullPath).SequenceEqual(_quickItems.Select(q => q.FullPath), StringComparer.OrdinalIgnoreCase);
+        _quickItems = quick;
+        if (quickChanged) QuickItemsChanged?.Invoke();
         foreach (var favGroup in groups.Where(x => x.Kind == "fav"))
             foreach (var favVm in favGroup.Items)
             {

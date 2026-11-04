@@ -182,6 +182,9 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public bool Acrylic { get => _c.Acrylic; set { _c.Acrylic = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); } }
 
+    /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
+    public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }
+
     public int PanelOpacity
     {
         get => _c.PanelOpacity;

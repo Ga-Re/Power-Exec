@@ -41,6 +41,7 @@ oder remote auf einem oder vielen Rechnern.
 - Doppelklick startet das Standardprofil; Split-Button für weitere Profile
 - **Aktivitäten-Leiste** unten im Panel: laufende und gerade beendete Starts mit Laufzeit; Remote-Läufe mit Fortschritt (z. B. „28 / 40 Rechner · 2 Fehler“), **Abbrechen** und **Ausgabe** (öffnet die Ergebnisliste); lokale Scripte mit Ende und Exit-Code. Solange etwas läuft, **pulsiert die Hover-Zone**. Beendete Einträge bleiben 15 Minuten stehen (höchstens drei)
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
+- **Mini-Dock** (Panel › Darstellung, standardmäßig aus): schmale Leiste mit den ersten neun Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das Panel; ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft
 - **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panel öffnen, Arbeitsbereich wechseln
 
 **Arbeitsbereiche**

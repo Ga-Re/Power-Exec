@@ -21,15 +21,26 @@ public sealed class PanelHost : IDisposable
     public PanelWindow Window { get; }
     public List<EdgeTriggerWindow> Triggers { get; } = new();
 
+    /// <summary>Mini-Docks (je Monitor), wenn in den Einstellungen eingeschaltet.</summary>
+    public List<DockWindow> Docks { get; } = new();
+
     public void CreateTriggers(AppController app)
     {
         foreach (var t in Triggers) t.Close();
         Triggers.Clear();
+        foreach (var d in Docks) d.Close();
+        Docks.Clear();
         foreach (var m in ScreenService.TriggerMonitors(Config))
         {
             var t = new EdgeTriggerWindow(app, this, m);
             t.Show();
             Triggers.Add(t);
+            if (Config.ShowDock)
+            {
+                var d = new DockWindow(app, this, m);
+                d.Show();
+                Docks.Add(d);
+            }
         }
     }
 
@@ -37,6 +48,8 @@ public sealed class PanelHost : IDisposable
     {
         foreach (var t in Triggers) t.Close();
         Triggers.Clear();
+        foreach (var d in Docks) d.Close();
+        Docks.Clear();
         Window.CloseForGood();
         ViewModel.Detach();
     }

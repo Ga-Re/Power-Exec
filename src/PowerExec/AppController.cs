@@ -236,6 +236,7 @@ public sealed partial class AppController : IDisposable
             if (!Settings.HideHotZoneInFullscreen)
             {
                 foreach (var t in AllTriggers) t.SetSuspended(false);
+                foreach (var d in _hosts.SelectMany(h => h.Docks)) d.SetSuspended(false);
                 return;
             }
             var hwnd = Interop.NativeMethods.GetForegroundWindow();
@@ -255,6 +256,9 @@ public sealed partial class AppController : IDisposable
                     if (full && !h.Window.IsOpen) t.SetSuspended(true);
                     else if (!full) t.SetSuspended(false);
                 }
+            foreach (var h in _hosts)
+                foreach (var d in h.Docks)
+                    d.SetSuspended(rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, d.Monitor.Bounds, cls));
         }
         catch
         {

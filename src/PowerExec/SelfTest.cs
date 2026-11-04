@@ -279,6 +279,30 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Mini-Dock");
+            {
+                var host = _hosts[0];
+                host.Config.ShowDock = true;
+                host.CreateTriggers(this);
+                host.ViewModel.Rebuild();
+                await Settle();
+                var dock = host.Docks.FirstOrDefault();
+                if (dock == null) Fail("Mini-Dock: wird trotz Einstellung nicht angezeigt");
+                else
+                {
+                    if (dock.SlotCount != host.ViewModel.QuickItems.Count + 1) Fail($"Mini-Dock: {dock.SlotCount} Plätze statt {host.ViewModel.QuickItems.Count + 1}");
+                    if (dock.Content is FrameworkElement dockRoot) Screenshot(dockRoot, "mini-dock");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (dock.IsVisible) Fail("Mini-Dock: bleibt sichtbar, während das Panel offen ist");
+                    host.Window.HidePanel();
+                    await Settle();
+                }
+                host.Config.ShowDock = false;
+                host.CreateTriggers(this);
+                if (host.Docks.Count > 0) Fail("Mini-Dock: lässt sich nicht ausschalten");
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");

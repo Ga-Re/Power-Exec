@@ -1207,6 +1207,10 @@
                                     Description="Der Desktop hinter dem Panel erscheint verschwommen, getönt mit der Panelfarbe – wie das Startmenü von Windows 11. Unter 72 % Deckkraft wirkt es am stärksten.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Acrylic}"/>
                     </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
+                                    Description="Schmale Leiste mit den ersten neun Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand"/>
+                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>

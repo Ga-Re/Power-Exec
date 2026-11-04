@@ -40,6 +40,29 @@ public static class PanelLayout
         };
     }
 
+    /// <summary>Dicke des Mini-Docks und Platz je Symbol (DIP).</summary>
+    public const int DockThickness = 40, DockSlot = 36, DockPadding = 8;
+
+    /// <summary>
+    /// Mini-Dock: schmale Leiste am Rand des Arbeitsbereichs (nicht über der Taskleiste), mittig,
+    /// lang genug für <paramref name="slots"/> Symbole.
+    /// </summary>
+    public static Rectangle Dock(Rectangle workArea, PanelConfig s, double scale, int slots)
+    {
+        int thickness = (int)Math.Round(DockThickness * scale);
+        bool vertical = s.Edge is ScreenEdge.Left or ScreenEdge.Right;
+        int full = vertical ? workArea.Height : workArea.Width;
+        int length = Math.Min(full, (int)Math.Round((Math.Max(1, slots) * DockSlot + 2 * DockPadding) * scale));
+        int start = (vertical ? workArea.Top : workArea.Left) + (full - length) / 2;
+        return s.Edge switch
+        {
+            ScreenEdge.Left => new Rectangle(workArea.Left, start, thickness, length),
+            ScreenEdge.Top => new Rectangle(start, workArea.Top, length, thickness),
+            ScreenEdge.Bottom => new Rectangle(start, workArea.Bottom - thickness, length, thickness),
+            _ => new Rectangle(workArea.Right - thickness, start, thickness, length)
+        };
+    }
+
     public static Rectangle Panel(Rectangle bounds, Rectangle workArea, PanelConfig s, double scale)
     {
         var w = workArea;

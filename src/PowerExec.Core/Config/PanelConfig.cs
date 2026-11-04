@@ -30,6 +30,9 @@ public sealed class PanelConfig
     public int PanelOpacity { get; set; } = 100;
     /// <summary>Acrylic: Hintergrund hinter dem Panel weichzeichnen (Windows 10 1803+; sonst nur Weichzeichnen).</summary>
     public bool Acrylic { get; set; }
+
+    /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
+    public bool ShowDock { get; set; }
     public string Hotkey { get; set; } = string.Empty;
     public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
     public bool Pinned { get; set; }
@@ -64,7 +67,7 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, ShowDock = ShowDock, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
     };
