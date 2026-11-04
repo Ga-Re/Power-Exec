@@ -344,6 +344,25 @@ public sealed class PanelViewModel : ObservableObject
 
     public void ClosePeek() => Peek = null;
 
+    // ---- Neu in dieser Version -----------------------------------------------------
+
+    public bool WhatsNewVisible => _app.WhatsNew != null;
+    public string WhatsNewTitle => _app.WhatsNew is { } n ? $"Neu in {n.Version.ToString(2)}: {n.Title}" : string.Empty;
+    /// <summary>Die ersten Neuerungen (alle über „Alle Neuerungen“).</summary>
+    public IReadOnlyList<string> WhatsNewItems => _app.WhatsNew?.Highlights.Take(4).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
+    public ICommand DismissWhatsNewCommand => _dismissWhatsNewCommand ??= new RelayCommand(() => _app.DismissWhatsNew());
+    public ICommand ShowAllWhatsNewCommand => _showAllWhatsNewCommand ??= new RelayCommand(() =>
+    {
+        if (_app.WhatsNew is { } n)
+            Services.Launcher.OpenUrl($"https://github.com/{Core.Updates.UpdateChecker.Owner}/{Core.Updates.UpdateChecker.Repo}/releases/tag/v{n.Version.ToString(3)}");
+    });
+    private ICommand? _dismissWhatsNewCommand, _showAllWhatsNewCommand;
+
+    public void RefreshWhatsNew()
+    {
+        foreach (var p in new[] { nameof(WhatsNewVisible), nameof(WhatsNewTitle), nameof(WhatsNewItems) }) OnPropertyChanged(p);
+    }
+
     // ---- Aktivitäten -----------------------------------------------------------
 
     /// <summary>Laufende und gerade beendete Starts (für alle Panels gleich).</summary>

@@ -76,7 +76,18 @@ public sealed partial class AppController : IDisposable
         _ = Repository.ScanAsync();
         AutostartService.Apply(Settings.StartWithWindows);
 
-        if (Settings.Folders.Count == 0)
+        // Neu in dieser Version: nach einem Update einmal im Panel zeigen
+        var current = UpdateService.CurrentVersion;
+        var lastSeen = Core.Updates.ReleaseNotes.Parse(Settings.LastSeenVersion);
+        if (firstStart || current.Major + current.Minor + current.Build == 0) Settings.LastSeenVersion = current.ToString(3);
+        else if (lastSeen == null || lastSeen < current) WhatsNew = Core.Updates.ReleaseNotes.Since(lastSeen, current).FirstOrDefault();
+        if (WhatsNew == null && Settings.LastSeenVersion != current.ToString(3)) { Settings.LastSeenVersion = current.ToString(3); SaveSettings(); }
+
+        if (Settings.Folders.Count == 0 && !Settings.WelcomeDone)
+        {
+            ShowWelcome();
+        }
+        else if (Settings.Folders.Count == 0)
         {
             _tray.ShowBalloon("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
             ShowSettings(section: "groups");

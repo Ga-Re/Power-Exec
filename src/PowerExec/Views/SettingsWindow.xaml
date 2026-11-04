@@ -608,6 +608,8 @@
                     <c:SettingsExpander Icon="&#xE895;" Header="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Description="{Binding UpdateStatus}">
                         <c:SettingsExpander.HeaderContent>
                             <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource Btn.Subtle}" Content="Einführung" Command="{Binding ShowWelcomeCommand}" Foreground="{DynamicResource Accent}"
+                                        ToolTip="Einführungs-Assistent erneut starten (Ordner, Rand, Tastenkürzel)" Margin="0,0,8,0"/>
                                 <Button Style="{StaticResource Btn.Subtle}" Content="Versionshinweise" Command="{Binding CurrentReleaseNotesCommand}" Foreground="{DynamicResource Accent}"
                                         ToolTip="Was ist neu in dieser Version? (GitHub)" Margin="0,0,8,0"/>
                                 <Button Style="{StaticResource Btn.Accent}" Content="Nach Updates suchen" Command="{Binding CheckUpdatesCommand}"/>

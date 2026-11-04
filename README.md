@@ -150,7 +150,7 @@ oder remote auf einem oder vielen Rechnern.
 
 1. `PowerExec-Setup.exe` aus dem neuesten [Release](https://github.com/Ga-Re/Power-Exec/releases) herunterladen und starten.
 2. Optional „Verknüpfung auf dem Desktop“ und „Mit Windows starten“ wählen.
-3. Fertig. Beim ersten Start öffnen sich die Einstellungen, um eine smarte Gruppe (Ordner) anzulegen.
+3. Fertig. Beim ersten Start führt ein kurzer **Einführungs-Assistent** durch Scriptordner (oder ein Beispielordner mit Script), Bildschirmrand, Tastenkürzel und Autostart – jederzeit erneut über Einstellungen › Allgemein › „Einführung“. Nach einem Update zeigt das Panel einmal eine Karte **„Neu in dieser Version“**.
 
 Der Installer braucht **keine Adminrechte**: Er installiert für den angemeldeten Benutzer nach
 `%LOCALAPPDATA%\Programs\Power-Exec` und legt einen Startmenü-Eintrag sowie einen Eintrag unter

@@ -30,4 +30,8 @@
   <ItemGroup>
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Beispiel-Script für den Einführungs-Assistenten -->
+    <EmbeddedResource Include="..\..\samples\Get-DiskSpace.ps1" LogicalName="PowerExec.Sample.Get-DiskSpace.ps1" Link="Assets\Get-DiskSpace.ps1" />
+  </ItemGroup>
 </Project>

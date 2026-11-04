@@ -731,6 +731,29 @@
 
             <!-- Update-Hinweis -->
             <StackPanel Grid.Row="1">
+            <!-- Neu in dieser Version -->
+            <Border Margin="16,0,16,10" Padding="12,10,6,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" VerticalAlignment="Top" Command="{Binding DismissWhatsNewCommand}"
+                            ToolTip="Gelesen – nicht mehr anzeigen" AutomationProperties.Name="Neuerungen schließen">
+                        <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                    </Button>
+                    <TextBlock Text="&#xE789;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="16" VerticalAlignment="Top" Margin="0,1,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="{Binding WhatsNewTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <ItemsControl ItemsSource="{Binding WhatsNewItems}" Focusable="False" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StringFormat=• {0}}" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource Info.Text}" Margin="0,1,0,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Style="{StaticResource Btn.Subtle}" Content="Alle Neuerungen" Command="{Binding ShowAllWhatsNewCommand}" HorizontalAlignment="Left"
+                                Foreground="{DynamicResource Accent}" FontWeight="SemiBold" Padding="0" Margin="0,6,0,0" MinHeight="22" Height="22"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
             <Border Margin="16,0,16,10" Padding="12,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding UpdateVisible, Converter={StaticResource Vis}}">
                 <DockPanel>

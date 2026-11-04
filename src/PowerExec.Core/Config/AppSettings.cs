@@ -115,6 +115,12 @@ public sealed class AppSettings
     /// <summary>Hintergrund von Einstellungen und Dialogen: deckend oder Mica (Windows 11).</summary>
     public WindowBackdrop WindowBackdrop { get; set; } = WindowBackdrop.Solid;
 
+    /// <summary>Zuletzt gesehene Version (für „Neu in dieser Version“); leer = noch nie.</summary>
+    public string LastSeenVersion { get; set; } = string.Empty;
+
+    /// <summary>Einführungs-Assistent wurde abgeschlossen oder übersprungen.</summary>
+    public bool WelcomeDone { get; set; }
+
     /// <summary>Größe von Schrift und Bedienelementen in Prozent (80–150).</summary>
     public int UiScalePercent { get; set; } = 100;
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";

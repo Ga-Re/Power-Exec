@@ -580,6 +580,7 @@ public sealed class SettingsViewModel : ObservableObject
         CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
         InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
+        ShowWelcomeCommand = new RelayCommand(() => _app.ShowWelcome());
         CurrentReleaseNotesCommand = new RelayCommand(() => Launcher.OpenUrl(
             $"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}/releases/tag/v{UpdateService.CurrentVersionText}"));
         _app.Update.PropertyChanged += OnUpdateChanged;
@@ -823,6 +824,8 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     private void RaisePresets() => OnPropertyChanged(nameof(DesignPresets));
+
+    public ICommand ShowWelcomeCommand { get; }
 
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }

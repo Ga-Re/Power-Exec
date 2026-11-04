@@ -253,6 +253,32 @@ public sealed partial class AppController
                 Settings.UiScalePercent = 100;
             }
 
+            Step("Einführung und Neuerungen");
+            {
+                var welcomeVm = new WelcomeViewModel(this);
+                var welcome = new WelcomeWindow(welcomeVm);
+                welcome.Show();
+                for (int step = 0; step < WelcomeViewModel.StepCount; step++)
+                {
+                    welcomeVm.Step = step;
+                    await Settle();
+                    if (welcome.Content is FrameworkElement welcomeRoot) Screenshot(welcomeRoot, $"einfuehrung-{step + 1}");
+                }
+                if (!welcomeVm.IsLast || welcomeVm.NextLabel != "Fertig") Fail("Einführung: letzter Schritt zeigt nicht „Fertig“");
+                welcome.Close();
+
+                var host = _hosts[0];
+                ShowWhatsNewForTest(PowerExec.Core.Updates.ReleaseNotes.All[0]);
+                if (!host.ViewModel.WhatsNewVisible) Fail("Neuerungen: Karte erscheint nicht");
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
+                if (host.Window.Content is FrameworkElement newsRoot) Screenshot(newsRoot, "panel-neuerungen");
+                DismissWhatsNew();
+                if (host.ViewModel.WhatsNewVisible) Fail("Neuerungen: Karte lässt sich nicht schließen");
+                host.Window.HidePanel();
+                await Settle();
+            }
+
             Step("Rückgängig");
             {
                 var cleanupPath = Path.Combine(dir, "Cleanup.cmd");
