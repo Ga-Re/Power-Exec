@@ -167,7 +167,7 @@ public sealed class FolderViewModel : ObservableObject
         Config = f.Clone();
         _path = f.Path;
         _recursive = f.Recursive;
-        _extensions = string.Join(" ", f.Extensions);
+        _extensions = ExtensionList.Format(f.Extensions);
         Status = status;
         foreach (var e in f.Excludes) Exclusions.Add(new ExclusionViewModel(e, RemoveExclusion));
         RemoveCommand = new RelayCommand(() => remove(this));
@@ -218,7 +218,9 @@ public sealed class FolderViewModel : ObservableObject
     public bool Recursive { get => _recursive; set { if (Set(ref _recursive, value)) OnPropertyChanged(nameof(Summary)); } }
 
     /// <summary>Leer = Standard-Dateiendungen.</summary>
-    public string Extensions { get => _extensions; set => Set(ref _extensions, value ?? string.Empty); }
+    public string Extensions { get => _extensions; set { if (Set(ref _extensions, value ?? string.Empty)) OnPropertyChanged(nameof(ExtensionsError)); } }
+    /// <summary>Hinweis bei falscher Schreibweise (Endungen mit Semikolon trennen).</summary>
+    public string? ExtensionsError => ExtensionList.Error(_extensions);
     public string NewExclusion { get => _newExclusion; set => Set(ref _newExclusion, value ?? string.Empty); }
     public string Status { get; }
     public bool IsHighlighted { get => _isHighlighted; set { if (Set(ref _isHighlighted, value) && value) IsExpanded = true; } }
@@ -371,7 +373,7 @@ public sealed class FolderViewModel : ObservableObject
         var c = Config.Clone();
         c.Path = Path;
         c.Recursive = Recursive;
-        c.Extensions = SettingsViewModel.ParseExtensions(Extensions);
+        c.Extensions = ExtensionList.Parse(Extensions);
         c.Excludes = Exclusions.Select(e => e.Value).ToList();
         return c;
     }
@@ -486,8 +488,8 @@ public sealed class CategoryItemViewModel : ObservableObject
 
     public ICommand CustomColorCommand => new RelayCommand(() =>
     {
-        var t = Views.InputWindow.Ask("Eigene Farbe", $"Farbe für „{Display}“ als #RRGGBB, z. B. #3B82F6.", ColorOwn, "Übernehmen",
-            x => PanelColors.TryParse(x, out _) ? null : "Bitte als #RRGGBB angeben.");
+        var t = Views.ColorPickerWindow.Pick($"Farbe für „{Display}“", ColorOwn,
+            Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
         if (t != null) ColorOwn = t;
     });
 
@@ -563,7 +565,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         _app = app;
         _s = SettingsStore.Clone(app.Settings);
-        _defaultExtensions = string.Join(" ", _s.DefaultExtensions);
+        _defaultExtensions = ExtensionList.Format(_s.DefaultExtensions);
         _globalExcludes = string.Join("; ", _s.GlobalExcludes);
 
         foreach (var f in _s.Folders)
@@ -755,7 +757,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     // Ordner
     public ObservableCollection<FolderViewModel> Folders { get; } = new();
-    public string DefaultExtensions { get => _defaultExtensions; set => Set(ref _defaultExtensions, value ?? string.Empty); }
+    public string DefaultExtensions { get => _defaultExtensions; set { if (Set(ref _defaultExtensions, value ?? string.Empty)) OnPropertyChanged(nameof(DefaultExtensionsError)); } }
+    public string? DefaultExtensionsError => ExtensionList.Error(_defaultExtensions);
     public string GlobalExcludes { get => _globalExcludes; set => Set(ref _globalExcludes, value ?? string.Empty); }
     public bool AutoRescan { get => _s.AutoRescan; set { _s.AutoRescan = value; OnPropertyChanged(); } }
     public int ScanTimeoutSeconds { get => _s.ScanTimeoutSeconds; set { _s.ScanTimeoutSeconds = value; OnPropertyChanged(); } }
@@ -974,6 +977,29 @@ public sealed class SettingsViewModel : ObservableObject
         if (picked == null) return;
         GroupManager.SetIcon(_s, c.Name, picked.Value);
         c.Icon = picked.Value.ToString();
+    }
+
+    /// <summary>Drag &amp; Drop in den Einstellungen: nur unter Geschwistern (gleiche übergeordnete Gruppe).</summary>
+    public bool CanDropCategory(CategoryItemViewModel dragged, CategoryItemViewModel target) =>
+        !ReferenceEquals(dragged, target) &&
+        string.Equals(GroupManager.ParentOf(dragged.Name), GroupManager.ParentOf(target.Name), StringComparison.CurrentCultureIgnoreCase);
+
+    /// <summary>Gruppe vor bzw. hinter eine Geschwistergruppe schieben (Untergruppen wandern mit).</summary>
+    public void DropCategory(CategoryItemViewModel dragged, CategoryItemViewModel target, bool after)
+    {
+        if (!CanDropCategory(dragged, target)) return;
+        var tmp = new AppSettings { CategoryOrder = Categories.Select(x => x.Name).ToList() };
+        GroupManager.MoveGroup(tmp, dragged.Name, target.Name, after ? GroupDropPosition.After : GroupDropPosition.Before);
+        ApplyOrder(GroupManager.All(tmp));
+    }
+
+    private void ApplyOrder(IReadOnlyList<string> order)
+    {
+        for (int target = 0; target < order.Count; target++)
+        {
+            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.CurrentCultureIgnoreCase));
+            if (current >= 0 && current != target) Categories.Move(current, target);
+        }
     }
 
     /// <summary>Unter den Geschwistern verschieben (Untergruppen wandern mit).</summary>
@@ -1302,17 +1328,12 @@ public sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(UpdateBannerTitle));
     }
 
-    internal static List<string> ParseExtensions(string text) =>
-        text.Split(new[] { ' ', ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(e => e.StartsWith('.') ? e.ToLowerInvariant() : "." + e.ToLowerInvariant())
-            .Distinct()
-            .ToList();
 
     /// <summary>Erstellt die neuen Einstellungen aus dem Formular.</summary>
     public AppSettings Build()
     {
         _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
-        var exts = ParseExtensions(DefaultExtensions);
+        var exts = ExtensionList.Parse(DefaultExtensions);
         _s.DefaultExtensions = exts.Count > 0 ? exts : new List<string>(AppSettings.StandardExtensions);
         _s.GlobalExcludes = GlobalExcludes.Split(new[] { ';', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         // Laufzeitzustand aus den aktuellen Einstellungen übernehmen (kann sich währenddessen geändert haben)

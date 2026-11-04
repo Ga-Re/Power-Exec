@@ -230,6 +230,72 @@ public partial class SettingsWindow : Window
             : (sender as FrameworkElement)?.DataContext as CustomEntryRowViewModel;
     }
 
+    // ---- Gruppen per Drag & Drop sortieren (unter Geschwistern) -----------------------
+
+    private const string GroupDragFormat = "PowerExec.SettingsGroup";
+    private Point _groupDragStart;
+    private CategoryItemViewModel? _groupDragCandidate;
+
+    private void GroupCard_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // Nicht aus Knöpfen, Auswahlfeldern oder Textfeldern heraus ziehen
+        if (e.OriginalSource is DependencyObject src && FindAncestor<ButtonBase>(src) is null && FindAncestor<ComboBox>(src) is null && FindAncestor<TextBox>(src) is null)
+        {
+            _groupDragStart = e.GetPosition(this);
+            _groupDragCandidate = (sender as FrameworkElement)?.DataContext as CategoryItemViewModel;
+        }
+        else _groupDragCandidate = null;
+    }
+
+    private void GroupCard_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _groupDragCandidate == null) return;
+        var d = e.GetPosition(this) - _groupDragStart;
+        if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var item = _groupDragCandidate;
+        _groupDragCandidate = null;
+        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(GroupDragFormat, item), DragDropEffects.Move);
+    }
+
+    private static bool DropAfter(FrameworkElement card, DragEventArgs e) => e.GetPosition(card).Y > card.ActualHeight / 2;
+
+    private void GroupCard_DragOver(object sender, DragEventArgs e)
+    {
+        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target ||
+            e.Data.GetData(GroupDragFormat) is not CategoryItemViewModel dragged) return;
+        var ok = CurrentViewModel.CanDropCategory(dragged, target);
+        e.Effects = ok ? DragDropEffects.Move : DragDropEffects.None;
+        e.Handled = true;
+        if (!ok) { GroupCard_DragLeave(sender, e); return; }
+        // Einfügelinie oben bzw. unten
+        card.BorderBrush = (Brush)FindResource("Accent");
+        card.BorderThickness = DropAfter(card, e) ? new Thickness(1, 1, 1, 3) : new Thickness(1, 3, 1, 1);
+    }
+
+    private void GroupCard_DragLeave(object sender, DragEventArgs e)
+    {
+        if (sender is Border card)
+        {
+            card.ClearValue(Border.BorderBrushProperty);
+            card.ClearValue(Border.BorderThicknessProperty);
+        }
+    }
+
+    private void GroupCard_Drop(object sender, DragEventArgs e)
+    {
+        GroupCard_DragLeave(sender, e);
+        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target ||
+            e.Data.GetData(GroupDragFormat) is not CategoryItemViewModel dragged) return;
+        CurrentViewModel.DropCategory(dragged, target, DropAfter(card, e));
+        e.Handled = true;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? d) where T : DependencyObject
+    {
+        while (d != null && d is not T) d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+        return d as T;
+    }
+
     private void EntryRow_PreviewMouseMove(object sender, MouseEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed || _entryDragRow == null) return;

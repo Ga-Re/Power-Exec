@@ -22,7 +22,7 @@ public sealed class DockSlot : ObservableObject
     {
         _item = item;
         Name = item.DisplayName;
-        ToolTip = $"{item.DisplayName} – Klick startet (Alt+{number})" + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
+        ToolTip = $"{item.DisplayName} – Klick startet" + (number <= 9 ? $" (Alt+{number})" : string.Empty) + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
         Command = item.RunCommand;
         item.PropertyChanged += (_, e) =>
         {
@@ -128,7 +128,7 @@ public partial class DockWindow : Window
     public void Rebuild()
     {
         if (_closed) return;
-        var slots = _host.ViewModel.QuickItems
+        var slots = _host.ViewModel.DockItems
             .Select((item, i) => new DockSlot(new ItemViewModel(_app, _host.ViewModel, item, "dock"), i + 1))
             .ToList();
         slots.Add(new DockSlot(new RelayCommand(OpenPanel)));

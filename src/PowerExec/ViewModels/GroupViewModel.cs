@@ -163,6 +163,9 @@ public sealed class GroupViewModel : ObservableObject
     public bool AllowReorder { get; }
 
     /// <summary>Symbol im Gruppenkopf (Segoe Fluent Icons).</summary>
+    /// <summary>Tooltip am Punkt der Sprungleiste.</summary>
+    public string RailToolTip => $"{Title} ({CountText}) – Klick: aufklappen und hinspringen · erneuter Klick: zuklappen";
+
     /// <summary>Gruppe eines abonnierten Team-Katalogs.</summary>
     public bool IsCatalog => GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.IsSameOrBelow(GroupPath, GroupManager.Normalize(c.Name)));
 

@@ -764,8 +764,7 @@ public sealed partial class AppController : IDisposable
     public void PickGroupColor(string groupPath)
     {
         var current = GroupManager.OwnColorOf(Settings, groupPath);
-        var text = WithDialog(() => InputWindow.Ask("Eigene Farbe", $"Farbe für „{GroupManager.LeafOf(groupPath)}“ als #RRGGBB, z. B. #3B82F6.", current, "Übernehmen",
-            t => PanelColors.TryParse(t, out _) ? null : "Bitte als #RRGGBB angeben."));
+        var text = WithDialog(() => ColorPickerWindow.Pick($"Farbe für „{GroupManager.LeafOf(groupPath)}“", current));
         if (text != null) SetGroupColor(groupPath, text);
     }
 

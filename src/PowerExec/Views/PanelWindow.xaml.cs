@@ -684,6 +684,19 @@ public partial class PanelWindow : Window
         var inSearch = ReferenceEquals(Keyboard.FocusedElement, SearchBox);
         if (Keyboard.FocusedElement is TextBox && !inSearch) return false;
 
+        // Vorschläge unter dem Suchfeld: Tab übernimmt; bei „#…“/„typ:…“ auch ↑ ↓ und Enter
+        if (inSearch && Vm.HasSuggestions)
+        {
+            if (key == Key.Tab && mods == ModifierKeys.None) { AcceptSuggestion(); return true; }
+            if (key == Key.Escape) { Vm.CloseSuggestions(); return true; }
+            if (Vm.SuggestionsTakeKeys && mods == ModifierKeys.None)
+            {
+                if (key == Key.Down) { Vm.SuggestionIndex++; SuggestionList.ScrollIntoView(Vm.SelectedSuggestion); return true; }
+                if (key == Key.Up) { Vm.SuggestionIndex--; SuggestionList.ScrollIntoView(Vm.SelectedSuggestion); return true; }
+                if (key == Key.Enter) { AcceptSuggestion(); return true; }
+            }
+        }
+
         // Alt+1 … 9: Favoriten starten
         if (mods == ModifierKeys.Alt && key is >= Key.D1 and <= Key.D9) return Vm.RunQuickItem(key - Key.D0);
         if (mods == ModifierKeys.Alt && key is >= Key.NumPad1 and <= Key.NumPad9) return Vm.RunQuickItem(key - Key.NumPad0);
@@ -845,6 +858,31 @@ public partial class PanelWindow : Window
             if (found != null) return found;
         }
         return null;
+    }
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => Vm.UpdateSuggestions(SearchBox.Text, SearchBox.CaretIndex);
+    private void SearchBox_SelectionChanged(object sender, RoutedEventArgs e) { if (SearchBox.IsKeyboardFocused) Vm.UpdateSuggestions(SearchBox.Text, SearchBox.CaretIndex); }
+    private void SearchBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => Vm.CloseSuggestions();
+
+    private void SuggestionList_MouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject d && ItemsControl.ContainerFromElement(SuggestionList, d) is ListBoxItem { DataContext: Core.Search.SearchSuggestion s })
+        {
+            Vm.SuggestionIndex = Vm.Suggestions.ToList().IndexOf(s);
+            AcceptSuggestion();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Gewählten Vorschlag ins Suchfeld übernehmen (ersetzt das Wort vor dem Cursor).</summary>
+    private void AcceptSuggestion()
+    {
+        if (Vm.SelectedSuggestion is not { } s) return;
+        var (text, caret) = Core.Search.SearchSuggestions.Apply(SearchBox.Text, SearchBox.CaretIndex, s);
+        SearchBox.Text = text;
+        SearchBox.CaretIndex = caret;
+        SearchBox.Focus();
+        Vm.UpdateSuggestions(text, caret); // nach „typ:“ gleich die Werte zeigen
     }
 
     private void UndoToast_MouseEnter(object sender, MouseEventArgs e) => Vm.PauseUndoToast(true);

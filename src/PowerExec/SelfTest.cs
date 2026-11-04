@@ -291,8 +291,9 @@ public sealed partial class AppController
                 if (dock == null) Fail("Mini-Dock: wird trotz Einstellung nicht angezeigt");
                 else
                 {
-                    if (dock.SlotCount != host.ViewModel.QuickItems.Count + 1) Fail($"Mini-Dock: {dock.SlotCount} Plätze statt {host.ViewModel.QuickItems.Count + 1}");
+                    if (dock.SlotCount != host.ViewModel.DockItems.Count + 1) Fail($"Mini-Dock: {dock.SlotCount} Plätze statt {host.ViewModel.DockItems.Count + 1}");
                     if (dock.Content is FrameworkElement dockRoot) Screenshot(dockRoot, "mini-dock");
+                    if (host.Triggers.Count > 0) Fail("Mini-Dock: Hover-Zone bleibt zusätzlich aktiv");
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
                     if (dock.IsVisible) Fail("Mini-Dock: bleibt sichtbar, während das Panel offen ist");
@@ -463,6 +464,34 @@ public sealed partial class AppController
                     await Settle();
                     UnsubscribeCatalog(sub);
                     if (Settings.CustomEntries.Any(c => c.IsFromCatalog)) Fail("Team-Katalog: Abbestellen entfernt die Einträge nicht");
+                }
+            }
+
+            Step("Suchvorschläge, Farbwähler, Sprungleiste");
+            {
+                var host = _hosts[0];
+                var vm = host.ViewModel;
+                vm.UpdateSuggestions("typ:", 4);
+                if (!vm.HasSuggestions) Fail("Suchvorschläge: „typ:“ schlägt nichts vor");
+                else if (vm.Suggestions.Any(x => x.Count <= 0)) Fail("Suchvorschläge: Typ ohne Einträge wird angeboten");
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
+                if (host.Window.Content is FrameworkElement sugRoot) Screenshot(sugRoot, "panel-suchvorschlaege");
+                vm.CloseSuggestions();
+                host.Window.HidePanel();
+                await Settle();
+                var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
+                if (colors == null || colors.Select(c => c.Swatch.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                await ShowAndClose(ColorPickerWindow.ForTest());
+                var railGroup = vm.Groups.FirstOrDefault(g => g.GroupPath != null);
+                if (railGroup != null)
+                {
+                    railGroup.IsExpanded = false;
+                    vm.RailClickCommand.Execute(railGroup);
+                    if (!railGroup.IsExpanded) Fail("Sprungleiste: Klick klappt die Gruppe nicht auf");
+                    vm.RailClickCommand.Execute(railGroup);
+                    if (railGroup.IsExpanded) Fail("Sprungleiste: zweiter Klick klappt die Gruppe nicht zu");
+                    railGroup.IsExpanded = true;
                 }
             }
 

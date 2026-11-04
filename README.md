@@ -17,6 +17,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
 - **Unscharfe Suche:** findet auch Anfangsbuchstaben (`gds` → *Get-DiskSpace*, `usr pw` → *Reset-ADUserPassword*) und einen Tippfehler (`dsik`); Treffer werden im Namen und in der Info-Zeile **hervorgehoben**; häufig und kürzlich gestartete Einträge stehen weiter oben, bei vielen Treffern zuerst als **„Beste Treffer“** (Enter startet den ersten)
+- **Vorschläge beim Tippen:** `#` zeigt die vorhandenen Schlagworte, `typ:` nur die Arten, die es tatsächlich gibt, `gruppe:` die Gruppen mit Einträgen, `ist:` nur Merkmale mit Treffern – jeweils mit Anzahl; schon „ty“ oder „gr“ bietet den Schlüssel an. Tab übernimmt, bei `#…`/`typ:…` auch ↑ ↓ und Enter
 - **Filter im Suchfeld:** `#schlagwort`, `typ:ps1|cmd|exe|programm|web|ordner|rdp|ssh|snippet|befehl|werkzeug|datei`, `gruppe:Name` (auch `gruppe:"Kunde A"`), `ist:fav`, `ist:admin`, `ist:remote`, `ist:problem` – erkannte Filter erscheinen als **Chips** unter dem Suchfeld und lassen sich mit ✕ entfernen
 - „Zuletzt ausgeführt“ und „Favoriten“ ein- oder ausblendbar (Einstellungen › Gruppen)
 - Globales Tastenkürzel (Standard: `Strg+Alt+Leertaste`) öffnet das Panel und setzt den Cursor ins Suchfeld
@@ -26,7 +27,7 @@ oder remote auf einem oder vielen Rechnern.
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
 - Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
 - Suche über Name, Dateiname, Synopsis, Beschreibung, Notiz, Schlagworte und Snippet-Code; Filter: Alle, Scripte, Programme, Favoriten
-- **Navigation in langen Listen:** der Kopf der aktuellen Gruppe bleibt beim Scrollen oben stehen (mit Pfad, z. B. „Kunde A › AD“; Klick springt zum Gruppenkopf); ab vier Gruppen zeigt eine **Sprungleiste** rechts einen Punkt je Gruppe in ihrer Farbe; **Strg+K** sucht eine Gruppe und springt hin
+- **Navigation in langen Listen:** der Kopf der aktuellen Gruppe bleibt beim Scrollen oben stehen (mit Pfad, z. B. „Kunde A › AD“; Klick springt zum Gruppenkopf); ab vier Gruppen zeigt eine **Sprungleiste** rechts einen Punkt je Gruppe in ihrer Farbe (Klick klappt auf und springt hin, erneuter Klick klappt zu); **Strg+K** sucht eine Gruppe und springt hin. Sprungleiste und Scrollbalken lassen sich unter Panel › Darstellung ausblenden; beim Darüberfahren über einen Gruppenkopf wird der Rahmen der Gruppe hervorgehoben
 - Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden
 - **Vorschau (Leertaste):** zeigt Code mit Syntaxfarben (PowerShell, Batch, Snippets; die ersten 60 Zeilen), Parameter mit Typ, Vorgabe und Hilfe, Signatur, Voraussetzungen, Notiz und wie oft/wann der Eintrag zuletzt gestartet wurde – ohne Editor; ↑ ↓ blättert zum nächsten Eintrag, Enter bzw. „Ausführen“ startet
@@ -35,7 +36,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Verlauf** (Strg+H oder Uhr-Symbol im Panel-Kopf): alle Starts mit Zeit, Ziel, Profil, Parametern, Dauer und Ergebnis (Exit-Code bzw. Zählung bei Remote), filterbar nach Heute/Fehler/Remote und durchsuchbar; **„↻ Gleiche Werte“** wiederholt den Lauf mit denselben Werten, Rechnern und Rechten, **„Nur fehlgeschlagene“** startet nur die Rechner, auf denen es nicht geklappt hat. Kennwörter werden nie gespeichert (`%LOCALAPPDATA%\Power-Exec\history.json`, höchstens 500 Einträge)
 - Gruppe **„Zuletzt ausgeführt“** (mit dem verwendeten Profil, Anzahl einstellbar)
 - **Gruppen mit Untergruppen** direkt im Panel anlegen (Rechtsklick auf eine Gruppe oder + unten), umbenennen, löschen; **Gruppen per Drag & Drop verschieben** (oberer/unterer Rand = davor/dahinter, Mitte = als Untergruppe hinein); Einträge per **Drag & Drop** in jede Gruppe verschieben oder auf „Favoriten“ ziehen; Reihenfolge per Drag & Drop
-- **Gruppenfarben:** Palette oder eigene Farbe; die Gruppe erscheint als getönte Karte mit farbigem Symbol, Untergruppen erben die Farbe
+- **Gruppenfarben:** Palette oder eigene Farbe über einen **Farbwähler** (Feld für Sättigung/Helligkeit, Farbton, Vorlagen, #RRGGBB); die Gruppe erscheint als getönte Karte mit farbigem Symbol, Untergruppen erben die Farbe
 - **Liste oder Raster je Gruppe:** im Gruppenkopf, per Rechtsklick › Darstellung oder in Einstellungen › Gruppen
 - **Smarte Gruppen:** eine Gruppe mit Ordner zeigt automatisch dessen Scripte und Programme – auf Wunsch mit Unterordnern als Untergruppen
 - **Aus dem Explorer und Browser ziehen:** Scripte, Programme, Ordner und Links ins Panel bzw. direkt in eine Gruppe ziehen (auch an den Bildschirmrand – das Panel fährt dann aus). Dateien verhalten sich wie gefundene Dateien (Synopsis, Parameter-Dialog, Remote, Profile)
@@ -44,7 +45,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Mehrfachauswahl und Abläufe:** Strg+Klick wählt mehrere Einträge aus; unten erscheint „▶ Nacheinander“ (jeder Schritt wartet auf den vorigen, bei Fehler Abbruch) und **„Als Ablauf speichern“**. Ein **Ablauf** ist ein eigener Eintrag (auch in Suche, Favoriten, Mini-Dock, Spotlight), zeigt Fortschritt in der Aktivitäten-Leiste und lässt sich bearbeiten (Reihenfolge, Startprofil je Schritt, „bei Fehler abbrechen“). Lokale Scripte laufen im Ablauf ohne -NoExit
 - **Aktivitäten-Leiste** unten im Panel: laufende und gerade beendete Starts mit Laufzeit; Remote-Läufe mit Fortschritt (z. B. „28 / 40 Rechner · 2 Fehler“), **Abbrechen** und **Ausgabe** (öffnet die Ergebnisliste); lokale Scripte mit Ende und Exit-Code. Solange etwas läuft, **pulsiert die Hover-Zone**. Beendete Einträge bleiben 15 Minuten stehen (höchstens drei)
 - Hover-Zone wird bei **Vollbild-Programmen** (Video, Präsentation, Spiel, RDP) automatisch deaktiviert
-- **Mini-Dock** (Panel › Darstellung, standardmäßig aus): schmale Leiste mit den ersten neun Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das Panel; ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft
+- **Mini-Dock** (Panel › Darstellung, standardmäßig aus): schmale Leiste mit den Favoriten (Anzahl 1–20 einstellbar) am gewählten Rand, ersetzt die Hover-Zone – ein Klick startet, „⋯“ öffnet das Panel; ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft
 - **Zeitpläne** (Rechtsklick › „Planen …“): einmal, täglich an gewählten Wochentagen oder alle n Minuten, mit Startprofil; am Eintrag erscheint ein Chip („Mo–Fr 07:00“). Läuft, solange Power-Exec läuft (mit Autostart dauerhaft); verpasste Termine auf Wunsch nachholen; Benachrichtigung auf Wunsch nur bei Fehlern, Ergebnis im Verlauf. Abläufe lassen sich ebenso planen
 - **Tray-Schnellstart:** Favoriten und „Zuletzt ausgeführt“ direkt aus dem Tray-Menü starten, Panel öffnen, Arbeitsbereich wechseln
 
@@ -78,10 +79,10 @@ oder remote auf einem oder vielen Rechnern.
 
 **Smarte Gruppen (Ordner)**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC); Anzeigename frei wählbar, Symbol wie bei jeder Gruppe
-- Alles unter Einstellungen › Inhalte › Gruppen: „Neu ▾“ → Gruppe oder smarte Gruppe; Löschen nur nach Rückfrage
+- Alles unter Einstellungen › Inhalte › Gruppen: „Neu ▾“ → Gruppe oder smarte Gruppe; Löschen nur nach Rückfrage; Reihenfolge per **Drag & Drop** (Gruppe am Griff ziehen, Einfügelinie zeigt davor/dahinter)
 - Die Einstellungen zeigen pro smarter Gruppe **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
 - **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
-- Ordner-Optionen: Unterordner ja/nein, **Unterordner im Panel als Untergruppen**, Dateiendungen, Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
+- Ordner-Optionen: Unterordner ja/nein, **Unterordner im Panel als Untergruppen**, Dateiendungen (mit Semikolon getrennt, z. B. `.ps1; .cmd`), Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse
 - Dateiwächter: Änderungen erscheinen automatisch
 - **Offline-fest:** Antwortet ein Ordner nicht innerhalb des Zeitlimits (z. B. Freigabe offline), zeigt das Panel den zuletzt eingelesenen Stand; beim Start erscheint sofort der zwischengespeicherte Stand
 - **Umbenennen/Verschieben:** Profile, Favorit, Sortierung und Verlauf wandern automatisch mit (Erkennung über Dateiinhalt bzw. gleichen Namen)

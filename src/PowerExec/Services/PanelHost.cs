@@ -32,9 +32,13 @@ public sealed class PanelHost : IDisposable
         Docks.Clear();
         foreach (var m in ScreenService.TriggerMonitors(Config))
         {
-            var t = new EdgeTriggerWindow(app, this, m);
-            t.Show();
-            Triggers.Add(t);
+            // Mit Mini-Dock übernimmt das Dock („⋯“) das Ausfahren; die Hover-Zone entfällt
+            if (!Config.ShowDock)
+            {
+                var t = new EdgeTriggerWindow(app, this, m);
+                t.Show();
+                Triggers.Add(t);
+            }
             if (Config.ShowDock)
             {
                 var d = new DockWindow(app, this, m);

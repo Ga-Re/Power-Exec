@@ -34,6 +34,15 @@ public sealed class PanelConfig
     /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
     public bool ShowDock { get; set; }
 
+    /// <summary>Sprungleiste (Punkt je Gruppe) rechts im Panel.</summary>
+    public bool ShowJumpRail { get; set; } = true;
+
+    /// <summary>Scrollbalken der Liste (ausgeblendet scrollt das Mausrad weiter).</summary>
+    public bool ShowScrollBar { get; set; } = true;
+
+    /// <summary>Anzahl der Favoriten im Mini-Dock (1–20).</summary>
+    public int DockCount { get; set; } = 9;
+
     /// <summary>Tastenkürzel öffnet ein Suchfenster in der Bildschirmmitte (Spotlight) statt des Panels am Rand.</summary>
     public bool HotkeyOpensSpotlight { get; set; }
     public string Hotkey { get; set; } = string.Empty;
@@ -70,7 +79,8 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
     };
@@ -96,6 +106,7 @@ public sealed class PanelConfig
         Folders.Clear();
         Categories.Clear();
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
+        DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);

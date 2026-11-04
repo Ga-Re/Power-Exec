@@ -744,9 +744,16 @@
                     <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="{Binding CardMargin}">
+                                <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="{Binding CardMargin}"
+                                        AllowDrop="True" DragOver="GroupCard_DragOver" DragLeave="GroupCard_DragLeave" Drop="GroupCard_Drop">
                                     <StackPanel>
-                                        <DockPanel Margin="6,6,8,6" MinHeight="44">
+                                        <DockPanel Margin="6,6,8,6" MinHeight="44" Background="Transparent" Cursor="SizeAll"
+                                                   PreviewMouseLeftButtonDown="GroupCard_PreviewMouseDown" PreviewMouseMove="GroupCard_PreviewMouseMove"
+                                                   ToolTip="Ziehen, um die Gruppe unter ihren Geschwistern zu verschieben">
+                                            <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="12" Margin="2,0,0,0"
+                                                       VerticalAlignment="Center" Foreground="{DynamicResource Text.Tertiary}" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock.RenderTransform><RotateTransform Angle="90"/></TextBlock.RenderTransform>
+                                            </TextBlock>
                                             <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}"
                                                     ToolTip="Ordner und Einträge ein-/ausklappen" Visibility="{Binding IsSmart, Converter={StaticResource Vis}, ConverterParameter=hidden}">
                                                 <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
@@ -780,19 +787,13 @@
                                                         </DataTemplate>
                                                     </ComboBox.ItemTemplate>
                                                 </ComboBox>
-                                                <Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Command="{Binding CustomColorCommand}" ToolTip="Eigene Farbe (#RRGGBB)">
+                                                <Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Command="{Binding CustomColorCommand}" ToolTip="Eigene Farbe im Farbwähler aussuchen">
                                                     <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
                                                 </Button>
                                                 <ComboBox Width="125" Margin="4,0,8,0" ItemsSource="{Binding LayoutList}" SelectedValue="{Binding Layout}"
                                                           DisplayMemberPath="Value" SelectedValuePath="Key" ToolTip="Darstellung dieser Gruppe im Panel"/>
                                                 <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="Umbenennen (Anzeigename)">
                                                     <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
-                                                </Button>
-                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding UpCommand}" ToolTip="Nach oben">
-                                                    <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
-                                                </Button>
-                                                <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding DownCommand}" ToolTip="Nach unten">
-                                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
                                                 </Button>
                                                 <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Gruppe löschen (nach Rückfrage)">
                                                     <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
@@ -837,8 +838,13 @@
                                                                     <CheckBox Content="Unterordner im Panel als Untergruppen" IsChecked="{Binding SubfoldersAsGroups}" IsEnabled="{Binding Recursive}"
                                                                               Margin="0,0,20,6" VerticalAlignment="Center"/>
                                                                     <TextBlock Text="Dateiendungen:" VerticalAlignment="Center" Margin="0,0,8,6" Foreground="{DynamicResource Text.Secondary}"/>
-                                                                    <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="220" Margin="0,0,0,6"
-                                                                             Tag="leer = Standard" FontFamily="{StaticResource MonoFont}"/>
+                                                                    <StackPanel Margin="0,0,0,6">
+                                                                        <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="220"
+                                                                                 Tag="leer = Standard; z. B. .ps1; .cmd" FontFamily="{StaticResource MonoFont}"
+                                                                                 ToolTip="Mit Semikolon getrennt, z. B. .ps1; .cmd; .exe"/>
+                                                                        <TextBlock Text="{Binding ExtensionsError}" FontSize="11" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" MaxWidth="220"
+                                                                                   Visibility="{Binding ExtensionsError, Converter={StaticResource Vis}}"/>
+                                                                    </StackPanel>
                                                                 </WrapPanel>
                                                                 <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0">
                                                                     <Run Text="{Binding Summary, Mode=OneWay}"/><Run Text=" · Letzter Scan: "/><Run Text="{Binding Status, Mode=OneWay}"/>
@@ -1031,10 +1037,14 @@
                     <TextBlock Text="Für alle smarten Gruppen (Ordner)" Style="{StaticResource SettingsSection}"/>
                     <Border Style="{StaticResource Card}">
                         <DockPanel>
-                            <TextBox DockPanel.Dock="Right" Width="300" Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                            <StackPanel DockPanel.Dock="Right" Width="300" VerticalAlignment="Center">
+                                <TextBox Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag=".ps1; .cmd; .exe"/>
+                                <TextBlock Text="{Binding DefaultExtensionsError}" FontSize="11" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                           Visibility="{Binding DefaultExtensionsError, Converter={StaticResource Vis}}"/>
+                            </StackPanel>
                             <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                 <TextBlock Text="Standard-Dateiendungen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Gilt für smarte Gruppen ohne eigene Angabe. Durch Leerzeichen getrennt." Style="{StaticResource RowDesc}"/>
+                                <TextBlock Text="Gilt für smarte Gruppen ohne eigene Angabe. Mit Semikolon getrennt, z. B. .ps1; .cmd; .exe" Style="{StaticResource RowDesc}"/>
                             </StackPanel>
                         </DockPanel>
                     </Border>
@@ -1249,9 +1259,15 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                <TextBlock Text="Eigene Farbe:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Text.Secondary}"/>
-                                <TextBox Width="120" Text="{Binding CustomColor, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="#RRGGBB"
-                                         FontFamily="{StaticResource MonoFont}"/>
+                                <Button Style="{StaticResource Btn.Standard}" Command="{Binding PickColorCommand}" ToolTip="Eigene Farbe im Farbwähler aussuchen">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="18" Height="18" CornerRadius="9" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
+                                                Background="{Binding PreviewBrush}"/>
+                                        <TextBlock Text="Eigene Farbe …"/>
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock Text="{Binding CustomColor}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" Margin="10,0,0,0"
+                                           Foreground="{DynamicResource Text.Secondary}"/>
                                 <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
                                            Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
                             </StackPanel>
@@ -1262,8 +1278,22 @@
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Acrylic}"/>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
-                                    Description="Schmale Leiste mit den ersten neun Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
+                                    Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE734;" Header="Favoriten im Mini-Dock" Description="Wie viele Favoriten das Dock zeigt (in der Reihenfolge der Gruppe „Favoriten“)."
+                                    IsEnabled="{Binding ShowDock}">
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="180" Minimum="1" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding DockCount}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Favoriten im Mini-Dock"/>
+                                <TextBlock Text="{Binding DockCount}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab vier Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowJumpRail}" AutomationProperties.Name="Sprungleiste"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowScrollBar}" AutomationProperties.Name="Scrollbalken"/>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
                             <StackPanel Orientation="Horizontal">

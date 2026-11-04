@@ -413,5 +413,57 @@ public class V016Tests
         Assert.Empty(s.Catalogs);
         Assert.DoesNotContain(s.CustomEntries, c => c.IsFromCatalog);
     }
+
+    [Fact]
+    public void SuggestionsOfferOnlyWhatExists()
+    {
+        var src = new SuggestionSource();
+        src.Tags["Exchange"] = 4; src.Tags["AD"] = 7;
+        src.Kinds[SearchKind.PowerShell] = 23; src.Kinds[SearchKind.Rdp] = 2;
+        src.Groups["Kunde A"] = 5;
+        src.Favorites = 3;
+
+        var tags = SearchSuggestions.For("reset #e", 8, src);
+        Assert.Equal("#Exchange", tags.Single().Insert);
+        Assert.Equal(4, tags.Single().Count);
+
+        var all = SearchSuggestions.For("#", 1, src);
+        Assert.Equal("#AD", all[0].Insert); // häufigstes zuerst
+
+        var kinds = SearchSuggestions.For("typ:", 4, src);
+        Assert.Equal(new[] { "typ:ps1", "typ:rdp" }, kinds.Select(k => k.Insert));
+        Assert.DoesNotContain(kinds, k => k.Insert == "typ:ssh"); // nicht vorhanden → nicht angeboten
+
+        Assert.Equal("gruppe:\"Kunde A\"", SearchSuggestions.For("gruppe:ku", 9, src).Single().Insert);
+        Assert.Equal(new[] { "ist:fav" }, SearchSuggestions.For("ist:", 4, src).Select(x => x.Insert)); // Admin/Remote ohne Treffer fehlen
+        Assert.Contains(SearchSuggestions.For("ty", 2, src), x => x.Insert == "typ:");
+        Assert.Empty(SearchSuggestions.For("disk", 4, src));
+    }
+
+    [Fact]
+    public void SuggestionReplacesCurrentWord()
+    {
+        var (text, caret) = SearchSuggestions.Apply("reset #ex", 9, new SearchSuggestion("#Exchange", "#Exchange", "", 1));
+        Assert.Equal("reset #Exchange ", text);
+        Assert.Equal(text.Length, caret);
+        var (t2, c2) = SearchSuggestions.Apply("ty disk", 2, new SearchSuggestion("typ:", "typ:", "", 1));
+        Assert.Equal("typ: disk", t2);
+        Assert.Equal(4, c2);
+    }
+
+    [Fact]
+    public void ColorMathRoundTripsAndExtensionsNeedSemicolons()
+    {
+        foreach (var hex in new[] { "#3B82F6", "#EF4444", "#000000", "#FFFFFF", "#22C55E" })
+        {
+            Assert.True(PanelColors.TryParse(hex, out var c));
+            var (h, sat, v) = ColorMath.ToHsv(c);
+            Assert.Equal(hex, ColorMath.FromHsv(h, sat, v).Hex);
+        }
+        Assert.Equal(new[] { ".ps1", ".cmd", ".exe" }, ExtensionList.Parse(".ps1; cmd;.EXE"));
+        Assert.Null(ExtensionList.Error(".ps1; .cmd"));
+        Assert.NotNull(ExtensionList.Error(".ps1 .cmd")); // mit Leerzeichen statt Semikolon
+        Assert.Equal(".ps1; .cmd", ExtensionList.Format(new[] { ".ps1", ".cmd" }));
+    }
 }
 

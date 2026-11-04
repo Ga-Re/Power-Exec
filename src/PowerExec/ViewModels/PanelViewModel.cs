@@ -191,6 +191,69 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand AddFolderCommand { get; }
 
 
+    // ---- Vorschläge beim Tippen (#, typ:, gruppe:, ist:) -----------------------------
+
+    private SuggestionSource? _suggestionSource;
+    private IReadOnlyList<SearchSuggestion> _suggestions = Array.Empty<SearchSuggestion>();
+    private int _suggestionIndex;
+
+    public IReadOnlyList<SearchSuggestion> Suggestions
+    {
+        get => _suggestions;
+        private set { if (Set(ref _suggestions, value)) { OnPropertyChanged(nameof(HasSuggestions)); SuggestionIndex = 0; } }
+    }
+    public bool HasSuggestions => _suggestions.Count > 0;
+
+    /// <summary>Ausgewählter Vorschlag (Pfeiltasten im Operator-Modus).</summary>
+    public int SuggestionIndex
+    {
+        get => _suggestionIndex;
+        set => Set(ref _suggestionIndex, _suggestions.Count == 0 ? 0 : Math.Clamp(value, 0, _suggestions.Count - 1));
+    }
+    public SearchSuggestion? SelectedSuggestion => _suggestions.Count == 0 ? null : _suggestions[Math.Clamp(_suggestionIndex, 0, _suggestions.Count - 1)];
+
+    /// <summary>
+    /// Das aktuelle Wort ist eindeutig ein Filter („#…“, „typ:…“): dann steuern ↑ ↓ und Enter die Vorschläge.
+    /// Bei bloßen Schlüssel-Vorschlägen („ty“ → typ:) übernimmt nur Tab, damit normales Suchen nicht gestört wird.
+    /// </summary>
+    public bool SuggestionsTakeKeys { get; private set; }
+
+    /// <summary>Was die sichtbaren Einträge hergeben (Schlagworte, Arten, Gruppen, Merkmale) – nur das wird vorgeschlagen.</summary>
+    private SuggestionSource BuildSuggestionSource()
+    {
+        var src = new SuggestionSource();
+        var settings = _app.Settings;
+        foreach (var i in CollectVisible())
+        {
+            foreach (var t in Tags.Of(settings, i.FullPath)) src.Tags[t] = src.Tags.GetValueOrDefault(t) + 1;
+            var kind = SearchQuery.KindOf(i);
+            src.Kinds[kind] = src.Kinds.GetValueOrDefault(kind) + 1;
+            var g = GroupOfItem(i);
+            if (g.Length > 0)
+                for (var p = g; p != null; p = GroupManager.ParentOf(p)) src.Groups[p] = src.Groups.GetValueOrDefault(p) + 1;
+            if (_app.IsFavorite(i.FullPath)) src.Favorites++;
+            if (i.RequiresAdmin) src.Admin++;
+            if (i.SupportsRemote) src.Remote++;
+            if (i.ParseError != null || i.IsBlocked || (i.Source != null && _app.Health?.Get(i.Source.Key) is { Ok: false })) src.Problems++;
+        }
+        return src;
+    }
+
+    /// <summary>Vorschläge zum Wort vor dem Cursor neu bestimmen.</summary>
+    public void UpdateSuggestions(string text, int caret)
+    {
+        var (_, token) = SearchSuggestions.CurrentToken(text, caret);
+        if (token.Length == 0) { Suggestions = Array.Empty<SearchSuggestion>(); return; }
+        _suggestionSource ??= BuildSuggestionSource();
+        var list = SearchSuggestions.For(text, caret, _suggestionSource);
+        // Schon vollständig getippt und eindeutig: nicht mehr anbieten
+        if (list.Count == 1 && list[0].Insert.Equals(token, StringComparison.CurrentCultureIgnoreCase)) list = Array.Empty<SearchSuggestion>();
+        SuggestionsTakeKeys = token.StartsWith('#') || token.Contains(':');
+        Suggestions = list;
+    }
+
+    public void CloseSuggestions() => Suggestions = Array.Empty<SearchSuggestion>();
+
     // ---- Suche als Bausteine (Panel und Spotlight-Modus) ---------------------------
 
     /// <summary>Gruppe eines Eintrags: ausdrücklich zugeordnet, sonst smarte Gruppe seines Ordners (ggf. mit Unterordner).</summary>
@@ -279,9 +342,13 @@ public sealed class PanelViewModel : ObservableObject
     // ---- Tastatur ------------------------------------------------------------
 
     private List<LaunchItem> _quickItems = new();
+    private List<LaunchItem> _favoriteItems = new();
 
-    /// <summary>Favoriten 1 … 9 in Panel-Reihenfolge (Alt+1 … 9, Mini-Dock).</summary>
+    /// <summary>Favoriten 1 … 9 in Panel-Reihenfolge (Alt+1 … 9).</summary>
     public IReadOnlyList<LaunchItem> QuickItems => _quickItems;
+
+    /// <summary>Favoriten fürs Mini-Dock (Anzahl einstellbar).</summary>
+    public IReadOnlyList<LaunchItem> DockItems => _favoriteItems.Take(_host.Config.DockCount).ToList();
 
     /// <summary>Die Favoriten haben sich geändert (Mini-Dock neu aufbauen).</summary>
     public event Action? QuickItemsChanged;
@@ -342,7 +409,32 @@ public sealed class PanelViewModel : ObservableObject
         : Groups.FirstOrDefault(g => g.SelfAndDescendants.Contains(_stickyGroup))?.Key;
 
     /// <summary>Sprungleiste rechts: ab 4 Gruppen auf oberster Ebene, nicht während der Suche.</summary>
-    public bool ShowJumpRail => Groups.Count >= 4 && !IsSearching;
+    public bool ShowJumpRail => _host.Config.ShowJumpRail && Groups.Count >= 4 && !IsSearching;
+
+    /// <summary>Scrollbalken der Liste anzeigen (ausgeblendet scrollt das Mausrad weiter).</summary>
+    public System.Windows.Controls.ScrollBarVisibility ListScrollBar =>
+        _host.Config.ShowScrollBar ? System.Windows.Controls.ScrollBarVisibility.Auto : System.Windows.Controls.ScrollBarVisibility.Hidden;
+
+    private string? _lastRailKey;
+
+    /// <summary>
+    /// Klick auf einen Punkt der Sprungleiste: Gruppe aufklappen und hinspringen;
+    /// ein zweiter Klick auf denselben Punkt klappt sie wieder zu.
+    /// </summary>
+    public ICommand RailClickCommand => _railClickCommand ??= new RelayCommand(p =>
+    {
+        if (p is not GroupViewModel g) return;
+        if (g.IsExpanded && _lastRailKey == g.Key)
+        {
+            g.IsExpanded = false;
+            _lastRailKey = null;
+            ScrollToGroupRequested?.Invoke(g);
+            return;
+        }
+        _lastRailKey = g.Key;
+        JumpTo(g);
+    });
+    private ICommand? _railClickCommand;
 
     /// <summary>Wird ausgelöst, wenn die Ansicht zu einer Gruppe scrollen soll.</summary>
     public event Action<GroupViewModel>? ScrollToGroupRequested;
@@ -749,9 +841,10 @@ public sealed class PanelViewModel : ObservableObject
         if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
-        var quick = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).Take(9).ToList();
-        var quickChanged = !quick.Select(q => q.FullPath).SequenceEqual(_quickItems.Select(q => q.FullPath), StringComparer.OrdinalIgnoreCase);
-        _quickItems = quick;
+        var favorites = Arrange("fav", visible.Where(i => _app.IsFavorite(i.FullPath))).ToList();
+        var quickChanged = !favorites.Select(q => q.FullPath).SequenceEqual(_favoriteItems.Select(q => q.FullPath), StringComparer.OrdinalIgnoreCase);
+        _favoriteItems = favorites;
+        _quickItems = favorites.Take(9).ToList();
         if (quickChanged) QuickItemsChanged?.Invoke();
         foreach (var favGroup in groups.Where(x => x.Kind == "fav"))
             foreach (var favVm in favGroup.Items)
@@ -932,6 +1025,8 @@ public sealed class PanelViewModel : ObservableObject
         ShowShortcuts = false;
         ShowGroupJump = false;
         Peek = null;
+        _suggestionSource = null; // beim nächsten Öffnen frisch (neue Schlagworte, Gruppen …)
+        Suggestions = Array.Empty<SearchSuggestion>();
         ShowHistory = false;
         OnPropertyChanged(nameof(SearchText));
         OnPropertyChanged(nameof(IsSearching));

@@ -158,6 +158,15 @@ public sealed class PanelSettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Eigene Panelfarbe im Farbwähler aussuchen.</summary>
+    public System.Windows.Input.ICommand PickColorCommand => _pickColor ??= new RelayCommand(() =>
+    {
+        var picked = Views.ColorPickerWindow.Pick("Panelfarbe", _c.PanelColor,
+            System.Windows.Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
+        if (picked != null) PanelColor = picked;
+    });
+    private System.Windows.Input.ICommand? _pickColor;
+
     public string CustomColor
     {
         get => _customColor.Length > 0 ? _customColor : _c.PanelColor;
@@ -184,6 +193,12 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
     public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }
+
+    /// <summary>Anzahl der Favoriten im Mini-Dock.</summary>
+    public int DockCount { get => _c.DockCount; set { _c.DockCount = Math.Clamp(value, 1, 20); OnPropertyChanged(); } }
+
+    public bool ShowJumpRail { get => _c.ShowJumpRail; set { _c.ShowJumpRail = value; OnPropertyChanged(); } }
+    public bool ShowScrollBar { get => _c.ShowScrollBar; set { _c.ShowScrollBar = value; OnPropertyChanged(); } }
 
     /// <summary>Tastenkürzel öffnet die Suche in der Bildschirmmitte statt des Panels.</summary>
     public bool HotkeyOpensSpotlight { get => _c.HotkeyOpensSpotlight; set { _c.HotkeyOpensSpotlight = value; OnPropertyChanged(); } }

@@ -9,6 +9,21 @@
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False"
         Width="400" Height="700">
     <Window.Resources>
+        <!-- Gruppenkopf: ohne eigene Hover-Fläche (hervorgehoben wird der Rahmen der Gruppe) -->
+        <Style x:Key="GroupHeaderButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Punkt in der Gruppenfarbe (ohne Farbe: neutral) -->
         <Style x:Key="GroupDot" TargetType="Ellipse">
             <Setter Property="Fill" Value="{DynamicResource Text.Tertiary}"/>
@@ -82,10 +97,17 @@
                         <Setter Property="Command" Value="{Binding Command}"/>
                         <Setter Property="CommandParameter" Value="{Binding Hex}"/>
                         <Setter Property="IsChecked" Value="{Binding IsCurrent, Mode=OneWay}"/>
-                        <Setter Property="Header" Value="{Binding Name}"/>
-                        <Setter Property="Icon">
+                        <!-- Farbpunkt im Kopf statt als Icon: ein Icon-Element im Stil würde von allen Einträgen geteilt (nur der letzte zeigte seine Farbe) -->
+                        <Setter Property="Header" Value="{Binding}"/>
+                        <Setter Property="HeaderTemplate">
                             <Setter.Value>
-                                <Ellipse Width="14" Height="14" Fill="{Binding Swatch}"/>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                 Stroke="{DynamicResource Border.Control}" StrokeThickness="1"/>
+                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
                             </Setter.Value>
                         </Setter>
                     </Style>
@@ -606,7 +628,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding ToggleCommand}" HorizontalContentAlignment="Stretch"
+                        <Button Style="{StaticResource GroupHeaderButton}" Command="{Binding ToggleCommand}" HorizontalContentAlignment="Stretch"
                                 Padding="8,0" Height="32" ContextMenu="{StaticResource GroupMenu}" Foreground="{DynamicResource Text.Secondary}"
                                 ToolTip="Klick: ein-/ausklappen · Rechtsklick: Menü" ToolTipService.InitialShowDelay="1200">
                             <Grid>
@@ -703,7 +725,16 @@
                         <Condition SourceName="GroupHeader" Property="IsMouseOver" Value="True"/>
                     </MultiTrigger.Conditions>
                     <Setter TargetName="LayoutToggle" Property="Visibility" Value="Visible"/>
+                    <!-- Hover über dem Gruppenkopf: Rahmen der Gruppe hervorheben (statt grauer Fläche) -->
+                    <Setter TargetName="GroupBox" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 </MultiTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsMouseOver, ElementName=GroupHeader}" Value="True"/>
+                        <Condition Binding="{Binding HasColor}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="GroupBox" Property="BorderBrush" Value="{Binding AccentBrush}"/>
+                </MultiDataTrigger>
                 <DataTrigger Binding="{Binding CanChangeLayout}" Value="False">
                     <Setter TargetName="LayoutToggle" Property="Visibility" Value="Collapsed"/>
                 </DataTrigger>
@@ -863,7 +894,8 @@
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
-                         Padding="30,0,8,0" Tag="Suchen … (typ:ps1, #schlagwort, ist:fav)" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
+                         Padding="30,0,8,0" Tag="Suchen …" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
+                         TextChanged="SearchBox_TextChanged" SelectionChanged="SearchBox_SelectionChanged" LostKeyboardFocus="SearchBox_LostKeyboardFocus"
                          ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
                          AutomationProperties.Name="Suchen" AutomationProperties.HelpText="{Binding SearchHelp}"/>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"
@@ -886,6 +918,49 @@
                     </Border.Style>
                     <TextBlock Text="{Binding HotkeyHint}" FontSize="11" Foreground="{DynamicResource Text.Secondary}"/>
                 </Border>
+                <!-- Vorschläge beim Tippen: #schlagwort, typ:, gruppe:, ist: (nur, was es gibt; mit Anzahl) -->
+                <Popup x:Name="SuggestionPopup" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
+                       IsOpen="{Binding HasSuggestions, Mode=OneWay}" VerticalOffset="4" Width="{Binding ActualWidth, ElementName=SearchBox}">
+                    <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="6" Padding="4" Margin="0,0,8,8">
+                        <Border.Effect><DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.35" Color="{DynamicResource ShadowColor}"/></Border.Effect>
+                        <StackPanel>
+                            <ListBox x:Name="SuggestionList" ItemsSource="{Binding Suggestions}" SelectedIndex="{Binding SuggestionIndex}" Background="Transparent" BorderThickness="0"
+                                     MaxHeight="260" Focusable="False" PreviewMouseLeftButtonUp="SuggestionList_MouseUp" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Focusable" Value="False"/>
+                                        <Setter Property="Padding" Value="8,4"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="Bd" CornerRadius="4" Padding="{TemplateBinding Padding}" Background="Transparent">
+                                                        <ContentPresenter/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/></Trigger>
+                                                        <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Selected}"/></Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Label}" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}" Margin="8,4,8,2" Text="Tab übernimmt · ↑ ↓ wählen · Esc schließt"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
                 <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,4,0" ToolTip="Suche leeren"
                         Command="{Binding ClearSearchCommand}" Visibility="{Binding IsSearching, Converter={StaticResource Vis}}">
                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11"/>
@@ -943,7 +1018,7 @@
             </Border>
 
             <!-- Liste -->
-            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="{Binding ListScrollBar, Mode=OneWay}" HorizontalScrollBarVisibility="Disabled"
                           Background="Transparent" ScrollChanged="ListScroll_ScrollChanged">
                 <ScrollViewer.Style>
                     <Style TargetType="ScrollViewer">
@@ -1071,8 +1146,8 @@
                           ItemsSource="{Binding Groups}" Visibility="{Binding ShowJumpRail, Converter={StaticResource Vis}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Width="14" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding Title}" Focusable="False"
-                                Command="{Binding DataContext.JumpToGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                        <Button Width="14" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding RailToolTip}" Focusable="False"
+                                Command="{Binding DataContext.RailClickCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
                                 AutomationProperties.Name="{Binding Title}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">

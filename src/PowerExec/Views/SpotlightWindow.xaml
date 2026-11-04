@@ -11,7 +11,7 @@
         </Border.Effect>
         <StackPanel>
             <Grid>
-                <TextBox x:Name="SearchBox" Height="44" FontSize="16" Padding="38,0,10,0" Tag="Suchen … (typ:ps1, #schlagwort, gruppe:Name)"
+                <TextBox x:Name="SearchBox" Height="44" FontSize="16" Padding="38,0,10,0" Tag="Suchen …"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="SearchBox_PreviewKeyDown"
                          AutomationProperties.Name="Suchen"/>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="16" HorizontalAlignment="Left" Margin="13,0,0,0" IsHitTestVisible="False"
