@@ -44,6 +44,8 @@ public partial class PanelWindow : Window
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
         if (Cfg.Acrylic) Interop.Acrylic.Apply(_hwnd, true);
+        UpdateBlurRegion();
+        SizeChanged += (_, _) => UpdateBlurRegion();
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
@@ -163,6 +165,7 @@ public partial class PanelWindow : Window
         if (s.Acrylic && !ThemeService.IsHighContrast) opacity = Math.Min(opacity, 0.72);
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast);
+        UseBlurRegion = s.Acrylic && !ThemeService.IsHighContrast;
 
         if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
         {
@@ -319,8 +322,69 @@ public partial class PanelWindow : Window
         };
         var fade = new DoubleAnimation(show ? 0.0 : 1.0, show ? 1.0 : 0.0, TimeSpan.FromMilliseconds(Math.Min(220, duration.TotalMilliseconds)));
         if (!show) slide.Completed += (_, _) => { if (_hiding) FinishHide(); };
+        if (UseBlurRegion)
+        {
+            // Weichzeichnung fährt mit dem Panel: Fensterbereich bei jedem Bild auf das verschobene Panel setzen.
+            // Ohne Einblenden, sonst wäre der Hintergrund schon da, bevor der Inhalt sichtbar ist.
+            StartBlurTracking();
+            slide.Completed += (_, _) => StopBlurTracking();
+            Slide.BeginAnimation(property, slide);
+            PanelBorder.BeginAnimation(OpacityProperty, null);
+            PanelBorder.Opacity = 1;
+            UpdateBlurRegion();
+            return;
+        }
         Slide.BeginAnimation(property, slide);
         PanelBorder.BeginAnimation(OpacityProperty, fade);
+    }
+
+    // ---- Acrylic: Weichzeichnung genau in Form und Lage des Panels ------------------------
+
+    private bool _useBlurRegion;
+    private bool _trackingBlur;
+
+    /// <summary>Acrylic aktiv: Fensterbereich folgt dem (abgerundeten, ggf. gerade einfahrenden) Panel.</summary>
+    private bool UseBlurRegion
+    {
+        get => _useBlurRegion;
+        set
+        {
+            if (_useBlurRegion == value) return;
+            _useBlurRegion = value;
+            if (value) UpdateBlurRegion();
+            else { StopBlurTracking(); Interop.Acrylic.ClearRegion(_hwnd); }
+        }
+    }
+
+    private void StartBlurTracking()
+    {
+        if (_trackingBlur) return;
+        _trackingBlur = true;
+        CompositionTarget.Rendering += OnRenderingBlur;
+    }
+
+    private void StopBlurTracking()
+    {
+        if (!_trackingBlur) return;
+        _trackingBlur = false;
+        CompositionTarget.Rendering -= OnRenderingBlur;
+        UpdateBlurRegion();
+    }
+
+    private void OnRenderingBlur(object? sender, EventArgs e) => UpdateBlurRegion();
+
+    /// <summary>Sichtbarer Teil des Panels (mit Verschiebung) als abgerundeter Fensterbereich in Pixeln.</summary>
+    private void UpdateBlurRegion()
+    {
+        if (!_useBlurRegion || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var bounds = PanelBorder.TransformToAncestor(this).TransformBounds(new Rect(0, 0, PanelBorder.ActualWidth, PanelBorder.ActualHeight));
+        bounds.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
+        if (bounds.IsEmpty) { Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0); return; }
+        int Px(double v, double scale) => (int)Math.Round(v * scale);
+        Interop.Acrylic.SetRoundedRegion(_hwnd,
+            Px(bounds.Left, dpi.DpiScaleX), Px(bounds.Top, dpi.DpiScaleY), Px(bounds.Right, dpi.DpiScaleX), Px(bounds.Bottom, dpi.DpiScaleY),
+            Px(PanelBorder.CornerRadius.TopLeft, dpi.DpiScaleX));
     }
 
     private void FinishHide()
