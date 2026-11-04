@@ -2,7 +2,7 @@
 
 Ausgewählt aus dem Ideenkatalog (16 Vorschläge, Stand 0.15). Reihenfolge = geplante Umsetzung.
 
-## Phase 1 – schnell gewonnen (0.16)
+## Phase 1 – schnell gewonnen (0.16) – umgesetzt
 
 | Kürzel | Vorschlag | Kern |
 |---|---|---|
@@ -10,6 +10,8 @@ Ausgewählt aus dem Ideenkatalog (16 Vorschläge, Stand 0.15). Reihenfolge = gep
 | C4 | Rückgängig | Toast „… ausgeblendet · Rückgängig“ und Strg+Z für Ausblenden, Löschen, Verschieben (Drag & Drop) und Gruppen-Änderungen; einige Rückfragen entfallen |
 | A3 | Tastatur & Spickzettel | →/Tab öffnet die Aktionen eines Eintrags als Liste, Alt+1…9 startet Favoriten, „?“ zeigt alle Kürzel, F2 umbenennen, optional globaler Hotkey je Eintrag |
 | C2 | Gruppenköpfe & Sprungleiste | Kopf der aktuellen Gruppe bleibt oben stehen, Pfad bei Untergruppen, Sprungleiste in Gruppenfarben, Strg+K springt per Suche zu einer Gruppe |
+
+Offen aus Phase 1: globaler Hotkey je Eintrag (A3, optional) – noch nicht umgesetzt.
 
 ## Phase 2 – Rückmeldung beim Ausführen (0.17)
 
