@@ -190,7 +190,7 @@ public class V016Tests
         var yellow = new Rgb(0xFF, 0xD7, 0x00); // zu hell für das helle Design
         var light = Appearance.Derive(yellow, dark: false);
         Assert.True(PanelColors.Contrast(light.Accent, new Rgb(0xF3, 0xF3, 0xF3)) >= 3.0);
-        Assert.True(PanelColors.Contrast(light.OnAccent, light.Accent) >= PanelColors.Contrast(new Rgb(255 - light.OnAccent.R, 255 - light.OnAccent.G, 255 - light.OnAccent.B), light.Accent));
+        Assert.True(PanelColors.Contrast(light.OnAccent, light.Accent) >= 3.0); // Schrift auf Akzent-Knöpfen
         Assert.Equal(new Rgb(0x10, 0x20, 0x30), Appearance.FromAbgr(0xFF302010));
     }
 
