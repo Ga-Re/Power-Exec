@@ -231,9 +231,15 @@ public sealed class ActivityList
             catch (IOException) { continue; } // wird gerade geschrieben
             catch (UnauthorizedAccessException) { continue; }
             Forget(activity, file);
+            activity.WindowStillOpen = true;
+            // „E“: Batch mit Fehler (Exit-Code dort nicht sicher ermittelbar)
+            if (text.Equals("E", StringComparison.OrdinalIgnoreCase))
+            {
+                activity.Complete(ActivityState.Error, "fertig mit Fehler · Fenster noch offen");
+                continue;
+            }
             var code = int.TryParse(text, out var c) ? c : 0;
             activity.ExitCode = code;
-            activity.WindowStillOpen = true;
             if (code == 0) activity.Complete(ActivityState.Success, "fertig · Fenster noch offen");
             else activity.Complete(ActivityState.Error, $"fertig · Exit-Code {code} · Fenster noch offen");
         }

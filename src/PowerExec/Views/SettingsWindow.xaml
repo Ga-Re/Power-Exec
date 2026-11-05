@@ -1489,8 +1489,16 @@
                         </StackPanel>
                     </Border>
                     <c:SettingsCard Icon="&#xE7B3;" Header="Acrylic (Hintergrund weichzeichnen)"
-                                    Description="Der Desktop hinter dem Panel erscheint verschwommen, getönt mit der Panelfarbe – wie das Startmenü von Windows 11. Unter 72 % Deckkraft wirkt es am stärksten.">
+                                    Description="Der Desktop hinter dem Panel erscheint verschwommen, getönt mit der Panelfarbe – wie das Startmenü von Windows 11. Je geringer die Deckkraft, desto mehr ist davon zu sehen.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Acrylic}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE7B3;" Header="Stärke des Weichzeichners" Visibility="{Binding Acrylic, Converter={StaticResource Vis}}"
+                                    Description="Leicht: einfacher Weichzeichner · Mittel: Acrylic wie in Windows · Stark: Acrylic mit Milchglas-Tönung. Den Radius selbst lässt Windows nicht einstellen.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="1" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
+                                    Value="{Binding AcrylicLevel}" VerticalAlignment="Center" AutomationProperties.Name="Stärke des Weichzeichners"/>
+                            <TextBlock Text="{Binding AcrylicLevelText}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
                                     Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
@@ -1510,7 +1518,7 @@
                     <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowScrollBar}" AutomationProperties.Name="Scrollbalken"/>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend. Helle Panels bleiben für guten Kontrast mindestens zu 85 % deckend.">
+                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
@@ -1577,6 +1585,10 @@
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE7C4;" Header="Konsole nach Ende offen lassen (-NoExit)" Description="Damit die Ausgabe sichtbar bleibt.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding NoExit}"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE77B;" Header="Beim Start nach dem Profil fragen"
+                                    Description="Hat ein Eintrag mehrere Startprofile, fragt Power-Exec vor dem Start, welches – im selben Fenster wie die Werte für {{Platzhalter}}. Je Eintrag abweichend einstellbar (Eintrag bearbeiten).">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding AskProfile}" AutomationProperties.Name="Beim Start nach dem Profil fragen"/>
                     </c:SettingsCard>
                     <TextBlock Text="Editor" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsCard Icon="&#xE70F;" Header="Editor für „Im Editor öffnen“">

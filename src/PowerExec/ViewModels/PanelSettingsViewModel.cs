@@ -182,6 +182,14 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public bool Acrylic { get => _c.Acrylic; set { _c.Acrylic = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); } }
 
+    /// <summary>Stärke der Weichzeichnung (1 leicht, 2 mittel, 3 stark).</summary>
+    public int AcrylicLevel
+    {
+        get => _c.AcrylicLevel;
+        set { _c.AcrylicLevel = Math.Clamp(value, 1, 3); OnPropertyChanged(); OnPropertyChanged(nameof(AcrylicLevelText)); }
+    }
+    public string AcrylicLevelText => _c.AcrylicLevel switch { 1 => "Leicht", 3 => "Stark", _ => "Mittel" };
+
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
     public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }
 

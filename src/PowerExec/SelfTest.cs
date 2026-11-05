@@ -327,7 +327,7 @@ public sealed partial class AppController
                     {
                         for (int wait = 0; wait < 100 && act.IsRunning; wait++) await Task.Delay(100);
                         if (act.IsRunning) Fail("Aktivitäten: Ende bei offenem Fenster nicht erkannt (bleibt „läuft“)");
-                        else if (!act.IsError || !act.Detail.Contains('4') || !act.WindowStillOpen) Fail($"Aktivitäten: Ergebnis bei offenem Fenster falsch ({act.State}, {act.Detail})");
+                        else if (!act.IsError || !act.Detail.Contains("Fehler") || !act.WindowStillOpen) Fail($"Aktivitäten: Ergebnis bei offenem Fenster falsch ({act.State}, {act.Detail})");
                         if (!act.CanRestart) Fail("Aktivitäten: „Erneut starten“ fehlt nach dem Ende");
                     }
                     try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { }
@@ -874,6 +874,8 @@ public sealed partial class AppController
             await ShowAndClose(IconPickerWindow.ForTest());
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(NewGroupWindow.ForTest());
+            await ShowAndClose(ChoiceWindow.ForTest());
+            await ShowAndClose(PlaceholderWindow.ForTestWithProfiles());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
             // Eintragsdialog: Kachelauswahl, jedes Formular, Live-Prüfung
             Step("Eintragsdialog");

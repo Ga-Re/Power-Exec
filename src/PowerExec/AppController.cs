@@ -42,6 +42,7 @@ public sealed partial class AppController : IDisposable
             SaveSettings();
         }
         Views.WindowHelper.Settings = () => Settings;
+        Views.WindowHelper.PanelsBehind = behind => { foreach (var h in _hosts) h.Window.SetBehindAppWindows(behind); };
         ThemeService.Apply(Settings);
         ThemeService.SystemChanged += OnSystemThemeChanged;
         SetupSnippetFolder();
@@ -395,11 +396,11 @@ public sealed partial class AppController : IDisposable
     /// Platzhalter ({{Name}}) abfragen und einsetzen. Liefert null bei Abbruch.
     /// Snippets bekommen dafür eine eigene .ps1 für genau diesen Start.
     /// </summary>
-    private LaunchItem? ResolvePlaceholders(LaunchItem item)
+    private LaunchItem? ResolvePlaceholders(LaunchItem item, IReadOnlyDictionary<string, string>? preset = null)
     {
         if (item.PlaceholdersResolved || item.Source is not { } entry || !entry.NeedsResolving) return item;
-        IReadOnlyDictionary<string, string>? values = new Dictionary<string, string>();
-        if (entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
+        IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
+        if (preset == null && entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
             values = WithDialog(() => PlaceholderWindow.Ask(item.DisplayName, entry.Placeholders,
                 name => ParameterHistory.Get(Settings, entry.Key, name)));
         if (values == null) return null;
@@ -584,9 +585,26 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Aus dem Explorer oder Browser gezogene Ziele übernehmen.</summary>
-    public void AddDropped(IReadOnlyList<DroppedTarget> targets, string? group)
+    public void AddDropped(IReadOnlyList<DroppedTarget> targets, string? group, bool askForFolders = true)
     {
         if (targets.Count == 0) return;
+        // Ordner: als smarte Gruppe (Inhalt einlesen) oder als Link (öffnet den Ordner)?
+        var folders = askForFolders ? targets.Where(t => t.Kind == CustomEntryKind.Folder && Directory.Exists(t.Target)).ToList() : new List<DroppedTarget>();
+        if (folders.Count > 0)
+        {
+            var asGroups = new List<DroppedTarget>();
+            int? all = null;
+            foreach (var f in folders)
+            {
+                var choice = all ?? AskFolderDrop(f, folders.Count > 1, out var forAll);
+                if (choice < 0) return; // Abbruch: gar nichts hinzufügen
+                if (all == null && forAll) all = choice;
+                if (choice == 0) asGroups.Add(f);
+            }
+            foreach (var f in asGroups) AddFolderAsGroup(f.Target, group);
+            targets = targets.Except(asGroups).ToList();
+            if (targets.Count == 0) return;
+        }
         var scanned = new HashSet<string>(Repository.Items.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
         var keys = DropClassifier.AddToSettings(Settings, targets, group, scanned.Contains);
         CommitUserChange();
@@ -595,7 +613,33 @@ public sealed partial class AppController : IDisposable
             _tray?.ShowBalloon("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
     }
 
-    /// <summary>Neuen eigenen Eintrag in einer Gruppe anlegen (Dialog).</summary>
+    private int AskFolderDrop(DroppedTarget folder, bool several, out bool forAll)
+    {
+        var (choice, all) = WithDialog(() => ChoiceWindow.Ask($"Ordner „{folder.Name}“ hinzufügen", "Wie soll der Ordner im Panel erscheinen?",
+            ChoiceWindow.FolderOptions, several ? "Für alle gezogenen Ordner übernehmen" : null));
+        forAll = all;
+        return choice;
+    }
+
+    /// <summary>Gezogenen Ordner als smarte Gruppe anlegen (in der Gruppe, auf die er gezogen wurde).</summary>
+    private void AddFolderAsGroup(string folderPath, string? parent)
+    {
+        if (NewGroup.FolderError(Settings.Folders, folderPath) is { } error)
+        {
+            _tray?.ShowBalloon("Ordner schon vorhanden", error, warning: true);
+            return;
+        }
+        RememberForUndo("Ordner als Gruppe hinzugefügt");
+        var name = NewGroup.NameFromFolder(folderPath);
+        for (int i = 2; GroupManager.Exists(Settings, parent == null ? name : parent + GroupManager.Separator + name); i++) name = $"{NewGroup.NameFromFolder(folderPath)} {i}";
+        var path = NewGroup.Create(Settings, new NewGroupSpec(name, IconRef.None, folderPath, string.Empty, null), string.IsNullOrEmpty(parent) ? null : parent);
+        SaveSettings();
+        Repository.UpdateSettings(Settings);
+        CommitUserChange();
+        ShowUndoToast($"Ordner als Gruppe „{GroupManager.LeafOf(path)}“ hinzugefügt");
+        AppLog.Info($"Ordner per Drag & Drop als smarte Gruppe: {folderPath} → {path}");
+    }
+
     /// <summary>Neuer Eintrag aus einem Menü: Art-Schlüssel („Url“, „TextSnippet“ …) oder null = Art im Dialog wählen.</summary>
     public void NewCustomEntry(string? kindKey, string? group)
     {
@@ -965,6 +1009,20 @@ public sealed partial class AppController : IDisposable
     public void RunProfile(LaunchItem item, LaunchProfile? profile, ExecutionMode? overrideMode = null, bool record = true)
     {
         if (item.Source is { Kind: CustomEntryKind.Workflow } workflow) { RunWorkflowEntry(item, workflow); return; }
+        // „Nach Profil fragen“: Profil (und Platzhalter-Werte) in einem Fenster, nur beim normalen Start mit mehreren Profilen
+        IReadOnlyDictionary<string, string>? presetValues = null;
+        if (profile == null && record && ProfileResolver.AsksProfile(Settings, item))
+        {
+            var current = Refresh(item);
+            var placeholders = !current.PlaceholdersResolved && current.Source is { NeedsResolving: true, CopiesToClipboard: false } src
+                ? src.Placeholders : (IReadOnlyList<Placeholder>)Array.Empty<Placeholder>();
+            var key = current.Source?.Key ?? item.FullPath;
+            var answer = WithDialog(() => PlaceholderWindow.AskWithProfile(item.DisplayName, placeholders,
+                name => ParameterHistory.Get(Settings, key, name), ProfileResolver.GetProfiles(Settings, item), ProfileResolver.GetDefault(Settings, item)));
+            if (answer is not { } a) return;
+            profile = a.Profile;
+            if (placeholders.Count > 0) presetValues = a.Values;
+        }
         profile ??= ProfileResolver.GetDefault(Settings, item);
         item = WithProfileOptions(record ? Refresh(item) : item, profile); // Parameter könnten sich geändert haben; Browser, Anzeige … des Profils
         if (item.Source?.CopiesToClipboard == true)
@@ -972,7 +1030,7 @@ public sealed partial class AppController : IDisposable
             CopySnippet(item, record);
             return;
         }
-        if (ResolvePlaceholders(item) is not { } resolvedItem) return;
+        if (ResolvePlaceholders(item, presetValues) is not { } resolvedItem) return;
         item = resolvedItem;
         bool remote = item.SupportsRemote && profile.Target != ProfileTarget.Local;
         var mode = Requirements.ModeFor(item, overrideMode ?? ProfileMode(profile), remote);

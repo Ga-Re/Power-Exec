@@ -43,7 +43,7 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
-        if (Cfg.Acrylic) Interop.Acrylic.Apply(_hwnd, true);
+        if (Cfg.Acrylic) Interop.Acrylic.Apply(_hwnd, true, Cfg.AcrylicLevel, AcrylicTint(Cfg));
         UpdateBlurRegion();
         SizeChanged += (_, _) => UpdateBlurRegion();
 
@@ -147,9 +147,6 @@ public partial class PanelWindow : Window
         HidePanel();
     }
 
-    /// <summary>Mindestdeckkraft heller Panels (Lesbarkeit über buntem Hintergrund).</summary>
-    internal const double LightMinOpacity = 0.85;
-
     private static readonly string[] AppearanceKeys =
         ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
 
@@ -164,12 +161,9 @@ public partial class PanelWindow : Window
         Resources.MergedDictionaries.Clear();
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
-        // Acrylic: Hintergrund muss durchscheinen, damit die Weichzeichnung sichtbar ist
-        if (s.Acrylic && !ThemeService.IsHighContrast) opacity = Math.Min(opacity, 0.72);
-        // Helle Fläche: höchstens leicht durchscheinend – sonst färbt der Desktop durch und Schrift, Symbole und Gruppenfarben verlieren Kontrast
-        if (!Vm.IsDarkSurface) opacity = Math.Max(opacity, LightMinOpacity);
+        // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
-        Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast);
+        Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast, s.AcrylicLevel, AcrylicTint(s));
         UseBlurRegion = s.Acrylic && !ThemeService.IsHighContrast;
 
         if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
@@ -206,6 +200,14 @@ public partial class PanelWindow : Window
         }
     }
 
+    /// <summary>Tönung der Weichzeichnung für „Stark“: Panelfarbe bzw. Fläche des Designs (Format 0xRRGGBB).</summary>
+    private static uint AcrylicTint(PanelConfig s)
+    {
+        if (PanelColors.TryParse(s.PanelColor, out var c)) return (uint)(c.R << 16 | c.G << 8 | c.B);
+        var bg = (Application.Current.Resources["Bg.Panel"] as SolidColorBrush)?.Color ?? Colors.Black;
+        return (uint)(bg.R << 16 | bg.G << 8 | bg.B);
+    }
+
     private static Brush Freeze(Brush b)
     {
         b.Freeze();
@@ -217,6 +219,18 @@ public partial class PanelWindow : Window
         var brush = new SolidColorBrush(Color.FromArgb((byte)Math.Round(255 * Math.Clamp(opacity, 0, 1)), c.R, c.G, c.B));
         brush.Freeze();
         return brush;
+    }
+
+    /// <summary>
+    /// Einstellungen oder ein Dialog von Power-Exec ist aktiv: das (angeheftete) Panel nicht mehr darüber legen,
+    /// danach wieder „immer im Vordergrund“.
+    /// </summary>
+    public void SetBehindAppWindows(bool behind)
+    {
+        if (_hwnd == IntPtr.Zero || Topmost == !behind) return;
+        Topmost = !behind;
+        NativeMethods.SetWindowPos(_hwnd, behind ? NativeMethods.HWND_NOTOPMOST : NativeMethods.HWND_TOPMOST, 0, 0, 0, 0,
+            NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE);
     }
 
     public void ApplySettings()

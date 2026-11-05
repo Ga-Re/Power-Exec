@@ -38,7 +38,7 @@ public static class CommandBuilder
 
     /// <param name="doneFile">
     /// Bleibt das Fenster offen (<see cref="ExecutionRequest.NoExit"/>), schreibt das Script nach dem Ende „0“ (ok) bzw.
-    /// den Exit-Code in diese Datei – so erkennt Power-Exec das Ende, obwohl der Prozess weiterläuft.
+    /// den Exit-Code (PowerShell) oder „E“ (Batch: Fehler, Code nicht ermittelbar) in diese Datei – so erkennt Power-Exec das Ende, obwohl der Prozess weiterläuft.
     /// </param>
     public static LocalLaunchSpec BuildLocal(ExecutionRequest r, string? doneFile = null)
     {
@@ -94,7 +94,7 @@ public static class CommandBuilder
                 {
                     // „call“, damit es nach dem Batch weitergeht; „if errorlevel“ wird erst zur Laufzeit ausgewertet
                     cmdArgs = "/k \"call \"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) +
-                              " & if errorlevel 1 (>\"" + doneFile + "\" echo 1) else (>\"" + doneFile + "\" echo 0)\"";
+                              " & if errorlevel 1 (>\"" + doneFile + "\" echo E) else (>\"" + doneFile + "\" echo 0)\"";
                 }
                 return new LocalLaunchSpec
                 {

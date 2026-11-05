@@ -26,7 +26,7 @@ public class DoneSignalTests
     public void BatchUsesCallAndErrorlevel()
     {
         var spec = CommandBuilder.BuildLocal(new ExecutionRequest { Item = Cmd, NoExit = true, ExtraArguments = "-x" }, Done);
-        Assert.Equal("/k \"call \"C:\\My Scripts\\Clean.cmd\" -x & if errorlevel 1 (>\"" + Done + "\" echo 1) else (>\"" + Done + "\" echo 0)\"", spec.Arguments);
+        Assert.Equal("/k \"call \"C:\\My Scripts\\Clean.cmd\" -x & if errorlevel 1 (>\"" + Done + "\" echo E) else (>\"" + Done + "\" echo 0)\"", spec.Arguments);
     }
 
     [Fact]

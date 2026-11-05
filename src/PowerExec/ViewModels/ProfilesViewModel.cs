@@ -318,6 +318,7 @@ public sealed class ProfilesViewModel : ObservableObject
         _category = entry?.Category ?? initialGroup ?? string.Empty;
         _notes = entry?.Notes ?? string.Empty;
         _singleClick = entry?.SingleClick ?? false;
+        _askProfile = entry?.AskProfile switch { true => "yes", false => "no", _ => "default" };
         _tags = Core.Config.Tags.Format(entry?.Tags ?? initialTags?.ToList() ?? new List<string>());
         Categories = GroupManager.All(target);
         if (Entry != null)
@@ -561,6 +562,16 @@ public sealed class ProfilesViewModel : ObservableObject
     /// <summary>Ein Klick im Panel startet sofort (statt aufzuklappen).</summary>
     public bool SingleClick { get => _singleClick; set => Set(ref _singleClick, value); }
 
+    private string _askProfile = "default";
+    /// <summary>Beim Start nach dem Profil fragen: „default“ (wie unter Ausführung), „yes“, „no“.</summary>
+    public string AskProfile { get => _askProfile; set => Set(ref _askProfile, value ?? "default"); }
+    public IReadOnlyList<KeyValuePair<string, string>> AskProfileChoices { get; } = new[]
+    {
+        new KeyValuePair<string, string>("default", "Wie unter Ausführung eingestellt"),
+        new KeyValuePair<string, string>("yes", "Immer nach dem Profil fragen"),
+        new KeyValuePair<string, string>("no", "Nie fragen (Standardprofil)")
+    };
+
     /// <summary>Vorhandene Schlagworte (global) für Vorschläge.</summary>
     public IReadOnlyList<string> AllTagsList => Core.Config.Tags.All(_target);
 
@@ -693,6 +704,7 @@ public sealed class ProfilesViewModel : ObservableObject
             Notes = Notes.Trim(),
             Tags = Core.Config.Tags.Parse(TagsText),
             SingleClick = SingleClick,
+            AskProfile = AskProfile switch { "yes" => true, "no" => false, _ => null },
             Profiles = Profiles.Select(p => p.ToProfile()).ToList()
         };
         if (entry.Category.Length > 0 && !_target.CategoryOrder.Contains(entry.Category, StringComparer.CurrentCultureIgnoreCase))

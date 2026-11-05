@@ -6,7 +6,13 @@
         ShowInTaskbar="True" Topmost="True">
     <StackPanel Margin="24,20,24,20">
         <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-        <TextBlock Text="Werte für diesen Start eingeben." Style="{StaticResource Caption}" Margin="0,2,0,12"/>
+        <TextBlock x:Name="SubHeading" Text="Werte für diesen Start eingeben." Style="{StaticResource Caption}" Margin="0,2,0,12"/>
+        <!-- Profil wählen („Nach Profil fragen“) -->
+        <StackPanel x:Name="ProfileRow" Margin="0,0,0,10" Visibility="Collapsed">
+            <TextBlock Text="Profil" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <ComboBox x:Name="ProfileBox" DisplayMemberPath="Name" AutomationProperties.Name="Profil"/>
+            <TextBlock x:Name="ProfileHint" Style="{StaticResource Caption}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
         <ItemsControl x:Name="Fields" Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>

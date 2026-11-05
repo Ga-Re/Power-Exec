@@ -729,6 +729,9 @@ public sealed class SettingsViewModel : ObservableObject
         new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
         new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
         new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
+        new("exec", "PowerShell", "Beim Start nach dem Profil fragen", "profil auswahl fragen"),
+        new("machines", "Rechnergruppen", "Dynamische Gruppen aus dem AD", "active directory regeln filter ldap dynamisch"),
+        new("look", "Darstellung", "Stärke des Weichzeichners (Acrylic)", "transparenz blur milchglas acrylic"),
         new("exec", "PowerShell", "Editor", "vscode ise notepad"),
         new("remote", "Remote", "PowerShell bei Remote", "winrm 5.1 7"),
         new("remote", "Remote", "HTTPS (Port 5986)", "ssl winrm"),
@@ -1080,7 +1083,7 @@ public sealed class SettingsViewModel : ObservableObject
             else ((List<CategoryItemViewModel>)children[parent]).Add(c);
         }
         // Feste Gruppen an ihrer Position zwischen den Gruppen der obersten Ebene
-        var byName = roots.ToDictionary(r => r.Name, StringComparer.CurrentCultureIgnoreCase);
+        var byName = roots.ToDictionary(r => r.Name, r => r, StringComparer.CurrentCultureIgnoreCase);
         var composed = FixedGroups.Compose(_s, roots.Select(r => r.Name).ToList())
             .Select(k => FixedGroups.IsFixed(k) ? FixedVm(k) : byName[k]).ToList();
         Core.Collections.CollectionSync.SyncTo(CategoryRoots, composed);
@@ -1414,6 +1417,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool NoProfile { get => _s.NoProfile; set { _s.NoProfile = value; OnPropertyChanged(); } }
     public bool NoExit { get => _s.NoExit; set { _s.NoExit = value; OnPropertyChanged(); } }
+    public bool AskProfile { get => _s.AskProfile; set { _s.AskProfile = value; OnPropertyChanged(); } }
     public bool InlineParameters { get => _s.InlineParameters; set { _s.InlineParameters = value; OnPropertyChanged(); } }
     public int ThrottleLimit { get => _s.ThrottleLimit; set { _s.ThrottleLimit = value; OnPropertyChanged(); } }
     public int RemoteTimeoutSeconds { get => _s.RemoteTimeoutSeconds; set { _s.RemoteTimeoutSeconds = value; OnPropertyChanged(); } }

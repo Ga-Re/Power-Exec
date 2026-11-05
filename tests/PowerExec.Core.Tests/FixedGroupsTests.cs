@@ -39,3 +39,23 @@ public class FixedGroupsTests
         Assert.True(s.Panels[0].ShowFavorites);
     }
 }
+
+public class AskProfileTests
+{
+    [Fact]
+    public void OnlyWithSeveralProfilesEntryOverridesGlobal()
+    {
+        var item = new Models.LaunchItem { FullPath = @"C:\S\a.ps1", RootFolder = @"C:\S", Type = Models.ItemType.PowerShell };
+        var s = new AppSettings { AskProfile = true };
+        Assert.False(Profiles.ProfileResolver.AsksProfile(s, item)); // nur das automatische Profil
+        var e = new EntryConfig { Path = item.FullPath, Profiles = { new LaunchProfile { Name = "A", IsDefault = true }, new LaunchProfile { Name = "B" } } };
+        s.Entries.Add(e);
+        Assert.True(Profiles.ProfileResolver.AsksProfile(s, item));
+        e.AskProfile = false;
+        Assert.False(Profiles.ProfileResolver.AsksProfile(s, item));
+        s.AskProfile = false;
+        e.AskProfile = true;
+        Assert.True(Profiles.ProfileResolver.AsksProfile(s, item));
+        Assert.False(new EntryConfig { Path = "x", AskProfile = true }.IsEmpty);
+    }
+}

@@ -195,6 +195,8 @@ public sealed class AppSettings
     public string ExecutionPolicy { get; set; } = "Bypass";
     public bool NoProfile { get; set; } = true;
     public bool NoExit { get; set; } = true;
+    /// <summary>Beim Start eines Eintrags mit mehreren Profilen nach dem Profil fragen (je Eintrag abweichend einstellbar).</summary>
+    public bool AskProfile { get; set; }
     public int ThrottleLimit { get; set; } = 16;
     public int RemoteTimeoutSeconds { get; set; } = 60;
 
