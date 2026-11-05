@@ -7,6 +7,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 2), "Weichzeichner repariert", new[]
+        {
+            "Aero-Blur bleibt nach dem Einfahren erhalten; kein unscharfer Streifen mehr neben dem Panel",
+            "Kein Schließen-Knopf von Windows mehr am Panel",
+            "Deckkraft steht direkt bei Hintergrund und Milchglas, jetzt ab 20 %; mit Weichzeichner wird sie auf 70 % gesetzt, wenn sie auf 100 % stand"
+        }),
         new ReleaseNote(new Version(0, 19, 1), "Hintergrund wählen: Aero, Acrylic, Mica oder Klarglas", new[]
         {
             "Hintergrund hinter dem Panel wählbar: Klarglas, Aero-Blur, Acrylic oder Mica – Ecken rundet Windows 11 jetzt selbst und glatt",

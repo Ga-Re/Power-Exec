@@ -399,8 +399,10 @@ public partial class PanelWindow : Window
             if (_useBlurRegion)
             {
                 StopBlurTracking(clear: show);
-                if (show) Interop.Acrylic.ClearRegion(_hwnd);
+                if (show && !KeepsRegion) Interop.Acrylic.ClearRegion(_hwnd);
             }
+            if (show && _useBlurRegion && KeepsRegion) Dispatcher.BeginInvoke(UpdateBlurRegion, DispatcherPriority.Loaded);
+            if (!show && _useBlurRegion) Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
             Slide.BeginAnimation(property, null);
             Slide.SetValue(property, show ? 0.0 : hiddenOffset);
             PanelBorder.BeginAnimation(OpacityProperty, null);
@@ -464,18 +466,28 @@ public partial class PanelWindow : Window
     private void StopBlurTracking(bool clear)
     {
         if (!_trackingBlur) return;
-        _trackingBlur = false;
         CompositionTarget.Rendering -= OnRenderingBlur;
-        if (clear) Interop.Acrylic.ClearRegion(_hwnd);
-        else Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
+        if (!clear) { _trackingBlur = false; Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0); return; }
+        if (KeepsRegion)
+        {
+            // Aero-Blur zeichnet Windows nur mit Fensterbereich: auf dem Panel stehen lassen
+            UpdateBlurRegion();
+            _trackingBlur = false;
+            return;
+        }
+        _trackingBlur = false;
+        Interop.Acrylic.ClearRegion(_hwnd);
     }
+
+    /// <summary>Aero-Blur braucht dauerhaft einen Fensterbereich (ohne verschwindet der Weichzeichner nach dem Einfahren).</summary>
+    private bool KeepsRegion => _backdrop == PanelBackdrop.Aero;
 
     private void OnRenderingBlur(object? sender, EventArgs e) => UpdateBlurRegion();
 
     /// <summary>Sichtbarer Teil des Panels (mit Verschiebung) als abgerundeter Fensterbereich in Pixeln.</summary>
     private void UpdateBlurRegion()
     {
-        if (!_useBlurRegion || !_trackingBlur || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
+        if (!_useBlurRegion || !(_trackingBlur || KeepsRegion && IsOpen) || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
         var dpi = VisualTreeHelper.GetDpi(this);
         var bounds = PanelBorder.TransformToAncestor(this).TransformBounds(new Rect(0, 0, PanelBorder.ActualWidth, PanelBorder.ActualHeight));
         bounds.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
