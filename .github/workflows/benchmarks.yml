@@ -1,0 +1,43 @@
+name: Benchmarks
+
+# Manuell starten (Actions › Benchmarks › Run workflow). Laufzeit ca. 10 Minuten.
+on:
+  workflow_dispatch:
+    inputs:
+      filter:
+        description: 'Benchmark-Filter (z. B. *Rebuild* oder *)'
+        required: false
+        default: '*'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Benchmarks ausführen
+        run: >
+          dotnet run -c Release --project tests/PowerExec.Core.Benchmarks --
+          --filter "${{ github.event.inputs.filter }}" --exporters github --artifacts bdn
+
+      - name: Ergebnis in die Zusammenfassung
+        if: always()
+        shell: pwsh
+        run: |
+          Get-ChildItem bdn/results -Filter *-report-github.md -ErrorAction SilentlyContinue |
+            ForEach-Object { Get-Content $_.FullName | Add-Content $env:GITHUB_STEP_SUMMARY; '' | Add-Content $env:GITHUB_STEP_SUMMARY }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmarks
+          path: bdn/results
+          retention-days: 90
+          if-no-files-found: ignore

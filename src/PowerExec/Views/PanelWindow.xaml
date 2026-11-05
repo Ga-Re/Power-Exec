@@ -35,7 +35,8 @@
         </Style>
 
         <!-- Menü einer Gruppe (Ordner/Favoriten) -->
-        <ContextMenu x:Key="GroupMenu" x:Shared="False">
+        <!-- Ein Menü je Fenster für alle Gruppen: erst beim Öffnen an die Gruppe gebunden (früher je Gruppe zweimal erzeugt) -->
+        <ContextMenu x:Key="GroupMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
             <MenuItem Header="Neuer Eintrag" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 <MenuItem Header="Neuer Eintrag …" Command="{Binding NewEntryCommand}">
@@ -161,7 +162,8 @@
         </ContextMenu>
 
         <!-- Menü eines Eintrags -->
-        <ContextMenu x:Key="ItemMenu" x:Shared="False">
+        <!-- Ein Menü je Fenster für alle Einträge: erst beim Öffnen an den Eintrag gebunden (früher je Zeile 43 MenuItems beim Erzeugen) -->
+        <ContextMenu x:Key="ItemMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
             <MenuItem Header="{Binding RunHeader}" Command="{Binding RunCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE768;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>

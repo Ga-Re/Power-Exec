@@ -29,6 +29,13 @@ Offen aus Phase 1: globaler Hotkey je Eintrag (A3, optional) – noch nicht umge
 | D2 | Assistent & Neuerungen | Einführung beim ersten Start (Ordner, Rand, Hotkey, Beispiel) und Karte „Neu in dieser Version“ nach Updates |
 | C1 | Mini-Dock am Rand | Schmale Symbolleiste mit Favoriten am Rand; **in den Einstellungen ein- und ausschaltbar** (Standard: aus) |
 
+## Leistung (0.17.0) – umgesetzt
+
+Messbasis (Testbestand mit 500 Einträgen, Benchmarks, Messung im Selbsttest mit Grenzwert), Kontextmenüs einmal je
+Fenster, ViewModels beim Tippen wiederverwenden und Listen abgleichen, Darstellung nur bei Änderung melden,
+Commands erst bei Bedarf, Momentaufnahme der Einstellungen je Rebuild. Tippen im Mittel ~170 ms statt 600–940 ms.
+Details und offene Punkte: [`PERFORMANCE.md`](PERFORMANCE.md).
+
 ## Nachträglich umgesetzt
 
 A1 Spotlight-Modus · B2 Parameter im Panel / Parameter-Sets · B3 Verlauf mit „Erneut ausführen“ · C3 Mehrfachauswahl & Abläufe · D3 Team-Katalog · D4 Geplante Ausführung

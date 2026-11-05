@@ -160,6 +160,27 @@ public sealed partial class AppController
                 var hit = vm.AllItems.FirstOrDefault(i => i.Item.FileName == "Cleanup.cmd");
                 if (hit == null) Fail("Unscharfe Suche: „clnup“ findet Cleanup.cmd nicht");
                 else if (!hit.NameParts.Any(part => part.IsHit)) Fail("Suche: Treffer im Namen werden nicht hervorgehoben");
+
+                // Weitertippen verwendet die ViewModels wieder (0.17) – die Hervorhebung muss trotzdem neu berechnet werden
+                if (hit != null)
+                {
+                    if (!hit.IsSelected) vm.Select(hit); // Select schaltet um
+                    vm.SearchText = "clean";
+                    var again = vm.AllItems.FirstOrDefault(i => i.Key == hit.Key); // dieselbe Gruppe (nicht „Beste Treffer“)
+                    if (again == null) Fail("Suche: „clean“ findet Cleanup.cmd nicht");
+                    else
+                    {
+                        if (!ReferenceEquals(again, hit)) Fail("Suche: Eintrag wird beim Weitertippen neu erzeugt statt wiederverwendet");
+                        var marked = string.Concat(again.NameParts.Where(part => part.IsHit).Select(part => part.Text));
+                        if (!marked.Equals("Clean", StringComparison.OrdinalIgnoreCase)) Fail($"Suche: Hervorhebung nach dem Weitertippen falsch („{marked}“ statt „Clean“)");
+                        if (!again.IsSelected || vm.SelectedItem != again) Fail("Suche: Auswahl geht beim Weitertippen verloren");
+                    }
+                    vm.SearchText = "zzzz-nichts";
+                    vm.SearchText = "clean";
+                    if (vm.AllItems.Count(i => i.IsSelected) > 1) Fail("Suche: mehrere Einträge gleichzeitig ausgewählt");
+                    if (vm.AllItems.FirstOrDefault(i => i.Item.FileName == "Cleanup.cmd") is { IsSelected: true })
+                        Fail("Suche: Auswahl kehrt zurück, nachdem der Eintrag nicht mehr gefunden wurde");
+                }
                 vm.SearchText = "typ:cmd";
                 if (vm.SearchChips.Count != 1 || vm.SearchChips[0].IsInvalid) Fail("Suche: Filter-Chip für typ:cmd fehlt");
                 if (!vm.AllItems.Any() || vm.AllItems.Any(i => i.Item.Type != PowerExec.Core.Models.ItemType.Batch)) Fail("Suche: typ:cmd filtert nicht nach Batch");
@@ -209,6 +230,19 @@ public sealed partial class AppController
                 vm.ConfirmGroupJump();
                 await Settle();
                 if (vm.ShowGroupJump) Fail("Strg+K: Auswahl schließt die Gruppensuche nicht");
+
+                // Geteiltes Kontextmenü: folgt dem jeweiligen Eintrag und vergisst sein Ziel beim Schließen
+                var sharedMenu = host.Window.ItemMenu;
+                foreach (var menuItem in vm.VisibleItems.Where(i => !i.IsSingleClick).Take(2).ToList())
+                {
+                    if (!host.Window.OpenItemMenu(menuItem)) { Fail($"Kontextmenü: öffnet für „{menuItem.DisplayName}“ nicht"); continue; }
+                    await Settle();
+                    if (!ReferenceEquals(sharedMenu.DataContext, menuItem))
+                        Fail($"Kontextmenü: zeigt nicht „{menuItem.DisplayName}“, sondern {(sharedMenu.DataContext as ItemViewModel)?.DisplayName ?? "nichts"}");
+                    sharedMenu.IsOpen = false;
+                    await Settle();
+                    if (sharedMenu.PlacementTarget != null) Fail("Kontextmenü: Ziel bleibt nach dem Schließen gesetzt");
+                }
                 host.Window.HidePanel();
                 await Settle();
             }
@@ -694,6 +728,9 @@ public sealed partial class AppController
             // Arbeitsbereich wechseln
             SwitchWorkspace("Kunde A");
             await Settle();
+
+            // Zuletzt: Leistungsmessung mit 500 Einträgen (verändert Einstellungen und Ordner)
+            await RunPerformanceAsync(dir);
         }
         catch (Exception ex)
         {

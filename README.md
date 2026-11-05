@@ -205,6 +205,11 @@ dotnet test tests/PowerExec.Core.Tests
 ```
 
 ```bash
+# Leistung des Datenteils (BenchmarkDotNet); Oberfläche misst der Selbsttest in der CI
+dotnet run -c Release --project tests/PowerExec.Core.Benchmarks -- --filter *
+```
+
+```bash
 dotnet build src/PowerExec/PowerExec.csproj
 ```
 
@@ -217,6 +222,7 @@ Aufbau:
 - `src/PowerExec.Core` – plattformunabhängige Logik: Ordnersuche, Ausschlüsse, Script-Hilfe und Parameter (über den PowerShell-Parser), Befehlsaufbau, Remote-Runner, Update-Prüfung
 - `src/PowerExec` – WPF-Anwendung: Panel, Dialoge, Einstellungen, Windows-Integration
 - `tests/PowerExec.Core.Tests` – Tests für die Kernlogik
+- `tests/PowerExec.Core.Benchmarks` – Benchmarks; Messverfahren, Ausgangswerte und Verlauf in [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md)
 - `installer/PowerExec.iss` – Installer (Inno Setup 6)
 
 ### Releases

@@ -35,6 +35,9 @@ public static class RunStats
                 s.RunStats.Remove(old);
     }
 
+    /// <summary>Aktueller Wert eines gespeicherten Eintrags (für <see cref="SettingsLookup"/>).</summary>
+    public static double ValueOf(RunStat stat, DateTime nowUtc) => stat.Score * Decay(stat.LastUtc, nowUtc);
+
     /// <summary>Aktueller Wert: 0 = nie oder vor langer Zeit gestartet.</summary>
     public static double Frecency(AppSettings s, string path, DateTime? nowUtc = null)
     {

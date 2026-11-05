@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
@@ -24,7 +25,7 @@ public sealed class GroupViewModel : ObservableObject
         Depth = GroupPath != null ? Core.Config.GroupManager.DepthOf(title) : 0;
         IsFavorites = isFavorites;
         FolderPath = folderPath;
-        Items = items;
+        Items = new ObservableCollection<ItemViewModel>(items);
         _isExpanded = expanded;
         Error = error;
 
@@ -79,8 +80,8 @@ public sealed class GroupViewModel : ObservableObject
     /// <summary>Pfad für die Anzeige („Kunde A › AD“); bei Sondergruppen der Titel.</summary>
     public string Breadcrumb => GroupPath != null ? string.Join(" › ", GroupPath.Split(GroupManager.Separator)) : Title;
 
-    /// <summary>Untergruppen (nur bei eigenen Gruppen).</summary>
-    public List<GroupViewModel> Children { get; } = new();
+    /// <summary>Untergruppen (nur bei eigenen Gruppen). Beim Rebuild abgeglichen statt neu erzeugt.</summary>
+    public ObservableCollection<GroupViewModel> Children { get; } = new();
     public bool HasChildren => Children.Count > 0;
 
     /// <summary>Einträge dieser Gruppe und aller Untergruppen.</summary>
@@ -160,7 +161,9 @@ public sealed class GroupViewModel : ObservableObject
     public bool IsFavorites { get; }
     public bool IsFolder => FolderPath != null;
     public string Kind { get; }
-    public bool AllowReorder { get; }
+    private bool _allowReorder;
+    /// <summary>Reihenfolge per Drag &amp; Drop änderbar (nicht während der Suche) – ändert sich beim Wiederverwenden.</summary>
+    public bool AllowReorder { get => _allowReorder; internal set => Set(ref _allowReorder, value); }
 
     /// <summary>Symbol im Gruppenkopf (Segoe Fluent Icons).</summary>
     /// <summary>Tooltip am Punkt der Sprungleiste.</summary>
@@ -182,7 +185,8 @@ public sealed class GroupViewModel : ObservableObject
         _ => "\uE8B7"
     };
     public string? FolderPath { get; }
-    public IReadOnlyList<ItemViewModel> Items { get; }
+    /// <summary>Einträge der Gruppe; beim Rebuild abgeglichen (siehe <see cref="Core.Collections.CollectionSync"/>).</summary>
+    public ObservableCollection<ItemViewModel> Items { get; }
     public string CountText => TotalCount.ToString();
     public string? Error { get; }
     public bool HasError => !string.IsNullOrEmpty(Error);
@@ -194,6 +198,19 @@ public sealed class GroupViewModel : ObservableObject
         {
             if (Set(ref _isExpanded, value)) { _panel.OnGroupExpandedChanged(this); OnPropertyChanged(nameof(ShowDropHint)); }
         }
+    }
+
+    /// <summary>Kann diese Gruppe für einen neuen Rebuild weiterverwendet werden? (Alles, was im Konstruktor feststeht, ist gleich.)</summary>
+    internal bool CanReuseFor(string title, string kind, bool isFavorites, string? folderPath, string? error) =>
+        Title == (kind is "group" or "subfolder" ? GroupManager.LeafOf(title) : title) &&
+        GroupPath == (kind is "group" or "subfolder" ? title : null) &&
+        Kind == kind && IsFavorites == isFavorites && FolderPath == folderPath && Error == error;
+
+    /// <summary>Nach dem Abgleich von Einträgen und Untergruppen: abhängige Anzeigen aktualisieren.</summary>
+    internal void RaiseContentChanged()
+    {
+        foreach (var p in new[] { nameof(TotalCount), nameof(CountText), nameof(HasChildren), nameof(IsEmptyUserGroup), nameof(ShowDropHint), nameof(RailToolTip) })
+            OnPropertyChanged(p);
     }
 
     internal void SetExpandedSilently(bool value)
