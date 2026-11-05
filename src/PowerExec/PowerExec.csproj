@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -10,8 +10,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\PowerExec.ico</ApplicationIcon>
     <SatelliteResourceLanguages>de;en</SatelliteResourceLanguages>
-    <!-- WFAC010 betrifft WinForms-Apps; für WPF ist die DPI-Angabe im Manifest richtig. -->
-    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+    <!-- WFAC010/WFO0003 (neuer Name ab .NET 9) betreffen WinForms-Apps; für WPF ist die DPI-Angabe im Manifest richtig. -->
+    <NoWarn>$(NoWarn);WFAC010;WFO0003</NoWarn>
   </PropertyGroup>
   <!-- Einzeldatei-Veröffentlichung (siehe .github/workflows/release.yml) -->
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
@@ -22,6 +22,8 @@
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
     <Using Include="System.IO" />
+    <!-- Seit .NET 9 gibt es System.Windows.ThemeMode (Fluent-Theme von WPF); gemeint ist immer die eigene Einstellung -->
+    <Using Include="PowerExec.Core.Config.ThemeMode" Alias="ThemeMode" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\PowerExec.ico" />
