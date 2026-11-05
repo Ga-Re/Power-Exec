@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>0.19.3</Version>
+    <Version>0.19.4</Version>
     <Authors>Ga-Re</Authors>
     <Product>Power-Exec</Product>
     <LangVersion>latest</LangVersion>
