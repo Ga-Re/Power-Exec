@@ -7,6 +7,10 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 3), "Weichzeichner fährt mit dem Panel", new[]
+        {
+            "Aero-Blur, Acrylic und Mica fahren genau mit dem Panel ein und aus – kein Hintergrund mehr vor oder nach dem Panel"
+        }),
         new ReleaseNote(new Version(0, 19, 2), "Weichzeichner repariert", new[]
         {
             "Aero-Blur bleibt nach dem Einfahren erhalten; kein unscharfer Streifen mehr neben dem Panel",

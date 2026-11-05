@@ -44,6 +44,9 @@ public partial class PanelWindow : Window
                 CaptionHeight = 0, GlassFrameThickness = new Thickness(-1), ResizeBorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(0), UseAeroCaptionButtons = false
             });
+            // Größe bestimmt allein das Fenster (beim Ein-/Ausfahren wächst es vom Rand); der Panelrahmen hat feste Größe
+            ClearValue(WidthProperty);
+            ClearValue(HeightProperty);
         }
         DataContext = host.ViewModel;
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
@@ -63,8 +66,6 @@ public partial class PanelWindow : Window
             src.AddHook(SystemWindowHook);
         }
         ApplyBackdrop();
-        // Bis zum ersten Einfahren nichts zeigen (sonst stünde der Hintergrund kurz in voller Größe da)
-        if (_systemWindow) Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
         SizeChanged += (_, _) => UpdateBlurRegion();
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -125,6 +126,12 @@ public partial class PanelWindow : Window
         // Für „Text einfügen“: das Fenster merken, in dem vorher gearbeitet wurde
         var fg = NativeMethods.GetForegroundWindow();
         if (fg != IntPtr.Zero && fg != _hwnd) Services.ForegroundTracker.Remember(fg);
+        if (_systemWindow && !IsVisible)
+        {
+            // Fenster beginnt als schmaler Streifen am Rand – kein Hintergrund vor dem Panel
+            BeginAnimation(RevealProperty, null);
+            Reveal = 0;
+        }
         Place();
         if (!IsVisible) Show();
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
@@ -185,7 +192,7 @@ public partial class PanelWindow : Window
         // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
-        UseBlurRegion = _systemWindow;
+        UseBlurRegion = false; // Weichzeichner-Varianten: das Fenster selbst wächst beim Einfahren (siehe Reveal)
 
         if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
         {
@@ -315,12 +322,23 @@ public partial class PanelWindow : Window
     {
         if (_monitor == null) return;
         _rect = ScreenService.PanelRect(_monitor, Cfg);
-        ScreenService.Place(_hwnd, _rect);
-        // WPF-Größe angleichen: sonst bleibt der Inhalt bei der Größe aus der XAML und das Fenster ist breiter als das Panel
-        // (bei Weichzeichner sichtbar als unscharfer Streifen neben dem Panel)
         var dpi = VisualTreeHelper.GetDpi(this);
-        Width = _rect.Width / dpi.DpiScaleX;
-        Height = _rect.Height / dpi.DpiScaleY;
+        if (_systemWindow)
+        {
+            // Panelrahmen in voller Größe, zur Bildschirmmitte hin ausgerichtet; das Fenster zeigt davon den eingefahrenen Teil
+            PanelBorder.Width = _rect.Width / dpi.DpiScaleX;
+            PanelBorder.Height = _rect.Height / dpi.DpiScaleY;
+            PanelBorder.HorizontalAlignment = Cfg.Edge == ScreenEdge.Left ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+            PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
+            ApplyReveal();
+        }
+        else
+        {
+            ScreenService.Place(_hwnd, _rect);
+            // WPF-Größe angleichen: sonst bliebe der Inhalt bei der Größe aus der XAML
+            Width = _rect.Width / dpi.DpiScaleX;
+            Height = _rect.Height / dpi.DpiScaleY;
+        }
         PlaceGrips();
     }
 
@@ -381,9 +399,68 @@ public partial class PanelWindow : Window
             Dispatcher.BeginInvoke(() => Vm.SwitchWorkspaceCommand.Execute(name));
     }
 
+    // ---- Weichzeichner-Varianten: Fenster wächst vom Rand (Hintergrund liegt immer genau unter dem Panel) -------
+
+    /// <summary>0 = eingefahren (nur ein Pixel am Rand), 1 = ganz ausgefahren.</summary>
+    public static readonly DependencyProperty RevealProperty = DependencyProperty.Register(
+        nameof(Reveal), typeof(double), typeof(PanelWindow), new PropertyMetadata(1.0, (d, _) => ((PanelWindow)d).ApplyReveal()));
+
+    public double Reveal { get => (double)GetValue(RevealProperty); set => SetValue(RevealProperty, value); }
+
+    /// <summary>Fenster auf den ausgefahrenen Teil des Panels setzen (am Rand verankert).</summary>
+    private void ApplyReveal()
+    {
+        if (!_systemWindow || _hwnd == IntPtr.Zero || _rect.Width <= 0) return;
+        var r = _rect;
+        var f = Math.Clamp(Reveal, 0, 1);
+        int x = r.Left, y = r.Top, w = r.Width, h = r.Height;
+        switch (Cfg.Edge)
+        {
+            case ScreenEdge.Right: w = Math.Max(1, (int)Math.Round(r.Width * f)); x = r.Right - w; break;
+            case ScreenEdge.Left: w = Math.Max(1, (int)Math.Round(r.Width * f)); break;
+            case ScreenEdge.Bottom: h = Math.Max(1, (int)Math.Round(r.Height * f)); y = r.Bottom - h; break;
+            default: h = Math.Max(1, (int)Math.Round(r.Height * f)); break;
+        }
+        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, x, y, w, h, NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
+        if (KeepsRegion)
+        {
+            // Aero-Blur braucht einen Fensterbereich: abgerundet auf die aktuelle Fenstergröße
+            var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
+            Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, w, h, radius);
+        }
+    }
+
+    private void AnimateReveal(bool show, TimeSpan duration)
+    {
+        Slide.BeginAnimation(TranslateTransform.XProperty, null);
+        Slide.BeginAnimation(TranslateTransform.YProperty, null);
+        Slide.X = 0;
+        Slide.Y = 0;
+        PanelBorder.BeginAnimation(OpacityProperty, null);
+        PanelBorder.Opacity = 1;
+        if (duration == TimeSpan.Zero)
+        {
+            BeginAnimation(RevealProperty, null);
+            Reveal = show ? 1 : 0;
+            if (!show) FinishHide();
+            return;
+        }
+        var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? duration : TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7))
+        {
+            EasingFunction = new CubicEase { EasingMode = show ? EasingMode.EaseOut : EasingMode.EaseIn }
+        };
+        if (!show) anim.Completed += (_, _) => { if (_hiding) FinishHide(); };
+        BeginAnimation(RevealProperty, anim);
+    }
+
     private void Animate(bool show)
     {
         var duration = AnimationDuration;
+        if (_systemWindow)
+        {
+            AnimateReveal(show, duration);
+            return;
+        }
         var edge = Cfg.Edge;
         double distance = edge is ScreenEdge.Left or ScreenEdge.Right
             ? (ActualWidth > 0 ? ActualWidth : Cfg.PanelWidth) + 24
