@@ -7,6 +7,14 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 1), "Hintergrund wählen: Aero, Acrylic, Mica oder Klarglas", new[]
+        {
+            "Hintergrund hinter dem Panel wählbar: Klarglas, Aero-Blur, Acrylic oder Mica – Ecken rundet Windows 11 jetzt selbst und glatt",
+            "Milchglas-Regler statt Stufen; Windows 10 bekommt bei Acrylic und Mica automatisch Aero-Blur",
+            "„Nach Profil fragen“ greift jetzt auch beim Start aus dem Panel, mit Alt+1 … 9 und im Spotlight",
+            "Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge) lassen sich auch im Panel verschieben",
+            "Liste ↔ Raster je Gruppe ändert die Höhe weich; Schieberegler bei „Zuletzt ausgeführt“ wieder bedienbar"
+        }),
         new ReleaseNote(new Version(0, 19, 0), "Dynamische Rechnergruppen, feste Gruppen frei anordnen", new[]
         {
             "Rechnergruppen dynamisch aus dem AD: Regeln wie „Betriebssystem enthält Server“, in Blöcken mit UND/ODER kombiniert; Aktualisierung beim Start und regelmäßig",

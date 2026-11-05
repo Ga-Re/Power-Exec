@@ -740,7 +740,8 @@
                     <TextBlock Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Vis}}" FontSize="12"
                                Foreground="{DynamicResource Status.Warning}" Margin="38,0,8,6" TextWrapping="Wrap"/>
                     <!-- Inhalt klappt beim Klick auf den Kopf weich auf und zu -->
-                    <c:CollapsePanel Animate="{Binding AnimateExpand}" IsExpanded="{Binding IsExpanded}">
+                    <c:CollapsePanel Animate="{Binding AnimateExpand}" IsExpanded="{Binding IsExpanded}"
+                                     AnimateResize="{Binding AnimateResize}" TransitionKey="{Binding IsGrid}">
                     <StackPanel>
                         <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
                             <ItemsControl.Style>
@@ -847,6 +848,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
+            <!-- Milchglas: Schleier über dem Weichzeichner (Farbe setzt ApplyAppearance) -->
+            <Border x:Name="FrostLayer" Grid.RowSpan="8" IsHitTestVisible="False" Panel.ZIndex="-1"/>
 
             <!-- Kopfzeile: Titel und Arbeitsbereich schrumpfen, die Knöpfe bleiben immer sichtbar -->
             <Grid Margin="14,10,8,8">

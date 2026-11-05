@@ -180,15 +180,58 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
         : "Farbe des Designs";
 
-    public bool Acrylic { get => _c.Acrylic; set { _c.Acrylic = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); } }
-
-    /// <summary>Stärke der Weichzeichnung (1 leicht, 2 mittel, 3 stark).</summary>
-    public int AcrylicLevel
+    public bool Acrylic
     {
-        get => _c.AcrylicLevel;
-        set { _c.AcrylicLevel = Math.Clamp(value, 1, 3); OnPropertyChanged(); OnPropertyChanged(nameof(AcrylicLevelText)); }
+        get => _c.Acrylic;
+        set { _c.Acrylic = value; _c.Backdrop = value ? PanelBackdrop.Acrylic : PanelBackdrop.Clear; RaiseBackdrop(); }
     }
-    public string AcrylicLevelText => _c.AcrylicLevel switch { 1 => "Leicht", 3 => "Stark", _ => "Mittel" };
+
+    /// <summary>Hintergrund hinter dem Panel (Klarglas, Aero-Blur, Acrylic, Mica).</summary>
+    public PanelBackdrop Backdrop
+    {
+        get => _c.EffectiveBackdropSetting;
+        set { _c.Backdrop = value; _c.Acrylic = value != PanelBackdrop.Clear; RaiseBackdrop(); }
+    }
+
+    public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops { get; } = new[]
+    {
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, "Klarglas (nur Deckkraft)"),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Aero, "Aero-Blur"),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Acrylic, "Acrylic (Windows 11)"),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Mica, "Mica (Windows 11)")
+    };
+
+    /// <summary>Was die Variante macht – und was auf diesem PC tatsächlich läuft.</summary>
+    public string BackdropDescription
+    {
+        get
+        {
+            var wanted = _c.EffectiveBackdropSetting;
+            var text = wanted switch
+            {
+                PanelBackdrop.Aero => "Klassischer Weichzeichner ohne Rauschen – der Desktop dahinter bleibt eher erkennbar.",
+                PanelBackdrop.Acrylic => "Acrylic wie Startmenü und Kontextmenüs: starker Weichzeichner, leichtes Rauschen, Ecken rundet Windows.",
+                PanelBackdrop.Mica => "Nimmt nur die Farbstimmung des Hintergrundbilds auf, kein Durchblick – ruhig und gut lesbar.",
+                _ => "Kein Weichzeichner; unter 100 % Deckkraft scheint der Desktop leicht durch."
+            };
+            var effective = PanelBackdrops.Effective(wanted, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+            if (effective != wanted)
+                text += effective == PanelBackdrop.Clear
+                    ? " Im Kontrastdesign ist das Panel deckend."
+                    : $" Auf diesem PC (vor Windows 11 22H2) läuft stattdessen {PanelBackdrops.Label(effective)}.";
+            return text;
+        }
+    }
+
+    public bool ShowFrost => PanelBackdrops.SupportsFrost(PanelBackdrops.Effective(_c.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, false));
+
+    /// <summary>Milchglas 0–60 %.</summary>
+    public int Frost { get => _c.Frost; set { _c.Frost = Math.Clamp(value, 0, 60); OnPropertyChanged(); } }
+
+    private void RaiseBackdrop()
+    {
+        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewBrush) }) OnPropertyChanged(p);
+    }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
     public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }

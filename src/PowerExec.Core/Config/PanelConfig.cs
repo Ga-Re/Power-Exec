@@ -28,11 +28,17 @@ public sealed class PanelConfig
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
     public string PanelColor { get; set; } = string.Empty;
     public int PanelOpacity { get; set; } = 100;
-    /// <summary>Acrylic: Hintergrund hinter dem Panel weichzeichnen (Windows 10 1803+; sonst nur Weichzeichnen).</summary>
+    /// <summary>Bis 0.19: Acrylic an/aus – wird zu <see cref="Backdrop"/> (und bleibt dazu passend gesetzt).</summary>
     public bool Acrylic { get; set; }
 
-    /// <summary>Stärke der Weichzeichnung: 1 leicht, 2 mittel (Acrylic), 3 stark (mit Milchglas-Tönung).</summary>
-    public int AcrylicLevel { get; set; } = 2;
+    /// <summary>Hintergrund hinter dem Panel: Klarglas, Aero-Blur, Acrylic oder Mica (null = aus <see cref="Acrylic"/> übernehmen).</summary>
+    public PanelBackdrop? Backdrop { get; set; }
+
+    /// <summary>Milchglas: heller bzw. dunkler Schleier über dem Weichzeichner, 0–60 %.</summary>
+    public int Frost { get; set; } = 15;
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public PanelBackdrop EffectiveBackdropSetting => Backdrop ?? (Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear);
 
     /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
     public bool ShowDock { get; set; }
@@ -82,7 +88,7 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, AcrylicLevel = AcrylicLevel, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
         ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
@@ -111,7 +117,9 @@ public sealed class PanelConfig
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
-        AcrylicLevel = Math.Clamp(AcrylicLevel == 0 ? 2 : AcrylicLevel, 1, 3);
+        Backdrop ??= Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear;
+        Acrylic = Backdrop != PanelBackdrop.Clear;
+        Frost = Math.Clamp(Frost, 0, 60);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);
         HotZoneLength = Math.Clamp(HotZoneLength, 40, 4000);

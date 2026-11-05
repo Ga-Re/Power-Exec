@@ -52,11 +52,12 @@ public static class Appearance
             panel.PanelColor = p.PanelColor;
             panel.PanelOpacity = p.Opacity;
             panel.Acrylic = p.Acrylic;
+            panel.Backdrop = p.Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear;
         }
     }
 
     /// <summary>Passende Vorlage zum aktuellen Stand (für die Markierung), sonst null.</summary>
     public static DesignPreset? Current(AppSettings s) => Presets.FirstOrDefault(p =>
         p.Theme == s.Theme && p.WindowsAccent == s.UseWindowsAccent && p.Backdrop == s.WindowBackdrop &&
-        s.Panels.All(x => string.Equals(x.PanelColor, p.PanelColor, StringComparison.OrdinalIgnoreCase) && x.PanelOpacity == p.Opacity && x.Acrylic == p.Acrylic));
+        s.Panels.All(x => string.Equals(x.PanelColor, p.PanelColor, StringComparison.OrdinalIgnoreCase) && x.PanelOpacity == p.Opacity && (x.EffectiveBackdropSetting != PanelBackdrop.Clear) == p.Acrylic));
 }

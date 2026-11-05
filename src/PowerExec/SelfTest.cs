@@ -347,6 +347,29 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica");
+            {
+                var cfg = Settings.Panels[0];
+                var before = cfg.Backdrop;
+                foreach (var b in new[] { PanelBackdrop.Clear, PanelBackdrop.Aero, PanelBackdrop.Mica, PanelBackdrop.Acrylic })
+                {
+                    cfg.Backdrop = b;
+                    cfg.Frost = 30;
+                    CreateHosts();
+                    var host = _hosts[0];
+                    var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+                    if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
+                    if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
+                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + b.ToString().ToLowerInvariant());
+                    host.Window.HidePanel();
+                    await Settle();
+                }
+                cfg.Backdrop = before;
+                CreateHosts();
+            }
+
             Step("Darstellung: Windows-Akzentfarbe und Größe");
             {
                 Settings.UseWindowsAccent = true;

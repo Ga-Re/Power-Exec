@@ -59,3 +59,52 @@ public class AskProfileTests
         Assert.False(new EntryConfig { Path = "x", AskProfile = true }.IsEmpty);
     }
 }
+
+public class MoveTopLevelTests
+{
+    [Fact]
+    public void FixedAndUserGroupsReorder()
+    {
+        var s = new AppSettings { CategoryOrder = { "A", "A/x", "B", "C" } };
+        Assert.Equal(FixedGroups.Favorites, FixedGroups.MoveTopLevel(s, FixedGroups.Favorites, "B", after: true));
+        Assert.Equal(new[] { FixedGroups.Recent, "A", "B", FixedGroups.Favorites, "C", FixedGroups.Custom },
+            FixedGroups.Compose(s, new[] { "A", "B", "C" }));
+
+        // Eigene Gruppe vor eine feste Gruppe
+        Assert.Equal("C", FixedGroups.MoveTopLevel(s, "C", FixedGroups.Recent, after: false));
+        Assert.Equal(new[] { "C", "A", "A/x", "B" }, GroupManager.All(s));
+        Assert.Equal(FixedGroups.Recent, FixedGroups.Compose(s, new[] { "C", "A", "B" })[1]);
+
+        // Untergruppe neben eine feste Gruppe: wird zur obersten Ebene
+        Assert.Equal("x", FixedGroups.MoveTopLevel(s, "A/x", FixedGroups.Custom, after: false));
+        Assert.Contains("x", GroupManager.All(s));
+        Assert.DoesNotContain("A/x", GroupManager.All(s));
+        var top = GroupManager.All(s).Where(p => GroupManager.ParentOf(p) == null).ToList();
+        var full = FixedGroups.Compose(s, top);
+        Assert.Equal(full.IndexOf("x") + 1, full.IndexOf(FixedGroups.Custom));
+    }
+}
+
+public class PanelBackdropTests
+{
+    [Fact]
+    public void OldAcrylicSwitchBecomesBackdrop()
+    {
+        var p = new PanelConfig { Acrylic = true };
+        p.Normalize();
+        Assert.Equal(PanelBackdrop.Acrylic, p.Backdrop);
+        var q = new PanelConfig { Backdrop = PanelBackdrop.Clear, Acrylic = true };
+        q.Normalize();
+        Assert.False(q.Acrylic);
+    }
+
+    [Fact]
+    public void FallbacksByWindowsVersion()
+    {
+        Assert.Equal(PanelBackdrop.Acrylic, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 22631, false));
+        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 19045, false));
+        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Mica, 22000, false));
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Mica, 26100, true));
+        Assert.False(PanelBackdrops.SupportsFrost(PanelBackdrop.Mica));
+    }
+}
