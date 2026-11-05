@@ -1094,6 +1094,113 @@ public sealed class PanelViewModel : ObservableObject
 
     public ICommand NewGroupCommand => new RelayCommand(() => _app.CreateGroup());
 
+    // ---- Gruppen ziehen: Lücke an der Zielstelle (Optionen unter Panel › Verhalten) ----------------
+
+    private GroupViewModel? _dragGroup;
+    private GroupViewModel? _gapGroup;
+    private GroupDropPlan? _dropPlan;
+    private string _dragLabel = string.Empty;
+    private System.Windows.Media.Brush? _dragBrush;
+    private bool _groupDragCompact;
+
+    /// <summary>Text im Platzhalter und im Ziehbild: Name der Gruppe (+ Zahl der Untergruppen).</summary>
+    public string DragLabel { get => _dragLabel; private set => Set(ref _dragLabel, value); }
+    /// <summary>Farbe der gezogenen Gruppe (Punkt im Platzhalter).</summary>
+    public System.Windows.Media.Brush? DragBrush { get => _dragBrush; private set => Set(ref _dragBrush, value); }
+    /// <summary>Während des Ziehens nur Gruppenköpfe zeigen (Option „Inhalte beim Ziehen zuklappen“).</summary>
+    public bool GroupDragCompact { get => _groupDragCompact; private set => Set(ref _groupDragCompact, value); }
+    /// <summary>Lücke weich öffnen (Option und Einstellung „Animation“).</summary>
+    public bool AnimateDropGap => _app.Settings.GroupDragAnimate && _app.Settings.Animation != AnimationMode.Off;
+    public bool IsDraggingGroup => _dragGroup != null;
+    public GroupViewModel? DraggedGroup => _dragGroup;
+    public GroupDropPlan? CurrentGroupDropPlan => _dropPlan;
+
+    /// <summary>Ziehen einer eigenen Gruppe beginnt: Quelle macht Platz, Inhalte ggf. zuklappen.</summary>
+    public void BeginGroupDrag(GroupViewModel group)
+    {
+        EndGroupDrag();
+        if (!group.IsUserGroup || group.GroupPath == null) return;
+        _dragGroup = group;
+        var sub = group.SelfAndDescendants.Count() - 1;
+        DragLabel = group.Title + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
+        DragBrush = group.AccentBrush;
+        OnPropertyChanged(nameof(AnimateDropGap));
+        group.IsDragSource = true;
+        GroupDragCompact = _app.Settings.GroupDragCollapse;
+    }
+
+    /// <summary>Eigene Gruppen in Anzeigereihenfolge, soweit sichtbar (eingeklappte Untergruppen nicht).</summary>
+    internal List<string> VisibleUserGroupOrder()
+    {
+        var order = new List<string>();
+        void Walk(GroupViewModel g)
+        {
+            if (g.IsUserGroup && g.GroupPath != null) order.Add(g.GroupPath);
+            if (g.IsExpanded) foreach (var c in g.Children) Walk(c);
+        }
+        foreach (var g in Groups) Walk(g);
+        return order;
+    }
+
+    /// <summary>
+    /// Ziel für die Mausposition bestimmen und die Lücke dort öffnen. <paramref name="levelOffset"/> = seitlicher Versatz in Ebenen.
+    /// </summary>
+    public GroupDropPlan? PreviewGroupDrop(GroupViewModel hovered, GroupDropZone zone, int levelOffset)
+    {
+        if (_dragGroup?.GroupPath is not { } dragged) return null;
+        var plan = !hovered.IsUserGroup || hovered.GroupPath == null
+            ? new GroupDropPlan { IsValid = false, Reason = "Gruppen lassen sich nur zwischen eigenen Gruppen ablegen." }
+            : GroupDropPlanner.Plan(VisibleUserGroupOrder(), dragged, hovered.GroupPath, zone, levelOffset, siblingsOnly: false,
+                path => GroupManager.Exists(_app.Settings, path));
+        _dropPlan = plan;
+        GroupViewModel? target = null;
+        GroupDropSlot slot = GroupDropSlot.None;
+        if (plan.IsValid && !(plan.IsNoOp && GroupManager.IsSameOrBelow(hovered.GroupPath ?? string.Empty, dragged)))
+        {
+            target = AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, plan.Target, StringComparison.CurrentCultureIgnoreCase));
+            slot = plan.Position switch
+            {
+                GroupDropPosition.Before => GroupDropSlot.Before,
+                GroupDropPosition.After => GroupDropSlot.After,
+                _ => GroupDropSlot.Inside
+            };
+        }
+        if (!ReferenceEquals(_gapGroup, target) && _gapGroup != null) _gapGroup.DropSlot = GroupDropSlot.None;
+        _gapGroup = target;
+        if (target != null) target.DropSlot = slot;
+        return plan;
+    }
+
+    /// <summary>Über der leeren Fläche unter allen Gruppen: hinter die letzte sichtbare Gruppe.</summary>
+    public GroupDropPlan? PreviewGroupDropAtEnd(int levelOffset)
+    {
+        var last = VisibleUserGroupOrder().LastOrDefault(p => _dragGroup?.GroupPath == null || !GroupManager.IsSameOrBelow(p, _dragGroup.GroupPath));
+        var lastVm = last == null ? null : AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, last, StringComparison.CurrentCultureIgnoreCase));
+        return lastVm == null ? null : PreviewGroupDrop(lastVm, GroupDropZone.After, levelOffset);
+    }
+
+    /// <summary>Loslassen: geplante Verschiebung ausführen. true, wenn sich etwas geändert hat.</summary>
+    public bool CommitGroupDrop()
+    {
+        var plan = _dropPlan;
+        var path = _dragGroup?.GroupPath;
+        EndGroupDrag();
+        if (plan is not { IsValid: true, IsNoOp: false } || path == null) return false;
+        _app.MoveGroupTo(path, plan.Target, plan.Position);
+        return true;
+    }
+
+    /// <summary>Ziehen beendet oder abgebrochen: Lücke schließen, Quelle wieder zeigen.</summary>
+    public void EndGroupDrag()
+    {
+        if (_gapGroup != null) _gapGroup.DropSlot = GroupDropSlot.None;
+        _gapGroup = null;
+        if (_dragGroup != null) _dragGroup.IsDragSource = false;
+        _dragGroup = null;
+        _dropPlan = null;
+        GroupDragCompact = false;
+    }
+
     /// <summary>Drag &amp; Drop einer Gruppe auf eine andere.</summary>
     public void MoveGroup(GroupViewModel dragged, GroupViewModel target, GroupDropPosition position)
     {

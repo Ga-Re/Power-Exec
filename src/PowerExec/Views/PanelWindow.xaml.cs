@@ -536,61 +536,83 @@ public partial class PanelWindow : Window
         var group = _groupDragCandidate;
         _groupDragCandidate = null;
         Mouse.Capture(null);
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(GroupDragFormat, group), DragDropEffects.Move);
+        _groupDragStartX = e.GetPosition(this).X;
+        Vm.BeginGroupDrag(group);
+        var settings = _app.Settings;
+        _dragFeedback = new DragFeedback(this, Vm.DragLabel, Vm.DragBrush, settings.GroupDragGhost, settings.GroupDragExplain);
+        var source = (UIElement)sender;
+        GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
+        source.GiveFeedback += follow;
+        try
+        {
+            DragDrop.DoDragDrop(source, new DataObject(GroupDragFormat, group), DragDropEffects.Move);
+        }
+        finally
+        {
+            source.GiveFeedback -= follow;
+            _dragFeedback?.Dispose();
+            _dragFeedback = null;
+            Vm.EndGroupDrag(); // abgebrochen oder außerhalb losgelassen
+        }
     }
 
+    private double _groupDragStartX;
+    private DragFeedback? _dragFeedback;
+
+    /// <summary>Einrückung je Ebene im Panel (Rand der Untergruppen-Liste): seitliches Ziehen um so viel wechselt die Ebene.</summary>
+    private const double GroupIndent = 14;
+
     /// <summary>Oberes Viertel = davor, unteres Viertel = dahinter, Mitte = hinein (Untergruppe).</summary>
-    private static Core.Config.GroupDropPosition GroupPosition(FrameworkElement header, DragEventArgs e)
+    private static Core.Config.GroupDropZone GroupZone(FrameworkElement header, DragEventArgs e)
     {
         var y = e.GetPosition(header).Y;
         var h = Math.Max(1, header.ActualHeight);
-        return y < h * 0.28 ? Core.Config.GroupDropPosition.Before
-             : y > h * 0.72 ? Core.Config.GroupDropPosition.After
-             : Core.Config.GroupDropPosition.Into;
+        return y < h * 0.28 ? Core.Config.GroupDropZone.Before
+             : y > h * 0.72 ? Core.Config.GroupDropZone.After
+             : Core.Config.GroupDropZone.Into;
+    }
+
+    private int LevelOffset(DragEventArgs e) => (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / GroupIndent);
+
+    /// <summary>Effekt und Schild für den aktuellen Plan (bleibt über Lücke und Gruppeninhalt stehen).</summary>
+    private void ApplyGroupPlan(Core.Config.GroupDropPlan? plan, DragEventArgs e)
+    {
+        e.Effects = plan is { IsValid: true } ? DragDropEffects.Move : DragDropEffects.None;
+        _dragFeedback?.Update(plan);
+        e.Handled = true;
     }
 
     private void GroupHeader_DragOver(object sender, DragEventArgs e)
     {
         if (sender is not Border header || !e.Data.GetDataPresent(GroupDragFormat)) return; // Einträge/Dateien: übernimmt die Gruppe
-        var dragged = (ViewModels.GroupViewModel)e.Data.GetData(GroupDragFormat)!;
-        var target = header.DataContext as ViewModels.GroupViewModel;
-        bool allowed = target is { IsUserGroup: true } && !ReferenceEquals(target, dragged) &&
-                       !Core.Config.GroupManager.IsSameOrBelow(target.GroupPath!, dragged.GroupPath!);
-        e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
-        if (allowed)
-        {
-            var pos = GroupPosition(header, e);
-            header.BorderThickness = pos switch
-            {
-                Core.Config.GroupDropPosition.Before => new Thickness(0, 2, 0, 0),
-                Core.Config.GroupDropPosition.After => new Thickness(0, 0, 0, 2),
-                _ => new Thickness(1)
-            };
-            header.Background = pos == Core.Config.GroupDropPosition.Into ? (Brush)FindResource("Bg.Hover") : Brushes.Transparent;
-        }
-        else
-        {
-            header.BorderThickness = new Thickness(0);
-            header.Background = Brushes.Transparent;
-        }
-        e.Handled = true;
+        if (header.DataContext is not ViewModels.GroupViewModel target) return;
+        ApplyGroupPlan(Vm.PreviewGroupDrop(target, GroupZone(header, e), LevelOffset(e)), e);
     }
 
     private void GroupHeader_DragLeave(object sender, DragEventArgs e)
     {
-        if (sender is not Border header) return;
-        header.BorderThickness = new Thickness(0);
-        header.Background = Brushes.Transparent;
+        // Lücke bleibt offen, bis ein anderes Ziel gefunden ist (sonst springt die Liste)
     }
 
     private void GroupHeader_Drop(object sender, DragEventArgs e)
     {
-        if (sender is not Border header || !e.Data.GetDataPresent(GroupDragFormat)) return;
-        GroupHeader_DragLeave(sender, e);
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
         e.Handled = true;
-        var dragged = (ViewModels.GroupViewModel)e.Data.GetData(GroupDragFormat)!;
-        if (header.DataContext is ViewModels.GroupViewModel { IsUserGroup: true } target)
-            Vm.MoveGroup(dragged, target, GroupPosition(header, e));
+        Vm.CommitGroupDrop();
+    }
+
+    /// <summary>Über der offenen Lücke: Ziel beibehalten.</summary>
+    private void DropGap_DragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
+        ApplyGroupPlan(Vm.CurrentGroupDropPlan, e);
+    }
+
+    private void DropGap_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
+        e.Handled = true;
+        Vm.CommitGroupDrop();
     }
 
     private void Row_DragOver(object sender, DragEventArgs e)
@@ -653,8 +675,7 @@ public partial class PanelWindow : Window
         bool allowed;
         if (e.Data.GetDataPresent(GroupDragFormat))
         {
-            e.Effects = DragDropEffects.None;
-            e.Handled = true;
+            ApplyGroupPlan(Vm.CurrentGroupDropPlan, e); // Inhalt einer Gruppe: Ziel vom letzten Gruppenkopf behalten
             return;
         }
         if (e.Data.GetDataPresent(DragFormat))
@@ -695,6 +716,11 @@ public partial class PanelWindow : Window
         if (sender is not Border box || box.DataContext is not ViewModels.GroupViewModel group) return;
         Group_DragLeave(sender, e);
         e.Handled = true;
+        if (e.Data.GetDataPresent(GroupDragFormat))
+        {
+            Vm.CommitGroupDrop();
+            return;
+        }
         if (e.Data.GetDataPresent(DragFormat))
         {
             Vm.MoveToGroup((ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!, group);
@@ -712,6 +738,11 @@ public partial class PanelWindow : Window
     /// <summary>Außerhalb einer Gruppe abgelegt: als eigener Eintrag ohne Gruppe.</summary>
     private void Panel_DragOver(object sender, DragEventArgs e)
     {
+        if (e.Data.GetDataPresent(GroupDragFormat))
+        {
+            ApplyGroupPlan(Vm.CurrentGroupDropPlan, e);
+            return;
+        }
         e.Effects = e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) ? DragDropEffects.Move
             : !e.Data.GetDataPresent(DragFormat) && !e.Data.GetDataPresent(GroupDragFormat) && ExternalDrop.HasData(e.Data) ? ExternalEffect(e) : DragDropEffects.None;
         e.Handled = true;
@@ -725,7 +756,13 @@ public partial class PanelWindow : Window
             e.Handled = true;
             return;
         }
-        if (e.Data.GetDataPresent(DragFormat) || e.Data.GetDataPresent(GroupDragFormat)) return;
+        if (e.Data.GetDataPresent(GroupDragFormat))
+        {
+            Vm.CommitGroupDrop(); // Lücke zeigt, wo die Gruppe landet
+            e.Handled = true;
+            return;
+        }
+        if (e.Data.GetDataPresent(DragFormat)) return;
         var targets = ExternalDrop.Read(e.Data);
         if (targets.Count > 0) Vm.DropExternal(targets, null);
         e.Handled = true;

@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 17, 1), "Gruppen verschieben: sehen, wo sie landen", new[]
+        {
+            "Beim Ziehen einer Gruppe öffnet sich an der Zielstelle eine Lücke mit Platzhalter – im Panel und in den Einstellungen",
+            "Zwischen zwei Gruppen wählt seitliches Ziehen die Ebene: nach rechts tiefer, nach links höher",
+            "Ziehbild am Mauszeiger mit Name, Farbe und Zahl der Untergruppen",
+            "Unter Panel › Verhalten einstellbar: Ziehbild, weiche Bewegung, Inhalte zuklappen, Begründung an ungültigen Stellen"
+        }),
         new ReleaseNote(new Version(0, 17, 0), "Spürbar schneller beim Tippen", new[]
         {
             "Suche im Panel im Mittel drei- bis fünfmal schneller (gemessen mit 500 Einträgen)",

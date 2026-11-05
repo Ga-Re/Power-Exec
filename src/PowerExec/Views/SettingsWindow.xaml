@@ -744,6 +744,22 @@
                     <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
+                                <!-- Gruppen ziehen: Lücke über/unter der Karte; die gezogene Gruppe macht Platz -->
+                                <StackPanel>
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDragSource}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <c:DropGap IsOpen="{Binding GapAbove}" Margin="{Binding GapMargin}" OpenHeight="44"
+                                               Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
                                 <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="{Binding CardMargin}"
                                         AllowDrop="True" DragOver="GroupCard_DragOver" DragLeave="GroupCard_DragLeave" Drop="GroupCard_Drop">
                                     <StackPanel>
@@ -1020,6 +1036,12 @@
                                         </ContentControl>
                                     </StackPanel>
                                 </Border>
+                                    <c:DropGap IsOpen="{Binding GapBelow}" Margin="{Binding GapMargin}" OpenHeight="44"
+                                               Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
+                                </StackPanel>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding IsSmart}" Value="True">
                                         <Setter TargetName="DefaultGlyph" Property="Text" Value="&#xE8B7;"/>
@@ -1100,6 +1122,21 @@
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE740;" Header="Bei Vollbild-Programmen ausblenden" Description="Die Hover-Zone ruht, solange ein Video, eine Präsentation, ein Spiel oder eine Remotedesktop-Sitzung im Vollbild läuft. Das Tastenkürzel funktioniert weiter.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding HideHotZoneInFullscreen}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="Gruppen ziehen" Style="{StaticResource SettingsSection}"/>
+                    <TextBlock Text="Beim Verschieben einer Gruppe – im Panel und unter Gruppen – öffnet sich an der Zielstelle eine Lücke mit einem Platzhalter. Im Panel wählst du zwischen zwei Gruppen die Ebene, indem du seitlich ziehst: nach rechts tiefer, nach links höher."
+                               Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="4,0,0,8"/>
+                    <c:SettingsCard Icon="&#xE7C2;" Header="Ziehbild am Mauszeiger" Description="Ein kleines Schild mit Name, Farbe und Zahl der Untergruppen folgt der Maus.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding GroupDragGhost}" AutomationProperties.Name="Ziehbild am Mauszeiger"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8AB;" Header="Lücke weich öffnen" Description="Gruppen gleiten zur Seite, wenn sich die Lücke öffnet. Folgt außerdem der Einstellung „Animation“ unter Darstellung.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding GroupDragAnimate}" AutomationProperties.Name="Lücke weich öffnen"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8C4;" Header="Inhalte beim Ziehen zuklappen" Description="Während des Ziehens zeigt das Panel nur Gruppenköpfe und die Gruppenliste nur kompakte Karten – kürzere Wege bei vielen Einträgen.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding GroupDragCollapse}" AutomationProperties.Name="Inhalte beim Ziehen zuklappen"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE946;" Header="Begründung an ungültigen Stellen" Description="Statt nur eines Verbotszeichens steht am Mauszeiger, warum die Gruppe hier nicht abgelegt werden kann.">
+                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding GroupDragExplain}" AutomationProperties.Name="Begründung an ungültigen Stellen"/>
                     </c:SettingsCard>
                     <TextBlock Text="Öffnen" Style="{StaticResource SettingsSection}"/>
                     <StackPanel DataContext="{Binding Panel}">
