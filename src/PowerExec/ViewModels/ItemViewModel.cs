@@ -19,9 +19,10 @@ public sealed class ItemViewModel : ObservableObject
     private readonly string? _subtitle;
 
     public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey,
-        LaunchProfile? fixedProfile = null, string? subtitle = null)
+        LaunchProfile? fixedProfile = null, string? subtitle = null, string? recentWhen = null)
     {
         _subtitle = subtitle;
+        RecentWhen = recentWhen;
         _app = app;
         _panel = panel;
         Item = item;
@@ -179,6 +180,14 @@ public sealed class ItemViewModel : ObservableObject
                 p.Name, ProfileResolver.Summary(p, Item), p.IsDefault, p.RunAsAdmin,
                 new RelayCommand(() => _app.RunProfile(Item, p)))).ToList();
     public bool HasProfileMenu => Profiles.Count > 1;
+
+    /// <summary>„Zuletzt ausgeführt“: wann (z. B. „vor 5 Min.“) – rechts in der Zeile, auch in der kompakten Liste.</summary>
+    public string? RecentWhen { get; }
+    public bool HasRecentWhen => RecentWhen != null;
+
+    private bool _isRunning;
+    /// <summary>Dieser Eintrag läuft gerade (Aktivitäten-Leiste).</summary>
+    public bool IsRunning { get => _isRunning; set => Set(ref _isRunning, value); }
     /// <summary>Info-Zeile; ohne Synopsis der Pfad relativ zum Ordner (unterscheidet gleichnamige Dateien).</summary>
     public string Synopsis => _subtitle != null ? _subtitle
         : !string.IsNullOrWhiteSpace(_entry?.Description) ? _entry!.Description

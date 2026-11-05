@@ -69,6 +69,7 @@ public sealed partial class AppController : IDisposable
         StartFullscreenWatch();
         StartScheduler();
         StartCatalogs();
+        StartMachineSync();
 
         _tray = new TrayIcon(this);
 
@@ -1011,8 +1012,8 @@ public sealed partial class AppController : IDisposable
             }
             else
             {
-                var entry = BeginHistory(item, profile, mode, request.Engine, null, raw, HistoryOrigin);
-                if (!Launcher.StartLocal(request, null, TrackLocal(item, mode, entry))) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
+                var origin = HistoryOrigin;
+                StartLocalTracked(item, request, () => BeginHistory(item, profile, mode, request.Engine, null, raw, origin), null);
             }
             return;
         }
@@ -1021,13 +1022,13 @@ public sealed partial class AppController : IDisposable
         HidePanels();
         try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
         catch (Exception ex) { AppLog.Error("Start vorbereiten fehlgeschlagen", ex); }
-        var plainEntry = BeginHistory(item, profile, mode, PsEngine.WindowsPowerShell, null, null, HistoryOrigin);
-        if (Launcher.StartLocal(BuildRequest(item, profile, mode, new Dictionary<string, object>()), null, TrackLocal(item, mode, plainEntry)))
+        var plainOrigin = HistoryOrigin;
+        if (StartLocalTracked(item, BuildRequest(item, profile, mode, new Dictionary<string, object>()),
+                () => BeginHistory(item, profile, mode, PsEngine.WindowsPowerShell, null, null, plainOrigin), null))
         {
             if (record) RecordRun(item, profile);
             AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
         }
-        else CompleteHistory(plainEntry, HistoryResult.Cancelled, "nicht gestartet");
     }
 
     /// <summary>Text-Parameterwerte für die Vorschläge im Ausführen-Dialog merken (nie geheime Werte).</summary>

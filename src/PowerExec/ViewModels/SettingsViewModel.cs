@@ -716,7 +716,6 @@ public sealed class SettingsViewModel : ObservableObject
         new("behavior", "Verhalten", "Gruppen ziehen: Inhalte zuklappen", "drag drop verschieben kompakt karten"),
         new("behavior", "Verhalten", "Gruppen ziehen: Begründung an ungültigen Stellen", "drag drop verschieben hinweis fehler"),
         new("behavior", "Verhalten", "Tastenkürzel", "hotkey shortcut"),
-        new("behavior", "Verhalten", "Standardfilter", "scripte programme"),
         new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
         new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
         new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
@@ -938,6 +937,23 @@ public sealed class SettingsViewModel : ObservableObject
     {
         MachineGroups.Remove(g);
         OnPropertyChanged(nameof(HasNoGroups));
+    }
+
+    /// <summary>Dynamische Gruppen: wie oft im Hintergrund aus dem AD aktualisieren.</summary>
+    public int AdSyncIntervalHours { get => _s.AdSyncIntervalHours; set { _s.AdSyncIntervalHours = Math.Clamp(value, 1, 168); OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<int, string>> AdSyncIntervals { get; } = new[]
+    {
+        new KeyValuePair<int, string>(1, "jede Stunde"), new KeyValuePair<int, string>(2, "alle 2 Stunden"),
+        new KeyValuePair<int, string>(4, "alle 4 Stunden"), new KeyValuePair<int, string>(8, "alle 8 Stunden"),
+        new KeyValuePair<int, string>(12, "alle 12 Stunden"), new KeyValuePair<int, string>(24, "einmal am Tag")
+    };
+
+    /// <summary>Hintergrund-Synchronisierung fertig: gefundene Rechner in die offenen Gruppen übernehmen.</summary>
+    public void ApplyMachineSync()
+    {
+        foreach (var vm in MachineGroups)
+            if (_app.Settings.MachineGroups.FirstOrDefault(g => g.Name.Equals(vm.Name.Trim(), StringComparison.CurrentCultureIgnoreCase)) is { } g)
+                vm.ApplySynced(g);
     }
 
     // ---- Arbeitsbereiche ------------------------------------------------------

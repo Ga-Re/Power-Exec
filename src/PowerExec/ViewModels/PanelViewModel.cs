@@ -26,7 +26,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         _app = app;
         _host = host;
-        _filter = host.Config.DefaultFilter;
+        _filter = TypeFilter.All; // „Vorausgewählter Filter“ gibt es nicht mehr – Filter kommen aus dem Suchfeld
         SetLayoutCommand = new RelayCommand(p => { if (Enum.TryParse<ItemLayout>(p?.ToString(), out var l)) Layout = l; });
         SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
@@ -712,6 +712,15 @@ public sealed class PanelViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasActivities));
         OnPropertyChanged(nameof(ActivitiesHeader));
+        RefreshRunning();
+    }
+
+    /// <summary>„läuft“ an den Einträgen, die gerade laufen (auch nach einem Neuaufbau der Liste).</summary>
+    private void RefreshRunning()
+    {
+        var running = _app.Activities.Items.Where(a => a.IsRunning && a.ItemPath != null)
+            .Select(a => a.ItemPath!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var i in AllItems) i.IsRunning = running.Count > 0 && running.Contains(i.Item.FullPath);
     }
 
     // ---- Rückgängig ---------------------------------------------------------
@@ -902,8 +911,9 @@ public sealed class PanelViewModel : ObservableObject
                         var item = byPath[r.Path];
                         var profile = ProfileResolver.GetProfiles(settings, item)
                             .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
-                        var subtitle = (profile.IsImplicit ? string.Empty : profile.Name + " · ") + RecentRunList.Ago(r.TimeUtc);
-                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle);
+                        // Zeit rechts in der Zeile; darunter das Profil (falls gewählt), sonst die normale Info-Zeile
+                        var subtitle = profile.IsImplicit ? null : "Profil " + profile.Name;
+                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle, RecentRunList.Ago(r.TimeUtc));
                     })
                     .ToList();
                 if (recent.Count > 0)
@@ -1039,6 +1049,7 @@ public sealed class PanelViewModel : ObservableObject
         OnPropertyChanged(nameof(HasWorkspaces));
         OnPropertyChanged(nameof(PanelName));
         OnPropertyChanged(nameof(IsMultiPanel));
+        if (_app.Activities.HasRunning) RefreshRunning(); // neu erzeugte Zeilen: „läuft“ übernehmen
         Rebuilt?.Invoke();
     }
 
@@ -1282,7 +1293,7 @@ public sealed class PanelViewModel : ObservableObject
     public void ResetForNextOpen()
     {
         _searchText = string.Empty;
-        _filter = _host.Config.DefaultFilter;
+        _filter = TypeFilter.All;
         _selectedKey = null;
         ShowShortcuts = false;
         ShowGroupJump = false;

@@ -40,7 +40,7 @@
                                                DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                                                Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                                                DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
-                                <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8"
+                                <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8" MinHeight="0"
                                         AllowDrop="True" DragOver="GroupCard_DragOver" DragLeave="GroupCard_DragLeave" Drop="GroupCard_Drop">
                                     <StackPanel>
                                         <DockPanel Margin="6,6,8,6" MinHeight="44" Background="Transparent" Cursor="SizeAll"
@@ -324,9 +324,9 @@
                                             </ContentControl.ContentTemplate>
                                         </ContentControl>
                                         <!-- Untergruppen im Rahmen dieser Gruppe; Lücke „als letzte Untergruppe“ -->
-                                        <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource CategoryCardTemplate}" Focusable="False" Margin="14,0,12,4"
+                                        <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource CategoryCardTemplate}" Focusable="False" Margin="14,2,12,0"
                                                       Visibility="{Binding HasChildren, Converter={StaticResource Vis}}"/>
-                                        <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,12,8" OpenHeight="44"
+                                        <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,12,0" OpenHeight="44"
                                                    Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -747,7 +747,7 @@
                     <ItemsControl ItemsSource="{Binding MachineGroups}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource Card}" Padding="8,8,16,8">
+                                <Border Style="{StaticResource Card}" Padding="8,8,16,8" MinHeight="0">
                                     <StackPanel>
                                         <DockPanel>
                                             <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="Rechner anzeigen" Margin="0,0,6,0">
@@ -766,6 +766,16 @@
                                                        Visibility="{Binding IsExpanded, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                         </DockPanel>
                                         <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="36,0,0,4">
+                                        <!-- Feste Liste oder dynamisch aus dem AD -->
+                                        <DockPanel Margin="0,8,0,0">
+                                            <CheckBox DockPanel.Dock="Right" Style="{StaticResource ToggleSwitch}" IsChecked="{Binding IsDynamic}" AutomationProperties.Name="Dynamisch aus dem AD"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="Dynamisch aus dem Active Directory" FontWeight="SemiBold"/>
+                                                <TextBlock Style="{StaticResource Caption}" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Rechner werden nach Regeln gesucht und beim Start sowie regelmäßig aktualisiert – die zuletzt gefundene Liste gilt auch offline."/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <StackPanel Visibility="{Binding IsStatic, Converter={StaticResource Vis}}">
                                         <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
                                                  MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
                                                  FontFamily="{StaticResource MonoFont}" Margin="0,8,0,0" Tag="Ein Rechner pro Zeile (oder durch Komma getrennt)"/>
@@ -778,6 +788,84 @@
                                                      Width="380" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
                                             <Button Style="{StaticResource Btn.Standard}" Content="Aus AD hinzufügen" Command="{Binding AdSearchCommand}" Margin="8,0,0,0" HorizontalAlignment="Left"/>
                                         </DockPanel>
+                                        </StackPanel>
+                                        <!-- Regelblöcke: innerhalb UND, zwischen den Blöcken ODER -->
+                                        <StackPanel Visibility="{Binding IsDynamic, Converter={StaticResource Vis}}" Margin="0,10,0,0">
+                                            <DockPanel Margin="0,0,0,8">
+                                                <TextBlock Text="Ab OU" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
+                                                <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                         Tag="leer = ganze Domäne · z. B. OU=Server,DC=firma,DC=local"/>
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding Blocks}" Focusable="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel>
+                                                            <TextBlock Text="ODER" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="12,4,0,4"
+                                                                       Visibility="{Binding IsFirst, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                                                            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="10,8" Background="{DynamicResource Bg.CardAlt}">
+                                                                <StackPanel>
+                                                                    <DockPanel Margin="0,0,0,6">
+                                                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding RemoveCommand}"
+                                                                                ToolTip="Block entfernen" AutomationProperties.Name="Block entfernen">
+                                                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                                        </Button>
+                                                                        <TextBlock Text="Alle Regeln treffen zu" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center"/>
+                                                                    </DockPanel>
+                                                                    <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <DockPanel Margin="0,0,0,6">
+                                                                                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
+                                                                                            ToolTip="Regel entfernen" AutomationProperties.Name="Regel entfernen">
+                                                                                        <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                                                    </Button>
+                                                                                    <!-- Attribut: Vorgabe wählen oder eigenes LDAP-Attribut eintippen -->
+                                                                                    <ComboBox DockPanel.Dock="Left" Width="190" IsEditable="True" ItemsSource="{Binding AttributeChoices}" DisplayMemberPath="Value"
+                                                                                              Text="{Binding AttributeText, UpdateSourceTrigger=LostFocus}" ToolTip="Attribut – eigenes LDAP-Attribut eintippen geht auch"/>
+                                                                                    <ComboBox DockPanel.Dock="Left" Width="170" Margin="6,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
+                                                                                              SelectedValuePath="Key" SelectedValue="{Binding Operator}"/>
+                                                                                    <TextBox Margin="6,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="{Binding ValueHint}"
+                                                                                             Visibility="{Binding NeedsValue, Converter={StaticResource Vis}}"/>
+                                                                                </DockPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                    <Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddRuleCommand}" Padding="6,0">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                                                            <TextBlock Text="Regel (UND)" Foreground="{DynamicResource Accent}"/>
+                                                                        </StackPanel>
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <DockPanel Margin="0,8,0,0">
+                                                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding SyncNowCommand}" Padding="12,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="Jetzt aus dem AD lesen"/>
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Command="{Binding AddBlockCommand}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="Block (ODER)"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DockPanel>
+                                            <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
+                                                       Visibility="{Binding HasRulesError, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
+                                            <Expander Header="LDAP-Filter anzeigen" Margin="0,6,0,0" FontSize="11">
+                                                <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                                         Padding="6,4" Margin="0,4,0,0"/>
+                                            </Expander>
+                                        </StackPanel>
                                         <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
                                                    Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                                         </StackPanel>
@@ -788,6 +876,11 @@
                     </ItemsControl>
                     <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
                                Text="Die AD-Suche läuft mit deinem angemeldeten Konto. Name mit * als Platzhalter, eine OU (alle Computer darin) oder ein eigener LDAP-Filter in Klammern."/>
+                    <c:SettingsCard Icon="&#xE895;" Header="Dynamische Gruppen aktualisieren" Margin="0,12,0,0"
+                                    Description="Beim Start von Power-Exec und danach in diesem Abstand im Hintergrund. Ohne Verbindung zum AD bleibt die zuletzt gefundene Liste.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding AdSyncIntervals}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                  SelectedValue="{Binding AdSyncIntervalHours}"/>
+                    </c:SettingsCard>
                 </StackPanel>
 
                 <!-- Inhalte › Schlagworte -->
@@ -805,7 +898,7 @@
                     <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,4">
+                                <Border Style="{StaticResource Card}" Padding="0" Margin="0,0,0,4" MinHeight="0">
                                     <StackPanel>
                                         <DockPanel Margin="6,6,8,6">
                                             <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="Einträge anzeigen">
@@ -814,7 +907,7 @@
                                                 </TextBlock>
                                             </Button>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <ComboBox Width="170" Margin="0,0,8,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding Color}" SelectedValuePath="Key" ToolTip="Farbe des Schlagworts">
+                                                <ComboBox Width="170" Margin="0,0,2,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding Color}" SelectedValuePath="Key" ToolTip="Farbe des Schlagworts">
                                                     <ComboBox.ItemTemplate>
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal">
@@ -825,6 +918,10 @@
                                                         </DataTemplate>
                                                     </ComboBox.ItemTemplate>
                                                 </ComboBox>
+                                                <Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Margin="0,0,8,0" Command="{Binding CustomColorCommand}"
+                                                        ToolTip="Eigene Farbe im Farbwähler aussuchen" AutomationProperties.Name="Eigene Farbe">
+                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </Button>
                                                 <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="Umbenennen oder zusammenführen">
                                                     <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
                                                 </Button>
@@ -843,7 +940,21 @@
                                                 Background="{DynamicResource Bg.CardAlt}" Padding="44,8,16,10">
                                             <ItemsControl ItemsSource="{Binding Entries}" Focusable="False">
                                                 <ItemsControl.ItemTemplate>
-                                                    <DataTemplate><TextBlock Text="{Binding}" Margin="0,2"/></DataTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel x:Name="TagEntryRow" Background="Transparent" Margin="0,1">
+                                                            <!-- ✕ nimmt nur diesem Eintrag das Schlagwort -->
+                                                            <Button x:Name="TagEntryRemove" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Opacity="0.55"
+                                                                    Command="{Binding RemoveCommand}" ToolTip="Schlagwort von diesem Eintrag entfernen" AutomationProperties.Name="Entfernen">
+                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                            </Button>
+                                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        </DockPanel>
+                                                        <DataTemplate.Triggers>
+                                                            <Trigger SourceName="TagEntryRow" Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="TagEntryRemove" Property="Opacity" Value="1"/>
+                                                            </Trigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </Border>
@@ -863,7 +974,7 @@
                     <ItemsControl ItemsSource="{Binding Workspaces}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource Card}" Padding="0">
+                                <Border Style="{StaticResource Card}" Padding="0" MinHeight="0">
                                     <StackPanel>
                                         <DockPanel Margin="6,8,12,8">
                                             <Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}"
@@ -1168,9 +1279,6 @@
                         </c:SettingsCard>
                         <TextBlock Text="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Error}"
                                    FontSize="12" Margin="4,0,0,6" Visibility="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
-                        <c:SettingsCard Icon="&#xE71C;" Header="Vorausgewählter Filter" Description="Dieser Filter ist aktiv, wenn das Panel aufgeht – er steht als Chip unter dem Suchfeld und lässt sich dort mit ✕ aufheben.">
-                                <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Filters}" SelectedValue="{Binding DefaultFilter}"/>
-                        </c:SettingsCard>
                     </StackPanel>
                 </StackPanel>
 

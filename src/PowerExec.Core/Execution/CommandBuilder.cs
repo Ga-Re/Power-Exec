@@ -36,14 +36,28 @@ public static class CommandBuilder
     public static string ScriptInvocation(string scriptPath, IReadOnlyDictionary<string, object> parameters) =>
         "& " + ParameterValueConverter.Quote(scriptPath) + ParameterValueConverter.ToPowerShellArguments(parameters);
 
-    public static LocalLaunchSpec BuildLocal(ExecutionRequest r)
+    /// <param name="doneFile">
+    /// Bleibt das Fenster offen (<see cref="ExecutionRequest.NoExit"/>), schreibt das Script nach dem Ende „0“ (ok) bzw.
+    /// den Exit-Code in diese Datei – so erkennt Power-Exec das Ende, obwohl der Prozess weiterläuft.
+    /// </param>
+    public static LocalLaunchSpec BuildLocal(ExecutionRequest r, string? doneFile = null)
     {
-        var spec = BuildLocalCore(r);
+        var spec = BuildLocalCore(r, SupportsDoneFile(r) ? doneFile : null);
         spec.WindowState = r.Item.WindowState;
         return spec;
     }
 
-    private static LocalLaunchSpec BuildLocalCore(ExecutionRequest r)
+    /// <summary>Fertig-Markierung nur für Scripte mit offen bleibendem Fenster, nicht als anderer Benutzer (kein Zugriff auf die Datei).</summary>
+    public static bool SupportsDoneFile(ExecutionRequest r) =>
+        r.NoExit && r.Mode != ExecutionMode.OtherUser && r.Item.Type is ItemType.PowerShell or ItemType.Batch;
+
+    /// <summary>PowerShell: nach dem Script Ergebnis in die Datei schreiben ($LASTEXITCODE, sonst 1 bei Fehler, sonst 0).</summary>
+    public static string DoneSuffix(string doneFile) =>
+        "; $__peOk = $?; $__peCode = if ($LASTEXITCODE -is [int] -and $LASTEXITCODE -ne 0) { $LASTEXITCODE } elseif (-not $__peOk) { 1 } else { 0 }" +
+        "; try { [System.IO.File]::WriteAllText(" + ParameterValueConverter.Quote(doneFile) + ", [string]$__peCode) } catch { }" +
+        "; Remove-Variable __peOk, __peCode -ErrorAction SilentlyContinue";
+
+    private static LocalLaunchSpec BuildLocalCore(ExecutionRequest r, string? doneFile)
     {
         var path = r.EffectivePath;
         var item = r.Item;
@@ -59,7 +73,7 @@ public static class CommandBuilder
                 var exe = EngineExe(r.Engine);
                 var flags = PowerShellFlags(r);
                 var command = ScriptInvocation(path, r.Parameters);
-                var args = flags + " -EncodedCommand " + Encode(command);
+                var args = flags + " -EncodedCommand " + Encode(doneFile != null ? command + DoneSuffix(doneFile) : command);
                 return new LocalLaunchSpec
                 {
                     FileName = exe,
@@ -76,6 +90,12 @@ public static class CommandBuilder
                 // cmd /k ""C:\Pfad mit Leerzeichen\x.cmd"" – die äußeren Anführungszeichen entfernt cmd selbst.
                 var extra = r.ExtraArguments.Trim();
                 var cmdArgs = (r.NoExit ? "/k " : "/c ") + "\"\"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) + "\"";
+                if (doneFile != null)
+                {
+                    // „call“, damit es nach dem Batch weitergeht; „if errorlevel“ wird erst zur Laufzeit ausgewertet
+                    cmdArgs = "/k \"call \"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) +
+                              " & if errorlevel 1 (>\"" + doneFile + "\" echo 1) else (>\"" + doneFile + "\" echo 0)\"";
+                }
                 return new LocalLaunchSpec
                 {
                     FileName = "cmd.exe",

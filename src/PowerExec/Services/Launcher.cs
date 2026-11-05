@@ -69,9 +69,28 @@ public sealed class Launcher
 
     /// <returns>true, wenn der Prozess gestartet wurde.</returns>
     /// <param name="started">Erhält den gestarteten Prozess (dann gibt der Aufrufer ihn frei), z. B. für die Aktivitäten-Leiste.</param>
+    /// <summary>Fertig-Markierung je gestartetem Prozess (siehe <see cref="CommandBuilder.BuildLocal"/>).</summary>
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Process, string> _doneFiles = new();
+
+    /// <summary>Datei, in die das Script nach seinem Ende das Ergebnis schreibt (Fenster bleibt offen), sonst null.</summary>
+    public static string? DoneFileOf(Process process) => _doneFiles.TryGetValue(process, out var f) ? f : null;
+
+    private static string NewDoneFile()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "PowerExec");
+        Directory.CreateDirectory(dir);
+        return Path.Combine(dir, $"done-{Guid.NewGuid():N}.txt");
+    }
+
     public bool StartLocal(ExecutionRequest request, Window? owner, Action<Process>? started = null)
     {
-        var spec = CommandBuilder.BuildLocal(request);
+        string? doneFile = null;
+        if (started != null && CommandBuilder.SupportsDoneFile(request))
+        {
+            try { doneFile = NewDoneFile(); }
+            catch (Exception ex) { AppLog.Info($"Fertig-Markierung nicht möglich: {ex.Message}"); }
+        }
+        var spec = CommandBuilder.BuildLocal(request, doneFile);
         RunCredential? cred = null;
         if (spec.RequiresCredential)
         {
@@ -103,6 +122,7 @@ public sealed class Launcher
         try
         {
             var process = Process.Start(psi);
+            if (process != null && doneFile != null) _doneFiles.AddOrUpdate(process, doneFile);
             if (process != null && started != null) started(process);
             else process?.Dispose();
             return true;

@@ -32,7 +32,13 @@ public sealed class GroupViewModel : ObservableObject
         _isExpanded = expanded;
         Error = error;
 
-        ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
+        ToggleCommand = new RelayCommand(() =>
+        {
+            // Nur der Klick auf den Kopf klappt weich auf/zu (nicht Suche oder „Alle ausklappen“)
+            AnimateExpand = true;
+            IsExpanded = !IsExpanded;
+            AnimateExpand = false;
+        });
         OpenInExplorerCommand = new RelayCommand(() => { if (FolderPath != null) Services.Launcher.OpenLocation(FolderPath, isFolder: true); }, () => FolderPath != null);
         RescanCommand = new RelayCommand(() => _ = app.Repository.ScanAsync());
         CollapseOthersCommand = new RelayCommand(() => _panel.CollapseAllExcept(this));
@@ -202,6 +208,10 @@ public sealed class GroupViewModel : ObservableObject
     public string CountText => TotalCount.ToString();
     public string? Error { get; }
     public bool HasError => !string.IsNullOrEmpty(Error);
+
+    private bool _animateExpand;
+    /// <summary>Kurz true, während der Klick auf den Gruppenkopf umschaltet – dann klappt die Gruppe animiert.</summary>
+    public bool AnimateExpand { get => _animateExpand; private set => Set(ref _animateExpand, value); }
 
     public bool IsExpanded
     {

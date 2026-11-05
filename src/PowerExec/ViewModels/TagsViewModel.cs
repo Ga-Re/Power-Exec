@@ -13,22 +13,29 @@ public sealed class TagRowViewModel : ObservableObject
     private readonly TagsViewModel _owner;
     private bool _isExpanded;
 
-    public TagRowViewModel(TagsViewModel owner, string tag, int count, string color, IReadOnlyList<string> entries)
+    public TagRowViewModel(TagsViewModel owner, string tag, int count, string color, IReadOnlyList<(string Key, string Name)> entries)
     {
         _owner = owner;
         Tag = tag;
         Count = count;
         _color = color;
-        Entries = entries;
+        Entries = entries.Select(e => new TagEntryViewModel(e.Name, new RelayCommand(() => _owner.RemoveFromEntry(this, e.Key)))).ToList();
         RenameCommand = new RelayCommand(() => _owner.Rename(this));
         DeleteCommand = new RelayCommand(() => _owner.Delete(this));
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
+        CustomColorCommand = new RelayCommand(() =>
+        {
+            var hex = Views.ColorPickerWindow.Pick($"Farbe für #{Tag}", _color, Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
+            if (hex != null) Color = hex;
+        });
     }
+
+    public ICommand CustomColorCommand { get; }
 
     public string Tag { get; }
     public int Count { get; }
     public string CountText => Count == 1 ? "1 Eintrag" : $"{Count} Einträge";
-    public IReadOnlyList<string> Entries { get; }
+    public IReadOnlyList<TagEntryViewModel> Entries { get; }
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 
     private string _color;
@@ -39,10 +46,15 @@ public sealed class TagRowViewModel : ObservableObject
         {
             if (!Set(ref _color, value ?? string.Empty)) return;
             _owner.SetColor(this, _color);
+            OnPropertyChanged(nameof(Colors));
             OnPropertyChanged(nameof(ChipBrush));
         }
     }
-    public IReadOnlyList<KeyValuePair<string, string>> Colors => CategoryItemViewModel.ColorList;
+    /// <summary>Palette plus die eigene Farbe, falls gesetzt (sonst bliebe die Auswahl leer).</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> Colors =>
+        _color.Length > 0 && !CategoryItemViewModel.ColorList.Any(c => c.Key.Equals(_color, StringComparison.OrdinalIgnoreCase))
+            ? CategoryItemViewModel.ColorList.Append(new KeyValuePair<string, string>(_color, "Eigene " + _color)).ToList()
+            : CategoryItemViewModel.ColorList;
 
     /// <summary>Hintergrund des Chips: getönt in der Farbe, sonst Standard.</summary>
     public Brush ChipBrush => PanelColors.TryParse(_color, out var c)
@@ -81,12 +93,13 @@ public sealed class TagsViewModel : ObservableObject
 
     public void Load()
     {
+        var expanded = Rows.Where(r => r.IsExpanded).Select(r => r.Tag).ToHashSet(StringComparer.CurrentCultureIgnoreCase);
         Rows.Clear();
         foreach (var (tag, count) in Tags.Counts(_s))
         {
             if (_query.Trim().Length > 0 && !tag.Contains(_query.Trim().TrimStart('#'), StringComparison.CurrentCultureIgnoreCase)) continue;
-            var names = Tags.EntriesWith(_s, tag).Select(NameOf).OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase).ToList();
-            Rows.Add(new TagRowViewModel(this, tag, count, Tags.ColorOf(_s, tag), names));
+            var entries = Tags.EntriesWith(_s, tag).Select(k => (k, NameOf(k))).OrderBy(e => e.Item2, StringComparer.CurrentCultureIgnoreCase).ToList();
+            Rows.Add(new TagRowViewModel(this, tag, count, Tags.ColorOf(_s, tag), entries) { IsExpanded = expanded.Contains(tag) });
         }
         OnPropertyChanged(nameof(IsEmpty));
     }
@@ -128,4 +141,16 @@ public sealed class TagsViewModel : ObservableObject
     }
 
     internal void SetColor(TagRowViewModel row, string color) => Tags.SetColor(_s, row.Tag, color);
+
+    /// <summary>Schlagwort nur von diesem einen Eintrag entfernen.</summary>
+    internal void RemoveFromEntry(TagRowViewModel row, string key)
+    {
+        _beforeChange();
+        Tags.Set(_s, key, Tags.Of(_s, key).Where(t => !t.Equals(row.Tag, StringComparison.CurrentCultureIgnoreCase)).ToList());
+        _afterChange();
+        Load();
+    }
 }
+
+/// <summary>Ein Eintrag unter einem Schlagwort; ✕ nimmt ihm das Schlagwort.</summary>
+public sealed record TagEntryViewModel(string Name, ICommand RemoveCommand);

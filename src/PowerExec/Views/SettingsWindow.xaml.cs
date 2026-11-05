@@ -49,13 +49,17 @@ public partial class SettingsWindow : Window
         Deactivated += (_, _) => _vm.SearchText = string.Empty; // Suchvorschläge nicht über anderen Fenstern stehen lassen
 
         _app.SettingsChangedOutside += OnChangedOutside;
+        _app.MachineGroupsSynced += OnMachineGroupsSynced;
         Closing += (_, _) => ApplyNow(force: true);
         Closed += (_, _) =>
         {
             _app.SettingsChangedOutside -= OnChangedOutside;
+            _app.MachineGroupsSynced -= OnMachineGroupsSynced;
             _vm.Detach();
         };
     }
+
+    private void OnMachineGroupsSynced() => _vm.ApplyMachineSync();
 
     private void Attach(SettingsViewModel vm)
     {

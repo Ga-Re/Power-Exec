@@ -120,15 +120,6 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? "Kein Tastenkürzel" : HotkeyService.Display(_c.Hotkey);
     public ICommand ClearHotkeyCommand { get; }
 
-    public TypeFilter DefaultFilter { get => _c.DefaultFilter; set { _c.DefaultFilter = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<TypeFilter, string>> Filters { get; } = new[]
-    {
-        new KeyValuePair<TypeFilter, string>(TypeFilter.All, "Alle"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Scripts, "Scripte"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Programs, "Programme"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Favorites, "Favoriten")
-    };
-
     // ---- Farbe ------------------------------------------------------------
 
     private IReadOnlyList<ColorPresetViewModel>? _presets;
