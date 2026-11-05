@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
+using PowerExec.Core.Search;
 using PowerExec.Core.Execution;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -548,10 +549,37 @@ public sealed partial class AppController
                 await Settle();
                 if (host.Window.Content is FrameworkElement sugRoot) Screenshot(sugRoot, "panel-suchvorschlaege");
                 vm.CloseSuggestions();
+                // Klick ins Suchfeld: erst die Filterarten, nach der Auswahl deren Werte
+                vm.ShowFilterCategories(string.Empty, 0);
+                if (!vm.HasSuggestions || !vm.Suggestions.All(x => x.IsCategory)) Fail("Filter: Klick ins Suchfeld bietet keine Filterarten an");
+                else
+                {
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement catRoot) Screenshot(catRoot, "panel-filterarten");
+                    var typ = vm.Suggestions.FirstOrDefault(x => x.Insert == "typ:");
+                    if (typ == null) Fail("Filter: Filterart „Typ“ fehlt");
+                    else
+                    {
+                        var (t, c) = Core.Search.SearchSuggestions.Apply(string.Empty, 0, typ);
+                        vm.UpdateSuggestions(t, c);
+                        if (!vm.HasSuggestions || vm.Suggestions.Any(x => x.IsCategory)) Fail("Filter: nach „Typ“ erscheinen keine Werte");
+                        await Settle();
+                        if (host.Window.Content is FrameworkElement valRoot) Screenshot(valRoot, "panel-filterwerte");
+                    }
+                }
+                vm.CloseSuggestions();
+                // Voreingestellter Filter: als Chip sichtbar und aufhebbar
+                vm.Filter = TypeFilter.Scripts;
+                if (!vm.SearchChips.Any(x => x.Label == "Scripte")) Fail("Filter: voreingestellter Filter erscheint nicht als Chip");
+                else vm.SearchChips.First(x => x.Label == "Scripte").RemoveCommand.Execute(null);
+                if (vm.Filter != TypeFilter.All) Fail("Filter: ✕ am Chip hebt den voreingestellten Filter nicht auf");
                 host.Window.HidePanel();
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
-                if (colors == null || colors.Select(c => c.Swatch.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                if (colors == null || colors.Where(c => c.Swatch != null).Select(c => c.Swatch!.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe"))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
+                var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
+                if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
                 await ShowAndClose(ColorPickerWindow.ForTest());
                 var railGroup = vm.Groups.FirstOrDefault(g => g.GroupPath != null);
                 if (railGroup != null)
@@ -710,6 +738,23 @@ public sealed partial class AppController
                 Step("Einstellungen " + section);
                 await Settle();
                 if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
+                await Settle();
+            }
+
+            Step("Design bei offenem Fenster wechseln");
+            {
+                var themeBefore = Settings.Theme;
+                settingsVm.Section = "look";
+                Settings.Theme = ThemeMode.Light;
+                ThemeService.Apply(Settings);
+                await Settle();
+                static bool IsLightBrush(object? b) => b is System.Windows.Media.SolidColorBrush sb && PanelColors.IsLight(new Rgb(sb.Color.R, sb.Color.G, sb.Color.B));
+                if (!IsLightBrush(Application.Current.Resources[Views.WindowHelper.MicaTintKey])) Fail("Design: Mica-Tönung bleibt nach dem Wechsel auf Hell dunkel");
+                if (settingsWindow.Background is System.Windows.Media.SolidColorBrush { Color.A: 255 } && !IsLightBrush(settingsWindow.Background))
+                    Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
+                if (settingsWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "settings-hell-live");
+                Settings.Theme = themeBefore;
+                ThemeService.Apply(Settings);
                 await Settle();
             }
             settingsWindow.Close();

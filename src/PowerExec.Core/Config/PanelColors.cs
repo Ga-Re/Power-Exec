@@ -85,6 +85,22 @@ public static class PanelColors
         return new Rgb(Mix(c.R, other.R), Mix(c.G, other.G), Mix(c.B, other.B));
     }
 
+    /// <summary>Typische Fläche des hellen bzw. dunklen Panels (Bezug für <see cref="Readable"/>).</summary>
+    public static readonly Rgb LightSurface = new(0xF9, 0xF9, 0xF9), DarkSurface = new(0x20, 0x20, 0x20);
+
+    /// <summary>
+    /// Farbe für Symbole und Rahmen auf dem Panel: im hellen Design so weit abgedunkelt, im dunklen so weit aufgehellt,
+    /// dass sie mindestens <paramref name="minContrast"/> zur Fläche hat (WCAG: 3:1 für Symbole). Kräftige Farben bleiben unverändert.
+    /// </summary>
+    public static Rgb Readable(Rgb color, bool darkSurface, double minContrast = 3.0)
+    {
+        var surface = darkSurface ? DarkSurface : LightSurface;
+        var toward = darkSurface ? new Rgb(255, 255, 255) : new Rgb(0, 0, 0);
+        var c = color;
+        for (int i = 0; i < 20 && Contrast(c, surface) < minContrast; i++) c = Blend(c, toward, 0.08);
+        return c;
+    }
+
     /// <summary>Abgeleitete Flächen: Hover, Auswahl und Rahmen leicht heller (dunkle Basis) bzw. dunkler (helle Basis).</summary>
     public static (Rgb Hover, Rgb Selected, Rgb Border, Rgb Input) Derive(Rgb baseColor)
     {

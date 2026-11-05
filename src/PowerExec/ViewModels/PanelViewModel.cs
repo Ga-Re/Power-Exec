@@ -66,6 +66,11 @@ public sealed class PanelViewModel : ObservableObject
     }
 
     public PanelConfig Config => _host.Config;
+
+    /// <summary>Dunkle Panelfläche (Design bzw. eigene Panelfarbe) – für lesbare Gruppenfarben.</summary>
+    public bool IsDarkSurface => !ThemeService.IsHighContrast && PanelColors.TryParse(_host.Config.PanelColor, out var c)
+        ? !PanelColors.IsLight(c)
+        : ThemeService.IsDark;
     public string PanelName => _host.Config.Name;
     public bool IsMultiPanel => _app.Settings.Panels.Count > 1;
 
@@ -266,6 +271,19 @@ public sealed class PanelViewModel : ObservableObject
         if (list.Count == 1 && list[0].Insert.Equals(token, StringComparison.CurrentCultureIgnoreCase)) list = Array.Empty<SearchSuggestion>();
         SuggestionsTakeKeys = token.StartsWith('#') || token.Contains(':');
         Suggestions = list;
+    }
+
+    /// <summary>
+    /// Klick ins Suchfeld: steht der Cursor nicht in einem Wort, die möglichen Filterarten anbieten
+    /// (Schlagwort, Typ, Gruppe, Merkmal); die Auswahl zeigt danach deren Werte.
+    /// </summary>
+    public void ShowFilterCategories(string text, int caret)
+    {
+        var (_, token) = SearchSuggestions.CurrentToken(text, caret);
+        if (token.Length > 0) { UpdateSuggestions(text, caret); return; }
+        _suggestionSource ??= BuildSuggestionSource();
+        SuggestionsTakeKeys = true;
+        Suggestions = SearchSuggestions.Categories(_suggestionSource);
     }
 
     public void CloseSuggestions() => Suggestions = Array.Empty<SearchSuggestion>();
@@ -741,6 +759,10 @@ public sealed class PanelViewModel : ObservableObject
                 t.Kind == SearchTokenKind.Invalid ? SearchQuery.Help : "Filter entfernen",
                 new RelayCommand(() => SearchText = SearchQuery.Remove(_searchText, t))))
             .ToList();
+        // Voreingestellter Filter des Panels (Einstellungen): als Chip sichtbar und mit ✕ für dieses Öffnen aufhebbar
+        if (_filter != TypeFilter.All)
+            chips.Insert(0, new SearchChip(_filter switch { TypeFilter.Scripts => "Scripte", TypeFilter.Programs => "Programme", _ => "Favoriten" },
+                false, "Voreingestellter Filter dieses Panels – entfernen", new RelayCommand(() => Filter = TypeFilter.All)));
         SearchChips = chips; // immer neu: die Befehle verweisen auf die aktuelle Position im Text
     }
 

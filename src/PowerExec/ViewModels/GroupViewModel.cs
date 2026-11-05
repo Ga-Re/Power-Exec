@@ -44,9 +44,6 @@ public sealed class GroupViewModel : ObservableObject
         // Eigene Gruppen
         RenameCommand = new RelayCommand(() => app.RenameGroup(GroupPath!), () => IsUserGroup);
         DeleteCommand = new RelayCommand(() => app.DeleteGroup(GroupPath!, TotalCount), () => IsUserGroup);
-        MoveUpCommand = new RelayCommand(() => app.MoveGroup(GroupPath!, -1), () => IsUserGroup);
-        MoveDownCommand = new RelayCommand(() => app.MoveGroup(GroupPath!, 1), () => IsUserGroup);
-        NewGroupCommand = new RelayCommand(() => app.CreateGroup());
         NewSubgroupCommand = new RelayCommand(() => app.CreateGroup(GroupPath), () => IsUserGroup);
         HideFolderCommand = new RelayCommand(() => app.HideGroupInWorkspace(GroupPath!), () => GroupPath != null);
         IsSmartGroup = GroupPath != null && Core.Config.SmartGroups.FolderOf(app.Settings, GroupPath) != null;
@@ -101,9 +98,6 @@ public sealed class GroupViewModel : ObservableObject
 
     public ICommand RenameCommand { get; }
     public ICommand DeleteCommand { get; }
-    public ICommand MoveUpCommand { get; }
-    public ICommand MoveDownCommand { get; }
-    public ICommand NewGroupCommand { get; }
     public ICommand NewSubgroupCommand { get; }
     public ICommand ChooseIconCommand { get; }
     public ICommand ExportCommand { get; }
@@ -144,19 +138,34 @@ public sealed class GroupViewModel : ObservableObject
     public string OwnColorHex => GroupPath != null ? GroupManager.OwnColorOf(_app.Settings, GroupPath) : string.Empty;
     public bool HasColor => ColorHex.Length > 0;
 
-    private Brush? BrushOf(byte alpha) =>
-        PanelColors.TryParse(ColorHex, out var c) ? Freeze(new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B))) : null;
+    private Brush? BrushOf(byte alpha, bool readable = false)
+    {
+        if (!PanelColors.TryParse(ColorHex, out var c)) return null;
+        if (readable) c = PanelColors.Readable(c, _panel.IsDarkSurface);
+        return Freeze(new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B)));
+    }
     private static Brush Freeze(Brush b) { b.Freeze(); return b; }
 
-    /// <summary>Symbol in voller Farbe.</summary>
-    public Brush? AccentBrush => BrushOf(255);
+    /// <summary>Symbol und Rahmen in voller Farbe – im hellen Design bei Bedarf abgedunkelt (mind. 3:1 Kontrast).</summary>
+    public Brush? AccentBrush => BrushOf(255, readable: true);
     /// <summary>Getönte Karte: Hintergrund dezent, Rand etwas kräftiger.</summary>
     public Brush CardBackground => BrushOf(0x24) ?? Brushes.Transparent;
-    public Brush CardBorder => BrushOf(0x73) ?? Brushes.Transparent;
+    public Brush CardBorder => BrushOf(0x73, readable: true) ?? Brushes.Transparent;
 
-    /// <summary>Farben für das Menü „Farbe“.</summary>
-    public IReadOnlyList<GroupColorChoice> ColorChoices => PanelColors.AccentPresets
-        .Select(p => new GroupColorChoice(p.Name, p.Hex, OwnColorHex.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand)).ToList();
+    /// <summary>Untermenü „Farbe“: Vorgaben, dazu „Eigene Farbe …“ und – wenn gesetzt – „Farbe entfernen“.</summary>
+    public IReadOnlyList<GroupColorChoice> ColorChoices
+    {
+        get
+        {
+            var own = OwnColorHex;
+            var list = PanelColors.AccentPresets
+                .Select(p => new GroupColorChoice(p.Name, p.Hex, own.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand))
+                .ToList();
+            list.Add(new GroupColorChoice("Eigene Farbe …", string.Empty, false, CustomColorCommand) { Glyph = "\uE790", IsFirstAction = true });
+            if (own.Length > 0) list.Add(new GroupColorChoice("Farbe entfernen", string.Empty, false, SetColorCommand) { Glyph = "\uE894" });
+            return list;
+        }
+    }
     public ICommand AddFilesCommand { get; }
 
     public string Key { get; }
@@ -259,5 +268,13 @@ public sealed class GroupViewModel : ObservableObject
 /// <summary>Eintrag im Menü „Farbe“ einer Gruppe.</summary>
 public sealed record GroupColorChoice(string Name, string Hex, bool IsCurrent, ICommand Command)
 {
-    public Brush Swatch { get; } = new SolidColorBrush((Color)ColorConverter.ConvertFromString(Hex));
+    /// <summary>Farbpunkt; bei Aktionen („Eigene Farbe …“, „Farbe entfernen“) keiner.</summary>
+    public Brush? Swatch { get; } = Hex.Length > 0 ? new SolidColorBrush((Color)ColorConverter.ConvertFromString(Hex)) : null;
+
+    /// <summary>Symbol einer Aktion statt Farbpunkt.</summary>
+    public string Glyph { get; init; } = string.Empty;
+    public bool IsAction => Glyph.Length > 0;
+
+    /// <summary>Erste Aktion nach den Farben: Trennlinie darüber.</summary>
+    public bool IsFirstAction { get; init; }
 }

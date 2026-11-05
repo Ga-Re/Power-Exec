@@ -272,6 +272,9 @@
     </Style>
 
     <!-- Eingabefelder -->
+    <!-- Eckenradius der Eingabefelder; Suchfelder setzen ihn in ihren Resources größer -->
+    <CornerRadius x:Key="TextBox.CornerRadius">4</CornerRadius>
+
     <Style TargetType="TextBox">
         <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
         <Setter Property="Background" Value="{DynamicResource Bg.Input}"/>
@@ -286,7 +289,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" SnapsToDevicePixels="True">
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource TextBox.CornerRadius}" SnapsToDevicePixels="True">
                         <Grid>
                             <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Foreground="{DynamicResource Text.Tertiary}"
                                        Margin="{TemplateBinding Padding}" Padding="2,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -504,17 +507,24 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,0" MinHeight="32" MinWidth="200">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="24"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                            <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
-                        </Grid>
-                    </Border>
+                    <DockPanel>
+                        <!-- Trennlinie über dem Eintrag (Tag="Separator"), z. B. in Menüs aus ItemsSource -->
+                        <Border x:Name="TopRule" DockPanel.Dock="Top" Height="1" Margin="4,4" Background="{DynamicResource Border.Default}" Visibility="Collapsed"/>
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="10,0" MinHeight="32" MinWidth="200">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                            </Grid>
+                        </Border>
+                    </DockPanel>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="Separator">
+                            <Setter TargetName="TopRule" Property="Visibility" Value="Visible"/>
+                        </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                         </Trigger>

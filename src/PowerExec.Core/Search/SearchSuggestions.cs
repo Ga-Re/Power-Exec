@@ -5,8 +5,14 @@ namespace PowerExec.Core.Search;
 /// <summary>Ein Vorschlag unter dem Suchfeld: <see cref="Insert"/> ersetzt das aktuelle Wort.</summary>
 public sealed record SearchSuggestion(string Insert, string Label, string Detail, int Count)
 {
-    /// <summary>Danach ein Leerzeichen anhängen (bei „typ:“ ohne Wert nicht, dort geht es mit dem Wert weiter).</summary>
-    public bool AppendSpace => !Insert.EndsWith(':');
+    /// <summary>Danach ein Leerzeichen anhängen (bei „typ:“ oder „#“ ohne Wert nicht, dort geht es mit dem Wert weiter).</summary>
+    public bool AppendSpace => !Insert.EndsWith(':') && Insert != "#";
+
+    /// <summary>Filterart (Schlagwort, Typ, Gruppe, Merkmal) statt eines Werts – Auswahl zeigt danach die Werte.</summary>
+    public bool IsCategory { get; init; }
+
+    /// <summary>Symbol (Segoe Fluent Icons) vor einer Filterart.</summary>
+    public string Glyph { get; init; } = string.Empty;
 }
 
 /// <summary>Was die sichtbaren Einträge hergeben – nur das wird vorgeschlagen (keine leeren Filter).</summary>
@@ -28,7 +34,53 @@ public sealed class SuggestionSource
 /// </summary>
 public static class SearchSuggestions
 {
+    /// <summary>Höchstzahl beim Weitertippen; ohne getippten Wert („#“, „typ:“) bis <see cref="MaxBrowse"/> zum Durchblättern.</summary>
     public const int MaxSuggestions = 8;
+    public const int MaxBrowse = 40;
+
+    /// <summary>
+    /// Filterarten beim Klick ins Suchfeld (aktuelles Wort leer): Schlagwort, Typ, Gruppe, Merkmal –
+    /// nur, wofür es Einträge gibt; als Beschreibung ein paar Beispiele.
+    /// </summary>
+    public static IReadOnlyList<SearchSuggestion> Categories(SuggestionSource src)
+    {
+        var list = new List<SearchSuggestion>();
+        if (src.Tags.Count > 0)
+            list.Add(new SearchSuggestion("#", "Schlagwort", Examples(src.Tags.OrderByDescending(t => t.Value).ThenBy(t => t.Key).Select(t => "#" + t.Key), src.Tags.Count), src.Tags.Count)
+                { IsCategory = true, Glyph = "\uE8EC" });
+        var kinds = src.Kinds.Where(k => k.Value > 0 && KindNames.ContainsKey(k.Key)).OrderByDescending(k => k.Value).ToList();
+        if (kinds.Count > 0)
+            list.Add(new SearchSuggestion("typ:", "Typ", Examples(kinds.Select(k => KindNames[k.Key].Label), kinds.Count), kinds.Count)
+                { IsCategory = true, Glyph = "\uE7C3" });
+        var groups = src.Groups.Where(g => g.Value > 0 && g.Key.Length > 0).ToList();
+        if (groups.Count > 0)
+            list.Add(new SearchSuggestion("gruppe:", "Gruppe", Examples(groups.OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => g.Key), groups.Count), groups.Count)
+                { IsCategory = true, Glyph = "\uE8B7" });
+        var flags = Flags(src).Where(f => f.Count > 0).ToList();
+        if (flags.Count > 0)
+            list.Add(new SearchSuggestion("ist:", "Merkmal", Examples(flags.Select(f => f.Label), flags.Count), flags.Count)
+                { IsCategory = true, Glyph = "\uE734" });
+        return list;
+    }
+
+    private static string Examples(IEnumerable<string> values, int total)
+    {
+        var shown = values.Take(3).ToList();
+        return string.Join(", ", shown) + (total > shown.Count ? " …" : string.Empty);
+    }
+
+    private static IEnumerable<(string Alias, string Label, int Count)> Flags(SuggestionSource src) => new[]
+    {
+        ("fav", "Favoriten", src.Favorites), ("admin", "Benötigt Administrator", src.Admin),
+        ("remote", "Remote-fähig", src.Remote), ("problem", "Mit Problemen", src.Problems)
+    };
+
+    /// <summary>Sammelarten wie die früheren Filterknöpfe: nur, wenn sie mehr als eine vorhandene Art zusammenfassen.</summary>
+    private static readonly (string Alias, string Label, SearchKind[] Kinds)[] KindGroups =
+    {
+        ("script", "Scripte (PowerShell und Batch)", new[] { SearchKind.PowerShell, SearchKind.Batch }),
+        ("programm", "Programme (.exe, Verknüpfungen, Snap-ins)", new[] { SearchKind.Executable, SearchKind.Shortcut, SearchKind.SnapIn }),
+    };
 
     /// <summary>Kanonischer Wert für <c>typ:</c> und Anzeigename je Art.</summary>
     public static readonly IReadOnlyDictionary<SearchKind, (string Alias, string Label)> KindNames = new Dictionary<SearchKind, (string, string)>
@@ -74,7 +126,7 @@ public static class SearchSuggestions
             list.AddRange(src.Tags.Where(t => prefix.Length == 0 || t.Key.Contains(prefix, StringComparison.CurrentCultureIgnoreCase))
                 .OrderByDescending(t => t.Key.StartsWith(prefix, StringComparison.CurrentCultureIgnoreCase)).ThenByDescending(t => t.Value).ThenBy(t => t.Key)
                 .Select(t => new SearchSuggestion("#" + t.Key, "#" + t.Key, "Schlagwort", t.Value)));
-            return list.Take(MaxSuggestions).ToList();
+            return list.Take(prefix.Length == 0 ? MaxBrowse : MaxSuggestions).ToList();
         }
 
         var colon = token.IndexOf(':');
@@ -85,6 +137,12 @@ public static class SearchSuggestions
             switch (key)
             {
                 case "typ" or "type" or "t" or "art":
+                    foreach (var (alias, label, groupKinds) in KindGroups)
+                    {
+                        var present = groupKinds.Where(k => src.Kinds.GetValueOrDefault(k) > 0).ToList();
+                        if (present.Count > 1 && (value.Length == 0 || alias.StartsWith(value, StringComparison.OrdinalIgnoreCase) || label.Contains(value, StringComparison.CurrentCultureIgnoreCase)))
+                            list.Add(new SearchSuggestion($"{key}:{alias}", $"{key}:{alias}", label, present.Sum(k => src.Kinds[k])));
+                    }
                     list.AddRange(src.Kinds.Where(k => k.Value > 0 && KindNames.ContainsKey(k.Key))
                         .Select(k => (k, n: KindNames[k.Key]))
                         .Where(x => value.Length == 0 || x.n.Alias.StartsWith(value, StringComparison.OrdinalIgnoreCase) || x.n.Label.Contains(value, StringComparison.CurrentCultureIgnoreCase))
@@ -97,12 +155,12 @@ public static class SearchSuggestions
                         .Select(g => new SearchSuggestion($"{key}:{Quote(g.Key)}", $"{key}:{g.Key}", "Gruppe", g.Value)));
                     break;
                 case "ist" or "is":
-                    foreach (var (alias, label, count) in new[] { ("fav", "Favoriten", src.Favorites), ("admin", "Benötigt Administrator", src.Admin), ("remote", "Remote-fähig", src.Remote), ("problem", "Mit Problemen", src.Problems) })
+                    foreach (var (alias, label, count) in Flags(src))
                         if (count > 0 && alias.StartsWith(value, StringComparison.OrdinalIgnoreCase))
                             list.Add(new SearchSuggestion($"{key}:{alias}", $"{key}:{alias}", label, count));
                     break;
             }
-            return list.Take(MaxSuggestions).ToList();
+            return list.Take(value.Length == 0 ? MaxBrowse : MaxSuggestions).ToList();
         }
 
         // Schlüssel anbieten, wenn das Wort wie ihr Anfang aussieht („ty“ → typ:, „gr“ → gruppe:)

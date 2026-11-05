@@ -12,12 +12,12 @@
     <SolidColorBrush x:Key="Bg.Code" Color="#F4F4F4"/>
     <SolidColorBrush x:Key="Bg.Chip" Color="#E8E8E8"/>
     <SolidColorBrush x:Key="Bg.Menu" Color="#FBFBFB"/>
-    <SolidColorBrush x:Key="Border.Default" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="Border.Default" Color="#D9D9D9"/>
     <SolidColorBrush x:Key="Border.Panel" Color="#D6D6D6"/>
-    <SolidColorBrush x:Key="Border.Control" Color="#C4C4C4"/>
+    <SolidColorBrush x:Key="Border.Control" Color="#ABABAB"/>
     <SolidColorBrush x:Key="Text.Primary" Color="#1A1A1A"/>
-    <SolidColorBrush x:Key="Text.Secondary" Color="#4F4F4F"/>
-    <SolidColorBrush x:Key="Text.Tertiary" Color="#666666"/>
+    <SolidColorBrush x:Key="Text.Secondary" Color="#444444"/>
+    <SolidColorBrush x:Key="Text.Tertiary" Color="#5A5A5A"/>
     <SolidColorBrush x:Key="Text.Disabled" Color="#A0A0A0"/>
     <SolidColorBrush x:Key="Accent" Color="#005FB8"/>
     <SolidColorBrush x:Key="Accent.Hover" Color="#1A6FC2"/>
