@@ -330,6 +330,7 @@ public partial class PanelWindow : Window
             PanelBorder.Height = _rect.Height / dpi.DpiScaleY;
             PanelBorder.HorizontalAlignment = Cfg.Edge == ScreenEdge.Left ? HorizontalAlignment.Right : HorizontalAlignment.Left;
             PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
+            ChooseRevealMode();
             ApplyReveal();
         }
         else
@@ -407,31 +408,38 @@ public partial class PanelWindow : Window
 
     public double Reveal { get => (double)GetValue(RevealProperty); set => SetValue(RevealProperty, value); }
 
-    /// <summary>Fenster auf den ausgefahrenen Teil des Panels setzen (am Rand verankert).</summary>
+    /// <summary>
+    /// Fenster für den ausgefahrenen Teil setzen. Ohne Bildschirm hinter dem Rand wird das Fenster in voller Größe
+    /// verschoben (flüssig, Windows muss nur verschieben); sonst wächst es vom Rand aus (sonst tauchte es dort auf).
+    /// </summary>
     private void ApplyReveal()
     {
         if (!_systemWindow || _hwnd == IntPtr.Zero || _rect.Width <= 0) return;
-        var r = _rect;
-        var f = Math.Clamp(Reveal, 0, 1);
-        int x = r.Left, y = r.Top, w = r.Width, h = r.Height;
-        switch (Cfg.Edge)
+        var r = Core.Layout.PanelLayout.Reveal(_rect, Cfg.Edge, Reveal, _revealByMove);
+        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X, r.Y, r.Width, r.Height, NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
+        if (KeepsRegion && r.Size != _regionSize)
         {
-            case ScreenEdge.Right: w = Math.Max(1, (int)Math.Round(r.Width * f)); x = r.Right - w; break;
-            case ScreenEdge.Left: w = Math.Max(1, (int)Math.Round(r.Width * f)); break;
-            case ScreenEdge.Bottom: h = Math.Max(1, (int)Math.Round(r.Height * f)); y = r.Bottom - h; break;
-            default: h = Math.Max(1, (int)Math.Round(r.Height * f)); break;
-        }
-        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, x, y, w, h, NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
-        if (KeepsRegion)
-        {
-            // Aero-Blur braucht einen Fensterbereich: abgerundet auf die aktuelle Fenstergröße
+            // Aero-Blur braucht einen Fensterbereich: abgerundet auf die aktuelle Fenstergröße (beim Verschieben nur einmal)
+            _regionSize = r.Size;
             var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
-            Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, w, h, radius);
+            Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, r.Width, r.Height, radius);
         }
+    }
+
+    private bool _revealByMove = true;
+    private System.Drawing.Size _regionSize;
+
+    /// <summary>Schieben, wenn hinter dem Panelrand kein anderer Bildschirm liegt.</summary>
+    private void ChooseRevealMode()
+    {
+        if (_monitor == null || _rect.Width <= 0) return;
+        var others = ScreenService.GetMonitors().Where(m => m.Bounds != _monitor.Bounds).Select(m => m.Bounds);
+        _revealByMove = !Core.Layout.PanelLayout.HasMonitorBeyond(_rect, Cfg.Edge, others);
     }
 
     private void AnimateReveal(bool show, TimeSpan duration)
     {
+        ChooseRevealMode();
         Slide.BeginAnimation(TranslateTransform.XProperty, null);
         Slide.BeginAnimation(TranslateTransform.YProperty, null);
         Slide.X = 0;

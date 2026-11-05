@@ -7,6 +7,10 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 4), "Flüssiger mit Weichzeichner", new[]
+        {
+            "Mit Aero-Blur, Acrylic oder Mica wird das Panel beim Ein- und Ausfahren als Ganzes verschoben statt neu vermessen – deutlich flüssiger (bei einem weiteren Bildschirm hinter dem Rand wächst es wie bisher)"
+        }),
         new ReleaseNote(new Version(0, 19, 3), "Weichzeichner fährt mit dem Panel", new[]
         {
             "Aero-Blur, Acrylic und Mica fahren genau mit dem Panel ein und aus – kein Hintergrund mehr vor oder nach dem Panel"
