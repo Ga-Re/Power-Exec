@@ -242,8 +242,8 @@ public partial class SettingsWindow : Window
 
     private void GroupCard_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        // Nicht aus Knöpfen, Auswahlfeldern oder Textfeldern heraus ziehen
-        if (e.OriginalSource is DependencyObject src && FindAncestor<ButtonBase>(src) is null && FindAncestor<ComboBox>(src) is null && FindAncestor<TextBox>(src) is null)
+        // Nicht aus Knöpfen, Auswahlfeldern, Textfeldern oder Schiebereglern heraus ziehen
+        if (e.OriginalSource is DependencyObject src && FindAncestor<ButtonBase>(src) is null && FindAncestor<ComboBox>(src) is null && FindAncestor<TextBox>(src) is null && FindAncestor<Slider>(src) is null && FindAncestor<Thumb>(src) is null)
         {
             _groupDragStart = e.GetPosition(this);
             _groupDragCandidate = (sender as FrameworkElement)?.DataContext as CategoryItemViewModel;

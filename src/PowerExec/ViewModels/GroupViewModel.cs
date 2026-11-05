@@ -56,7 +56,13 @@ public sealed class GroupViewModel : ObservableObject
         ChooseIconCommand = new RelayCommand(() => app.ChooseGroupIcon(GroupPath!), () => IsUserGroup);
         _app = app;
         SetLayoutCommand = new RelayCommand(p => app.SetGroupLayout(GroupPath!, p?.ToString() switch { "Grid" => ItemLayout.Grid, "List" => ItemLayout.List, _ => null }), _ => GroupPath != null);
-        ToggleLayoutCommand = new RelayCommand(() => app.SetGroupLayout(GroupPath!, IsGrid ? ItemLayout.List : ItemLayout.Grid), () => GroupPath != null);
+        ToggleLayoutCommand = new RelayCommand(() =>
+        {
+            // Liste ↔ Raster über den Knopf im Gruppenkopf: Höhe der Gruppe ändert sich weich
+            AnimateResize = true;
+            app.SetGroupLayout(GroupPath!, IsGrid ? ItemLayout.List : ItemLayout.Grid);
+            AnimateResize = false;
+        }, () => GroupPath != null);
         SetColorCommand = new RelayCommand(p => app.SetGroupColor(GroupPath!, p?.ToString()), _ => GroupPath != null);
         CustomColorCommand = new RelayCommand(() => app.PickGroupColor(GroupPath!), () => GroupPath != null);
         ExportCommand = new RelayCommand(() => app.ExportGroup(GroupPath!), () => IsUserGroup);
@@ -70,6 +76,18 @@ public sealed class GroupViewModel : ObservableObject
 
     /// <summary>Vom Benutzer angelegte Gruppe (umbenennen, löschen, Einträge hineinziehen).</summary>
     public bool IsUserGroup => Kind == "group";
+
+    /// <summary>Feste Gruppe (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Schlüssel, sonst null.</summary>
+    public string? FixedKey => Kind switch
+    {
+        "recent" => FixedGroups.Recent,
+        "fav" => FixedGroups.Favorites,
+        "custom" => FixedGroups.Custom,
+        _ => null
+    };
+
+    /// <summary>Lässt sich im Panel ziehen: eigene Gruppen und feste Gruppen (diese nur auf oberster Ebene).</summary>
+    public bool CanDrag => IsUserGroup && GroupPath != null || FixedKey != null;
 
     /// <summary>Gruppen, in die man Einträge ziehen kann (eigene Gruppen, Ordner, „Eigene Einträge“, „Ohne Gruppe“, Favoriten).</summary>
     public bool AcceptsItems => Kind is "group" or "subfolder" or "folder" or "custom" or "ungrouped" or "fav";
@@ -208,6 +226,10 @@ public sealed class GroupViewModel : ObservableObject
     public string CountText => TotalCount.ToString();
     public string? Error { get; }
     public bool HasError => !string.IsNullOrEmpty(Error);
+
+    private bool _animateResize;
+    /// <summary>Kurz true, während der Knopf Liste/Raster umschaltet – dann ändert sich die Höhe animiert.</summary>
+    public bool AnimateResize { get => _animateResize; private set => Set(ref _animateResize, value); }
 
     private bool _animateExpand;
     /// <summary>Kurz true, während der Klick auf den Gruppenkopf umschaltet – dann klappt die Gruppe animiert.</summary>

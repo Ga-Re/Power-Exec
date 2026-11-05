@@ -3,8 +3,9 @@ using System.Runtime.InteropServices;
 namespace PowerExec.Interop;
 
 /// <summary>
-/// Weichgezeichneter Hintergrund hinter einem Fenster (Acrylic ab Windows 10 1803, sonst Blur) über
-/// SetWindowCompositionAttribute. Die Tönung liefert der halbtransparente Panelhintergrund.
+/// Weichgezeichneter Hintergrund hinter einem Fenster (Aero-Blur bzw. Acrylic) über SetWindowCompositionAttribute,
+/// dazu Systemhintergrund (Acrylic/Mica) und runde Ecken von Windows 11 über DWM.
+/// Die Tönung liefert der halbtransparente Panelhintergrund.
 /// </summary>
 internal static class Acrylic
 {
@@ -68,27 +69,15 @@ internal static class Acrylic
         catch (EntryPointNotFoundException) { }
     }
 
-    /// <summary>Stärke der Weichzeichnung (Regler in den Einstellungen).</summary>
-    public const int Light = 1, Medium = 2, Strong = 3;
-
-    /// <param name="level">
-    /// 1 = leicht (einfacher Weichzeichner), 2 = mittel (Acrylic), 3 = stark (Acrylic mit Milchglas-Tönung in <paramref name="tintRgb"/>).
-    /// Den Radius der Weichzeichnung selbst lässt Windows nicht einstellen.
-    /// </param>
+    /// <param name="acrylic">true = Acrylic (Windows 10 1803+), false = klassischer Weichzeichner (Aero-Blur).</param>
     /// <returns>false, wenn Windows die Funktion nicht kennt.</returns>
-    public static bool Apply(IntPtr hwnd, bool enabled, int level = Medium, uint tintRgb = 0)
+    public static bool Apply(IntPtr hwnd, bool enabled, bool acrylic = false)
     {
         if (hwnd == IntPtr.Zero) return false;
-        level = Math.Clamp(level, Light, Strong);
-        var state = !enabled ? AccentState.Disabled
-            : level == Light || !IsAcrylicSupported ? AccentState.BlurBehind
-            : AccentState.AcrylicBlurBehind;
-        // GradientColor ist AABBGGRR; „stark“ legt eine deutliche Tönung über die Weichzeichnung
-        uint bgr = (tintRgb & 0xFF) << 16 | (tintRgb & 0xFF00) | (tintRgb >> 16 & 0xFF);
         var policy = new AccentPolicy
         {
-            AccentState = state,
-            GradientColor = level == Strong && enabled ? 0x99000000 | bgr : 0x01000000 // sonst minimale eigene Tönung, Farbe kommt vom Panel
+            AccentState = !enabled ? AccentState.Disabled : acrylic && IsAcrylicSupported ? AccentState.AcrylicBlurBehind : AccentState.BlurBehind,
+            GradientColor = 0x01000000 // minimale eigene Tönung, Farbe kommt vom Panel (geglättet von WPF gezeichnet)
         };
         var size = Marshal.SizeOf(policy);
         var ptr = Marshal.AllocHGlobal(size);
@@ -101,4 +90,52 @@ internal static class Acrylic
         catch (EntryPointNotFoundException) { return false; }
         finally { Marshal.FreeHGlobal(ptr); }
     }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Margins { public int Left, Right, Top, Bottom; }
+
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20, DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWA_BORDER_COLOR = 34, DWMWA_SYSTEMBACKDROP_TYPE = 38;
+    private const int DWMWCP_ROUND = 2, DWMSBT_NONE = 1, DWMSBT_MAINWINDOW = 2, DWMSBT_TRANSIENTWINDOW = 3;
+    private const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
+
+    private static void Set(IntPtr hwnd, int attr, int value)
+    {
+        try { DwmSetWindowAttribute(hwnd, attr, ref value, sizeof(int)); }
+        catch (DllNotFoundException) { }
+        catch (EntryPointNotFoundException) { }
+    }
+
+    /// <summary>
+    /// Fenster für einen Hintergrund von Windows vorbereiten: Rahmen in den Inhalt erweitern (Windows zeichnet hinter
+    /// den durchsichtigen Teilen), Ecken wie Windows 11 runden, keinen farbigen Rand.
+    /// </summary>
+    public static void PrepareSystemWindow(IntPtr hwnd, bool dark)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        try
+        {
+            var m = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+            DwmExtendFrameIntoClientArea(hwnd, ref m);
+        }
+        catch (DllNotFoundException) { }
+        Set(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, dark ? 1 : 0);
+        Set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND);
+        Set(hwnd, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE);
+    }
+
+    /// <summary>Systemhintergrund von Windows 11 22H2+: Acrylic (wie Menüs) oder Mica; false = keiner.</summary>
+    public static void SetSystemBackdrop(IntPtr hwnd, bool? acrylic) =>
+        Set(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, acrylic switch { true => DWMSBT_TRANSIENTWINDOW, false => DWMSBT_MAINWINDOW, null => DWMSBT_NONE });
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr DefWindowProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 }

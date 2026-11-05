@@ -70,6 +70,34 @@ public static class FixedGroups
     }
 
     /// <summary>
+    /// Oberste Ebene umordnen (Ziehen im Panel oder in den Einstellungen): <paramref name="key"/> – feste Gruppe oder
+    /// eigene Gruppe – vor bzw. hinter <paramref name="anchor"/>. Eine Untergruppe wird dabei zur Gruppe der obersten Ebene.
+    /// </summary>
+    /// <returns>Neuer Schlüssel (Pfad ändert sich, wenn eine Untergruppe nach oben wandert) oder null, wenn nichts geht.</returns>
+    public static string? MoveTopLevel(AppSettings s, string key, string anchor, bool after)
+    {
+        static bool Eq(string a, string b) => a.Equals(b, StringComparison.CurrentCultureIgnoreCase);
+        if (Eq(key, anchor)) return null;
+        if (!IsFixed(key) && GroupManager.ParentOf(key) != null)
+        {
+            var root = GroupManager.All(s).LastOrDefault(p => GroupManager.ParentOf(p) == null && !GroupManager.IsSameOrBelow(key, p));
+            root ??= GroupManager.All(s).LastOrDefault(p => GroupManager.ParentOf(p) == null);
+            if (root == null || GroupManager.MoveGroup(s, key, root, GroupDropPosition.After) is not { } moved) return null;
+            key = moved;
+        }
+        var all = GroupManager.All(s);
+        var full = Compose(s, all.Where(p => GroupManager.ParentOf(p) == null).ToList());
+        full.RemoveAll(k => Eq(k, key));
+        var at = full.FindIndex(k => Eq(k, anchor));
+        if (at < 0) return null;
+        full.Insert(after ? at + 1 : at, key);
+        SetPositions(s, full);
+        s.CategoryOrder = full.Where(k => !IsFixed(k))
+            .SelectMany(r => all.Where(p => GroupManager.IsSameOrBelow(p, r))).ToList();
+        return key;
+    }
+
+    /// <summary>
     /// Einmalig: die früheren Schalter „Favoriten anzeigen“ / „Zuletzt ausgeführt anzeigen“ werden zu
     /// ausgeblendeten Gruppen in allen Arbeitsbereichen (die Anzeige steuern jetzt die Arbeitsbereiche).
     /// </summary>

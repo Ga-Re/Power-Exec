@@ -414,7 +414,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         if (number < 1 || number > _quickItems.Count) return false;
         var item = _quickItems[number - 1];
-        _app.RunProfile(item, ProfileResolver.GetDefault(_app.Settings, item));
+        _app.RunProfile(item, null); // Standardprofil bzw. „Nach Profil fragen“
         return true;
     }
 
@@ -1163,7 +1163,7 @@ public sealed class PanelViewModel : ObservableObject
     public void BeginGroupDrag(GroupViewModel group)
     {
         EndGroupDrag();
-        if (!group.IsUserGroup || group.GroupPath == null) return;
+        if (!group.CanDrag) return;
         _dragGroup = group;
         var sub = group.SelfAndDescendants.Count() - 1;
         DragLabel = group.Title + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
@@ -1191,7 +1191,10 @@ public sealed class PanelViewModel : ObservableObject
     /// </summary>
     public GroupDropPlan? PreviewGroupDrop(GroupViewModel hovered, GroupDropZone zone, int levelOffset)
     {
-        if (_dragGroup?.GroupPath is not { } dragged) return null;
+        if (_dragGroup == null) return null;
+        if (_dragGroup.FixedKey != null || hovered.FixedKey != null) return PreviewTopLevelDrop(hovered, zone);
+        _topDrop = null;
+        if (_dragGroup.GroupPath is not { } dragged) return null;
         var plan = !hovered.IsUserGroup || hovered.GroupPath == null
             ? new GroupDropPlan { IsValid = false, Reason = "Gruppen lassen sich nur zwischen eigenen Gruppen ablegen." }
             : GroupDropPlanner.Plan(VisibleUserGroupOrder(), dragged, hovered.GroupPath, zone, levelOffset, siblingsOnly: false,
@@ -1215,9 +1218,44 @@ public sealed class PanelViewModel : ObservableObject
         return plan;
     }
 
+    /// <summary>Feste Gruppe beteiligt: oberste Ebene, Lücke vor oder hinter der Gruppe der obersten Ebene unter der Maus.</summary>
+    private (string Anchor, bool After)? _topDrop;
+
+    private static string? TopKeyOf(GroupViewModel g) => g.FixedKey ?? g.GroupPath;
+
+    private GroupDropPlan PreviewTopLevelDrop(GroupViewModel hovered, GroupDropZone zone)
+    {
+        var dragged = _dragGroup!;
+        var anchor = Groups.FirstOrDefault(t => ReferenceEquals(t, hovered) || t.SelfAndDescendants.Contains(hovered)) ?? hovered;
+        GroupDropPlan plan;
+        GroupDropSlot slot = GroupDropSlot.None;
+        if (anchor.Kind == "best" || TopKeyOf(anchor) is not { } anchorKey)
+            plan = new GroupDropPlan { IsValid = false, Reason = "Hier lässt sich nichts ablegen." };
+        else if (ReferenceEquals(anchor, dragged))
+            plan = new GroupDropPlan { IsValid = true, IsNoOp = true, Target = anchorKey };
+        else if (zone == GroupDropZone.Into && dragged.FixedKey != null && anchor.FixedKey == null)
+            plan = new GroupDropPlan { IsValid = false, Reason = "Feste Gruppen bleiben auf oberster Ebene – vor oder hinter eine Gruppe ziehen." };
+        else
+        {
+            var after = zone != GroupDropZone.Before;
+            slot = after ? GroupDropSlot.After : GroupDropSlot.Before;
+            _topDrop = (anchorKey, after);
+            plan = new GroupDropPlan { IsValid = true, Target = anchorKey, Position = after ? GroupDropPosition.After : GroupDropPosition.Before };
+        }
+        if (!plan.IsValid || plan.IsNoOp) _topDrop = null;
+        _dropPlan = plan;
+        var target = slot == GroupDropSlot.None ? null : anchor;
+        if (!ReferenceEquals(_gapGroup, target) && _gapGroup != null) _gapGroup.DropSlot = GroupDropSlot.None;
+        _gapGroup = target;
+        if (target != null) target.DropSlot = slot;
+        return plan;
+    }
+
     /// <summary>Über der leeren Fläche unter allen Gruppen: hinter die letzte sichtbare Gruppe.</summary>
     public GroupDropPlan? PreviewGroupDropAtEnd(int levelOffset)
     {
+        if (_dragGroup?.FixedKey != null)
+            return Groups.LastOrDefault(g => !ReferenceEquals(g, _dragGroup) && TopKeyOf(g) != null) is { } lastTop ? PreviewGroupDrop(lastTop, GroupDropZone.After, levelOffset) : null;
         var last = VisibleUserGroupOrder().LastOrDefault(p => _dragGroup?.GroupPath == null || !GroupManager.IsSameOrBelow(p, _dragGroup.GroupPath));
         var lastVm = last == null ? null : AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, last, StringComparison.CurrentCultureIgnoreCase));
         return lastVm == null ? null : PreviewGroupDrop(lastVm, GroupDropZone.After, levelOffset);
@@ -1228,7 +1266,11 @@ public sealed class PanelViewModel : ObservableObject
     {
         var plan = _dropPlan;
         var path = _dragGroup?.GroupPath;
+        var topKey = _dragGroup == null ? null : TopKeyOf(_dragGroup);
+        var top = _topDrop;
         EndGroupDrag();
+        if (top is { } t && topKey != null && plan is { IsValid: true, IsNoOp: false })
+            return _app.MoveTopLevel(topKey, t.Anchor, t.After);
         if (plan is not { IsValid: true, IsNoOp: false } || path == null) return false;
         _app.MoveGroupTo(path, plan.Target, plan.Position);
         return true;
@@ -1242,6 +1284,7 @@ public sealed class PanelViewModel : ObservableObject
         if (_dragGroup != null) _dragGroup.IsDragSource = false;
         _dragGroup = null;
         _dropPlan = null;
+        _topDrop = null;
         GroupDragCompact = false;
     }
 

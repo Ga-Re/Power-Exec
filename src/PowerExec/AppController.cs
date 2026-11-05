@@ -560,6 +560,17 @@ public sealed partial class AppController : IDisposable
             : $"„{GroupManager.LeafOf(path)}“ verschoben");
     }
 
+    /// <summary>Oberste Ebene umordnen – auch feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge).</summary>
+    public bool MoveTopLevel(string key, string anchor, bool after)
+    {
+        var before = SettingsStore.Clone(Settings);
+        if (FixedGroups.MoveTopLevel(Settings, key, anchor, after) is not { } moved) return false;
+        _undo.Push(before, "Gruppe verschoben");
+        CommitUserChange();
+        ShowUndoToast($"„{(FixedGroups.IsFixed(moved) ? FixedGroups.Title(moved) : GroupManager.LeafOf(moved))}“ verschoben");
+        return true;
+    }
+
     /// <summary>Gruppe im aktiven Arbeitsbereich ausblenden (wieder einblenden: Einstellungen › Arbeitsbereiche).</summary>
     public void HideGroupInWorkspace(string groupPath)
     {

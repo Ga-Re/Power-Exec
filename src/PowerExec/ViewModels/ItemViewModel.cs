@@ -17,6 +17,8 @@ public sealed class ItemViewModel : ObservableObject
     private ImageSource? _icon;
     private readonly EntryConfig? _entry;
     private readonly string? _subtitle;
+    /// <summary>„Zuletzt ausgeführt“: mit genau diesem Profil starten (nicht nachfragen).</summary>
+    private readonly LaunchProfile? _fixedProfile;
 
     public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey,
         LaunchProfile? fixedProfile = null, string? subtitle = null, string? recentWhen = null)
@@ -29,6 +31,7 @@ public sealed class ItemViewModel : ObservableObject
         Key = groupKey + "|" + item.FullPath;
         _entry = app.Settings.FindEntry(item.FullPath);
         Profiles = ProfileResolver.GetProfiles(app.Settings, item);
+        _fixedProfile = fixedProfile;
         DefaultProfile = fixedProfile ?? Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
 
         CustomIcon = item.Source?.Icon ?? string.Empty;
@@ -397,11 +400,11 @@ public sealed class ItemViewModel : ObservableObject
     private ICommand? _selectCommand;
     public ICommand SelectCommand => _selectCommand ??= new RelayCommand(() => { if (IsSingleClick) RunCommand?.Execute(null); else _panel.Select(this); });
     private ICommand? _runCommand;
-    public ICommand RunCommand => _runCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile));
+    public ICommand RunCommand => _runCommand ??= new RelayCommand(() => _app.RunProfile(Item, _fixedProfile));
     private ICommand? _runAdminCommand;
-    public ICommand RunAdminCommand => _runAdminCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.Administrator), () => CanElevate);
+    public ICommand RunAdminCommand => _runAdminCommand ??= new RelayCommand(() => _app.RunProfile(Item, _fixedProfile, ExecutionMode.Administrator), () => CanElevate);
     private ICommand? _runAsUserCommand;
-    public ICommand RunAsUserCommand => _runAsUserCommand ??= new RelayCommand(() => _app.RunProfile(Item, DefaultProfile, ExecutionMode.OtherUser), () => CanElevate);
+    public ICommand RunAsUserCommand => _runAsUserCommand ??= new RelayCommand(() => _app.RunProfile(Item, _fixedProfile, ExecutionMode.OtherUser), () => CanElevate);
     private ICommand? _runRemoteCommand;
     public ICommand RunRemoteCommand => _runRemoteCommand ??= new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
                 remote: true, DefaultProfile), () => Item.SupportsRemote);

@@ -1488,16 +1488,16 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                    <c:SettingsCard Icon="&#xE7B3;" Header="Acrylic (Hintergrund weichzeichnen)"
-                                    Description="Der Desktop hinter dem Panel erscheint verschwommen, getönt mit der Panelfarbe – wie das Startmenü von Windows 11. Je geringer die Deckkraft, desto mehr ist davon zu sehen.">
-                        <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding Acrylic}"/>
+                    <c:SettingsCard Icon="&#xE7B3;" Header="Hintergrund hinter dem Panel" Description="{Binding BackdropDescription}">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Backdrops}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                  SelectedValue="{Binding Backdrop}" AutomationProperties.Name="Hintergrund hinter dem Panel"/>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE7B3;" Header="Stärke des Weichzeichners" Visibility="{Binding Acrylic, Converter={StaticResource Vis}}"
-                                    Description="Leicht: einfacher Weichzeichner · Mittel: Acrylic wie in Windows · Stark: Acrylic mit Milchglas-Tönung. Den Radius selbst lässt Windows nicht einstellen.">
+                    <c:SettingsCard Icon="&#xE7B3;" Header="Milchglas" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}"
+                                    Description="Heller Schleier über dem Weichzeichner – wirkt stärker, ohne den Radius zu ändern (den legt Windows fest).">
                         <StackPanel Orientation="Horizontal">
-                            <Slider Width="180" Minimum="1" Maximum="3" TickFrequency="1" IsSnapToTickEnabled="True" TickPlacement="BottomRight"
-                                    Value="{Binding AcrylicLevel}" VerticalAlignment="Center" AutomationProperties.Name="Stärke des Weichzeichners"/>
-                            <TextBlock Text="{Binding AcrylicLevelText}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            <Slider Width="180" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
+                                    Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="Milchglas"/>
+                            <TextBlock Text="{Binding Frost, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                         </StackPanel>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"

@@ -32,6 +32,19 @@ public partial class PanelWindow : Window
         _app = app;
         _host = host;
         InitializeComponent();
+        // Weichzeichner-Varianten: Fenster ohne Transparenz-Schicht, Windows zeichnet dahinter und rundet die Ecken
+        _backdrop = PanelBackdrops.Effective(host.Config.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+        _systemWindow = PanelBackdrops.NeedsSystemWindow(_backdrop);
+        if (_systemWindow)
+        {
+            AllowsTransparency = false;
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            System.Windows.Shell.WindowChrome.SetWindowChrome(this, new System.Windows.Shell.WindowChrome
+            {
+                CaptionHeight = 0, GlassFrameThickness = new Thickness(-1), ResizeBorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(0), UseAeroCaptionButtons = false
+            });
+        }
         DataContext = host.ViewModel;
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
         AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
@@ -43,8 +56,14 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
-        if (Cfg.Acrylic) Interop.Acrylic.Apply(_hwnd, true, Cfg.AcrylicLevel, AcrylicTint(Cfg));
-        UpdateBlurRegion();
+        if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
+        {
+            if (src.CompositionTarget != null) src.CompositionTarget.BackgroundColor = Colors.Transparent;
+            src.AddHook(SystemWindowHook);
+        }
+        ApplyBackdrop();
+        // Bis zum ersten Einfahren nichts zeigen (sonst stünde der Hintergrund kurz in voller Größe da)
+        if (_systemWindow) Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
         SizeChanged += (_, _) => UpdateBlurRegion();
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
@@ -108,6 +127,7 @@ public partial class PanelWindow : Window
         Place();
         if (!IsVisible) Show();
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
+        if (_systemWindow) Interop.Acrylic.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
         _poll.Start();
         Animate(show: true);
@@ -163,8 +183,8 @@ public partial class PanelWindow : Window
         double opacity = s.PanelOpacity / 100.0;
         // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
-        Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast, s.AcrylicLevel, AcrylicTint(s));
-        UseBlurRegion = s.Acrylic && !ThemeService.IsHighContrast;
+        ApplyBackdrop();
+        UseBlurRegion = _systemWindow;
 
         if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
         {
@@ -198,14 +218,59 @@ public partial class PanelWindow : Window
             var c = themeBrush.Color;
             Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
         }
+        // Milchglas: heller Schleier (dunkle Panels halb so stark), nur über einem Weichzeichner
+        var frost = PanelBackdrops.SupportsFrost(_backdrop) ? s.Frost / 100.0 : 0;
+        if (!Vm.IsDarkSurface) FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost) : null;
+        else FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost * 0.5) : null;
     }
 
-    /// <summary>Tönung der Weichzeichnung für „Stark“: Panelfarbe bzw. Fläche des Designs (Format 0xRRGGBB).</summary>
-    private static uint AcrylicTint(PanelConfig s)
+    // ---- Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica ---------------------------------
+
+    private readonly PanelBackdrop _backdrop;
+    private readonly bool _systemWindow;
+
+    /// <summary>Tatsächlich laufende Variante (nach Rückfall für Windows 10 bzw. Kontrastdesign).</summary>
+    internal PanelBackdrop EffectiveBackdrop => _backdrop;
+
+    private void ApplyBackdrop()
     {
-        if (PanelColors.TryParse(s.PanelColor, out var c)) return (uint)(c.R << 16 | c.G << 8 | c.B);
-        var bg = (Application.Current.Resources["Bg.Panel"] as SolidColorBrush)?.Color ?? Colors.Black;
-        return (uint)(bg.R << 16 | bg.G << 8 | bg.B);
+        if (_hwnd == IntPtr.Zero) return;
+        if (!_systemWindow)
+        {
+            Interop.Acrylic.Apply(_hwnd, false);
+            return;
+        }
+        Interop.Acrylic.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+        switch (_backdrop)
+        {
+            case PanelBackdrop.Acrylic:
+                Interop.Acrylic.Apply(_hwnd, false);
+                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: true);
+                break;
+            case PanelBackdrop.Mica:
+                Interop.Acrylic.Apply(_hwnd, false);
+                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: false);
+                break;
+            default: // Aero-Blur: klassischer Weichzeichner
+                if (Environment.OSVersion.Version.Build >= PanelBackdrops.SystemBackdropBuild) Interop.Acrylic.SetSystemBackdrop(_hwnd, null);
+                Interop.Acrylic.Apply(_hwnd, true, acrylic: false);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Windows zeigt Acrylic und Mica nur für „aktive“ Fenster, sonst eine schlichte Ersatzfarbe. Das Panel wird oft
+    /// ohne Fokus gezeigt (Hover-Zone) – es soll trotzdem wie aktiv aussehen.
+    /// </summary>
+    private IntPtr SystemWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_NCACTIVATE = 0x0086;
+        if (msg == WM_NCACTIVATE && wParam == IntPtr.Zero)
+        {
+            handled = true;
+            return Interop.Acrylic.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
+        }
+        return IntPtr.Zero;
     }
 
     private static Brush Freeze(Brush b)
@@ -325,6 +390,11 @@ public partial class PanelWindow : Window
 
         if (duration == TimeSpan.Zero)
         {
+            if (_useBlurRegion)
+            {
+                StopBlurTracking(clear: show);
+                if (show) Interop.Acrylic.ClearRegion(_hwnd);
+            }
             Slide.BeginAnimation(property, null);
             Slide.SetValue(property, show ? 0.0 : hiddenOffset);
             PanelBorder.BeginAnimation(OpacityProperty, null);
@@ -346,7 +416,7 @@ public partial class PanelWindow : Window
             // Weichzeichnung fährt mit dem Panel: Fensterbereich bei jedem Bild auf das verschobene Panel setzen.
             // Ohne Einblenden, sonst wäre der Hintergrund schon da, bevor der Inhalt sichtbar ist.
             StartBlurTracking();
-            slide.Completed += (_, _) => StopBlurTracking();
+            slide.Completed += (_, _) => StopBlurTracking(clear: show);
             Slide.BeginAnimation(property, slide);
             PanelBorder.BeginAnimation(OpacityProperty, null);
             PanelBorder.Opacity = 1;
@@ -362,7 +432,10 @@ public partial class PanelWindow : Window
     private bool _useBlurRegion;
     private bool _trackingBlur;
 
-    /// <summary>Acrylic aktiv: Fensterbereich folgt dem (abgerundeten, ggf. gerade einfahrenden) Panel.</summary>
+    /// <summary>
+    /// Weichzeichner aktiv: beim Ein- und Ausfahren folgt der Fensterbereich dem verschobenen Panel (sonst stünde der
+    /// Hintergrund schon an der Endposition). In Ruhe kein Fensterbereich – dann rundet Windows die Ecken selbst (geglättet).
+    /// </summary>
     private bool UseBlurRegion
     {
         get => _useBlurRegion;
@@ -370,8 +443,7 @@ public partial class PanelWindow : Window
         {
             if (_useBlurRegion == value) return;
             _useBlurRegion = value;
-            if (value) UpdateBlurRegion();
-            else { StopBlurTracking(); Interop.Acrylic.ClearRegion(_hwnd); }
+            if (!value) { StopBlurTracking(clear: true); Interop.Acrylic.ClearRegion(_hwnd); }
         }
     }
 
@@ -382,12 +454,14 @@ public partial class PanelWindow : Window
         CompositionTarget.Rendering += OnRenderingBlur;
     }
 
-    private void StopBlurTracking()
+    /// <param name="clear">true nach dem Einfahren: Bereich entfernen (Windows rundet die Ecken); false nach dem Ausfahren: leer lassen.</param>
+    private void StopBlurTracking(bool clear)
     {
         if (!_trackingBlur) return;
         _trackingBlur = false;
         CompositionTarget.Rendering -= OnRenderingBlur;
-        UpdateBlurRegion();
+        if (clear) Interop.Acrylic.ClearRegion(_hwnd);
+        else Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
     }
 
     private void OnRenderingBlur(object? sender, EventArgs e) => UpdateBlurRegion();
@@ -395,7 +469,7 @@ public partial class PanelWindow : Window
     /// <summary>Sichtbarer Teil des Panels (mit Verschiebung) als abgerundeter Fensterbereich in Pixeln.</summary>
     private void UpdateBlurRegion()
     {
-        if (!_useBlurRegion || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
+        if (!_useBlurRegion || !_trackingBlur || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
         var dpi = VisualTreeHelper.GetDpi(this);
         var bounds = PanelBorder.TransformToAncestor(this).TransformBounds(new Rect(0, 0, PanelBorder.ActualWidth, PanelBorder.ActualHeight));
         bounds.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
@@ -543,7 +617,7 @@ public partial class PanelWindow : Window
     private void GroupHeader_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _groupDragStart = e.GetPosition(this);
-        _groupDragCandidate = (sender as FrameworkElement)?.DataContext is ViewModels.GroupViewModel { IsUserGroup: true } g ? g : null;
+        _groupDragCandidate = (sender as FrameworkElement)?.DataContext is ViewModels.GroupViewModel { CanDrag: true } g ? g : null;
     }
 
     private void GroupHeader_PreviewMouseMove(object sender, MouseEventArgs e)
