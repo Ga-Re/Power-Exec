@@ -55,7 +55,7 @@ public class PanelColorTests
             File.WriteAllText(file, """{"PanelColor":"keine Farbe","PanelOpacity":10,"DefaultFilter":"Favorites"}""");
             var s = new SettingsStore(file).Load();
             Assert.Equal(string.Empty, s.PanelColor);
-            Assert.Equal(50, s.PanelOpacity);
+            Assert.Equal(20, s.PanelOpacity); // Untergrenze (mit Weichzeichner bis 20 %)
             Assert.Equal(TypeFilter.Favorites, s.DefaultFilter);
             Assert.True(new AppSettings().ShowProgramIcons);
         }
