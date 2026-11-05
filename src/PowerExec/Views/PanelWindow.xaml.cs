@@ -147,6 +147,9 @@ public partial class PanelWindow : Window
         HidePanel();
     }
 
+    /// <summary>Mindestdeckkraft heller Panels (Lesbarkeit über buntem Hintergrund).</summary>
+    internal const double LightMinOpacity = 0.85;
+
     private static readonly string[] AppearanceKeys =
         ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
 
@@ -163,6 +166,8 @@ public partial class PanelWindow : Window
         double opacity = s.PanelOpacity / 100.0;
         // Acrylic: Hintergrund muss durchscheinen, damit die Weichzeichnung sichtbar ist
         if (s.Acrylic && !ThemeService.IsHighContrast) opacity = Math.Min(opacity, 0.72);
+        // Helle Fläche: höchstens leicht durchscheinend – sonst färbt der Desktop durch und Schrift, Symbole und Gruppenfarben verlieren Kontrast
+        if (!Vm.IsDarkSurface) opacity = Math.Max(opacity, LightMinOpacity);
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         Interop.Acrylic.Apply(_hwnd, s.Acrylic && !ThemeService.IsHighContrast);
         UseBlurRegion = s.Acrylic && !ThemeService.IsHighContrast;
@@ -815,6 +820,9 @@ public partial class PanelWindow : Window
         var inSearch = ReferenceEquals(Keyboard.FocusedElement, SearchBox);
         if (Keyboard.FocusedElement is TextBox && !inSearch) return false;
 
+        // Strg+Leertaste im Suchfeld: Filterarten anbieten (wie ein Klick ins Feld)
+        if (inSearch && key == Key.Space && mods == ModifierKeys.Control) { Vm.ShowFilterCategories(SearchBox.Text, SearchBox.CaretIndex); return true; }
+
         // Vorschläge unter dem Suchfeld: Tab übernimmt; bei „#…“/„typ:…“ auch ↑ ↓ und Enter
         if (inSearch && Vm.HasSuggestions)
         {
@@ -1008,6 +1016,16 @@ public partial class PanelWindow : Window
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => Vm.UpdateSuggestions(SearchBox.Text, SearchBox.CaretIndex);
     private void SearchBox_SelectionChanged(object sender, RoutedEventArgs e) { if (SearchBox.IsKeyboardFocused) Vm.UpdateSuggestions(SearchBox.Text, SearchBox.CaretIndex); }
     private void SearchBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => Vm.CloseSuggestions();
+
+    /// <summary>Klick ins Suchfeld: Filterarten anbieten (nach dem Setzen des Cursors, daher verzögert).</summary>
+    private void SearchBox_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (SearchBox.SelectionLength > 0) return; // Text markiert: nicht dazwischenfunken
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (SearchBox.IsKeyboardFocused && SearchBox.SelectionLength == 0) Vm.ShowFilterCategories(SearchBox.Text, SearchBox.CaretIndex);
+        }, System.Windows.Threading.DispatcherPriority.Input);
+    }
 
     private void SuggestionList_MouseUp(object sender, MouseButtonEventArgs e)
     {

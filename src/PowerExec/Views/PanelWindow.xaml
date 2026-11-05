@@ -37,6 +37,9 @@
         <!-- Menü einer Gruppe (Ordner/Favoriten) -->
         <!-- Ein Menü je Fenster für alle Gruppen: erst beim Öffnen an die Gruppe gebunden (früher je Gruppe zweimal erzeugt) -->
         <ContextMenu x:Key="GroupMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+            <MenuItem Header="Neue Untergruppe …" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="Neuer Eintrag" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 <MenuItem Header="Neuer Eintrag …" Command="{Binding NewEntryCommand}">
@@ -77,10 +80,6 @@
                 <MenuItem Header="Aus Zwischenablage einfügen" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V">
                     <MenuItem.Icon><TextBlock Text="&#xE77F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <Separator Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"/>
-                <MenuItem Header="Neue Untergruppe …" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
-                    <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                </MenuItem>
             </MenuItem>
             <MenuItem Header="Darstellung" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8A9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -104,26 +103,32 @@
                             <Setter.Value>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Ellipse Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,10,0" VerticalAlignment="Center"
+                                        <Ellipse x:Name="Dot" Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,10,0" VerticalAlignment="Center"
                                                  Stroke="{DynamicResource Border.Control}" StrokeThickness="1"/>
+                                        <TextBlock x:Name="ActionIcon" Text="{Binding Glyph}" Style="{StaticResource Icon}" Width="14" Margin="0,0,10,0" FontSize="13"
+                                                   VerticalAlignment="Center" Visibility="Collapsed"/>
                                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                                     </StackPanel>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsAction}" Value="True">
+                                            <Setter TargetName="Dot" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="ActionIcon" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </Setter.Value>
                         </Setter>
+                        <Style.Triggers>
+                            <!-- Trennlinie zwischen den Farben und den Aktionen „Eigene Farbe …“ / „Farbe entfernen“ -->
+                            <DataTrigger Binding="{Binding IsFirstAction}" Value="True">
+                                <Setter Property="Tag" Value="Separator"/>
+                            </DataTrigger>
+                        </Style.Triggers>
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
-            <MenuItem Header="Eigene Farbe …" Command="{Binding CustomColorCommand}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}"/>
-            <MenuItem Header="Farbe entfernen" Command="{Binding SetColorCommand}" CommandParameter="" Visibility="{Binding HasColor, Converter={StaticResource Vis}}"/>
             <MenuItem Header="Umbenennen …" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Nach oben" Command="{Binding MoveUpCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE70E;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Nach unten" Command="{Binding MoveDownCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE70D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Gruppe exportieren …" Command="{Binding ExportCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
                       ToolTip="Eigene Einträge dieser Gruppe als Datei – z. B. für Kollegen">
@@ -134,9 +139,6 @@
             </MenuItem>
             <MenuItem Header="Gruppe löschen …" Command="{Binding DeleteCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Neue Gruppe …" Command="{Binding NewGroupCommand}">
-                <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
             <MenuItem Header="Im Explorer öffnen" Command="{Binding OpenInExplorerCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
@@ -934,8 +936,11 @@
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
                          Padding="30,0,8,0" Tag="Suchen …" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
                          TextChanged="SearchBox_TextChanged" SelectionChanged="SearchBox_SelectionChanged" LostKeyboardFocus="SearchBox_LostKeyboardFocus"
+                         PreviewMouseLeftButtonUp="SearchBox_PreviewMouseUp"
                          ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
-                         AutomationProperties.Name="Suchen" AutomationProperties.HelpText="{Binding SearchHelp}"/>
+                         AutomationProperties.Name="Suchen" AutomationProperties.HelpText="{Binding SearchHelp}">
+                    <TextBox.Resources><CornerRadius x:Key="TextBox.CornerRadius">12</CornerRadius></TextBox.Resources>
+                </TextBox>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"
                            Foreground="{DynamicResource Text.Secondary}"/>
                 <Border HorizontalAlignment="Right" Margin="0,0,8,0" Padding="6,1" CornerRadius="4" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}"
@@ -959,7 +964,7 @@
                 <!-- Vorschläge beim Tippen: #schlagwort, typ:, gruppe:, ist: (nur, was es gibt; mit Anzahl) -->
                 <Popup x:Name="SuggestionPopup" PlacementTarget="{Binding ElementName=SearchBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
                        IsOpen="{Binding HasSuggestions, Mode=OneWay}" VerticalOffset="4" Width="{Binding ActualWidth, ElementName=SearchBox}">
-                    <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="6" Padding="4" Margin="0,0,8,8">
+                    <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="10" Padding="4" Margin="0,0,8,8">
                         <Border.Effect><DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.35" Color="{DynamicResource ShadowColor}"/></Border.Effect>
                         <StackPanel>
                             <ListBox x:Name="SuggestionList" ItemsSource="{Binding Suggestions}" SelectedIndex="{Binding SuggestionIndex}" Background="Transparent" BorderThickness="0"
@@ -987,15 +992,31 @@
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <DockPanel>
-                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Label}" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="Count" DockPanel.Dock="Right" Text="{Binding Count}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="Chevron" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="10" Margin="8,0,0,0"
+                                                       Foreground="{DynamicResource Text.Tertiary}" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="Glyph" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="14" Width="18" Margin="0,0,8,0"
+                                                       Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="Label" Text="{Binding Label}" FontFamily="{StaticResource MonoFont}" FontSize="12" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding Detail}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" Margin="10,0,0,0" VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis"/>
                                         </DockPanel>
+                                        <DataTemplate.Triggers>
+                                            <!-- Filterart (Schlagwort, Typ …): Symbol, normale Schrift, Pfeil – die Auswahl zeigt danach die Werte -->
+                                            <DataTrigger Binding="{Binding IsCategory}" Value="True">
+                                                <Setter TargetName="Glyph" Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="Chevron" Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="Count" Property="Visibility" Value="Collapsed"/>
+                                                <Setter TargetName="Label" Property="FontFamily" Value="{StaticResource AppFont}"/>
+                                                <Setter TargetName="Label" Property="FontSize" Value="13"/>
+                                                <Setter TargetName="Label" Property="FontWeight" Value="SemiBold"/>
+                                                <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource Text.Primary}"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                            <TextBlock FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}" Margin="8,4,8,2" Text="Tab übernimmt · ↑ ↓ wählen · Esc schließt"/>
+                            <TextBlock FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}" Margin="8,4,8,2" Text="Enter oder Tab übernimmt · ↑ ↓ wählen · Esc schließt"/>
                         </StackPanel>
                     </Border>
                 </Popup>
@@ -1005,10 +1026,10 @@
                 </Button>
             </Grid>
 
-            <!-- Filter -->
-            <StackPanel Grid.Row="3" Margin="16,10,16,4">
+            <!-- Aktive Filter (aus dem Suchfeld bzw. voreingestellt); gewählt werden sie über die Vorschläge beim Klick ins Suchfeld -->
+            <StackPanel Grid.Row="3" Margin="16,8,16,2">
             <!-- Erkannte Filter aus dem Suchfeld (typ:, gruppe:, ist:, #schlagwort); ✕ entfernt sie -->
-            <ItemsControl ItemsSource="{Binding SearchChips}" Margin="0,0,0,6" Focusable="False"
+            <ItemsControl ItemsSource="{Binding SearchChips}" Margin="0,0,0,2" Focusable="False"
                           Visibility="{Binding HasSearchChips, Converter={StaticResource Vis}}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -1034,16 +1055,6 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <WrapPanel>
-                <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="TypeFilter"
-                             IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=All}"/>
-                <RadioButton Style="{StaticResource Chip}" Content="Scripte" GroupName="TypeFilter"
-                             IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=Scripts}"/>
-                <RadioButton Style="{StaticResource Chip}" Content="Programme" GroupName="TypeFilter"
-                             IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=Programs}"/>
-                <RadioButton Style="{StaticResource Chip}" Content="Favoriten" GroupName="TypeFilter"
-                             IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=Favorites}"/>
-            </WrapPanel>
             </StackPanel>
 
             <!-- Warnung: Ordner nicht erreichbar -->
@@ -1117,7 +1128,7 @@
                         <Button Style="{StaticResource Btn.Accent}" Content="Neue Gruppe …" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
-                               Style="{StaticResource Caption}" Text="Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten – Filter: typ:ps1, gruppe:Name, ist:fav, #schlagwort."/>
+                               Style="{StaticResource Caption}" Text="Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten. Filter (Schlagwort, Typ, Gruppe, Merkmal) bietet ein Klick ins Suchfeld an."/>
 
                     <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}" Focusable="False"/>
                 </StackPanel>

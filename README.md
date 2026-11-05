@@ -26,7 +26,7 @@ oder remote auf einem oder vielen Rechnern.
 - Panelfarbe frei wählbar (Vorlagen oder eigene Farbe als `#RRGGBB`) samt Deckkraft; bei hellen Farben wird die Schrift automatisch dunkel
 - Vorausgewählter Filter beim Öffnen einstellbar (Alle, Scripte, Programme oder Favoriten)
 - Symbole: Programmsymbol bei EXE, Verknüpfungen und Snap-ins, **Favicon bei Webseiten**, Ordnersymbol bei Ordnern, Remotedesktop-Symbol bei RDP, Programmsymbol bei Befehlen
-- Suche über Name, Dateiname, Synopsis, Beschreibung, Notiz, Schlagworte und Snippet-Code; Filter: Alle, Scripte, Programme, Favoriten
+- Suche über Name, Dateiname, Synopsis, Beschreibung, Notiz, Schlagworte und Snippet-Code; Filter per Klick ins Suchfeld: erst die Art (Schlagwort, Typ, Gruppe, Merkmal), dann der Wert
 - **Navigation in langen Listen:** der Kopf der aktuellen Gruppe bleibt beim Scrollen oben stehen (mit Pfad, z. B. „Kunde A › AD“; Klick springt zum Gruppenkopf); ab vier Gruppen zeigt eine **Sprungleiste** rechts einen Punkt je Gruppe in ihrer Farbe (Klick klappt auf und springt hin, erneuter Klick klappt zu); **Strg+K** sucht eine Gruppe und springt hin. Sprungleiste und Scrollbalken lassen sich unter Panel › Darstellung ausblenden; beim Darüberfahren über einen Gruppenkopf wird der Rahmen der Gruppe hervorgehoben
 - Gruppen einklappbar; Kontextmenü pro Gruppe (Neuer Eintrag, Neue Untergruppe, Im Explorer öffnen, Neu einlesen, Im Arbeitsbereich ausblenden, Gruppe konfigurieren …)
 - Kontextmenü pro Eintrag: Ausführen, Admin, Als anderer Benutzer, Remote, Im Editor öffnen, Speicherort öffnen, Pfad kopieren, Favorit, Ausblenden

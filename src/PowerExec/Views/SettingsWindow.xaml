@@ -504,7 +504,9 @@
         <DockPanel Grid.Column="1">
         <!-- Suche (wie PowerToys oben in der Mitte) -->
         <Grid DockPanel.Dock="Top" Margin="28,12,28,4" MaxWidth="520" HorizontalAlignment="Stretch">
-            <TextBox x:Name="SettingsSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0" Tag="Nach Einstellungen suchen"/>
+            <TextBox x:Name="SettingsSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0" Tag="Nach Einstellungen suchen">
+                    <TextBox.Resources><CornerRadius x:Key="TextBox.CornerRadius">12</CornerRadius></TextBox.Resources>
+                </TextBox>
             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
             <Popup IsOpen="{Binding HasSearchResults, Mode=OneWay}" PlacementTarget="{Binding ElementName=SettingsSearch}" Placement="Bottom" AllowsTransparency="True"
                    StaysOpen="True" Width="{Binding ActualWidth, ElementName=SettingsSearch}">
@@ -1166,7 +1168,7 @@
                         </c:SettingsCard>
                         <TextBlock Text="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Error}"
                                    FontSize="12" Margin="4,0,0,6" Visibility="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
-                        <c:SettingsCard Icon="&#xE71C;" Header="Vorausgewählter Filter" Description="Dieser Filter ist ausgewählt, wenn das Panel aufgeht.">
+                        <c:SettingsCard Icon="&#xE71C;" Header="Vorausgewählter Filter" Description="Dieser Filter ist aktiv, wenn das Panel aufgeht – er steht als Chip unter dem Suchfeld und lässt sich dort mit ✕ aufheben.">
                                 <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Filters}" SelectedValue="{Binding DefaultFilter}"/>
                         </c:SettingsCard>
                     </StackPanel>
@@ -1345,7 +1347,7 @@
                     <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowScrollBar}" AutomationProperties.Name="Scrollbalken"/>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
+                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend. Helle Panels bleiben für guten Kontrast mindestens zu 85 % deckend.">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>

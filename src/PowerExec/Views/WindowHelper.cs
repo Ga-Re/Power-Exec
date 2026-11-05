@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using PowerExec.Core.Config;
@@ -24,6 +25,33 @@ internal static class WindowHelper
 
     /// <summary>Aktuelle Einstellungen (Mica, Größe); setzt der AppController beim Start.</summary>
     public static Func<AppSettings>? Settings { get; set; }
+
+    /// <summary>Getönter Fensterhintergrund über Mica (Bg.Window, teilweise durchsichtig); setzt der ThemeService.</summary>
+    public const string MicaTintKey = "Bg.WindowMica";
+
+    private static readonly HashSet<Window> _micaWindows = new();
+
+    /// <summary>
+    /// Design gewechselt: offene Fenster ziehen Titelleiste und Mica (hell/dunkel) nach – sonst bliebe z. B. die
+    /// Navigation der Einstellungen nach dem Wechsel auf „Hell“ dunkel hinterlegt.
+    /// </summary>
+    public static void RefreshOpenWindows()
+    {
+        if (Application.Current == null) return;
+        foreach (Window w in Application.Current.Windows)
+        {
+            var hwnd = new WindowInteropHelper(w).Handle;
+            if (hwnd == IntPtr.Zero) continue;
+            try
+            {
+                int dark = ThemeService.IsDark ? 1 : 0;
+                DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
+                // Kontrastdesign: Mica aus, deckender Hintergrund
+                if (_micaWindows.Contains(w) && ThemeService.IsHighContrast) w.SetResourceReference(Control.BackgroundProperty, "Bg.Window");
+            }
+            catch { }
+        }
+    }
 
     /// <summary>Mica gibt es ab Windows 11 22H2 (Build 22621).</summary>
     public static bool IsMicaSupported => Environment.OSVersion.Version.Build >= 22621;
@@ -55,9 +83,10 @@ internal static class WindowHelper
     private static void ApplyMica(Window w, IntPtr hwnd)
     {
         if (HwndSource.FromHwnd(hwnd) is { CompositionTarget: { } target }) target.BackgroundColor = Colors.Transparent;
-        // Leicht getönt statt ganz durchsichtig, damit Text auf jedem Hintergrund lesbar bleibt
-        var bg = (Application.Current.Resources["Bg.Window"] as SolidColorBrush)?.Color ?? Colors.Black;
-        w.Background = new SolidColorBrush(Color.FromArgb(0x99, bg.R, bg.G, bg.B));
+        // Leicht getönt statt ganz durchsichtig, damit Text auf jedem Hintergrund lesbar bleibt;
+        // als Ressource, damit ein Wechsel hell/dunkel offene Fenster mitnimmt
+        w.SetResourceReference(Control.BackgroundProperty, MicaTintKey);
+        if (_micaWindows.Add(w)) w.Closed += (_, _) => _micaWindows.Remove(w);
         var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
         DwmExtendFrameIntoClientArea(hwnd, ref margins);
         int type = DWMSBT_MAINWINDOW;
