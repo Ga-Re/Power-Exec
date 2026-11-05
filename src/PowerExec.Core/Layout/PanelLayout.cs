@@ -86,48 +86,6 @@ public static class PanelLayout
         return new Rectangle(left, y, width, height);
     }
 
-    /// <summary>
-    /// Fenster beim Ein-/Ausfahren (Weichzeichner-Varianten): <paramref name="reveal"/> 0 = eingefahren, 1 = ganz da.
-    /// <paramref name="move"/>: in voller Größe vom Rand hereinschieben (flüssig); sonst vom Rand aus wachsen
-    /// (nötig, wenn hinter dem Rand ein weiterer Bildschirm liegt).
-    /// </summary>
-    public static Rectangle Reveal(Rectangle full, ScreenEdge edge, double reveal, bool move)
-    {
-        var f = Math.Clamp(reveal, 0, 1);
-        int visW = Math.Max(1, (int)Math.Round(full.Width * f));
-        int visH = Math.Max(1, (int)Math.Round(full.Height * f));
-        if (move)
-        {
-            return edge switch
-            {
-                ScreenEdge.Right => new Rectangle(full.Right - visW, full.Top, full.Width, full.Height),
-                ScreenEdge.Left => new Rectangle(full.Left - (full.Width - visW), full.Top, full.Width, full.Height),
-                ScreenEdge.Bottom => new Rectangle(full.Left, full.Bottom - visH, full.Width, full.Height),
-                _ => new Rectangle(full.Left, full.Top - (full.Height - visH), full.Width, full.Height)
-            };
-        }
-        return edge switch
-        {
-            ScreenEdge.Right => new Rectangle(full.Right - visW, full.Top, visW, full.Height),
-            ScreenEdge.Left => new Rectangle(full.Left, full.Top, visW, full.Height),
-            ScreenEdge.Bottom => new Rectangle(full.Left, full.Bottom - visH, full.Width, visH),
-            _ => new Rectangle(full.Left, full.Top, full.Width, visH)
-        };
-    }
-
-    /// <summary>Liegt hinter dem Rand des Panels ein anderer Bildschirm? Dann darf das Fenster dort nicht auftauchen.</summary>
-    public static bool HasMonitorBeyond(Rectangle full, ScreenEdge edge, IEnumerable<Rectangle> otherMonitors)
-    {
-        var beyond = edge switch
-        {
-            ScreenEdge.Right => new Rectangle(full.Right, full.Top, full.Width, full.Height),
-            ScreenEdge.Left => new Rectangle(full.Left - full.Width, full.Top, full.Width, full.Height),
-            ScreenEdge.Bottom => new Rectangle(full.Left, full.Bottom, full.Width, full.Height),
-            _ => new Rectangle(full.Left, full.Top - full.Height, full.Width, full.Height)
-        };
-        return otherMonitors.Any(m => m.IntersectsWith(beyond));
-    }
-
     /// <summary>Position entlang der Kante: an der Hover-Zone zentriert, am Anfang, mittig oder am Ende.</summary>
     private static int Align(PanelAlignment alignment, int start, int available, int size, int zoneCenter)
     {

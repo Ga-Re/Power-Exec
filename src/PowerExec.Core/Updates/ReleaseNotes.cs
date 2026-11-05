@@ -7,6 +7,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 5), "Weichzeichner auch an Taskleiste und zweitem Monitor flüssig, .NET 10", new[]
+        {
+            "Liegt die Taskleiste oder ein weiterer Monitor an der Panelkante, gleitet das Panel jetzt ebenfalls als Ganzes herein und wird am Rand des Arbeitsbereichs abgeschnitten – kein Wachsen mehr, kein Ruckeln, nicht mehr über der Taskleiste",
+            "Läuft jetzt auf .NET 10 (Langzeitsupport bis 2028) und PowerShell 7.6"
+        }),
         new ReleaseNote(new Version(0, 19, 4), "Flüssiger mit Weichzeichner", new[]
         {
             "Mit Aero-Blur, Acrylic oder Mica wird das Panel beim Ein- und Ausfahren als Ganzes verschoben statt neu vermessen – deutlich flüssiger (bei einem weiteren Bildschirm hinter dem Rand wächst es wie bisher)"

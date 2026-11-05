@@ -42,20 +42,41 @@ internal static class Acrylic
     [DllImport("user32.dll")]
     private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool redraw);
 
+    [DllImport("gdi32.dll")]
+    private static extern int CombineRgn(IntPtr dest, IntPtr src1, IntPtr src2, int mode);
+
+    [DllImport("gdi32.dll")]
+    private static extern bool DeleteObject(IntPtr obj);
+
+    private const int RGN_AND = 1;
+
     /// <summary>
-    /// Fensterbereich auf ein abgerundetes Rechteck beschränken (Pixel relativ zum Fenster). Die Weichzeichnung
-    /// hinter dem Fenster folgt diesem Bereich – so passt sie genau zur Form des Panels, auch während es einfährt.
-    /// Ein leeres Rechteck blendet sie ganz aus. Windows übernimmt den Bereich (nicht selbst freigeben).
+    /// Fensterbereich: abgerundetes Fenster (<paramref name="width"/>×<paramref name="height"/>), beschnitten auf das
+    /// Rechteck clip (Pixel relativ zum Fenster). Ein leeres Rechteck blendet das Fenster ganz aus.
     /// </summary>
-    public static void SetRoundedRegion(IntPtr hwnd, int left, int top, int right, int bottom, int radius)
+    public static void SetClippedRoundedRegion(IntPtr hwnd, int width, int height, int radius, int clipLeft, int clipTop, int clipRight, int clipBottom)
     {
         if (hwnd == IntPtr.Zero) return;
         try
         {
-            var rgn = right <= left || bottom <= top
-                ? CreateRectRgn(0, 0, 0, 0)
-                : CreateRoundRectRgn(left, top, right + 1, bottom + 1, radius * 2, radius * 2);
-            if (rgn != IntPtr.Zero) SetWindowRgn(hwnd, rgn, true);
+            if (clipRight <= clipLeft || clipBottom <= clipTop)
+            {
+                var empty = CreateRectRgn(0, 0, 0, 0);
+                if (empty != IntPtr.Zero) SetWindowRgn(hwnd, empty, true);
+                return;
+            }
+            var rgn = CreateRoundRectRgn(0, 0, width + 1, height + 1, radius * 2, radius * 2);
+            if (rgn == IntPtr.Zero) return;
+            if (clipLeft > 0 || clipTop > 0 || clipRight < width || clipBottom < height)
+            {
+                var clip = CreateRectRgn(clipLeft, clipTop, clipRight, clipBottom);
+                if (clip != IntPtr.Zero)
+                {
+                    CombineRgn(rgn, rgn, clip, RGN_AND);
+                    DeleteObject(clip);
+                }
+            }
+            SetWindowRgn(hwnd, rgn, true); // Windows übernimmt rgn
         }
         catch (EntryPointNotFoundException) { }
         catch (DllNotFoundException) { }

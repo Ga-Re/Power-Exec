@@ -377,9 +377,17 @@ public sealed partial class AppController
                     stripes.Show();
                     await Settle();
                     host.Window.ShowPanel(monitor, viaHotkey: true);
+                    var hwnd = new System.Windows.Interop.WindowInteropHelper(host.Window).Handle;
+                    if (PanelBackdrops.NeedsSystemWindow(expected) && Settings.Animation != AnimationMode.Off)
+                    {
+                        // Weichzeichner-Varianten gleiten als Ganzes herein: schon während des Einfahrens volle Panelgröße
+                        await Task.Delay(60);
+                        Interop.NativeMethods.GetWindowRect(hwnd, out var mid);
+                        if (Math.Abs(mid.Right - mid.Left - rect.Width) > 1 || Math.Abs(mid.Bottom - mid.Top - rect.Height) > 1)
+                            Fail($"Hintergrund {b}: Fenster ändert beim Einfahren die Größe ({mid.Right - mid.Left}×{mid.Bottom - mid.Top} statt {rect.Width}×{rect.Height})");
+                    }
                     await Settle();
                     await Task.Delay(400);
-                    var hwnd = new System.Windows.Interop.WindowInteropHelper(host.Window).Handle;
                     Interop.NativeMethods.GetWindowRect(hwnd, out var wr);
                     var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(host.Window);
                     var bw = (int)Math.Round(host.Window.PanelBorder.ActualWidth * dpi.DpiScaleX);

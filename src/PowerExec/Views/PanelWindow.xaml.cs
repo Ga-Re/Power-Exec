@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
+using PowerExec.Core.Layout;
 using PowerExec.Interop;
 using PowerExec.Services;
 
@@ -44,7 +45,7 @@ public partial class PanelWindow : Window
                 CaptionHeight = 0, GlassFrameThickness = new Thickness(-1), ResizeBorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(0), UseAeroCaptionButtons = false
             });
-            // Größe bestimmt allein das Fenster (beim Ein-/Ausfahren wächst es vom Rand); der Panelrahmen hat feste Größe
+            // Größe bestimmt allein das Fenster (immer so groß wie das Panel, beim Ein-/Ausfahren wird es nur verschoben)
             ClearValue(WidthProperty);
             ClearValue(HeightProperty);
         }
@@ -66,7 +67,6 @@ public partial class PanelWindow : Window
             src.AddHook(SystemWindowHook);
         }
         ApplyBackdrop();
-        SizeChanged += (_, _) => UpdateBlurRegion();
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
@@ -128,7 +128,7 @@ public partial class PanelWindow : Window
         if (fg != IntPtr.Zero && fg != _hwnd) Services.ForegroundTracker.Remember(fg);
         if (_systemWindow && !IsVisible)
         {
-            // Fenster beginnt als schmaler Streifen am Rand – kein Hintergrund vor dem Panel
+            // Fenster beginnt eingefahren hinter dem Rand des Arbeitsbereichs
             BeginAnimation(RevealProperty, null);
             Reveal = 0;
         }
@@ -192,7 +192,6 @@ public partial class PanelWindow : Window
         // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
-        UseBlurRegion = false; // Weichzeichner-Varianten: das Fenster selbst wächst beim Einfahren (siehe Reveal)
 
         if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
         {
@@ -272,11 +271,19 @@ public partial class PanelWindow : Window
     /// </summary>
     private IntPtr SystemWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int WM_NCACTIVATE = 0x0086;
+        const int WM_NCACTIVATE = 0x0086, WM_DPICHANGED = 0x02E0;
         if (msg == WM_NCACTIVATE && wParam == IntPtr.Zero)
         {
             handled = true;
             return Interop.Acrylic.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
+        }
+        // Beim Gleiten liegt das Fenster kurz auf dem Nachbarmonitor (dort weggeschnitten). Hat der eine andere
+        // Skalierung, meldet Windows einen DPI-Wechsel – WPF würde Fenster und Inhalt mitten im Gleiten umskalieren.
+        // Das Panel gehört aber zu seinem Monitor: Wechsel während des Gleitens übergehen.
+        if (msg == WM_DPICHANGED && _clipSlide && IsSliding)
+        {
+            handled = true;
+            return IntPtr.Zero;
         }
         return IntPtr.Zero;
     }
@@ -325,12 +332,12 @@ public partial class PanelWindow : Window
         var dpi = VisualTreeHelper.GetDpi(this);
         if (_systemWindow)
         {
-            // Panelrahmen in voller Größe, zur Bildschirmmitte hin ausgerichtet; das Fenster zeigt davon den eingefahrenen Teil
+            // Panelrahmen so groß wie das Fenster; die Lage beim Ein-/Ausfahren setzt ApplyReveal
             PanelBorder.Width = _rect.Width / dpi.DpiScaleX;
             PanelBorder.Height = _rect.Height / dpi.DpiScaleY;
             PanelBorder.HorizontalAlignment = Cfg.Edge == ScreenEdge.Left ? HorizontalAlignment.Right : HorizontalAlignment.Left;
             PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-            ChooseRevealMode();
+            PrepareSlide();
             ApplyReveal();
         }
         else
@@ -400,46 +407,78 @@ public partial class PanelWindow : Window
             Dispatcher.BeginInvoke(() => Vm.SwitchWorkspaceCommand.Execute(name));
     }
 
-    // ---- Weichzeichner-Varianten: Fenster wächst vom Rand (Hintergrund liegt immer genau unter dem Panel) -------
+    // ---- Weichzeichner-Varianten: Fenster gleitet als Ganzes vom Rand (Hintergrund bleibt deckungsgleich) -------
+    //
+    // Windows zeichnet den Hintergrund, WPF den Inhalt – zwei getrennte Abläufe. Ändert sich beim Ein-/Ausfahren die
+    // Fenstergröße oder ein Fensterbereich, passt Windows den Hintergrund sofort an, WPF den Inhalt ein bis zwei Bilder
+    // später (und muss dafür jedes Bild neu zeichnen). Verschiebt man dagegen nur das Fenster, bewegt Windows Inhalt und
+    // Hintergrund in einem Stück – wie beim Ziehen eines Fensters. WPF muss dabei nichts neu zeichnen.
 
-    /// <summary>0 = eingefahren (nur ein Pixel am Rand), 1 = ganz ausgefahren.</summary>
+    /// <summary>0 = eingefahren (hinter dem Rand des Arbeitsbereichs), 1 = ganz ausgefahren.</summary>
     public static readonly DependencyProperty RevealProperty = DependencyProperty.Register(
         nameof(Reveal), typeof(double), typeof(PanelWindow), new PropertyMetadata(1.0, (d, _) => ((PanelWindow)d).ApplyReveal()));
 
     public double Reveal { get => (double)GetValue(RevealProperty); set => SetValue(RevealProperty, value); }
 
-    /// <summary>
-    /// Fenster für den ausgefahrenen Teil setzen. Ohne Bildschirm hinter dem Rand wird das Fenster in voller Größe
-    /// verschoben (flüssig, Windows muss nur verschieben); sonst wächst es vom Rand aus (sonst tauchte es dort auf).
-    /// </summary>
+    /// <summary>Eingefahrene Lage des Fensters (gleiche Größe wie das Panel).</summary>
+    private System.Drawing.Rectangle _hidden;
+    /// <summary>Auf dem Weg auf den Arbeitsbereich zuschneiden: Taskleiste oder ein anderer Monitor liegt an dieser Kante.</summary>
+    private bool _clipSlide;
+    private System.Drawing.Size _appliedSize;
+    /// <summary>Gesetzter Fensterbereich (sichtbarer Teil relativ zum Fenster); null = keiner, Windows rundet die Ecken selbst.</summary>
+    private System.Drawing.Rectangle? _region;
+    private bool _regionApplied;
+
+    /// <summary>Weg zum Ein-/Ausfahren für die aktuelle Panelgröße und -lage bestimmen (bei jedem Platzieren).</summary>
+    private void PrepareSlide()
+    {
+        if (_monitor == null) return;
+        _hidden = PanelSlide.Hidden(_rect, _monitor.WorkArea, Cfg.Edge);
+        _clipSlide = PanelSlide.NeedsClip(_rect, _monitor.WorkArea, Cfg.Edge, ScreenService.GetMonitors().Select(m => m.Bounds));
+        _appliedSize = System.Drawing.Size.Empty; // Größe und Fensterbereich neu setzen (Panel kann größer/kleiner geworden sein)
+        _regionApplied = false;
+    }
+
+    /// <summary>Fenster auf die Lage zum aktuellen <see cref="Reveal"/> setzen; die Größe bleibt die des Panels.</summary>
     private void ApplyReveal()
     {
-        if (!_systemWindow || _hwnd == IntPtr.Zero || _rect.Width <= 0) return;
-        var r = Core.Layout.PanelLayout.Reveal(_rect, Cfg.Edge, Reveal, _revealByMove);
-        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X, r.Y, r.Width, r.Height, NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
-        if (KeepsRegion && r.Size != _regionSize)
-        {
-            // Aero-Blur braucht einen Fensterbereich: abgerundet auf die aktuelle Fenstergröße (beim Verschieben nur einmal)
-            _regionSize = r.Size;
-            var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
-            Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, r.Width, r.Height, radius);
-        }
+        if (!_systemWindow || _hwnd == IntPtr.Zero || _rect.Width <= 0 || _monitor == null) return;
+        var r = PanelSlide.At(_rect, _hidden, Reveal);
+        var visible = _clipSlide ? PanelSlide.Visible(r, _monitor.WorkArea) : new System.Drawing.Rectangle(0, 0, r.Width, r.Height);
+        bool full = visible.Size == r.Size;
+        // Aero-Blur zeichnet Windows nur mit Fensterbereich; die anderen brauchen einen nur, solange zugeschnitten wird
+        System.Drawing.Rectangle? region = KeepsRegion || !full ? visible : null;
+
+        // Wird der sichtbare Teil kleiner, zuerst zuschneiden, dann verschieben (sonst umgekehrt) –
+        // so ragt das Panel auch für ein einzelnes Bild nicht über die Taskleiste oder auf den Nachbarmonitor.
+        static long Area(System.Drawing.Rectangle? v, System.Drawing.Rectangle win) => v is { } x ? (long)x.Width * x.Height : (long)win.Width * win.Height;
+        bool shrinking = !_regionApplied || Area(region, r) < Area(_region, r);
+        if (shrinking) SetSlideRegion(region, r.Size);
+        uint flags = NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER;
+        if (r.Size == _appliedSize) flags |= NativeMethods.SWP_NOSIZE;
+        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X, r.Y, r.Width, r.Height, flags);
+        _appliedSize = r.Size;
+        if (!shrinking) SetSlideRegion(region, r.Size);
     }
 
-    private bool _revealByMove = true;
-    private System.Drawing.Size _regionSize;
-
-    /// <summary>Schieben, wenn hinter dem Panelrand kein anderer Bildschirm liegt.</summary>
-    private void ChooseRevealMode()
+    private void SetSlideRegion(System.Drawing.Rectangle? region, System.Drawing.Size size)
     {
-        if (_monitor == null || _rect.Width <= 0) return;
-        var others = ScreenService.GetMonitors().Where(m => m.Bounds != _monitor.Bounds).Select(m => m.Bounds);
-        _revealByMove = !Core.Layout.PanelLayout.HasMonitorBeyond(_rect, Cfg.Edge, others);
+        if (_regionApplied && Nullable.Equals(region, _region)) return; // unverändert: kein Fensterbereich pro Bild
+        _region = region;
+        _regionApplied = true;
+        if (region is not { } v) { Interop.Acrylic.ClearRegion(_hwnd); return; }
+        var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
+        Interop.Acrylic.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
+
+    /// <summary>Aero-Blur braucht dauerhaft einen Fensterbereich (ohne verschwindet der Weichzeichner nach dem Einfahren).</summary>
+    private bool KeepsRegion => _backdrop == PanelBackdrop.Aero;
+
+    /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
+    private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;
 
     private void AnimateReveal(bool show, TimeSpan duration)
     {
-        ChooseRevealMode();
         Slide.BeginAnimation(TranslateTransform.XProperty, null);
         Slide.BeginAnimation(TranslateTransform.YProperty, null);
         Slide.X = 0;
@@ -469,6 +508,7 @@ public partial class PanelWindow : Window
             AnimateReveal(show, duration);
             return;
         }
+        // Klarglas: Fenster mit Transparenz-Schicht, der Inhalt gleitet im Fenster
         var edge = Cfg.Edge;
         double distance = edge is ScreenEdge.Left or ScreenEdge.Right
             ? (ActualWidth > 0 ? ActualWidth : Cfg.PanelWidth) + 24
@@ -481,13 +521,6 @@ public partial class PanelWindow : Window
 
         if (duration == TimeSpan.Zero)
         {
-            if (_useBlurRegion)
-            {
-                StopBlurTracking(clear: show);
-                if (show && !KeepsRegion) Interop.Acrylic.ClearRegion(_hwnd);
-            }
-            if (show && _useBlurRegion && KeepsRegion) Dispatcher.BeginInvoke(UpdateBlurRegion, DispatcherPriority.Loaded);
-            if (!show && _useBlurRegion) Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0);
             Slide.BeginAnimation(property, null);
             Slide.SetValue(property, show ? 0.0 : hiddenOffset);
             PanelBorder.BeginAnimation(OpacityProperty, null);
@@ -504,83 +537,8 @@ public partial class PanelWindow : Window
         };
         var fade = new DoubleAnimation(show ? 0.0 : 1.0, show ? 1.0 : 0.0, TimeSpan.FromMilliseconds(Math.Min(220, duration.TotalMilliseconds)));
         if (!show) slide.Completed += (_, _) => { if (_hiding) FinishHide(); };
-        if (UseBlurRegion)
-        {
-            // Weichzeichnung fährt mit dem Panel: Fensterbereich bei jedem Bild auf das verschobene Panel setzen.
-            // Ohne Einblenden, sonst wäre der Hintergrund schon da, bevor der Inhalt sichtbar ist.
-            StartBlurTracking();
-            slide.Completed += (_, _) => StopBlurTracking(clear: show);
-            Slide.BeginAnimation(property, slide);
-            PanelBorder.BeginAnimation(OpacityProperty, null);
-            PanelBorder.Opacity = 1;
-            UpdateBlurRegion();
-            return;
-        }
         Slide.BeginAnimation(property, slide);
         PanelBorder.BeginAnimation(OpacityProperty, fade);
-    }
-
-    // ---- Acrylic: Weichzeichnung genau in Form und Lage des Panels ------------------------
-
-    private bool _useBlurRegion;
-    private bool _trackingBlur;
-
-    /// <summary>
-    /// Weichzeichner aktiv: beim Ein- und Ausfahren folgt der Fensterbereich dem verschobenen Panel (sonst stünde der
-    /// Hintergrund schon an der Endposition). In Ruhe kein Fensterbereich – dann rundet Windows die Ecken selbst (geglättet).
-    /// </summary>
-    private bool UseBlurRegion
-    {
-        get => _useBlurRegion;
-        set
-        {
-            if (_useBlurRegion == value) return;
-            _useBlurRegion = value;
-            if (!value) { StopBlurTracking(clear: true); Interop.Acrylic.ClearRegion(_hwnd); }
-        }
-    }
-
-    private void StartBlurTracking()
-    {
-        if (_trackingBlur) return;
-        _trackingBlur = true;
-        CompositionTarget.Rendering += OnRenderingBlur;
-    }
-
-    /// <param name="clear">true nach dem Einfahren: Bereich entfernen (Windows rundet die Ecken); false nach dem Ausfahren: leer lassen.</param>
-    private void StopBlurTracking(bool clear)
-    {
-        if (!_trackingBlur) return;
-        CompositionTarget.Rendering -= OnRenderingBlur;
-        if (!clear) { _trackingBlur = false; Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0); return; }
-        if (KeepsRegion)
-        {
-            // Aero-Blur zeichnet Windows nur mit Fensterbereich: auf dem Panel stehen lassen
-            UpdateBlurRegion();
-            _trackingBlur = false;
-            return;
-        }
-        _trackingBlur = false;
-        Interop.Acrylic.ClearRegion(_hwnd);
-    }
-
-    /// <summary>Aero-Blur braucht dauerhaft einen Fensterbereich (ohne verschwindet der Weichzeichner nach dem Einfahren).</summary>
-    private bool KeepsRegion => _backdrop == PanelBackdrop.Aero;
-
-    private void OnRenderingBlur(object? sender, EventArgs e) => UpdateBlurRegion();
-
-    /// <summary>Sichtbarer Teil des Panels (mit Verschiebung) als abgerundeter Fensterbereich in Pixeln.</summary>
-    private void UpdateBlurRegion()
-    {
-        if (!_useBlurRegion || !(_trackingBlur || KeepsRegion && IsOpen) || _hwnd == IntPtr.Zero || PanelBorder.ActualWidth <= 0) return;
-        var dpi = VisualTreeHelper.GetDpi(this);
-        var bounds = PanelBorder.TransformToAncestor(this).TransformBounds(new Rect(0, 0, PanelBorder.ActualWidth, PanelBorder.ActualHeight));
-        bounds.Intersect(new Rect(0, 0, ActualWidth, ActualHeight));
-        if (bounds.IsEmpty) { Interop.Acrylic.SetRoundedRegion(_hwnd, 0, 0, 0, 0, 0); return; }
-        int Px(double v, double scale) => (int)Math.Round(v * scale);
-        Interop.Acrylic.SetRoundedRegion(_hwnd,
-            Px(bounds.Left, dpi.DpiScaleX), Px(bounds.Top, dpi.DpiScaleY), Px(bounds.Right, dpi.DpiScaleX), Px(bounds.Bottom, dpi.DpiScaleY),
-            Px(PanelBorder.CornerRadius.TopLeft, dpi.DpiScaleX));
     }
 
     private void FinishHide()
