@@ -60,7 +60,7 @@ public sealed class SettingsStore
         s.HoverDelayMs = Math.Clamp(s.HoverDelayMs, 0, 3000);
         s.CollapseDelayMs = Math.Clamp(s.CollapseDelayMs, 0, 5000);
         s.PanelWidth = Math.Clamp(s.PanelWidth, 280, 900);
-        s.PanelOpacity = Math.Clamp(s.PanelOpacity, 50, 100);
+        s.PanelOpacity = Math.Clamp(s.PanelOpacity, 20, 100);
         s.PanelHeightPercent = Math.Clamp(s.PanelHeightPercent, 30, 100);
         s.HotZoneThickness = Math.Clamp(s.HotZoneThickness, 1, 40);
         s.HotZoneLength = Math.Clamp(s.HotZoneLength, 40, 4000);

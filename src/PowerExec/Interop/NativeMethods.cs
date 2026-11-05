@@ -99,6 +99,15 @@ internal static class NativeMethods
     public static extern int WNetGetConnection(string localName, StringBuilder remoteName, ref int length);
 
     /// <summary>Fenster aus Alt+Tab ausblenden und optional ohne Aktivierung anzeigen.</summary>
+    /// <summary>Systemmenü sowie Minimieren/Maximieren entfernen – Windows zeichnet dann keine Fensterknöpfe in den Rahmen.</summary>
+    public static void RemoveCaptionButtons(IntPtr hwnd)
+    {
+        const int GWL_STYLE = -16;
+        const long WS_SYSMENU = 0x00080000, WS_MINIMIZEBOX = 0x00020000, WS_MAXIMIZEBOX = 0x00010000;
+        var style = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
+        SetWindowLongPtr(hwnd, GWL_STYLE, new IntPtr(style & ~(WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)));
+    }
+
     public static void MakeToolWindow(IntPtr hwnd, bool noActivate)
     {
         var ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();

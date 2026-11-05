@@ -190,8 +190,23 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public PanelBackdrop Backdrop
     {
         get => _c.EffectiveBackdropSetting;
-        set { _c.Backdrop = value; _c.Acrylic = value != PanelBackdrop.Clear; RaiseBackdrop(); }
+        set
+        {
+            _c.Backdrop = value;
+            _c.Acrylic = value != PanelBackdrop.Clear;
+            // Bei voller Deckkraft wäre vom Weichzeichner nichts zu sehen
+            if (value is PanelBackdrop.Aero or PanelBackdrop.Acrylic && _c.PanelOpacity >= 95) PanelOpacity = 70;
+            RaiseBackdrop();
+        }
     }
+
+    /// <summary>Hinweis zur Deckkraft – mit Weichzeichner: bei 100 % ist er nicht zu sehen.</summary>
+    public string OpacityDescription =>
+        _c.EffectiveBackdropSetting is PanelBackdrop.Aero or PanelBackdrop.Acrylic
+            ? _c.PanelOpacity >= 95
+                ? "Bei voller Deckkraft ist vom Weichzeichner nichts zu sehen – etwa 50–80 % zeigen ihn deutlich."
+                : "Je geringer, desto mehr vom weichgezeichneten Hintergrund scheint durch. Schrift bleibt voll deckend."
+            : "Unter 100 % scheint der Desktop durch; Schrift bleibt voll deckend.";
 
     public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops { get; } = new[]
     {
@@ -230,7 +245,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     private void RaiseBackdrop()
     {
-        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewBrush) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewBrush), nameof(OpacityDescription) }) OnPropertyChanged(p);
     }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
@@ -248,7 +263,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public int PanelOpacity
     {
         get => _c.PanelOpacity;
-        set { _c.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); }
+        set { _c.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); OnPropertyChanged(nameof(OpacityDescription)); }
     }
 
     /// <summary>Erstellt die gespeicherte Panel-Konfiguration aus dem Formular.</summary>
