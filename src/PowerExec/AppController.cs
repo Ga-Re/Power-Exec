@@ -596,7 +596,8 @@ public sealed partial class AppController : IDisposable
             int? all = null;
             foreach (var f in folders)
             {
-                var choice = all ?? AskFolderDrop(f, folders.Count > 1, out var forAll);
+                var forAll = false;
+                var choice = all ?? AskFolderDrop(f, folders.Count > 1, out forAll);
                 if (choice < 0) return; // Abbruch: gar nichts hinzufügen
                 if (all == null && forAll) all = choice;
                 if (choice == 0) asGroups.Add(f);

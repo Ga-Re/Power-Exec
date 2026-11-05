@@ -984,11 +984,11 @@ public sealed class PanelViewModel : ObservableObject
             fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest);
 
         // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
-        var byPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
+        var topByPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
         foreach (var key in FixedGroups.Compose(settings, topLevel.Select(g => g.GroupPath ?? g.Key).ToList()))
         {
             if (FixedGroups.IsFixed(key)) { if (fixedSpecs.TryGetValue(key, out var f)) groups.Add(f); }
-            else if (byPath.TryGetValue(key, out var g)) groups.Add(g);
+            else if (topByPath.TryGetValue(key, out var g)) groups.Add(g);
         }
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
