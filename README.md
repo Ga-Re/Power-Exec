@@ -14,7 +14,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Acrylic:** Hintergrund hinter dem Panel weichzeichnen (Panel › Darstellung)
 - **Designvorlagen** (Fluent, Glas, Graphit, Papier, Mitternacht): Design, Panelfarbe, Deckkraft, Acrylic, Akzentfarbe und Fensterhintergrund mit einem Klick; **Akzentfarbe von Windows übernehmen** (passend aufgehellt bzw. abgedunkelt, folgt Änderungen in Windows sofort); **Mica** für Einstellungen und Dialoge (Windows 11 22H2+); **Schrift- und Elementgröße** 80–150 %; ein **Kontrastdesign** von Windows wird automatisch übernommen
 - **Darstellung:** Liste oder **Raster** (Kacheln; Details des ausgewählten Eintrags unten im Panel), **Elementgröße Klein / Mittel / Groß** – per Knopf im Panel-Kopf, Rechtsklick oder in den Einstellungen
-- **Rechtsklick auf freie Fläche:** neue Gruppe, neue smarte Gruppe (Ordner), „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
+- **Rechtsklick auf freie Fläche:** neue Gruppe, „Neuer Eintrag“ (Arten, Dateien, aus Vorlagen, aus Zwischenablage), Import, Darstellung
 - **Strg+V** im Panel (außerhalb des Suchfelds) bzw. **Strg+Umschalt+V**: erkennt URL, Pfad, Rechnername, `ssh user@host` oder Code und schlägt einen Eintrag vor
 - **Unscharfe Suche:** findet auch Anfangsbuchstaben (`gds` → *Get-DiskSpace*, `usr pw` → *Reset-ADUserPassword*) und einen Tippfehler (`dsik`); Treffer werden im Namen und in der Info-Zeile **hervorgehoben**; häufig und kürzlich gestartete Einträge stehen weiter oben, bei vielen Treffern zuerst als **„Beste Treffer“** (Enter startet den ersten)
 - **Vorschläge beim Tippen:** `#` zeigt die vorhandenen Schlagworte, `typ:` nur die Arten, die es tatsächlich gibt, `gruppe:` die Gruppen mit Einträgen, `ist:` nur Merkmale mit Treffern – jeweils mit Anzahl; schon „ty“ oder „gr“ bietet den Schlüssel an. Tab übernimmt, bei `#…`/`typ:…` auch ↑ ↓ und Enter
@@ -62,7 +62,7 @@ oder remote auf einem oder vielen Rechnern.
   - **SSH:** **Befehl nach dem Login**, **Sprungserver** (-J), **Port-Weiterleitungen** (-L), **Windows-Terminal-Profil**
   - **PowerShell-Snippet:** Editor mit Zeilennummern und **Syntaxprüfung**, **Vorschau der abgefragten Parameter**, Ausführungsart (Admin, anderer Benutzer, remote, PowerShell 5.1/7), **Testen**
   - **Text-Snippet:** eingebaute Variablen **{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}}**, Platzhalter mit Vorschau, **formatiert (HTML) kopieren**, **direkt in das vorher aktive Fenster einfügen**
-  - **Ordner:** Erreichbarkeitsprüfung mit UNC-Hinweis, **Öffnen mit** (Explorer, neues Fenster, Programm, Terminal), als anderer Benutzer, „als smarte Gruppe anlegen“
+  - **Ordner:** Erreichbarkeitsprüfung mit UNC-Hinweis, **Öffnen mit** (Explorer, neues Fenster, Programm, Terminal), als anderer Benutzer
   - **Befehl, Datei, Werkzeug:** **Arbeitsordner**, **Fenster** (normal, maximiert, minimiert), Ausführen als (aktuelles Konto, Administrator, anderer Benutzer), Werkzeug-Auswahl mit Suche
   - **Startprofile für alle Arten** (Liste links, Einstellungen rechts): je Profil eigene Startoptionen – z. B. Webseite „Arbeit“ in Edge mit Browserprofil A, „Privat“ in Chrome mit Browserprofil B; RDP mit anderem Benutzer oder Vollbild; SSH über anderen Sprungserver; Ordner im Terminal statt Explorer. Ziel, Adresse und Code gelten für alle Profile. Gleicher Aufbau für Scripte und Programme aus smarten Gruppen (⚙)
   - Browser-Auswahl zeigt **nur installierte Browser**, Browserprofile werden **gefunden und zur Auswahl angeboten** (Edge, Chrome, Firefox)
@@ -79,7 +79,8 @@ oder remote auf einem oder vielen Rechnern.
 
 **Smarte Gruppen (Ordner)**
 - Beliebig viele Ordner, auch Netzwerkfreigaben (UNC); Anzeigename frei wählbar, Symbol wie bei jeder Gruppe
-- Alles unter Einstellungen › Inhalte › Gruppen: „Neu ▾“ → Gruppe oder smarte Gruppe; Löschen nur nach Rückfrage; Reihenfolge per **Drag & Drop** (Gruppe am Griff ziehen, Einfügelinie zeigt davor/dahinter)
+- **Dialog „Neue Gruppe“** (im Panel per Rechtsklick auf eine Gruppe = Untergruppe, auf freie Fläche oder „+“ = neue Gruppe unten; in den Einstellungen „Neue Gruppe“ bzw. Rechtsklick auf eine Karte): Name, **Symbol oder Bild**, **Ordner** (dann wird es eine smarte Gruppe), **Farbe** und **Darstellung** in einem Schritt
+- Einstellungen › Inhalte › Gruppen: Untergruppen liegen **im Rahmen ihrer Gruppe**; Gruppen per **Drag & Drop** verschieben und verschachteln wie im Panel (Lücke an der Zielstelle, Mitte = als Untergruppe mit hervorgehobenem Rahmen, seitlich ziehen = Ebene); Löschen nur nach Rückfrage
 - Die Einstellungen zeigen pro smarter Gruppe **alle gefundenen Einträge** in einer Tabelle: Haken = im Panel sichtbar, dazu Startprofile, Admin-Markierung und ⚙ zum Konfigurieren; Suche, Typfilter, „Alle anzeigen“ / „Keine“
 - **Neue Dateien** pro Ordner: automatisch anzeigen oder erst nach Freigabe (Hinweis im Panel und in den Einstellungen, „Alle freigeben“ / „Ausgeblendet lassen“)
 - Ordner-Optionen: Unterordner ja/nein, **Unterordner im Panel als Untergruppen**, Dateiendungen (mit Semikolon getrennt, z. B. `.ps1; .cmd`), Muster-Ausschlüsse (`*.exe`, `*\Archiv\*`, `_*`); per Muster ausgeschlossene Dateien erscheinen ausgegraut mit Begründung; zusätzlich globale Ausschlüsse

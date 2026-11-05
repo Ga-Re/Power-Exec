@@ -623,7 +623,7 @@
                         </Style.Triggers>
                     </Style>
                 </StackPanel.Style>
-                <c:DropGap IsOpen="{Binding GapBefore}" Margin="0,2,0,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                <c:DropGap IsOpen="{Binding GapBefore}" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                            DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
@@ -699,7 +699,8 @@
                                     Command="{Binding ToggleLayoutCommand}" Visibility="Hidden">
                                 <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="12"/>
                             </Button>
-                            <Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
+                            <!-- Menü erst beim Darüberfahren (wie Liste/Raster) – ruhigerer Gruppenkopf -->
+                            <Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü" Visibility="Hidden"
                                     ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
                                 <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
                             </Button>
@@ -734,7 +735,7 @@
                         <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource GroupTemplate}" Focusable="False" Margin="14,0,0,0"/>
                     </StackPanel>
                     <!-- Lücke für „als letzte Untergruppe“ (auch bei eingeklappter Gruppe sichtbar) -->
-                    <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,4,4" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                    <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,4,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                            DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
@@ -745,7 +746,7 @@
                     </Border>
                 </StackPanel>
                 </Border>
-                <c:DropGap IsOpen="{Binding GapAfter}" Margin="0,2,0,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                <c:DropGap IsOpen="{Binding GapAfter}" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                            DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
@@ -756,6 +757,7 @@
                         <Condition SourceName="GroupHeader" Property="IsMouseOver" Value="True"/>
                     </MultiTrigger.Conditions>
                     <Setter TargetName="LayoutToggle" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="GroupMenuButton" Property="Visibility" Value="Visible"/>
                     <!-- Hover über dem Gruppenkopf: Rahmen der Gruppe hervorheben (statt grauer Fläche) -->
                     <Setter TargetName="GroupBox" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 </MultiTrigger>
@@ -768,6 +770,11 @@
                 </MultiDataTrigger>
                 <DataTrigger Binding="{Binding CanChangeLayout}" Value="False">
                     <Setter TargetName="LayoutToggle" Property="Visibility" Value="Collapsed"/>
+                </DataTrigger>
+                <!-- Gruppe wird hineingezogen: Rahmen der Zielgruppe hervorheben -->
+                <DataTrigger Binding="{Binding GapInside}" Value="True">
+                    <Setter TargetName="GroupBox" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                    <Setter TargetName="GroupBox" Property="BorderThickness" Value="2"/>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -1067,9 +1074,6 @@
                         <MenuItem Header="Neue Gruppe …" Command="{Binding NewGroupCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="Neue smarte Gruppe (Ordner) …" Command="{Binding NewSmartGroupCommand}">
-                            <MenuItem.Icon><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                        </MenuItem>
                         <MenuItem Header="Neuer Eintrag">
                             <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                             <MenuItem Header="Neuer Eintrag …" Command="{Binding NewEntryCommand}"/>
@@ -1107,10 +1111,10 @@
                 </ScrollViewer.ContextMenu>
                 <StackPanel>
                     <StackPanel Visibility="{Binding HasNoFolders, Converter={StaticResource Vis}}" Margin="16,32,16,0">
-                        <TextBlock Text="Noch keine smarte Gruppe." FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Eine smarte Gruppe liest einen Ordner mit Scripten und Programmen ein. Eigene Einträge legst du per Rechtsklick an."
+                        <TextBlock Text="Noch keine Gruppe mit Ordner." FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Lege eine Gruppe an und wähle einen Ordner – sie zeigt dann dessen Scripte und Programme. Eigene Einträge legst du per Rechtsklick an."
                                    Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,12"/>
-                        <Button Style="{StaticResource Btn.Accent}" Content="Ordner hinzufügen …" Command="{Binding NewSmartGroupCommand}" HorizontalAlignment="Center"/>
+                        <Button Style="{StaticResource Btn.Accent}" Content="Neue Gruppe …" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center"/>
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
                                Style="{StaticResource Caption}" Text="Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten – Filter: typ:ps1, gruppe:Name, ist:fav, #schlagwort."/>
