@@ -897,10 +897,13 @@ public sealed class PanelViewModel : ObservableObject
                 Key = "best", Title = "Beste Treffer", Kind = "best", Expanded = true, AllowReorder = false,
                 Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
             });
+        // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
+        var fixedSpecs = new Dictionary<string, GroupSpec>();
+        var topLevel = new List<GroupSpec>();
         if (!searching && _filter == TypeFilter.All)
         {
             // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
-            if (settings.RecentRunsCount > 0 && cfg.ShowRecent)
+            if (settings.RecentRunsCount > 0 && ShowsGroup(FixedGroups.Recent))
             {
                 var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
                 var recent = settings.RecentRuns
@@ -917,15 +920,15 @@ public sealed class PanelViewModel : ObservableObject
                     })
                     .ToList();
                 if (recent.Count > 0)
-                    groups.Add(new GroupSpec
+                    fixedSpecs[FixedGroups.Recent] = new GroupSpec
                     {
                         Key = "recent", Title = "Zuletzt ausgeführt", Kind = "recent", Expanded = !collapsed.Contains("recent"),
                         AllowReorder = false, Items = recent
-                    });
+                    };
             }
 
             var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
-            if (favs.Count > 0 && cfg.ShowFavorites) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
+            if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", "Favoriten", "fav", null, favs);
         }
 
         // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
@@ -965,7 +968,7 @@ public sealed class PanelViewModel : ObservableObject
             {
                 if (nodes.TryGetValue(parentPath, out var parentNode)) parentNode.Children.Add(node);
             }
-            else groups.Add(node);
+            else topLevel.Add(node);
         }
         // Leere Zweige bei Suche/Filter weglassen (fehlerhafte Ordner bleiben sichtbar)
         bool Prune(GroupSpec g)
@@ -973,11 +976,20 @@ public sealed class PanelViewModel : ObservableObject
             g.Children.RemoveAll(c => !Prune(c));
             return showEmpty || g.TotalCount > 0 || g.HasError;
         }
-        groups.RemoveAll(g => g.GroupPath != null && !Prune(g));
+        topLevel.RemoveAll(g => g.GroupPath != null && !Prune(g));
 
-        // Eigene Einträge ohne Gruppe
+        // Eigene Einträge ohne Gruppe (bei der Suche immer, damit Treffer nicht verschwinden)
         var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
-        if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
+        if (rest.Count > 0 && (searching || ShowsGroup(FixedGroups.Custom)))
+            fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest);
+
+        // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
+        var byPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
+        foreach (var key in FixedGroups.Compose(settings, topLevel.Select(g => g.GroupPath ?? g.Key).ToList()))
+        {
+            if (FixedGroups.IsFixed(key)) { if (fixedSpecs.TryGetValue(key, out var f)) groups.Add(f); }
+            else if (byPath.TryGetValue(key, out var g)) groups.Add(g);
+        }
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
         var favorites = Arrange("fav", visible.Where(i => IsFav(i.FullPath))).ToList();

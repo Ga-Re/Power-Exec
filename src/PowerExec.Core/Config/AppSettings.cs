@@ -243,6 +243,9 @@ public sealed class AppSettings
     /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
     public List<MachineGroup> MachineGroups { get; set; } = new();
 
+    /// <summary>Position der festen Gruppen unter den Gruppen der obersten Ebene (siehe <see cref="FixedGroups"/>).</summary>
+    public Dictionary<string, int> FixedGroupPositions { get; set; } = new();
+
     /// <summary>Dynamische Rechnergruppen: beim Start und danach alle N Stunden aus dem AD aktualisieren.</summary>
     public int AdSyncIntervalHours { get; set; } = 4;
 
