@@ -110,15 +110,6 @@
                     <TextBlock Text="{Binding OpenWithProgramError}" Style="{StaticResource FieldError}" Visibility="{Binding OpenWithProgramError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </StackPanel>
-            <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1">
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Als smarte Gruppe anlegen" Command="{Binding SmartGroupCommand}" Margin="10,0,0,0"/>
-                        <TextBlock Text="Du möchtest die Scripte und Programme darin direkt im Panel starten? Dann lege den Ordner als smarte Gruppe an."
-                                   TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12"/>
-                    </DockPanel>
-                </Border>
-            </StackPanel>
         </StackPanel>
 
         <!-- ===== Remotedesktop ===== -->

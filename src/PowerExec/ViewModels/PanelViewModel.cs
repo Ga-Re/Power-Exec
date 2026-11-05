@@ -146,7 +146,6 @@ public sealed class PanelViewModel : ObservableObject
 
     public ICommand SetLayoutCommand { get; }
     public ICommand ToggleGridCommand => new RelayCommand(() => IsGrid = !IsGrid);
-    public ICommand NewSmartGroupCommand => new RelayCommand(() => _app.CreateSmartGroup());
 
     // Rechtsklick auf freie Fläche
     public ICommand NewEntryCommand => new RelayCommand(p => _app.NewCustomEntry(p?.ToString(), null));
@@ -176,7 +175,7 @@ public sealed class PanelViewModel : ObservableObject
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
-    public string EmptyHint => "Noch keine Gruppen. Lege eine smarte Gruppe mit einem Ordner an oder füge eigene Einträge hinzu.";
+    public string EmptyHint => "Noch keine Gruppen. Lege eine Gruppe an – mit einem Ordner zeigt sie dessen Scripte und Programme – oder füge eigene Einträge hinzu.";
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis

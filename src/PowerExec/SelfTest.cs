@@ -667,25 +667,37 @@ public sealed partial class AppController
                 if (leerCat == null || adminCat == null || adCat == null) Fail("Einstellungen › Gruppen ziehen: Testgruppen fehlen");
                 else
                 {
+                    // Verschachtelte Darstellung: „AD“ liegt in der Karte von „Admin“
+                    if (!adminCat.Children.Contains(adCat) || settingsVm.CategoryRoots.Contains(adCat))
+                        Fail("Einstellungen › Gruppen: Untergruppe liegt nicht im Rahmen der übergeordneten Gruppe");
+
                     settingsVm.BeginCategoryDrag(leerCat);
                     var ok = settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Before, 0);
-                    if (ok is not { IsValid: true } || !adminCat.GapAbove) Fail("Einstellungen › Gruppen ziehen: Lücke über der Zielkarte fehlt");
+                    if (ok is not { IsValid: true } || !adminCat.GapBefore) Fail("Einstellungen › Gruppen ziehen: Lücke vor der Zielkarte fehlt");
+                    var into = settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Into, 0);
+                    if (into is not { IsValid: true, Position: GroupDropPosition.Into } || !adminCat.GapInside || adminCat.GapBefore)
+                        Fail("Einstellungen › Gruppen ziehen: „hinein“ öffnet keine Lücke in der Zielgruppe");
                     await Settle();
-                    if (settingsWindow.Content is FrameworkElement gapRoot) Screenshot(gapRoot, "settings-gruppe-ziehen-luecke");
+                    if (settingsWindow.Content is FrameworkElement gapRoot) Screenshot(gapRoot, "settings-gruppe-ziehen-hinein");
                     settingsVm.EndCategoryDrag();
+                    if (cats.Any(c => c.IsDragSource || c.DropSlot != GroupDropSlot.None)) Fail("Einstellungen › Gruppen ziehen: Zustand bleibt nach dem Abbrechen");
 
-                    // Nur Geschwister: „AD“ kann hier nicht auf die oberste Ebene – keine Lücke
+                    // Verschachteln und zurück: „AD“ nach „Leer“ und wieder nach „Admin“
                     settingsVm.BeginCategoryDrag(adCat);
-                    var bad = settingsVm.PreviewCategoryDrop(leerCat, GroupDropZone.After, -1);
-                    if (bad is not { IsValid: false } || cats.Any(c => c.GapAbove || c.GapBelow)) Fail("Einstellungen › Gruppen ziehen: ungültiges Ziel öffnet eine Lücke");
-                    if (bad?.Reason?.Contains("Admin") != true) Fail("Einstellungen › Gruppen ziehen: Begründung nennt die übergeordnete Gruppe nicht");
-                    settingsVm.EndCategoryDrag();
-                    if (cats.Any(c => c.IsDragSource || c.GapAbove || c.GapBelow)) Fail("Einstellungen › Gruppen ziehen: Zustand bleibt nach dem Abbrechen");
+                    settingsVm.PreviewCategoryDrop(leerCat, GroupDropZone.Into, 0);
+                    if (!settingsVm.CommitCategoryDrop() || adCat.Name != "Leer/AD" || !leerCat.Children.Contains(adCat))
+                        Fail($"Einstellungen › Gruppen ziehen: Verschachteln klappt nicht („{adCat.Name}“)");
+                    settingsVm.BeginCategoryDrag(adCat);
+                    settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Into, 0);
+                    if (!settingsVm.CommitCategoryDrop() || adCat.Name != "Admin/AD" || !adminCat.Children.Contains(adCat))
+                        Fail($"Einstellungen › Gruppen ziehen: Zurückschieben klappt nicht („{adCat.Name}“)");
 
                     settingsVm.BeginCategoryDrag(leerCat);
                     settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Before, 0);
                     if (!settingsVm.CommitCategoryDrop()) Fail("Einstellungen › Gruppen ziehen: Ablegen bewirkt nichts");
                     else if (cats.IndexOf(leerCat) > cats.IndexOf(adminCat)) Fail("Einstellungen › Gruppen ziehen: Reihenfolge nicht geändert");
+                    await Settle();
+                    if (settingsWindow.Content is FrameworkElement treeRoot) Screenshot(treeRoot, "settings-gruppen-verschachtelt");
                 }
             }
 
@@ -727,6 +739,7 @@ public sealed partial class AppController
             }
             await ShowAndClose(IconPickerWindow.ForTest());
             await ShowAndClose(CatalogWindow.ForTest());
+            await ShowAndClose(NewGroupWindow.ForTest());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
             // Eintragsdialog: Kachelauswahl, jedes Formular, Live-Prüfung
             Step("Eintragsdialog");

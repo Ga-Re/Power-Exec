@@ -428,7 +428,12 @@ public sealed class CategoryItemViewModel : ObservableObject
     public string Name
     {
         get => _name;
-        set { if (Set(ref _name, value)) { OnPropertyChanged(nameof(Display)); OnPropertyChanged(nameof(Indent)); OnPropertyChanged(nameof(CardMargin)); } }
+        set
+        {
+            if (!Set(ref _name, value)) return;
+            foreach (var p in new[] { nameof(Display), nameof(Indent), nameof(CardMargin), nameof(ColorOwn), nameof(Colors), nameof(Swatch), nameof(Layout) })
+                OnPropertyChanged(p);
+        }
     }
     public string Display => GroupManager.LeafOf(Name);
     public string Icon { get => _icon; set { if (Set(ref _icon, value ?? string.Empty)) OnPropertyChanged(nameof(HasIcon)); } }
@@ -446,14 +451,36 @@ public sealed class CategoryItemViewModel : ObservableObject
     public string KindText => _folder != null ? "Smarte Gruppe · " + _folder.Path : "Gruppe";
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 
-    // ---- Gruppen ziehen: Lücke über/unter der Karte ----------------------------------
+    // ---- Verschachtelung: Untergruppen als Karten in der Karte -----------------------
 
-    private bool _gapAbove, _gapBelow, _isDragSource;
-    private Thickness _gapMargin;
-    public bool GapAbove { get => _gapAbove; internal set => Set(ref _gapAbove, value); }
-    public bool GapBelow { get => _gapBelow; internal set => Set(ref _gapBelow, value); }
-    /// <summary>Einrückung der Lücke = Ebene, auf der die gezogene Gruppe landet.</summary>
-    public Thickness GapMargin { get => _gapMargin; internal set => Set(ref _gapMargin, value); }
+    /// <summary>Untergruppen (aus der flachen Liste abgeleitet, siehe <c>SettingsViewModel.RebuildCategoryTree</c>).</summary>
+    public ObservableCollection<CategoryItemViewModel> Children { get; } = new();
+    public bool HasChildren => Children.Count > 0;
+    internal void RaiseChildrenChanged() => OnPropertyChanged(nameof(HasChildren));
+
+    /// <summary>Rechtsklick › „Neue Untergruppe …“.</summary>
+    internal Action<CategoryItemViewModel>? NewSubgroupRequested { get; set; }
+    public ICommand NewSubgroupCommand => new RelayCommand(() => NewSubgroupRequested?.Invoke(this));
+
+    // ---- Gruppen ziehen: Lücke davor, dahinter oder als letzte Untergruppe -------------
+
+    private GroupDropSlot _dropSlot;
+    private bool _isDragSource;
+    public GroupDropSlot DropSlot
+    {
+        get => _dropSlot;
+        internal set
+        {
+            if (!Set(ref _dropSlot, value)) return;
+            OnPropertyChanged(nameof(GapBefore));
+            OnPropertyChanged(nameof(GapAfter));
+            OnPropertyChanged(nameof(GapInside));
+        }
+    }
+    public bool GapBefore => _dropSlot == GroupDropSlot.Before;
+    public bool GapAfter => _dropSlot == GroupDropSlot.After;
+    /// <summary>Gruppe wird hineingezogen: Lücke am Ende der Untergruppen, Rahmen hervorgehoben.</summary>
+    public bool GapInside => _dropSlot == GroupDropSlot.Inside;
     /// <summary>Wird gerade gezogen (samt Untergruppen): macht an der alten Stelle Platz.</summary>
     public bool IsDragSource { get => _isDragSource; internal set => Set(ref _isDragSource, value); }
 
@@ -607,10 +634,12 @@ public sealed class SettingsViewModel : ObservableObject
 
         foreach (var c in GroupManager.All(_s))
         {
-            var cat = new CategoryItemViewModel(c, MoveCategory, RemoveCategory, GroupManager.IconOf(_s, c).ToString(), ChooseCategoryIcon, RenameCategory) { Settings = _s };
+            var cat = NewCategoryVm(c, GroupManager.IconOf(_s, c).ToString());
             cat.Folder = Folders.FirstOrDefault(f => f.Config.Group.Equals(c, StringComparison.CurrentCultureIgnoreCase));
             Categories.Add(cat);
         }
+        Categories.CollectionChanged += (_, _) => RebuildCategoryTree();
+        RebuildCategoryTree();
         if (focusFolder != null) FocusGroup(focusFolder);
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
@@ -990,6 +1019,35 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<GroupingMode, string>(GroupingMode.Category, "Nur eigene Gruppen")
     };
     public ObservableCollection<CategoryItemViewModel> Categories { get; } = new();
+
+    /// <summary>Gruppen der obersten Ebene; Untergruppen hängen als <see cref="CategoryItemViewModel.Children"/> darunter.</summary>
+    public ObservableCollection<CategoryItemViewModel> CategoryRoots { get; } = new();
+    private bool _treeSuspended;
+
+    private CategoryItemViewModel NewCategoryVm(string name, string icon = "") =>
+        new(name, MoveCategory, RemoveCategory, icon, ChooseCategoryIcon, RenameCategory) { Settings = _s };
+
+    /// <summary>Baum aus der flachen Liste ableiten (abgleichen statt neu aufbauen, damit Karten erhalten bleiben).</summary>
+    private void RebuildCategoryTree()
+    {
+        if (_treeSuspended) return;
+        var children = Categories.ToDictionary(c => c, _ => new List<CategoryItemViewModel>(), ReferenceEqualityComparer.Instance);
+        var roots = new List<CategoryItemViewModel>();
+        foreach (var c in Categories)
+        {
+            c.NewSubgroupRequested = x => AddGroupPrompt(x.Name);
+            var parentPath = GroupManager.ParentOf(c.Name);
+            var parent = parentPath == null ? null : Categories.FirstOrDefault(x => x.Name.Equals(parentPath, StringComparison.CurrentCultureIgnoreCase));
+            if (parent == null) roots.Add(c);
+            else ((List<CategoryItemViewModel>)children[parent]).Add(c);
+        }
+        Core.Collections.CollectionSync.SyncTo(CategoryRoots, roots);
+        foreach (var c in Categories)
+        {
+            Core.Collections.CollectionSync.SyncTo(c.Children, (List<CategoryItemViewModel>)children[c]);
+            c.RaiseChildrenChanged();
+        }
+    }
     private string _newCategory = string.Empty;
     public string NewCategory { get => _newCategory; set => Set(ref _newCategory, value ?? string.Empty); }
     public ICommand AddCategoryCommand { get; }
@@ -1040,27 +1098,16 @@ public sealed class SettingsViewModel : ObservableObject
     {
         if (_dragCategory == null) return null;
         var plan = GroupDropPlanner.Plan(Categories.Select(x => x.Name).ToList(), _dragCategory.Name, hovered.Name, zone, levelOffset,
-            siblingsOnly: true, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase)));
+            siblingsOnly: false, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase)));
         _categoryPlan = plan;
-        CategoryItemViewModel? row = null;
-        bool above = false;
-        if (plan.IsValid)
+        var target = plan.IsValid ? Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase)) : null;
+        var slot = plan.Position switch
         {
-            if (plan.Position == GroupDropPosition.Before)
-            {
-                row = Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase));
-                above = true;
-            }
-            else
-                row = Categories.LastOrDefault(x => !x.IsDragSource && GroupManager.IsSameOrBelow(x.Name, plan.Target));
-        }
-        foreach (var x in Categories)
-        {
-            bool isRow = ReferenceEquals(x, row);
-            if (isRow) x.GapMargin = new Thickness(plan.Depth * 28, 0, 0, 6);
-            x.GapAbove = isRow && above;
-            x.GapBelow = isRow && !above;
-        }
+            GroupDropPosition.Before => GroupDropSlot.Before,
+            GroupDropPosition.After => GroupDropSlot.After,
+            _ => GroupDropSlot.Inside
+        };
+        foreach (var x in Categories) x.DropSlot = ReferenceEquals(x, target) ? slot : GroupDropSlot.None;
         return plan;
     }
 
@@ -1070,15 +1117,37 @@ public sealed class SettingsViewModel : ObservableObject
         var dragged = _dragCategory;
         EndCategoryDrag();
         if (plan is not { IsValid: true, IsNoOp: false } || dragged == null) return false;
-        var target = Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase));
-        if (target == null) return false;
-        DropCategory(dragged, target, plan.Position == GroupDropPosition.After);
+        return MoveCategoryTo(dragged, plan);
+    }
+
+    /// <summary>
+    /// Gruppe samt Untergruppen verschieben – auch in eine andere Gruppe. Wie im Panel über <see cref="GroupManager.MoveGroup"/>
+    /// auf der Arbeitskopie, damit Zuordnungen, Farben, Symbole, Darstellung und Ordner mitwandern.
+    /// </summary>
+    private bool MoveCategoryTo(CategoryItemViewModel dragged, GroupDropPlan plan)
+    {
+        _s.CategoryOrder = Categories.Select(x => x.Name).ToList();
+        _s.Folders = Folders.Where(f => f.Path.Length > 0).Select(f => f.ToConfig()).ToList();
+        var oldPath = dragged.Name;
+        var newPath = GroupManager.MoveGroup(_s, oldPath, plan.Target, plan.Position);
+        if (newPath == null) return false;
+        string Map(string p) => GroupManager.IsSameOrBelow(p, oldPath) ? newPath + p[oldPath.Length..] : p;
+        _treeSuspended = true;
+        try
+        {
+            foreach (var x in Categories) x.Name = Map(x.Name);
+            foreach (var f in Folders) f.Config.Group = Map(f.Config.Group);
+            ApplyOrder(GroupManager.All(_s));
+        }
+        finally { _treeSuspended = false; }
+        RebuildCategoryTree();
+        LoadWorkspaces();
         return true;
     }
 
     public void EndCategoryDrag()
     {
-        foreach (var x in Categories) { x.GapAbove = false; x.GapBelow = false; x.IsDragSource = false; }
+        foreach (var x in Categories) { x.DropSlot = GroupDropSlot.None; x.IsDragSource = false; }
         if (_expandedBeforeDrag != null)
             foreach (var (x, expanded) in _expandedBeforeDrag) x.IsExpanded = expanded;
         _expandedBeforeDrag = null;
@@ -1159,6 +1228,7 @@ public sealed class SettingsViewModel : ObservableObject
         string Map(string p) => GroupManager.IsSameOrBelow(p, oldPath) ? newPath + p[oldPath.Length..] : p;
         foreach (var x in Categories) x.Name = Map(x.Name);
         foreach (var f in Folders) f.Config.Group = Map(f.Config.Group);
+        RebuildCategoryTree();
         LoadWorkspaces();
     }
 
@@ -1176,41 +1246,42 @@ public sealed class SettingsViewModel : ObservableObject
         Section = "groups";
     }
 
-    /// <summary>Neue (normale) Gruppe auf oberster Ebene.</summary>
-    private void AddGroupPrompt()
+    /// <summary>
+    /// Dialog „Neue Gruppe“ (Name, Symbol/Bild, Ordner, Farbe, Darstellung): ohne <paramref name="parent"/> unten auf
+    /// oberster Ebene, sonst als letzte Untergruppe. Mit Ordner wird es eine smarte Gruppe.
+    /// </summary>
+    private void AddGroupPrompt(string? parent)
     {
-        var name = Views.InputWindow.Ask("Neue Gruppe", "Einträge ziehst du im Panel per Drag & Drop hinein.", "Neue Gruppe", "Anlegen",
-            n => Categories.Any(x => x.Name.Equals(GroupManager.CleanName(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es schon." : null);
-        if (name == null) return;
-        Categories.Add(new CategoryItemViewModel(GroupManager.CleanName(name), MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s });
-    }
-
-    /// <summary>Neue smarte Gruppe: Ordner wählen, Name = Ordnername (änderbar).</summary>
-    private void AddSmartGroup()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner für die smarte Gruppe auswählen" };
-        if (dlg.ShowDialog(OwnerWindow()) != true) return;
-        if (Folders.FirstOrDefault(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        string PathOf(string n) => parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
+        var spec = Views.NewGroupWindow.Ask(parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“",
+            parent == null ? "Neue Gruppe" : "Neue Untergruppe",
+            n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null,
+            f => NewGroup.FolderError(Folders.Where(x => x.Path.Length > 0).Select(x => x.Config), f));
+        if (spec == null) return;
+        var path = PathOf(spec.Name);
+        var cat = NewCategoryVm(path, spec.Icon.ToString());
+        if (spec.IsSmart)
         {
-            MessageBox.Show(OwnerWindow()!, $"Dieser Ordner gehört bereits zur Gruppe „{existing.Config.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
+            var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = spec.Folder!.Trim(), Group = path }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true };
+            Folders.Add(folder);
+            cat.Folder = folder;
+            cat.IsExpanded = true;
         }
-        var leaf = GroupManager.CleanName(System.IO.Path.GetFileName(dlg.FolderName.TrimEnd('\\', '/')) is { Length: > 0 } l ? l : "Ordner");
-        var name = leaf;
-        for (int i = 2; Categories.Any(x => x.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"{leaf} {i}";
-        var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = dlg.FolderName, Group = name }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true };
-        Folders.Add(folder);
-        Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s, Folder = folder, IsExpanded = true });
+        if (!spec.Icon.IsEmpty) GroupManager.SetIcon(_s, path, spec.Icon);
+        var index = parent == null ? Categories.Count
+            : Categories.ToList().FindLastIndex(x => GroupManager.IsSameOrBelow(x.Name, parent)) + 1;
+        Categories.Insert(Math.Clamp(index, 0, Categories.Count), cat);
+        if (spec.Color.Length > 0) cat.ColorOwn = spec.Color;
+        if (spec.Layout != null) cat.Layout = spec.Layout.ToString()!;
     }
 
-    public ICommand NewGroupCommand => new RelayCommand(AddGroupPrompt);
-    public ICommand NewSmartGroupCommand => new RelayCommand(AddSmartGroup);
+    public ICommand NewGroupCommand => new RelayCommand(() => AddGroupPrompt(null));
 
     private void AddCategory()
     {
         var name = GroupManager.Normalize(NewCategory);
         if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
-            Categories.Add(new CategoryItemViewModel(name, MoveCategory, RemoveCategory, string.Empty, ChooseCategoryIcon, RenameCategory) { Settings = _s });
+            Categories.Add(NewCategoryVm(name));
         NewCategory = string.Empty;
     }
 

@@ -277,13 +277,24 @@ public partial class SettingsWindow : Window
     private double _groupDragStartX;
     private DragFeedback? _dragFeedback;
 
-    /// <summary>Obere Hälfte des Kartenkopfs = davor, sonst dahinter (auch über den aufgeklappten Details).</summary>
-    private static Core.Config.GroupDropZone CardZone(Border card, DragEventArgs e)
+    /// <summary>
+    /// Bereich auf dem Kartenkopf wie im Panel: oberes Viertel = davor, Mitte = hinein, unteres Viertel = dahinter.
+    /// Unterhalb des Kopfs (Details, Untergruppen) null = Ziel beibehalten.
+    /// </summary>
+    private static Core.Config.GroupDropZone? CardZone(Border card, DragEventArgs e)
     {
         var head = (card.Child as Panel)?.Children.OfType<FrameworkElement>().FirstOrDefault();
-        var h = head?.ActualHeight > 0 ? head.ActualHeight : card.ActualHeight;
-        return e.GetPosition(card).Y < h / 2 ? Core.Config.GroupDropZone.Before : Core.Config.GroupDropZone.After;
+        if (head == null || head.ActualHeight <= 0) return null;
+        var y = e.GetPosition(head).Y;
+        var h = head.ActualHeight;
+        if (y > h) return null;
+        return y < h * 0.28 ? Core.Config.GroupDropZone.Before
+             : y > h * 0.72 ? Core.Config.GroupDropZone.After
+             : Core.Config.GroupDropZone.Into;
     }
+
+    /// <summary>Seitliches Ziehen um so viel wechselt die Ebene (wie die Einrückung der Untergruppen).</summary>
+    private const double CategoryIndent = 24;
 
     private void ApplyCategoryPlan(Core.Config.GroupDropPlan? plan, DragEventArgs e)
     {
@@ -295,8 +306,9 @@ public partial class SettingsWindow : Window
     private void GroupCard_DragOver(object sender, DragEventArgs e)
     {
         if (sender is not Border card || card.DataContext is not CategoryItemViewModel target || !e.Data.GetDataPresent(GroupDragFormat)) return;
-        var offset = (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / 28);
-        ApplyCategoryPlan(CurrentViewModel.PreviewCategoryDrop(target, CardZone(card, e), offset), e);
+        var offset = (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / CategoryIndent);
+        var zone = CardZone(card, e);
+        ApplyCategoryPlan(zone is { } z ? CurrentViewModel.PreviewCategoryDrop(target, z, offset) : CurrentViewModel.CurrentCategoryPlan, e);
     }
 
     private void GroupCard_DragLeave(object sender, DragEventArgs e)

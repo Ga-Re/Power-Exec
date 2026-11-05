@@ -484,16 +484,21 @@ public sealed partial class AppController : IDisposable
 
     /// <param name="parent">Pfad der übergeordneten Gruppe (Untergruppe) oder null.</param>
     /// <returns>Pfad der neuen Gruppe oder null bei Abbruch.</returns>
+    /// <summary>
+    /// Dialog „Neue Gruppe“ (Name, Symbol/Bild, Ordner, Farbe, Darstellung). Mit <paramref name="parent"/> entsteht eine
+    /// Untergruppe (Rechtsklick auf eine Gruppe), sonst eine Gruppe auf oberster Ebene am Ende. Mit Ordner: smarte Gruppe.
+    /// </summary>
     public string? CreateGroup(string? parent = null)
     {
         var heading = parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“";
-        var name = WithDialog(() => InputWindow.Ask(heading, "Einträge ziehst du anschließend per Drag & Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser. Gruppen lassen sich ebenfalls per Drag & Drop verschieben und ineinander ziehen.",
-            parent == null ? "Neue Gruppe" : "Neue Untergruppe", "Anlegen", n => GroupNameError(n, parent)));
-        if (name == null) return null;
-        var path = GroupManager.Create(Settings, name, parent);
+        var spec = WithDialog(() => NewGroupWindow.Ask(heading, parent == null ? "Neue Gruppe" : "Neue Untergruppe",
+            n => GroupNameError(n, parent), f => NewGroup.FolderError(Settings.Folders, f)));
+        if (spec == null) return null;
+        var path = NewGroup.Create(Settings, spec, parent);
         if (parent != null)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(parent), StringComparison.OrdinalIgnoreCase));
         CommitUserChange();
+        if (spec.IsSmart) Repository.UpdateSettings(Settings); // Ordner einlesen und überwachen
         return path;
     }
 
@@ -560,23 +565,6 @@ public sealed partial class AppController : IDisposable
         WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(Settings), groupPath, true);
         CommitUserChange();
         ShowUndoToast($"„{GroupManager.LeafOf(groupPath)}“ im Arbeitsbereich „{Settings.ActiveWorkspace}“ ausgeblendet");
-    }
-
-    /// <summary>Smarte Gruppe für einen Ordner anlegen (Ordnerauswahl).</summary>
-    public string? CreateSmartGroup(string? parent = null)
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner für die smarte Gruppe auswählen" };
-        if (WithDialog(() => dlg.ShowDialog()) != true) return null;
-        if (Settings.Folders.FirstOrDefault(f => f.Path.Equals(dlg.FolderName, StringComparison.OrdinalIgnoreCase)) is { } existing)
-        {
-            MessageBox.Show($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
-            return null;
-        }
-        var folder = SmartGroups.Add(Settings, dlg.FolderName, null, parent);
-        SaveSettings();
-        Repository.UpdateSettings(Settings);
-        CommitUserChange();
-        return folder.Group;
     }
 
     /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>

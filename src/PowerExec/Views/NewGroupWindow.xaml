@@ -1,0 +1,78 @@
+<Window x:Class="PowerExec.Views.NewGroupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:PowerExec.Controls"
+        Title="Power-Exec" Style="{StaticResource AppWindow}"
+        Width="480" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True" Topmost="True">
+    <StackPanel Margin="24,20,24,20">
+        <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold" Text="Neue Gruppe"/>
+        <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,16" TextWrapping="Wrap"
+                   Text="Einträge ziehst du anschließend per Drag &amp; Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser."/>
+
+        <!-- Symbol und Name -->
+        <TextBlock Text="Name und Symbol" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <DockPanel>
+            <Button x:Name="IconButton" DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Width="40" Height="34" MinHeight="34" Padding="0" Margin="0,0,8,0"
+                    Click="Icon_Click" ToolTip="Symbol oder Bild wählen" AutomationProperties.Name="Symbol oder Bild wählen">
+                <Grid>
+                    <c:IconPresenter x:Name="IconPreview" Size="18" Foreground="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
+                    <TextBlock x:Name="IconPlaceholder" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="14" Foreground="{DynamicResource Text.Tertiary}"/>
+                </Grid>
+            </Button>
+            <TextBox x:Name="NameBox" Tag="Name der Gruppe" AutomationProperties.Name="Name der Gruppe" TextChanged="NameBox_TextChanged"/>
+        </DockPanel>
+
+        <!-- Ordner: macht daraus eine smarte Gruppe -->
+        <TextBlock Text="Ordner (optional)" FontWeight="SemiBold" Margin="0,16,0,6"/>
+        <DockPanel>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Margin="8,0,0,0" Click="Browse_Click"/>
+            <Button x:Name="ClearFolderButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0"
+                    Click="ClearFolder_Click" ToolTip="Ordner entfernen" Visibility="Collapsed" AutomationProperties.Name="Ordner entfernen">
+                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11"/>
+            </Button>
+            <TextBox x:Name="FolderBox" IsReadOnly="True" Tag="Kein Ordner" AutomationProperties.Name="Ordner"/>
+        </DockPanel>
+        <TextBlock x:Name="FolderHint" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+                   Text="Mit Ordner zeigt die Gruppe automatisch dessen Scripte und Programme – neue Dateien erscheinen von selbst."/>
+
+        <!-- Farbe und Darstellung -->
+        <Grid Margin="0,16,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Farbe" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0" Click="CustomColor_Click"
+                            ToolTip="Eigene Farbe im Farbwähler aussuchen" AutomationProperties.Name="Eigene Farbe">
+                        <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
+                    </Button>
+                    <ComboBox x:Name="ColorBox" SelectedValuePath="Key" AutomationProperties.Name="Farbe">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="12" Height="12" Margin="0,0,8,0" Stroke="{DynamicResource Border.Control}" StrokeThickness="1"
+                                             Fill="{Binding Key, Converter={StaticResource HexBrush}}"/>
+                                    <TextBlock Text="{Binding Value}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </DockPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="Darstellung" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ComboBox x:Name="LayoutBox" DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="Darstellung"/>
+            </StackPanel>
+        </Grid>
+
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,12,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96"/>
+            <Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="Anlegen" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
