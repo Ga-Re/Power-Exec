@@ -247,6 +247,42 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Gruppen ziehen: Lücke im Panel");
+            {
+                var host = _hosts[0];
+                var vm = host.ViewModel;
+                vm.SearchText = string.Empty;
+                vm.Rebuild();
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
+                var leer = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Leer");
+                var admin = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
+                if (leer == null || admin == null) Fail("Gruppen ziehen: Testgruppen „Leer“/„Admin“ fehlen im Panel");
+                else
+                {
+                    vm.BeginGroupDrag(leer);
+                    if (!leer.IsDragSource || !vm.IsDraggingGroup) Fail("Gruppen ziehen: gezogene Gruppe macht keinen Platz");
+                    var into = vm.PreviewGroupDrop(admin, GroupDropZone.Into, 0);
+                    if (into is not { IsValid: true, Position: GroupDropPosition.Into } || !admin.GapInside)
+                        Fail("Gruppen ziehen: keine Lücke für „als Untergruppe“");
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement intoRoot) Screenshot(intoRoot, "panel-gruppe-ziehen-untergruppe");
+                    var before = vm.PreviewGroupDrop(admin, GroupDropZone.Before, 0);
+                    if (before is not { IsValid: true } || !admin.GapBefore || admin.GapInside) Fail("Gruppen ziehen: Lücke wandert nicht mit");
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement beforeRoot) Screenshot(beforeRoot, "panel-gruppe-ziehen-davor");
+                    vm.PreviewGroupDrop(admin, GroupDropZone.Into, 0);
+                    if (!vm.CommitGroupDrop()) Fail("Gruppen ziehen: Ablegen bewirkt nichts");
+                    await Settle();
+                    if (!GroupManager.Exists(Settings, "Admin/Leer")) Fail("Gruppen ziehen: „Leer“ ist nicht in „Admin“ gelandet");
+                    if (vm.AllGroups.Any(g => g.IsDragSource || g.DropSlot != GroupDropSlot.None)) Fail("Gruppen ziehen: Lücke oder Quelle bleibt nach dem Ablegen");
+                    if (!vm.TryUndo() || !GroupManager.Exists(Settings, "Leer")) Fail("Gruppen ziehen: Rückgängig stellt „Leer“ nicht wieder her");
+                    await Settle();
+                }
+                host.Window.HidePanel();
+                await Settle();
+            }
+
             Step("Aktivitäten-Leiste");
             {
                 // Echter Prozess: Ende und Exit-Code werden erkannt
@@ -620,6 +656,39 @@ public sealed partial class AppController
                 if (settingsVm.Workspaces.FirstOrDefault(w => w.IsActive) is { } r2) r2.IsExpanded = true;
                 if (settingsVm.Categories.FirstOrDefault(c => c.IsSmart) is { } sm2) sm2.IsExpanded = true;
             }
+            Step("Einstellungen: Gruppen ziehen");
+            {
+                settingsVm.Section = "groups";
+                await Settle();
+                var cats = settingsVm.Categories;
+                var leerCat = cats.FirstOrDefault(c => c.Name == "Leer");
+                var adminCat = cats.FirstOrDefault(c => c.Name == "Admin");
+                var adCat = cats.FirstOrDefault(c => c.Name == "Admin/AD");
+                if (leerCat == null || adminCat == null || adCat == null) Fail("Einstellungen › Gruppen ziehen: Testgruppen fehlen");
+                else
+                {
+                    settingsVm.BeginCategoryDrag(leerCat);
+                    var ok = settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Before, 0);
+                    if (ok is not { IsValid: true } || !adminCat.GapAbove) Fail("Einstellungen › Gruppen ziehen: Lücke über der Zielkarte fehlt");
+                    await Settle();
+                    if (settingsWindow.Content is FrameworkElement gapRoot) Screenshot(gapRoot, "settings-gruppe-ziehen-luecke");
+                    settingsVm.EndCategoryDrag();
+
+                    // Nur Geschwister: „AD“ kann hier nicht auf die oberste Ebene – keine Lücke
+                    settingsVm.BeginCategoryDrag(adCat);
+                    var bad = settingsVm.PreviewCategoryDrop(leerCat, GroupDropZone.After, -1);
+                    if (bad is not { IsValid: false } || cats.Any(c => c.GapAbove || c.GapBelow)) Fail("Einstellungen › Gruppen ziehen: ungültiges Ziel öffnet eine Lücke");
+                    if (bad?.Reason?.Contains("Admin") != true) Fail("Einstellungen › Gruppen ziehen: Begründung nennt die übergeordnete Gruppe nicht");
+                    settingsVm.EndCategoryDrag();
+                    if (cats.Any(c => c.IsDragSource || c.GapAbove || c.GapBelow)) Fail("Einstellungen › Gruppen ziehen: Zustand bleibt nach dem Abbrechen");
+
+                    settingsVm.BeginCategoryDrag(leerCat);
+                    settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Before, 0);
+                    if (!settingsVm.CommitCategoryDrop()) Fail("Einstellungen › Gruppen ziehen: Ablegen bewirkt nichts");
+                    else if (cats.IndexOf(leerCat) > cats.IndexOf(adminCat)) Fail("Einstellungen › Gruppen ziehen: Reihenfolge nicht geändert");
+                }
+            }
+
             settingsVm.FocusGroup(Settings.Folders[0].Group);
             if (settingsVm.Section != "groups") Fail("Einstellungen: Gruppe fokussieren wechselt nicht zur Gruppen-Seite");
 

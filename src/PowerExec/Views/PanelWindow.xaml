@@ -612,6 +612,21 @@
         </DataTemplate>
         <!-- Gruppe (Ordner, Favoriten, eigene Gruppe mit Untergruppen) -->
         <DataTemplate x:Key="GroupTemplate">
+            <!-- Gruppen ziehen: Lücke davor/dahinter; die gezogene Gruppe macht an ihrer alten Stelle Platz -->
+            <StackPanel>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsDragSource}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <c:DropGap IsOpen="{Binding GapBefore}" Margin="0,2,0,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
                 <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" Margin="0,2,0,0"
                         AllowDrop="True" DragOver="Group_DragOver" DragLeave="Group_DragLeave" Drop="Group_Drop">
                 <!-- Farbe der Gruppe als getönte Karte (über den Stil, damit die Drag-Hervorhebung zurückgesetzt werden kann) -->
@@ -707,6 +722,10 @@
                                                 </Setter.Value>
                                             </Setter>
                                         </DataTrigger>
+                                        <!-- Option „Inhalte beim Ziehen zuklappen“: nur Gruppenköpfe -->
+                                        <DataTrigger Binding="{Binding DataContext.GroupDragCompact, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </ItemsControl.Style>
@@ -714,6 +733,11 @@
                         <!-- Untergruppen -->
                         <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource GroupTemplate}" Focusable="False" Margin="14,0,0,0"/>
                     </StackPanel>
+                    <!-- Lücke für „als letzte Untergruppe“ (auch bei eingeklappter Gruppe sichtbar) -->
+                    <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,4,4" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
                     <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
                             Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
                         <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Text.Tertiary}"
@@ -721,6 +745,11 @@
                     </Border>
                 </StackPanel>
                 </Border>
+                <c:DropGap IsOpen="{Binding GapAfter}" Margin="0,2,0,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
+            </StackPanel>
             <DataTemplate.Triggers>
                 <MultiTrigger>
                     <MultiTrigger.Conditions>

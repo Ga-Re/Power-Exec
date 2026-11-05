@@ -145,6 +145,16 @@ public sealed class AppSettings
     /// <summary>Hover-Zone ausblenden, solange auf dem Monitor ein Programm im Vollbild läuft.</summary>
     public bool HideHotZoneInFullscreen { get; set; } = true;
 
+    // Gruppen ziehen (Panel und Einstellungen): an der Zielstelle öffnet sich eine Lücke mit Platzhalter
+    /// <summary>Beim Ziehen einer Gruppe Einträge bzw. Kartendetails zuklappen (kürzere Wege).</summary>
+    public bool GroupDragCollapse { get; set; }
+    /// <summary>An ungültigen Stellen am Mauszeiger erklären, warum dort nicht abgelegt werden kann.</summary>
+    public bool GroupDragExplain { get; set; }
+    /// <summary>Ziehbild am Mauszeiger: Name, Farbe und Zahl der Untergruppen.</summary>
+    public bool GroupDragGhost { get; set; } = true;
+    /// <summary>Lücke öffnet und schließt sich weich (nur, wenn Animationen eingeschaltet sind).</summary>
+    public bool GroupDragAnimate { get; set; } = true;
+
     /// <summary>Gruppen im Panel: nach Ordner oder nach eigenen Kategorien.</summary>
     public GroupingMode Grouping { get; set; } = GroupingMode.Folder;
 

@@ -6,6 +6,9 @@ using PowerExec.Infrastructure;
 
 namespace PowerExec.ViewModels;
 
+/// <summary>Wo an dieser Gruppe beim Ziehen einer anderen die Lücke aufgeht.</summary>
+public enum GroupDropSlot { None, Before, After, Inside }
+
 public sealed class GroupViewModel : ObservableObject
 {
     private readonly PanelViewModel _panel;
@@ -212,6 +215,29 @@ public sealed class GroupViewModel : ObservableObject
         foreach (var p in new[] { nameof(TotalCount), nameof(CountText), nameof(HasChildren), nameof(IsEmptyUserGroup), nameof(ShowDropHint), nameof(RailToolTip) })
             OnPropertyChanged(p);
     }
+
+    // ---- Gruppen ziehen: Lücke und Quelle ----------------------------------------------
+
+    private GroupDropSlot _dropSlot;
+    /// <summary>Lücke vor, hinter oder (als letzte Untergruppe) in dieser Gruppe.</summary>
+    public GroupDropSlot DropSlot
+    {
+        get => _dropSlot;
+        internal set
+        {
+            if (!Set(ref _dropSlot, value)) return;
+            OnPropertyChanged(nameof(GapBefore));
+            OnPropertyChanged(nameof(GapAfter));
+            OnPropertyChanged(nameof(GapInside));
+        }
+    }
+    public bool GapBefore => _dropSlot == GroupDropSlot.Before;
+    public bool GapAfter => _dropSlot == GroupDropSlot.After;
+    public bool GapInside => _dropSlot == GroupDropSlot.Inside;
+
+    private bool _isDragSource;
+    /// <summary>Wird gerade gezogen: macht an der alten Stelle Platz (samt Untergruppen).</summary>
+    public bool IsDragSource { get => _isDragSource; internal set => Set(ref _isDragSource, value); }
 
     internal void SetExpandedSilently(bool value)
     {

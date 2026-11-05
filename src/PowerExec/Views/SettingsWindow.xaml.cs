@@ -254,40 +254,75 @@ public partial class SettingsWindow : Window
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         var item = _groupDragCandidate;
         _groupDragCandidate = null;
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(GroupDragFormat, item), DragDropEffects.Move);
+        var vm = CurrentViewModel;
+        _groupDragStartX = e.GetPosition(this).X;
+        vm.BeginCategoryDrag(item);
+        _dragFeedback = new DragFeedback(this, vm.CategoryDragLabel, vm.CategoryDragBrush, vm.GroupDragGhost, vm.GroupDragExplain);
+        var source = (UIElement)sender;
+        GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
+        source.GiveFeedback += follow;
+        try
+        {
+            DragDrop.DoDragDrop(source, new DataObject(GroupDragFormat, item), DragDropEffects.Move);
+        }
+        finally
+        {
+            source.GiveFeedback -= follow;
+            _dragFeedback?.Dispose();
+            _dragFeedback = null;
+            vm.EndCategoryDrag();
+        }
     }
 
-    private static bool DropAfter(FrameworkElement card, DragEventArgs e) => e.GetPosition(card).Y > card.ActualHeight / 2;
+    private double _groupDragStartX;
+    private DragFeedback? _dragFeedback;
+
+    /// <summary>Obere Hälfte des Kartenkopfs = davor, sonst dahinter (auch über den aufgeklappten Details).</summary>
+    private static Core.Config.GroupDropZone CardZone(Border card, DragEventArgs e)
+    {
+        var head = (card.Child as Panel)?.Children.OfType<FrameworkElement>().FirstOrDefault();
+        var h = head?.ActualHeight > 0 ? head.ActualHeight : card.ActualHeight;
+        return e.GetPosition(card).Y < h / 2 ? Core.Config.GroupDropZone.Before : Core.Config.GroupDropZone.After;
+    }
+
+    private void ApplyCategoryPlan(Core.Config.GroupDropPlan? plan, DragEventArgs e)
+    {
+        e.Effects = plan is { IsValid: true } ? DragDropEffects.Move : DragDropEffects.None;
+        _dragFeedback?.Update(plan);
+        e.Handled = true;
+    }
 
     private void GroupCard_DragOver(object sender, DragEventArgs e)
     {
-        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target ||
-            e.Data.GetData(GroupDragFormat) is not CategoryItemViewModel dragged) return;
-        var ok = CurrentViewModel.CanDropCategory(dragged, target);
-        e.Effects = ok ? DragDropEffects.Move : DragDropEffects.None;
-        e.Handled = true;
-        if (!ok) { GroupCard_DragLeave(sender, e); return; }
-        // Einfügelinie oben bzw. unten
-        card.BorderBrush = (Brush)FindResource("Accent");
-        card.BorderThickness = DropAfter(card, e) ? new Thickness(1, 1, 1, 3) : new Thickness(1, 3, 1, 1);
+        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target || !e.Data.GetDataPresent(GroupDragFormat)) return;
+        var offset = (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / 28);
+        ApplyCategoryPlan(CurrentViewModel.PreviewCategoryDrop(target, CardZone(card, e), offset), e);
     }
 
     private void GroupCard_DragLeave(object sender, DragEventArgs e)
     {
-        if (sender is Border card)
-        {
-            card.ClearValue(Border.BorderBrushProperty);
-            card.ClearValue(Border.BorderThicknessProperty);
-        }
+        // Lücke bleibt offen, bis ein anderes Ziel gefunden ist (sonst springt die Liste)
     }
 
     private void GroupCard_Drop(object sender, DragEventArgs e)
     {
-        GroupCard_DragLeave(sender, e);
-        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target ||
-            e.Data.GetData(GroupDragFormat) is not CategoryItemViewModel dragged) return;
-        CurrentViewModel.DropCategory(dragged, target, DropAfter(card, e));
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
         e.Handled = true;
+        CurrentViewModel.CommitCategoryDrop();
+    }
+
+    /// <summary>Über der offenen Lücke: Ziel beibehalten.</summary>
+    private void CategoryGap_DragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
+        ApplyCategoryPlan(CurrentViewModel.CurrentCategoryPlan, e);
+    }
+
+    private void CategoryGap_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
+        e.Handled = true;
+        CurrentViewModel.CommitCategoryDrop();
     }
 
     private static T? FindAncestor<T>(DependencyObject? d) where T : DependencyObject

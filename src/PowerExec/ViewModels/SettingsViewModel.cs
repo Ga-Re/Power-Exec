@@ -446,6 +446,17 @@ public sealed class CategoryItemViewModel : ObservableObject
     public string KindText => _folder != null ? "Smarte Gruppe · " + _folder.Path : "Gruppe";
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 
+    // ---- Gruppen ziehen: Lücke über/unter der Karte ----------------------------------
+
+    private bool _gapAbove, _gapBelow, _isDragSource;
+    private Thickness _gapMargin;
+    public bool GapAbove { get => _gapAbove; internal set => Set(ref _gapAbove, value); }
+    public bool GapBelow { get => _gapBelow; internal set => Set(ref _gapBelow, value); }
+    /// <summary>Einrückung der Lücke = Ebene, auf der die gezogene Gruppe landet.</summary>
+    public Thickness GapMargin { get => _gapMargin; internal set => Set(ref _gapMargin, value); }
+    /// <summary>Wird gerade gezogen (samt Untergruppen): macht an der alten Stelle Platz.</summary>
+    public bool IsDragSource { get => _isDragSource; internal set => Set(ref _isDragSource, value); }
+
     public ICommand ChooseIconCommand { get; }
     public ICommand RenameCommand { get; }
     public ICommand UpCommand { get; }
@@ -671,6 +682,10 @@ public sealed class SettingsViewModel : ObservableObject
         new("behavior", "Verhalten", "Verweilzeit bis zum Ausfahren", "hover verzögerung"),
         new("behavior", "Verhalten", "Einklappen nach Verlassen", "schließen verzögerung"),
         new("behavior", "Verhalten", "Bei Vollbild-Programmen ausblenden", "video präsentation spiel rdp"),
+        new("behavior", "Verhalten", "Gruppen ziehen: Ziehbild am Mauszeiger", "drag drop verschieben gruppe vorschau"),
+        new("behavior", "Verhalten", "Gruppen ziehen: Lücke weich öffnen", "drag drop verschieben animation platzhalter"),
+        new("behavior", "Verhalten", "Gruppen ziehen: Inhalte zuklappen", "drag drop verschieben kompakt karten"),
+        new("behavior", "Verhalten", "Gruppen ziehen: Begründung an ungültigen Stellen", "drag drop verschieben hinweis fehler"),
         new("behavior", "Verhalten", "Tastenkürzel", "hotkey shortcut"),
         new("behavior", "Verhalten", "Standardfilter", "scripte programme"),
         new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
@@ -955,6 +970,14 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool ShowProgramIcons { get => _s.ShowProgramIcons; set { _s.ShowProgramIcons = value; OnPropertyChanged(); } }
     public bool HideHotZoneInFullscreen { get => _s.HideHotZoneInFullscreen; set { _s.HideHotZoneInFullscreen = value; OnPropertyChanged(); } }
+
+    // Gruppen ziehen
+    public bool GroupDragCollapse { get => _s.GroupDragCollapse; set { _s.GroupDragCollapse = value; OnPropertyChanged(); } }
+    public bool GroupDragExplain { get => _s.GroupDragExplain; set { _s.GroupDragExplain = value; OnPropertyChanged(); } }
+    public bool GroupDragGhost { get => _s.GroupDragGhost; set { _s.GroupDragGhost = value; OnPropertyChanged(); } }
+    public bool GroupDragAnimate { get => _s.GroupDragAnimate; set { _s.GroupDragAnimate = value; OnPropertyChanged(); } }
+    /// <summary>Weiche Bewegung der Lücke im Einstellungsfenster selbst (folgt auch der Einstellung „Animation“).</summary>
+    public bool AnimateDropGap => _s.GroupDragAnimate && _s.Animation != AnimationMode.Off;
     public int RecentRunsCount { get => _s.RecentRunsCount; set { _s.RecentRunsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(RecentRunsText)); } }
     public string RecentRunsText => _s.RecentRunsCount == 0 ? "aus" : _s.RecentRunsCount.ToString();
 
@@ -980,6 +1003,89 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>Drag &amp; Drop in den Einstellungen: nur unter Geschwistern (gleiche übergeordnete Gruppe).</summary>
+    // ---- Gruppen ziehen (Lücke an der Zielstelle; hier nur Reihenfolge unter Geschwistern) ----------------
+
+    private CategoryItemViewModel? _dragCategory;
+    private GroupDropPlan? _categoryPlan;
+    private Dictionary<CategoryItemViewModel, bool>? _expandedBeforeDrag;
+    private string _categoryDragLabel = string.Empty;
+    private Brush? _categoryDragBrush;
+
+    public string CategoryDragLabel { get => _categoryDragLabel; private set { _categoryDragLabel = value; OnPropertyChanged(); } }
+    public Brush? CategoryDragBrush { get => _categoryDragBrush; private set { _categoryDragBrush = value; OnPropertyChanged(); } }
+    public GroupDropPlan? CurrentCategoryPlan => _categoryPlan;
+    public bool IsDraggingCategory => _dragCategory != null;
+
+    private IEnumerable<CategoryItemViewModel> SubtreeOf(CategoryItemViewModel c) =>
+        Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name));
+
+    public void BeginCategoryDrag(CategoryItemViewModel c)
+    {
+        EndCategoryDrag();
+        _dragCategory = c;
+        var sub = SubtreeOf(c).Count() - 1;
+        CategoryDragLabel = c.Display + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
+        CategoryDragBrush = c.Swatch;
+        OnPropertyChanged(nameof(AnimateDropGap));
+        foreach (var x in SubtreeOf(c)) x.IsDragSource = true;
+        if (_s.GroupDragCollapse)
+        {
+            _expandedBeforeDrag = Categories.ToDictionary(x => x, x => x.IsExpanded);
+            foreach (var x in Categories) x.IsExpanded = false;
+        }
+    }
+
+    /// <summary>Ziel bestimmen und die Lücke öffnen (über der Zielkarte bzw. unter ihrer letzten Untergruppe).</summary>
+    public GroupDropPlan? PreviewCategoryDrop(CategoryItemViewModel hovered, GroupDropZone zone, int levelOffset)
+    {
+        if (_dragCategory == null) return null;
+        var plan = GroupDropPlanner.Plan(Categories.Select(x => x.Name).ToList(), _dragCategory.Name, hovered.Name, zone, levelOffset,
+            siblingsOnly: true, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase)));
+        _categoryPlan = plan;
+        CategoryItemViewModel? row = null;
+        bool above = false;
+        if (plan.IsValid)
+        {
+            if (plan.Position == GroupDropPosition.Before)
+            {
+                row = Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase));
+                above = true;
+            }
+            else
+                row = Categories.LastOrDefault(x => !x.IsDragSource && GroupManager.IsSameOrBelow(x.Name, plan.Target));
+        }
+        foreach (var x in Categories)
+        {
+            bool isRow = ReferenceEquals(x, row);
+            if (isRow) x.GapMargin = new Thickness(plan.Depth * 28, 0, 0, 6);
+            x.GapAbove = isRow && above;
+            x.GapBelow = isRow && !above;
+        }
+        return plan;
+    }
+
+    public bool CommitCategoryDrop()
+    {
+        var plan = _categoryPlan;
+        var dragged = _dragCategory;
+        EndCategoryDrag();
+        if (plan is not { IsValid: true, IsNoOp: false } || dragged == null) return false;
+        var target = Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase));
+        if (target == null) return false;
+        DropCategory(dragged, target, plan.Position == GroupDropPosition.After);
+        return true;
+    }
+
+    public void EndCategoryDrag()
+    {
+        foreach (var x in Categories) { x.GapAbove = false; x.GapBelow = false; x.IsDragSource = false; }
+        if (_expandedBeforeDrag != null)
+            foreach (var (x, expanded) in _expandedBeforeDrag) x.IsExpanded = expanded;
+        _expandedBeforeDrag = null;
+        _dragCategory = null;
+        _categoryPlan = null;
+    }
+
     public bool CanDropCategory(CategoryItemViewModel dragged, CategoryItemViewModel target) =>
         !ReferenceEquals(dragged, target) &&
         string.Equals(GroupManager.ParentOf(dragged.Name), GroupManager.ParentOf(target.Name), StringComparison.CurrentCultureIgnoreCase);
