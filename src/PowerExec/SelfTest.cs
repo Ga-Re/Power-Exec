@@ -721,7 +721,8 @@ public sealed partial class AppController
             settingsVm.Section = "workspaces";
             await Settle();
             var wsRow = settingsVm.Workspaces.FirstOrDefault(w => w.IsActive);
-            if (wsRow == null || wsRow.Groups.Count != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
+            if (wsRow == null || wsRow.Groups.Count(g => !g.IsFixed) != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
+            if (wsRow != null && wsRow.Groups.Count(g => g.IsFixed) != FixedGroups.Keys.Count) Fail("Arbeitsbereiche: feste Gruppen fehlen in der Auswahl");
             else
             {
                 wsRow.IsExpanded = true;
