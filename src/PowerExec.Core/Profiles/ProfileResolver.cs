@@ -17,6 +17,10 @@ public static class ProfileResolver
         return new[] { CreateImplicit(settings, item) };
     }
 
+    /// <summary>Beim Start nach dem Profil fragen? Nur bei mehr als einem Profil; Eintrag geht vor der globalen Einstellung.</summary>
+    public static bool AsksProfile(AppSettings settings, LaunchItem item) =>
+        (settings.FindEntry(item.FullPath)?.AskProfile ?? settings.AskProfile) && GetProfiles(settings, item).Count > 1;
+
     public static LaunchProfile GetDefault(AppSettings settings, LaunchItem item)
     {
         var profiles = GetProfiles(settings, item);

@@ -60,8 +60,28 @@ internal static class WindowHelper
     /// Titelleiste passend zum Farbschema (Windows 10 20H1+ / Windows 11), auf Wunsch Mica als Hintergrund
     /// und die eingestellte Größe von Schrift und Bedienelementen.
     /// </summary>
+    /// <summary>Panels hinter bzw. wieder vor die Fenster von Power-Exec legen (setzt der AppController).</summary>
+    public static Action<bool>? PanelsBehind { get; set; }
+
+    /// <summary>
+    /// Ein Fenster von Power-Exec (Einstellungen, Dialog) ist aktiv: angeheftete Panels dürfen es nicht verdecken.
+    /// Wird es inaktiv und ist kein anderes mehr aktiv, kommen die Panels wieder nach vorn.
+    /// </summary>
+    private static void TrackActivation(Window w)
+    {
+        w.Activated += (_, _) => PanelsBehind?.Invoke(true);
+        void Check() => w.Dispatcher.BeginInvoke(() =>
+        {
+            var anyActive = Application.Current?.Windows.OfType<Window>().Any(x => x.IsActive && x is not PanelWindow) == true;
+            if (!anyActive) PanelsBehind?.Invoke(false);
+        }, System.Windows.Threading.DispatcherPriority.Background);
+        w.Deactivated += (_, _) => Check();
+        w.Closed += (_, _) => Check();
+    }
+
     public static void ApplyTitleBar(Window w)
     {
+        TrackActivation(w);
         ApplyScale(w);
         void Apply()
         {

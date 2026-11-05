@@ -29,6 +29,15 @@ public partial class PlaceholderWindow : Window
     internal static Window ForTest(IReadOnlyList<Placeholder> placeholders) =>
         new PlaceholderWindow("Test", placeholders.Select(p => new Field { Name = p.Name, Value = p.Default, History = new[] { "a", "b" } }).ToList());
 
+    /// <summary>Für den Selbsttest: mit Profilauswahl („Nach Profil fragen“).</summary>
+    internal static Window ForTestWithProfiles()
+    {
+        var w = new PlaceholderWindow("Test", new List<Field> { new() { Name = "Ticket", Value = "4711" } });
+        var profiles = new[] { new LaunchProfile { Name = "Standard", IsDefault = true }, new LaunchProfile { Name = "Server", RunAsAdmin = true, Machines = { "SRV1", "SRV2" } } };
+        w.ShowProfiles(profiles, profiles[0]);
+        return w;
+    }
+
     public static Dictionary<string, string>? Ask(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history)
     {
         var fields = placeholders.Select(p =>
@@ -38,6 +47,47 @@ public partial class PlaceholderWindow : Window
         }).ToList();
         var w = new PlaceholderWindow(title, fields);
         return w.ShowDialog() == true ? fields.ToDictionary(f => f.Name, f => f.Value.Trim(), StringComparer.CurrentCultureIgnoreCase) : null;
+    }
+
+    /// <summary>
+    /// „Nach Profil fragen“: Profil wählen, dazu die Platzhalter des Eintrags (falls vorhanden) – alles in einem Fenster.
+    /// </summary>
+    /// <returns>Gewähltes Profil und Werte, null bei Abbruch.</returns>
+    public static (LaunchProfile Profile, Dictionary<string, string> Values)? AskWithProfile(string title, IReadOnlyList<Placeholder> placeholders,
+        Func<string, IReadOnlyList<string>> history, IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected)
+    {
+        var fields = placeholders.Select(p =>
+        {
+            var h = history(p.Name);
+            return new Field { Name = p.Name, History = h, Value = h.FirstOrDefault() ?? p.Default };
+        }).ToList();
+        var w = new PlaceholderWindow(title, fields);
+        w.ShowProfiles(profiles, selected);
+        if (w.ShowDialog() != true || w.ProfileBox.SelectedItem is not LaunchProfile chosen) return null;
+        return (chosen, fields.ToDictionary(f => f.Name, f => f.Value.Trim(), StringComparer.CurrentCultureIgnoreCase));
+    }
+
+    private void ShowProfiles(IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected)
+    {
+        ProfileRow.Visibility = Visibility.Visible;
+        SubHeading.Text = _fields.Count > 0 ? "Profil wählen und Werte für diesen Start eingeben." : "Mit welchem Profil starten?";
+        ProfileBox.ItemsSource = profiles;
+        ProfileBox.SelectedItem = selected;
+        ProfileBox.SelectionChanged += (_, _) => UpdateProfileHint();
+        UpdateProfileHint();
+        if (_fields.Count == 0) Loaded += (_, _) => ProfileBox.Focus();
+    }
+
+    private void UpdateProfileHint()
+    {
+        var p = ProfileBox.SelectedItem as LaunchProfile;
+        var parts = new List<string>();
+        if (p == null) { ProfileHint.Text = string.Empty; return; }
+        if (p.IsDefault) parts.Add("Standardprofil");
+        if (p.RunAsAdmin) parts.Add("als Administrator");
+        if (p.Machines.Count > 0) parts.Add(string.Join(", ", p.Machines.Take(4)) + (p.Machines.Count > 4 ? " …" : string.Empty));
+        ProfileHint.Text = string.Join(" · ", parts);
+        ProfileHint.Visibility = parts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Field_Loaded(object sender, RoutedEventArgs e)

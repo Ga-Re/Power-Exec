@@ -7,6 +7,16 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 19, 0), "Dynamische Rechnergruppen, feste Gruppen frei anordnen", new[]
+        {
+            "Rechnergruppen dynamisch aus dem AD: Regeln wie „Betriebssystem enthält Server“, in Blöcken mit UND/ODER kombiniert; Aktualisierung beim Start und regelmäßig",
+            "Zuletzt ausgeführt, Favoriten und Eigene Einträge stehen mit Schloss in der Gruppenliste, lassen sich verschieben und je Arbeitsbereich ein- oder ausblenden",
+            "Laufende Scripte: Ende wird erkannt, auch wenn das Fenster offen bleibt; „Erneut starten“ nach dem Ende; „läuft“ direkt am Eintrag",
+            "Beim Start nach dem Profil fragen (global oder je Eintrag) – im selben Fenster wie die Werte für {{Platzhalter}}",
+            "Gruppen klappen weich auf und zu, Knöpfe im Gruppenkopf blenden ein, „Zuletzt ausgeführt“ zeigt die Zeit",
+            "Stärke des Weichzeichners einstellbar, Deckkraft wieder genau wie eingestellt; angeheftetes Panel überdeckt die Einstellungen nicht mehr",
+            "Ordner ins Panel ziehen: als Gruppe oder als Link; Schlagworte mit eigener Farbe und einzeln von Einträgen entfernbar"
+        }),
         new ReleaseNote(new Version(0, 18, 0), "Filtern aus dem Suchfeld, besser lesbar in Hell", new[]
         {
             "Klick ins Suchfeld zeigt die Filterarten (Schlagwort, Typ, Gruppe, Merkmal) – die Auswahl listet die vorhandenen Werte; die Filterknöpfe unter der Suche entfallen",

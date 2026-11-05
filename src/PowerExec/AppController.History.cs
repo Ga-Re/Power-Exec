@@ -93,9 +93,9 @@ public sealed partial class AppController
     }
 
     /// <summary>Lokaler Start: Verlaufseintrag und Aktivität verbinden.</summary>
-    public Action<System.Diagnostics.Process>? TrackLocal(LaunchItem item, ExecutionMode mode, HistoryEntry entry)
+    public Action<System.Diagnostics.Process>? TrackLocal(LaunchItem item, ExecutionMode mode, HistoryEntry entry, Action? restart = null)
     {
-        var track = TrackStarted(item, mode, activity => activity.Completed += () => CompleteHistory(entry,
+        var track = TrackStarted(item, mode, restart: restart, created: activity => activity.Completed += () => CompleteHistory(entry,
             activity.State switch { ActivityState.Error => HistoryResult.Error, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Success },
             activity.Detail, activity.ExitCode));
         // Programme, Webseiten, Ordner …: nur „gestartet“, kein Ende

@@ -435,7 +435,14 @@ public sealed class CategoryItemViewModel : ObservableObject
                 OnPropertyChanged(p);
         }
     }
-    public string Display => GroupManager.LeafOf(Name);
+    public string Display => IsFixed ? FixedGroups.Title(Name) : GroupManager.LeafOf(Name);
+
+    /// <summary>Feste Gruppe (Zuletzt ausgeführt, Favoriten, Eigene Einträge): verschiebbar, nicht löschbar, keine Untergruppen.</summary>
+    public bool IsFixed { get; init; }
+    public string FixedGlyph => FixedGroups.Glyph(Name);
+    public string FixedDescription => FixedGroups.Description(Name);
+    public bool IsRecentFixed => IsFixed && Name == FixedGroups.Recent;
+    public bool IsCustomFixed => IsFixed && Name == FixedGroups.Custom;
     public string Icon { get => _icon; set { if (Set(ref _icon, value ?? string.Empty)) OnPropertyChanged(nameof(HasIcon)); } }
     public bool HasIcon => _icon.Length > 0;
     public Thickness Indent => new(GroupManager.DepthOf(Name) * 22, 0, 0, 0);
@@ -566,8 +573,11 @@ public sealed class WorkspaceGroupChoice : ObservableObject
 
     public string Path { get; }
     public string Icon { get; }
-    public string Display => GroupManager.LeafOf(Path);
-    public Thickness Indent => new(GroupManager.DepthOf(Path) * 22, 0, 0, 0);
+    public string Display => IsFixed ? FixedGroups.Title(Path) : GroupManager.LeafOf(Path);
+    public Thickness Indent => new(IsFixed ? 0 : GroupManager.DepthOf(Path) * 22, 0, 0, 0);
+    /// <summary>Feste Gruppe (Schloss-Symbol): nur ein-/ausblendbar.</summary>
+    public bool IsFixed => FixedGroups.IsFixed(Path);
+    public string FixedGlyph => FixedGroups.Glyph(Path);
 
     /// <summary>Die Gruppe selbst ist nicht ausgeblendet.</summary>
     public bool IsVisible
@@ -716,10 +726,12 @@ public sealed class SettingsViewModel : ObservableObject
         new("behavior", "Verhalten", "Gruppen ziehen: Inhalte zuklappen", "drag drop verschieben kompakt karten"),
         new("behavior", "Verhalten", "Gruppen ziehen: Begründung an ungültigen Stellen", "drag drop verschieben hinweis fehler"),
         new("behavior", "Verhalten", "Tastenkürzel", "hotkey shortcut"),
-        new("behavior", "Verhalten", "Standardfilter", "scripte programme"),
         new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
         new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
         new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
+        new("exec", "PowerShell", "Beim Start nach dem Profil fragen", "profil auswahl fragen"),
+        new("machines", "Rechnergruppen", "Dynamische Gruppen aus dem AD", "active directory regeln filter ldap dynamisch"),
+        new("look", "Darstellung", "Stärke des Weichzeichners (Acrylic)", "transparenz blur milchglas acrylic"),
         new("exec", "PowerShell", "Editor", "vscode ise notepad"),
         new("remote", "Remote", "PowerShell bei Remote", "winrm 5.1 7"),
         new("remote", "Remote", "HTTPS (Port 5986)", "ssl winrm"),
@@ -940,6 +952,23 @@ public sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(HasNoGroups));
     }
 
+    /// <summary>Dynamische Gruppen: wie oft im Hintergrund aus dem AD aktualisieren.</summary>
+    public int AdSyncIntervalHours { get => _s.AdSyncIntervalHours; set { _s.AdSyncIntervalHours = Math.Clamp(value, 1, 168); OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<int, string>> AdSyncIntervals { get; } = new[]
+    {
+        new KeyValuePair<int, string>(1, "jede Stunde"), new KeyValuePair<int, string>(2, "alle 2 Stunden"),
+        new KeyValuePair<int, string>(4, "alle 4 Stunden"), new KeyValuePair<int, string>(8, "alle 8 Stunden"),
+        new KeyValuePair<int, string>(12, "alle 12 Stunden"), new KeyValuePair<int, string>(24, "einmal am Tag")
+    };
+
+    /// <summary>Hintergrund-Synchronisierung fertig: gefundene Rechner in die offenen Gruppen übernehmen.</summary>
+    public void ApplyMachineSync()
+    {
+        foreach (var vm in MachineGroups)
+            if (_app.Settings.MachineGroups.FirstOrDefault(g => g.Name.Equals(vm.Name.Trim(), StringComparison.CurrentCultureIgnoreCase)) is { } g)
+                vm.ApplySynced(g);
+    }
+
     // ---- Arbeitsbereiche ------------------------------------------------------
 
     public ObservableCollection<WorkspaceRowViewModel> Workspaces { get; } = new();
@@ -966,6 +995,8 @@ public sealed class SettingsViewModel : ObservableObject
             var row = new WorkspaceRowViewModel(w.Name, active, summary,
                 r => SwitchWorkspaceRequested?.Invoke(r.OriginalName),
                 RemoveWorkspace);
+            foreach (var key in FixedGroups.Keys)
+                row.Groups.Add(new WorkspaceGroupChoice(w, key, string.Empty, () => { foreach (var x in row.Groups) x.Refresh(); }));
             foreach (var g in groups)
                 row.Groups.Add(new WorkspaceGroupChoice(w, g, Categories.First(c => c.Name == g).Icon, () => { foreach (var x in row.Groups) x.Refresh(); }));
             Workspaces.Add(row);
@@ -1027,6 +1058,16 @@ public sealed class SettingsViewModel : ObservableObject
     private CategoryItemViewModel NewCategoryVm(string name, string icon = "") =>
         new(name, MoveCategory, RemoveCategory, icon, ChooseCategoryIcon, RenameCategory) { Settings = _s };
 
+    /// <summary>Karten der festen Gruppen (stehen nicht in <see cref="Categories"/>, nur in <see cref="CategoryRoots"/>).</summary>
+    private readonly Dictionary<string, CategoryItemViewModel> _fixedVms = new();
+
+    private CategoryItemViewModel FixedVm(string key)
+    {
+        if (!_fixedVms.TryGetValue(key, out var vm))
+            _fixedVms[key] = vm = new CategoryItemViewModel(key, (_, _) => { }, _ => { }) { Settings = _s, IsFixed = true };
+        return vm;
+    }
+
     /// <summary>Baum aus der flachen Liste ableiten (abgleichen statt neu aufbauen, damit Karten erhalten bleiben).</summary>
     private void RebuildCategoryTree()
     {
@@ -1041,7 +1082,11 @@ public sealed class SettingsViewModel : ObservableObject
             if (parent == null) roots.Add(c);
             else ((List<CategoryItemViewModel>)children[parent]).Add(c);
         }
-        Core.Collections.CollectionSync.SyncTo(CategoryRoots, roots);
+        // Feste Gruppen an ihrer Position zwischen den Gruppen der obersten Ebene
+        var byName = roots.ToDictionary(r => r.Name, r => r, StringComparer.CurrentCultureIgnoreCase);
+        var composed = FixedGroups.Compose(_s, roots.Select(r => r.Name).ToList())
+            .Select(k => FixedGroups.IsFixed(k) ? FixedVm(k) : byName[k]).ToList();
+        Core.Collections.CollectionSync.SyncTo(CategoryRoots, composed);
         foreach (var c in Categories)
         {
             Core.Collections.CollectionSync.SyncTo(c.Children, (List<CategoryItemViewModel>)children[c]);
@@ -1086,6 +1131,7 @@ public sealed class SettingsViewModel : ObservableObject
         CategoryDragBrush = c.Swatch;
         OnPropertyChanged(nameof(AnimateDropGap));
         foreach (var x in SubtreeOf(c)) x.IsDragSource = true;
+        c.IsDragSource = true; // auch feste Gruppen
         if (_s.GroupDragCollapse)
         {
             _expandedBeforeDrag = Categories.ToDictionary(x => x, x => x.IsExpanded);
@@ -1097,6 +1143,7 @@ public sealed class SettingsViewModel : ObservableObject
     public GroupDropPlan? PreviewCategoryDrop(CategoryItemViewModel hovered, GroupDropZone zone, int levelOffset)
     {
         if (_dragCategory == null) return null;
+        if (_dragCategory.IsFixed || hovered.IsFixed) return PreviewTopLevelDrop(hovered, zone);
         var plan = GroupDropPlanner.Plan(Categories.Select(x => x.Name).ToList(), _dragCategory.Name, hovered.Name, zone, levelOffset,
             siblingsOnly: false, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase)));
         _categoryPlan = plan;
@@ -1108,14 +1155,73 @@ public sealed class SettingsViewModel : ObservableObject
             _ => GroupDropSlot.Inside
         };
         foreach (var x in Categories) x.DropSlot = ReferenceEquals(x, target) ? slot : GroupDropSlot.None;
+        foreach (var x in _fixedVms.Values) x.DropSlot = GroupDropSlot.None;
+        _topDrop = null;
         return plan;
+    }
+
+    /// <summary>Feste Gruppe beteiligt: nur oberste Ebene, vor oder hinter eine Karte (nicht hinein).</summary>
+    private (CategoryItemViewModel Anchor, bool After)? _topDrop;
+
+    private GroupDropPlan PreviewTopLevelDrop(CategoryItemViewModel hovered, GroupDropZone zone)
+    {
+        var dragged = _dragCategory!;
+        // Untergruppe als Ziel: ihre Gruppe der obersten Ebene
+        var anchor = hovered.IsFixed ? hovered : CategoryRoots.FirstOrDefault(r => !r.IsFixed && GroupManager.IsSameOrBelow(hovered.Name, r.Name)) ?? hovered;
+        foreach (var x in Categories.Concat(_fixedVms.Values)) x.DropSlot = GroupDropSlot.None;
+        if (zone == GroupDropZone.Into && !hovered.IsFixed && dragged.IsFixed)
+        {
+            _topDrop = null;
+            _categoryPlan = new GroupDropPlan { IsValid = false, Reason = "Feste Gruppen bleiben auf oberster Ebene – vor oder hinter eine Gruppe ziehen." };
+            return _categoryPlan;
+        }
+        if (ReferenceEquals(anchor, dragged))
+        {
+            _topDrop = null;
+            _categoryPlan = new GroupDropPlan { IsValid = true, IsNoOp = true, Target = dragged.Name };
+            return _categoryPlan;
+        }
+        var after = zone != GroupDropZone.Before; // „hinein“ in eine feste Gruppe: dahinter
+        anchor.DropSlot = after ? GroupDropSlot.After : GroupDropSlot.Before;
+        _topDrop = (anchor, after);
+        _categoryPlan = new GroupDropPlan { IsValid = true, Target = anchor.Name, Position = after ? GroupDropPosition.After : GroupDropPosition.Before };
+        return _categoryPlan;
+    }
+
+    /// <summary>Oberste Ebene neu anordnen: Gruppe bzw. feste Gruppe vor/hinter den Anker; eigene Gruppen werden dafür zur obersten Ebene.</summary>
+    private bool CommitTopLevelDrop(CategoryItemViewModel dragged, CategoryItemViewModel anchor, bool after)
+    {
+        var key = dragged.Name;
+        if (!dragged.IsFixed && GroupManager.ParentOf(dragged.Name) != null)
+        {
+            // Untergruppe neben eine feste Gruppe: erst auf die oberste Ebene holen (ans Ende), dann einsortieren
+            var lastRoot = CategoryRoots.LastOrDefault(r => !r.IsFixed && !GroupManager.IsSameOrBelow(r.Name, dragged.Name));
+            if (lastRoot == null || !MoveCategoryTo(dragged, new GroupDropPlan { IsValid = true, Target = lastRoot.Name, Position = GroupDropPosition.After })) return false;
+            key = dragged.Name;
+        }
+        var top = CategoryRoots.Select(r => r.Name).Where(n => !n.Equals(key, StringComparison.CurrentCultureIgnoreCase)).ToList();
+        var at = top.FindIndex(n => n.Equals(anchor.Name, StringComparison.CurrentCultureIgnoreCase));
+        if (at < 0) return false;
+        top.Insert(after ? at + 1 : at, key);
+        FixedGroups.SetPositions(_s, top);
+        // Reihenfolge der eigenen Gruppen (samt Untergruppen) übernehmen
+        var userRoots = top.Where(k => !FixedGroups.IsFixed(k)).ToList();
+        var order = userRoots.SelectMany(r => Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, r)).Select(x => x.Name)).ToList();
+        _treeSuspended = true;
+        try { ApplyOrder(order); }
+        finally { _treeSuspended = false; }
+        RebuildCategoryTree();
+        LoadWorkspaces();
+        return true;
     }
 
     public bool CommitCategoryDrop()
     {
         var plan = _categoryPlan;
         var dragged = _dragCategory;
+        var top = _topDrop;
         EndCategoryDrag();
+        if (top is { } t && dragged != null && plan is { IsValid: true, IsNoOp: false }) return CommitTopLevelDrop(dragged, t.Anchor, t.After);
         if (plan is not { IsValid: true, IsNoOp: false } || dragged == null) return false;
         return MoveCategoryTo(dragged, plan);
     }
@@ -1147,7 +1253,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     public void EndCategoryDrag()
     {
-        foreach (var x in Categories) { x.DropSlot = GroupDropSlot.None; x.IsDragSource = false; }
+        foreach (var x in Categories.Concat(_fixedVms.Values)) { x.DropSlot = GroupDropSlot.None; x.IsDragSource = false; }
+        _topDrop = null;
         if (_expandedBeforeDrag != null)
             foreach (var (x, expanded) in _expandedBeforeDrag) x.IsExpanded = expanded;
         _expandedBeforeDrag = null;
@@ -1310,6 +1417,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool NoProfile { get => _s.NoProfile; set { _s.NoProfile = value; OnPropertyChanged(); } }
     public bool NoExit { get => _s.NoExit; set { _s.NoExit = value; OnPropertyChanged(); } }
+    public bool AskProfile { get => _s.AskProfile; set { _s.AskProfile = value; OnPropertyChanged(); } }
     public bool InlineParameters { get => _s.InlineParameters; set { _s.InlineParameters = value; OnPropertyChanged(); } }
     public int ThrottleLimit { get => _s.ThrottleLimit; set { _s.ThrottleLimit = value; OnPropertyChanged(); } }
     public int RemoteTimeoutSeconds { get => _s.RemoteTimeoutSeconds; set { _s.RemoteTimeoutSeconds = value; OnPropertyChanged(); } }

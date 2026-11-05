@@ -33,7 +33,7 @@ public sealed partial class AppController
     }
 
     /// <summary>Für lokale Starts: Prozess in der Aktivitäten-Leiste verfolgen (nur Scripte), sonst null.</summary>
-    public Action<Process>? TrackStarted(LaunchItem item, ExecutionMode mode, Action<ActivityViewModel>? created = null)
+    public Action<Process>? TrackStarted(LaunchItem item, ExecutionMode mode, Action<ActivityViewModel>? created = null, Action? restart = null)
     {
         if (!ActivityList.ShouldTrack(item)) return null;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
@@ -43,6 +43,18 @@ public sealed partial class AppController
             ExecutionMode.OtherUser => "lokal · als anderer Benutzer",
             _ => "lokal"
         };
-        return p => Activities.TrackProcess(item, name, p, detail, created);
+        return p => Activities.TrackProcess(item, name, p, detail, created, restart);
+    }
+
+    /// <summary>
+    /// Lokal starten mit Verlauf und Aktivität; „Erneut starten“ in der Aktivität wiederholt denselben Start
+    /// (gleiche Werte, neuer Verlaufseintrag).
+    /// </summary>
+    public bool StartLocalTracked(LaunchItem item, ExecutionRequest request, Func<HistoryEntry> beginHistory, Window? owner)
+    {
+        var entry = beginHistory();
+        var ok = Launcher.StartLocal(request, owner, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
+        if (!ok) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
+        return ok;
     }
 }

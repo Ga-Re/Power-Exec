@@ -104,10 +104,22 @@ public sealed partial class AppController
             Settings.Favorites.Add(Path.Combine(dir, "Cleanup.cmd"));
             Settings.Entries.Add(new EntryConfig { Path = Path.Combine(dir, "Cleanup.cmd"), Notes = "Nur nach Rücksprache" });
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
+            Settings.MachineGroups.Add(new MachineGroup
+            {
+                Name = "Server-AD", Machines = ["SRV-DC1", "SRV-FS1"], LastSyncUtc = DateTime.UtcNow.AddHours(-1),
+                AdQuery = new AdGroupQuery
+                {
+                    Blocks =
+                    {
+                        new AdRuleBlock { Rules = { new AdRule { Attribute = "name", Operator = AdOperator.StartsWith, Value = "SRV-" }, new AdRule { Attribute = AdRules.Enabled, Operator = AdOperator.Equals, Value = "Ja" } } },
+                        new AdRuleBlock { Rules = { new AdRule { Attribute = "operatingSystem", Operator = AdOperator.Contains, Value = "Server" } } }
+                    }
+                }
+            });
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", Acrylic = true, PanelOpacity = 90 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
-            Settings.DataVersion = 13;
+            Settings.DataVersion = 14;
             WorkspaceManager.Create(Settings, "Kunde A", copyCurrent: true);
             HistoryPath = Path.Combine(dir, "history.json");
             Views.WindowHelper.Settings = () => Settings;
@@ -297,6 +309,29 @@ public sealed partial class AppController
                     for (int wait = 0; wait < 100 && tracked.IsRunning; wait++) await Task.Delay(100);
                     if (tracked.IsRunning) Fail("Aktivitäten: Prozessende wird nicht erkannt");
                     else if (!tracked.IsError || !tracked.Detail.Contains('3')) Fail($"Aktivitäten: Exit-Code 3 nicht erkannt ({tracked.State}, {tracked.Detail})");
+                }
+                // Fenster bleibt offen (cmd /k): Ende trotzdem über die Fertig-Markierung erkennen, danach „Erneut starten“
+                {
+                    var doneDir = Path.Combine(Path.GetTempPath(), "PowerExec-SelfTest-" + Guid.NewGuid().ToString("N"));
+                    Directory.CreateDirectory(doneDir);
+                    var doneCmd = Path.Combine(doneDir, "Fertig.cmd");
+                    File.WriteAllText(doneCmd, "@echo off\r\nexit /b 4\r\n");
+                    var doneItem = new PowerExec.Core.Models.LaunchItem { FullPath = doneCmd, RootFolder = doneDir, Type = PowerExec.Core.Models.ItemType.Batch };
+                    var before = Activities.Items.Count;
+                    System.Diagnostics.Process? cmdProc = null;
+                    var started = Launcher.StartLocal(new ExecutionRequest { Item = doneItem, NoExit = true }, null,
+                        p => { cmdProc = p; Activities.TrackProcess(doneItem, "Fertig-Test", p, "lokal", restart: () => { }); });
+                    var act = Activities.Items.Count > before ? Activities.Items[0] : null;
+                    if (!started || act == null) Fail("Aktivitäten: Batch mit offenem Fenster wird nicht verfolgt");
+                    else
+                    {
+                        for (int wait = 0; wait < 100 && act.IsRunning; wait++) await Task.Delay(100);
+                        if (act.IsRunning) Fail("Aktivitäten: Ende bei offenem Fenster nicht erkannt (bleibt „läuft“)");
+                        else if (!act.IsError || !act.Detail.Contains("Fehler") || !act.WindowStillOpen) Fail($"Aktivitäten: Ergebnis bei offenem Fenster falsch ({act.State}, {act.Detail})");
+                        if (!act.CanRestart) Fail("Aktivitäten: „Erneut starten“ fehlt nach dem Ende");
+                    }
+                    try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { }
+                    try { Directory.Delete(doneDir, true); } catch { }
                 }
                 var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
                 remoteDemo.Progress = 0.7;
@@ -609,6 +644,29 @@ public sealed partial class AppController
                 }
             }
 
+            Step("Feste Gruppen: Reihenfolge und Arbeitsbereich");
+            {
+                var vm0 = _hosts[0].ViewModel;
+                vm0.Rebuild();
+                if (!vm0.Groups.Any(g => g.Kind == "fav")) Fail("Feste Gruppen: Favoriten fehlen im Panel");
+                var ws = WorkspaceManager.Active(Settings);
+                WorkspaceManager.SetGroupHidden(ws, FixedGroups.Favorites, true);
+                vm0.Rebuild();
+                if (vm0.Groups.Any(g => g.Kind == "fav")) Fail("Feste Gruppen: im Arbeitsbereich ausgeblendete Favoriten erscheinen trotzdem");
+                WorkspaceManager.SetGroupHidden(ws, FixedGroups.Favorites, false);
+                // Favoriten hinter die erste eigene Gruppe
+                var firstTop = vm0.Groups.First(g => g.GroupPath != null).GroupPath!;
+                var tops = FixedGroups.Compose(Settings, vm0.Groups.Where(g => g.GroupPath != null).Select(g => g.GroupPath!).ToList());
+                tops.Remove(FixedGroups.Favorites);
+                tops.Insert(tops.IndexOf(firstTop) + 1, FixedGroups.Favorites);
+                FixedGroups.SetPositions(Settings, tops);
+                vm0.Rebuild();
+                var kinds = vm0.Groups.Select(g => g.GroupPath ?? g.Kind).ToList();
+                if (kinds.IndexOf("fav") != kinds.IndexOf(firstTop) + 1) Fail($"Feste Gruppen: Reihenfolge im Panel falsch ({string.Join(", ", kinds)})");
+                Settings.FixedGroupPositions.Clear();
+                vm0.Rebuild();
+            }
+
             Step("Gruppenfarbe und Darstellung je Gruppe");
             {
                 var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
@@ -663,7 +721,8 @@ public sealed partial class AppController
             settingsVm.Section = "workspaces";
             await Settle();
             var wsRow = settingsVm.Workspaces.FirstOrDefault(w => w.IsActive);
-            if (wsRow == null || wsRow.Groups.Count != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
+            if (wsRow == null || wsRow.Groups.Count(g => !g.IsFixed) != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
+            if (wsRow != null && wsRow.Groups.Count(g => g.IsFixed) != FixedGroups.Keys.Count) Fail("Arbeitsbereiche: feste Gruppen fehlen in der Auswahl");
             else
             {
                 wsRow.IsExpanded = true;
@@ -726,12 +785,43 @@ public sealed partial class AppController
                     else if (cats.IndexOf(leerCat) > cats.IndexOf(adminCat)) Fail("Einstellungen › Gruppen ziehen: Reihenfolge nicht geändert");
                     await Settle();
                     if (settingsWindow.Content is FrameworkElement treeRoot) Screenshot(treeRoot, "settings-gruppen-verschachtelt");
+
+                    // Feste Gruppen: mit Schloss in der Liste, verschiebbar, nicht hinein
+                    var fixedRows = settingsVm.CategoryRoots.Where(r => r.IsFixed).ToList();
+                    if (fixedRows.Count != 3) Fail($"Einstellungen › Gruppen: feste Gruppen fehlen ({fixedRows.Count} statt 3)");
+                    var favRow = fixedRows.FirstOrDefault(r => r.Name == FixedGroups.Favorites);
+                    if (favRow != null)
+                    {
+                        settingsVm.BeginCategoryDrag(favRow);
+                        var noInto = settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.Into, 0);
+                        if (noInto is { IsValid: true }) Fail("Einstellungen › Gruppen: feste Gruppe lässt sich in eine Gruppe ziehen");
+                        settingsVm.PreviewCategoryDrop(adminCat, GroupDropZone.After, 0);
+                        if (!adminCat.GapAfter) Fail("Einstellungen › Gruppen: Lücke für die feste Gruppe fehlt");
+                        if (!settingsVm.CommitCategoryDrop()) Fail("Einstellungen › Gruppen: feste Gruppe lässt sich nicht verschieben");
+                        var roots = settingsVm.CategoryRoots.Select(r => r.Name).ToList();
+                        if (roots.IndexOf(FixedGroups.Favorites) != roots.IndexOf("Admin") + 1) Fail($"Einstellungen › Gruppen: Favoriten nicht hinter „Admin“ ({string.Join(", ", roots)})");
+                        await Settle();
+                        if (settingsWindow.Content is FrameworkElement fixedRoot) Screenshot(fixedRoot, "settings-gruppen-fest");
+                    }
                 }
             }
 
             settingsVm.FocusGroup(Settings.Folders[0].Group);
             if (settingsVm.Section != "groups") Fail("Einstellungen: Gruppe fokussieren wechselt nicht zur Gruppen-Seite");
 
+            // Rechnergruppen: dynamische Gruppe mit Regelblöcken
+            foreach (var mg in settingsVm.MachineGroups) mg.IsExpanded = true;
+            if (settingsVm.MachineGroups.FirstOrDefault(m => m.IsDynamic) is not { } dyn) Fail("Rechnergruppen: dynamische Gruppe fehlt in den Einstellungen");
+            else
+            {
+                if (dyn.Blocks.Count != 2 || dyn.HasRulesError) Fail($"Rechnergruppen: Regelblöcke falsch geladen ({dyn.Blocks.Count}, {dyn.RulesError})");
+                if (!dyn.FilterPreview.Contains("(|")) Fail("Rechnergruppen: Blöcke werden nicht mit ODER verknüpft");
+                var back = dyn.ToGroup();
+                if (back.AdQuery == null || back.Machines.Count != 2) Fail("Rechnergruppen: dynamische Gruppe geht beim Speichern verloren");
+                dyn.Blocks[0].Rules[0].AttributeText = "Betriebssystem";
+                if (dyn.Blocks[0].Rules[0].Attribute != "operatingSystem") Fail("Rechnergruppen: Attribut-Auswahl wird nicht übernommen");
+                dyn.Blocks[0].Rules[0].AttributeText = "name";
+            }
             foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "look", "behavior", "exec", "remote", "machines", "diag" })
             {
                 settingsVm.Section = section;
@@ -785,6 +875,8 @@ public sealed partial class AppController
             await ShowAndClose(IconPickerWindow.ForTest());
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(NewGroupWindow.ForTest());
+            await ShowAndClose(ChoiceWindow.ForTest());
+            await ShowAndClose(PlaceholderWindow.ForTestWithProfiles());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
             // Eintragsdialog: Kachelauswahl, jedes Formular, Live-Prüfung
             Step("Eintragsdialog");

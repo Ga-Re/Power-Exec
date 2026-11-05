@@ -68,14 +68,27 @@ internal static class Acrylic
         catch (EntryPointNotFoundException) { }
     }
 
+    /// <summary>Stärke der Weichzeichnung (Regler in den Einstellungen).</summary>
+    public const int Light = 1, Medium = 2, Strong = 3;
+
+    /// <param name="level">
+    /// 1 = leicht (einfacher Weichzeichner), 2 = mittel (Acrylic), 3 = stark (Acrylic mit Milchglas-Tönung in <paramref name="tintRgb"/>).
+    /// Den Radius der Weichzeichnung selbst lässt Windows nicht einstellen.
+    /// </param>
     /// <returns>false, wenn Windows die Funktion nicht kennt.</returns>
-    public static bool Apply(IntPtr hwnd, bool enabled)
+    public static bool Apply(IntPtr hwnd, bool enabled, int level = Medium, uint tintRgb = 0)
     {
         if (hwnd == IntPtr.Zero) return false;
+        level = Math.Clamp(level, Light, Strong);
+        var state = !enabled ? AccentState.Disabled
+            : level == Light || !IsAcrylicSupported ? AccentState.BlurBehind
+            : AccentState.AcrylicBlurBehind;
+        // GradientColor ist AABBGGRR; „stark“ legt eine deutliche Tönung über die Weichzeichnung
+        uint bgr = (tintRgb & 0xFF) << 16 | (tintRgb & 0xFF00) | (tintRgb >> 16 & 0xFF);
         var policy = new AccentPolicy
         {
-            AccentState = !enabled ? AccentState.Disabled : IsAcrylicSupported ? AccentState.AcrylicBlurBehind : AccentState.BlurBehind,
-            GradientColor = 0x01000000 // minimale eigene Tönung, Farbe kommt vom Panel
+            AccentState = state,
+            GradientColor = level == Strong && enabled ? 0x99000000 | bgr : 0x01000000 // sonst minimale eigene Tönung, Farbe kommt vom Panel
         };
         var size = Marshal.SizeOf(policy);
         var ptr = Marshal.AllocHGlobal(size);

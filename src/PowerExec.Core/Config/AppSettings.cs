@@ -195,6 +195,8 @@ public sealed class AppSettings
     public string ExecutionPolicy { get; set; } = "Bypass";
     public bool NoProfile { get; set; } = true;
     public bool NoExit { get; set; } = true;
+    /// <summary>Beim Start eines Eintrags mit mehreren Profilen nach dem Profil fragen (je Eintrag abweichend einstellbar).</summary>
+    public bool AskProfile { get; set; }
     public int ThrottleLimit { get; set; } = 16;
     public int RemoteTimeoutSeconds { get; set; } = 60;
 
@@ -243,6 +245,12 @@ public sealed class AppSettings
     /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
     public List<MachineGroup> MachineGroups { get; set; } = new();
 
+    /// <summary>Position der festen Gruppen unter den Gruppen der obersten Ebene (siehe <see cref="FixedGroups"/>).</summary>
+    public Dictionary<string, int> FixedGroupPositions { get; set; } = new();
+
+    /// <summary>Dynamische Rechnergruppen: beim Start und danach alle N Stunden aus dem AD aktualisieren.</summary>
+    public int AdSyncIntervalHours { get; set; } = 4;
+
     /// <summary>Zuletzt verwendete Parameterwerte (Schlüssel: Pfad|Parameter).</summary>
     public Dictionary<string, List<string>> ParameterHistory { get; set; } = new();
 
@@ -266,7 +274,20 @@ public sealed class AppSettings
 public sealed class MachineGroup
 {
     public string Name { get; set; } = string.Empty;
+    /// <summary>Feste Liste bzw. bei dynamischen Gruppen das Ergebnis der letzten Synchronisierung (auch offline nutzbar).</summary>
     public List<string> Machines { get; set; } = new();
 
-    public MachineGroup Clone() => new() { Name = Name, Machines = new List<string>(Machines) };
+    /// <summary>Dynamische Gruppe: Regeln für das Active Directory; null = feste Liste.</summary>
+    public AdGroupQuery? AdQuery { get; set; }
+    public DateTime? LastSyncUtc { get; set; }
+    /// <summary>Fehler der letzten Synchronisierung (die bisherige Liste bleibt dann erhalten).</summary>
+    public string? LastSyncError { get; set; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsDynamic => AdQuery != null;
+
+    public MachineGroup Clone() => new()
+    {
+        Name = Name, Machines = new List<string>(Machines), AdQuery = AdQuery?.Clone(), LastSyncUtc = LastSyncUtc, LastSyncError = LastSyncError
+    };
 }

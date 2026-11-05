@@ -26,7 +26,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         _app = app;
         _host = host;
-        _filter = host.Config.DefaultFilter;
+        _filter = TypeFilter.All; // „Vorausgewählter Filter“ gibt es nicht mehr – Filter kommen aus dem Suchfeld
         SetLayoutCommand = new RelayCommand(p => { if (Enum.TryParse<ItemLayout>(p?.ToString(), out var l)) Layout = l; });
         SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
@@ -712,6 +712,15 @@ public sealed class PanelViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasActivities));
         OnPropertyChanged(nameof(ActivitiesHeader));
+        RefreshRunning();
+    }
+
+    /// <summary>„läuft“ an den Einträgen, die gerade laufen (auch nach einem Neuaufbau der Liste).</summary>
+    private void RefreshRunning()
+    {
+        var running = _app.Activities.Items.Where(a => a.IsRunning && a.ItemPath != null)
+            .Select(a => a.ItemPath!).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var i in AllItems) i.IsRunning = running.Count > 0 && running.Contains(i.Item.FullPath);
     }
 
     // ---- Rückgängig ---------------------------------------------------------
@@ -888,10 +897,13 @@ public sealed class PanelViewModel : ObservableObject
                 Key = "best", Title = "Beste Treffer", Kind = "best", Expanded = true, AllowReorder = false,
                 Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
             });
+        // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
+        var fixedSpecs = new Dictionary<string, GroupSpec>();
+        var topLevel = new List<GroupSpec>();
         if (!searching && _filter == TypeFilter.All)
         {
             // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
-            if (settings.RecentRunsCount > 0 && cfg.ShowRecent)
+            if (settings.RecentRunsCount > 0 && ShowsGroup(FixedGroups.Recent))
             {
                 var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
                 var recent = settings.RecentRuns
@@ -902,20 +914,21 @@ public sealed class PanelViewModel : ObservableObject
                         var item = byPath[r.Path];
                         var profile = ProfileResolver.GetProfiles(settings, item)
                             .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
-                        var subtitle = (profile.IsImplicit ? string.Empty : profile.Name + " · ") + RecentRunList.Ago(r.TimeUtc);
-                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle);
+                        // Zeit rechts in der Zeile; darunter das Profil (falls gewählt), sonst die normale Info-Zeile
+                        var subtitle = profile.IsImplicit ? null : "Profil " + profile.Name;
+                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle, RecentRunList.Ago(r.TimeUtc));
                     })
                     .ToList();
                 if (recent.Count > 0)
-                    groups.Add(new GroupSpec
+                    fixedSpecs[FixedGroups.Recent] = new GroupSpec
                     {
                         Key = "recent", Title = "Zuletzt ausgeführt", Kind = "recent", Expanded = !collapsed.Contains("recent"),
                         AllowReorder = false, Items = recent
-                    });
+                    };
             }
 
             var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
-            if (favs.Count > 0 && cfg.ShowFavorites) groups.Add(MakeGroup("fav", "Favoriten", "fav", null, favs));
+            if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", "Favoriten", "fav", null, favs);
         }
 
         // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
@@ -955,7 +968,7 @@ public sealed class PanelViewModel : ObservableObject
             {
                 if (nodes.TryGetValue(parentPath, out var parentNode)) parentNode.Children.Add(node);
             }
-            else groups.Add(node);
+            else topLevel.Add(node);
         }
         // Leere Zweige bei Suche/Filter weglassen (fehlerhafte Ordner bleiben sichtbar)
         bool Prune(GroupSpec g)
@@ -963,11 +976,20 @@ public sealed class PanelViewModel : ObservableObject
             g.Children.RemoveAll(c => !Prune(c));
             return showEmpty || g.TotalCount > 0 || g.HasError;
         }
-        groups.RemoveAll(g => g.GroupPath != null && !Prune(g));
+        topLevel.RemoveAll(g => g.GroupPath != null && !Prune(g));
 
-        // Eigene Einträge ohne Gruppe
+        // Eigene Einträge ohne Gruppe (bei der Suche immer, damit Treffer nicht verschwinden)
         var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
-        if (rest.Count > 0) groups.Add(MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest));
+        if (rest.Count > 0 && (searching || ShowsGroup(FixedGroups.Custom)))
+            fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, "Eigene Einträge", "custom", null, rest);
+
+        // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
+        var topByPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
+        foreach (var key in FixedGroups.Compose(settings, topLevel.Select(g => g.GroupPath ?? g.Key).ToList()))
+        {
+            if (FixedGroups.IsFixed(key)) { if (fixedSpecs.TryGetValue(key, out var f)) groups.Add(f); }
+            else if (topByPath.TryGetValue(key, out var g)) groups.Add(g);
+        }
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
         var favorites = Arrange("fav", visible.Where(i => IsFav(i.FullPath))).ToList();
@@ -1039,6 +1061,7 @@ public sealed class PanelViewModel : ObservableObject
         OnPropertyChanged(nameof(HasWorkspaces));
         OnPropertyChanged(nameof(PanelName));
         OnPropertyChanged(nameof(IsMultiPanel));
+        if (_app.Activities.HasRunning) RefreshRunning(); // neu erzeugte Zeilen: „läuft“ übernehmen
         Rebuilt?.Invoke();
     }
 
@@ -1282,7 +1305,7 @@ public sealed class PanelViewModel : ObservableObject
     public void ResetForNextOpen()
     {
         _searchText = string.Empty;
-        _filter = _host.Config.DefaultFilter;
+        _filter = TypeFilter.All;
         _selectedKey = null;
         ShowShortcuts = false;
         ShowGroupJump = false;

@@ -31,6 +31,9 @@ public sealed class PanelConfig
     /// <summary>Acrylic: Hintergrund hinter dem Panel weichzeichnen (Windows 10 1803+; sonst nur Weichzeichnen).</summary>
     public bool Acrylic { get; set; }
 
+    /// <summary>Stärke der Weichzeichnung: 1 leicht, 2 mittel (Acrylic), 3 stark (mit Milchglas-Tönung).</summary>
+    public int AcrylicLevel { get; set; } = 2;
+
     /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
     public bool ShowDock { get; set; }
 
@@ -79,7 +82,7 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, AcrylicLevel = AcrylicLevel, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
         ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
@@ -108,6 +111,7 @@ public sealed class PanelConfig
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
         PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
+        AcrylicLevel = Math.Clamp(AcrylicLevel == 0 ? 2 : AcrylicLevel, 1, 3);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);
         HotZoneLength = Math.Clamp(HotZoneLength, 40, 4000);

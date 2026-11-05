@@ -120,15 +120,6 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? "Kein Tastenkürzel" : HotkeyService.Display(_c.Hotkey);
     public ICommand ClearHotkeyCommand { get; }
 
-    public TypeFilter DefaultFilter { get => _c.DefaultFilter; set { _c.DefaultFilter = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<TypeFilter, string>> Filters { get; } = new[]
-    {
-        new KeyValuePair<TypeFilter, string>(TypeFilter.All, "Alle"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Scripts, "Scripte"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Programs, "Programme"),
-        new KeyValuePair<TypeFilter, string>(TypeFilter.Favorites, "Favoriten")
-    };
-
     // ---- Farbe ------------------------------------------------------------
 
     private IReadOnlyList<ColorPresetViewModel>? _presets;
@@ -190,6 +181,14 @@ public sealed class PanelSettingsViewModel : ObservableObject
         : "Farbe des Designs";
 
     public bool Acrylic { get => _c.Acrylic; set { _c.Acrylic = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); } }
+
+    /// <summary>Stärke der Weichzeichnung (1 leicht, 2 mittel, 3 stark).</summary>
+    public int AcrylicLevel
+    {
+        get => _c.AcrylicLevel;
+        set { _c.AcrylicLevel = Math.Clamp(value, 1, 3); OnPropertyChanged(); OnPropertyChanged(nameof(AcrylicLevelText)); }
+    }
+    public string AcrylicLevelText => _c.AcrylicLevel switch { 1 => "Leicht", 3 => "Stark", _ => "Mittel" };
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
     public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }

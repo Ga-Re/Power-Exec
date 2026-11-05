@@ -92,6 +92,11 @@ public sealed class SettingsStore
             s.Grouping = GroupingMode.Folder;
             s.DataVersion = 13;
         }
+        if (s.DataVersion < 14)
+        {
+            FixedGroups.MigrateToggles(s);
+            s.DataVersion = 14;
+        }
         SmartGroups.EnsureFolderGroups(s);
         s.MachineGroups.RemoveAll(g => string.IsNullOrWhiteSpace(g.Name));
         s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));

@@ -382,6 +382,12 @@
                                 </StackPanel>
                             </Grid>
                             <CheckBox Margin="0,12,0,0" IsChecked="{Binding SingleClick}" Content="Mit einem Klick starten (statt den Eintrag im Panel aufzuklappen)"/>
+                            <DockPanel Margin="0,10,0,0">
+                                <ComboBox DockPanel.Dock="Right" Width="250" ItemsSource="{Binding AskProfileChoices}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                          SelectedValue="{Binding AskProfile}" AutomationProperties.Name="Beim Start nach dem Profil fragen"/>
+                                <TextBlock Text="Beim Start nach dem Profil fragen" VerticalAlignment="Center"
+                                           ToolTip="Nur bei mehreren Profilen – die Auswahl erscheint im selben Fenster wie die Werte für {{Platzhalter}}"/>
+                            </DockPanel>
                             <TextBlock Text="Notiz" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="32" MaxHeight="90"
                                      VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"

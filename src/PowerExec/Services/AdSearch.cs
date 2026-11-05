@@ -45,6 +45,23 @@ public static class AdSearch
             }
         }, token);
 
+    /// <summary>Computer nach fertigem LDAP-Filter (dynamische Rechnergruppen), optional ab einer OU.</summary>
+    public static Task<IReadOnlyList<string>> QueryAsync(string ldapFilter, string? searchBase, CancellationToken token = default) =>
+        Task.Run<IReadOnlyList<string>>(() =>
+        {
+            using var root = string.IsNullOrWhiteSpace(searchBase) ? new DirectoryEntry() : new DirectoryEntry("LDAP://" + searchBase.Trim());
+            using var searcher = new DirectorySearcher(root, ldapFilter, new[] { "name" })
+                { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
+            using var results = searcher.FindAll();
+            var names = new List<string>();
+            foreach (SearchResult r in results)
+            {
+                token.ThrowIfCancellationRequested();
+                if (r.Properties["name"] is { Count: > 0 } p && p[0] is string n) names.Add(n.ToUpperInvariant());
+            }
+            return names.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+        }, token);
+
     /// <summary>Maskiert LDAP-Sonderzeichen, lässt aber * als Platzhalter stehen.</summary>
     private static string Escape(string s) =>
         s.Replace("\\", "\\5c").Replace("(", "\\28").Replace(")", "\\29").Replace("\0", "\\00");

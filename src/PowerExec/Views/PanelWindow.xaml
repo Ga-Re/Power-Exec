@@ -523,12 +523,25 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <!-- Schnellstart-Taste (Favoriten) -->
-                            <Border Grid.Column="2" VerticalAlignment="Center" Margin="6,0,0,0" Padding="5,1" CornerRadius="4" BorderThickness="1"
-                                    BorderBrush="{DynamicResource Border.Control}" Visibility="{Binding HasQuickKey, Converter={StaticResource Vis}}"
-                                    ToolTip="Schnellstart mit dieser Taste – auch ohne den Eintrag auszuwählen">
-                                <TextBlock Text="{Binding QuickKeyText}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
-                            </Border>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Läuft gerade (lokaler Start in der Aktivitäten-Leiste) -->
+                                <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="8" Background="{DynamicResource Bg.Selected}" VerticalAlignment="Center"
+                                        Visibility="{Binding IsRunning, Converter={StaticResource Vis}}" ToolTip="Läuft gerade – Details unten in den Aktivitäten">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="RunDot" Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="läuft" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <!-- Zuletzt ausgeführt: wann -->
+                                <TextBlock Text="{Binding RecentWhen}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                           Visibility="{Binding HasRecentWhen, Converter={StaticResource Vis}}"/>
+                                <!-- Schnellstart-Taste (Favoriten) -->
+                                <Border VerticalAlignment="Center" Margin="6,0,0,0" Padding="5,1" CornerRadius="4" BorderThickness="1"
+                                        BorderBrush="{DynamicResource Border.Control}" Visibility="{Binding HasQuickKey, Converter={StaticResource Vis}}"
+                                        ToolTip="Schnellstart mit dieser Taste – auch ohne den Eintrag auszuwählen">
+                                    <TextBlock Text="{Binding QuickKeyText}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
+                                </Border>
+                            </StackPanel>
                             <Grid x:Name="BadgeBox" Width="36" VerticalAlignment="Top" Margin="0,1,0,0">
                                 <Border Style="{StaticResource Badge}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                     <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -578,6 +591,19 @@
                 <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Hover}"/>
                 </Trigger>
+                <!-- „läuft“: Punkt pulsiert -->
+                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="RunPulse">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetName="RunDot" Storyboard.TargetProperty="Opacity" From="1" To="0.25" Duration="0:0:0.7"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="RunPulse"/>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
                 <!-- Mehrfachauswahl (Strg+Klick) -->
                 <DataTrigger Binding="{Binding IsChecked}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Search.Highlight}"/>
@@ -642,7 +668,7 @@
                     <Border x:Name="GroupHeader" CornerRadius="6" BorderBrush="{DynamicResource Accent}" BorderThickness="0" Background="Transparent" AllowDrop="True"
                             PreviewMouseLeftButtonDown="GroupHeader_PreviewMouseLeftButtonDown" PreviewMouseMove="GroupHeader_PreviewMouseMove"
                             DragOver="GroupHeader_DragOver" DragLeave="GroupHeader_DragLeave" Drop="GroupHeader_Drop">
-                    <Grid Margin="0,6,0,2">
+                    <Grid Margin="0,3,0,3">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
@@ -695,14 +721,16 @@
                                 <TextBlock Grid.Column="3" Text="{Binding CountText}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                             </Grid>
                         </Button>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <!-- Liste/Raster nur für diese Gruppe (bei Mausover) -->
+                        <!-- Knöpfe erst beim Darüberfahren: wachsen von 0 auf volle Breite und blenden ein, die Zahl gleitet dabei nach links -->
+                        <StackPanel x:Name="HeaderTools" Grid.Column="1" Orientation="Horizontal" Opacity="0">
+                            <StackPanel.LayoutTransform><ScaleTransform ScaleX="0"/></StackPanel.LayoutTransform>
+                            <!-- Liste/Raster nur für diese Gruppe -->
                             <Button x:Name="LayoutToggle" Style="{StaticResource Btn.Icon}" Width="28" Height="32" ToolTip="{Binding LayoutToolTip}"
-                                    Command="{Binding ToggleLayoutCommand}" Visibility="Hidden">
+                                    Command="{Binding ToggleLayoutCommand}">
                                 <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="12"/>
                             </Button>
                             <!-- Menü erst beim Darüberfahren (wie Liste/Raster) – ruhigerer Gruppenkopf -->
-                            <Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü" Visibility="Hidden"
+                            <Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
                                     ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
                                 <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
                             </Button>
@@ -711,7 +739,9 @@
                     </Border>
                     <TextBlock Text="{Binding Error}" Visibility="{Binding HasError, Converter={StaticResource Vis}}" FontSize="12"
                                Foreground="{DynamicResource Status.Warning}" Margin="38,0,8,6" TextWrapping="Wrap"/>
-                    <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}">
+                    <!-- Inhalt klappt beim Klick auf den Kopf weich auf und zu -->
+                    <c:CollapsePanel Animate="{Binding AnimateExpand}" IsExpanded="{Binding IsExpanded}">
+                    <StackPanel>
                         <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
                             <ItemsControl.Style>
                                 <Style TargetType="ItemsControl">
@@ -736,6 +766,7 @@
                         <!-- Untergruppen -->
                         <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource GroupTemplate}" Focusable="False" Margin="14,0,0,0"/>
                     </StackPanel>
+                    </c:CollapsePanel>
                     <!-- Lücke für „als letzte Untergruppe“ (auch bei eingeklappter Gruppe sichtbar) -->
                     <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,4,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                            DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -758,8 +789,24 @@
                     <MultiTrigger.Conditions>
                         <Condition SourceName="GroupHeader" Property="IsMouseOver" Value="True"/>
                     </MultiTrigger.Conditions>
-                    <Setter TargetName="LayoutToggle" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="GroupMenuButton" Property="Visibility" Value="Visible"/>
+                    <MultiTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="HeaderTools" Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleX)"
+                                                 To="1" Duration="0:0:0.16"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="HeaderTools" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.04" Duration="0:0:0.14"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiTrigger.EnterActions>
+                    <MultiTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="HeaderTools" Storyboard.TargetProperty="(FrameworkElement.LayoutTransform).(ScaleTransform.ScaleX)"
+                                                 To="0" Duration="0:0:0.14"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseIn"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="HeaderTools" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </MultiTrigger.ExitActions>
                     <!-- Hover über dem Gruppenkopf: Rahmen der Gruppe hervorheben (statt grauer Fläche) -->
                     <Setter TargetName="GroupBox" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 </MultiTrigger>
@@ -1165,8 +1212,8 @@
                     DataContext="{Binding StickyGroup}" Command="{Binding DataContext.JumpToGroupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding}" ToolTip="Zum Gruppenkopf springen"
                     Visibility="{Binding DataContext.HasStickyGroup, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                <Border Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="8,6">
-                    <Border Background="{Binding CardBackground}" Margin="-8,-6" Padding="8,6">
+                <Border Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="8,6" CornerRadius="6,6,0,0">
+                    <Border Background="{Binding CardBackground}" Margin="-8,-6" Padding="8,6" CornerRadius="6,6,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding IconGlyph}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -1561,6 +1608,15 @@
                                                 ToolTip="Aus der Liste entfernen" AutomationProperties.Name="Entfernen"
                                                 Visibility="{Binding IsRunning, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Text.Tertiary}"/>
+                                        </Button>
+                                        <!-- Nach dem Ende: denselben Start wiederholen (gleiche Werte und gleiches Profil) -->
+                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="6,0" Command="{Binding RestartCommand}"
+                                                Visibility="{Binding CanRestart, Converter={StaticResource Vis}}" ToolTip="Mit denselben Werten erneut starten"
+                                                AutomationProperties.Name="Erneut starten">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Accent}" Margin="0,0,5,0"/>
+                                                <TextBlock Text="Erneut starten" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                            </StackPanel>
                                         </Button>
                                         <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="8,0" Command="{Binding OpenCommand}"
                                                 Visibility="{Binding CanOpen, Converter={StaticResource Vis}}" ToolTip="Ergebnisliste öffnen">

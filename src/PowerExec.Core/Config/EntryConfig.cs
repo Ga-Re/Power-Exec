@@ -84,11 +84,14 @@ public sealed class EntryConfig
     /// <summary>Ein Klick im Panel startet sofort das Standardprofil (statt aufzuklappen).</summary>
     public bool SingleClick { get; set; }
 
+    /// <summary>Beim Start nach dem Profil fragen: null = wie unter Ausführung eingestellt.</summary>
+    public bool? AskProfile { get; set; }
+
     public List<LaunchProfile> Profiles { get; set; } = new();
 
     /// <summary>Nichts eingestellt – die Konfiguration muss nicht aufbewahrt werden.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsEmpty => string.IsNullOrEmpty(Category) && Profiles.Count == 0 && Tags.Count == 0 && !SingleClick &&
+    public bool IsEmpty => string.IsNullOrEmpty(Category) && Profiles.Count == 0 && Tags.Count == 0 && !SingleClick && AskProfile == null &&
                            string.IsNullOrWhiteSpace(DisplayName) && string.IsNullOrWhiteSpace(Description) && string.IsNullOrWhiteSpace(Notes);
 
     public EntryConfig Clone() => new()
@@ -100,6 +103,7 @@ public sealed class EntryConfig
         Notes = Notes,
         Tags = new List<string>(Tags),
         SingleClick = SingleClick,
+        AskProfile = AskProfile,
         Profiles = Profiles.Select(p => p.Clone()).ToList()
     };
 }

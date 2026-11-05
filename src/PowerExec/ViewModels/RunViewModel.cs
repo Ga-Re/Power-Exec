@@ -452,8 +452,7 @@ public sealed class RunViewModel : ObservableObject
                 CloseRequested?.Invoke();
             }
         }
-        else if (_app.Launcher.StartLocal(req, OwnerWindow?.Invoke(),
-                     _app.TrackLocal(Item, req.Mode, _app.BeginHistory(Item, Profile, req.Mode, req.Engine, null, RawValues()))))
+        else if (RawValues() is var raw && _app.StartLocalTracked(Item, req, () => _app.BeginHistory(Item, Profile, req.Mode, req.Engine, null, raw), OwnerWindow?.Invoke()))
         {
             _app.RecordParameters(Item, RawValues());
             _app.RecordRun(Item, Profile);

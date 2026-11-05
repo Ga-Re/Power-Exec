@@ -28,7 +28,16 @@ public sealed class ActivityViewModel : ObservableObject
         CancelAction = cancel;
         OpenCommand = new RelayCommand(() => OpenAction?.Invoke(), () => OpenAction != null);
         CancelCommand = new RelayCommand(() => CancelAction?.Invoke(), () => CancelAction != null && IsRunning);
+        RestartCommand = new RelayCommand(() => RestartAction?.Invoke(), () => RestartAction != null && !IsRunning);
     }
+
+    /// <summary>Gleichen Start wiederholen (gleiche Werte, gleiches Profil); nur nach dem Ende.</summary>
+    public Action? RestartAction { get; set; }
+    public ICommand RestartCommand { get; }
+    public bool CanRestart => RestartAction != null && !IsRunning;
+
+    /// <summary>Script ist fertig, sein Fenster aber noch offen.</summary>
+    public bool WindowStillOpen { get; internal set; }
 
     public string Title { get; }
     /// <summary>Typ-Kürzel wie im Panel (PS, CMD …).</summary>
@@ -48,7 +57,7 @@ public sealed class ActivityViewModel : ObservableObject
         private set
         {
             if (!Set(ref _state, value)) return;
-            foreach (var p in new[] { nameof(IsRunning), nameof(IsSuccess), nameof(IsWarning), nameof(IsError), nameof(StatusGlyph), nameof(TimeText), nameof(CanCancel) })
+            foreach (var p in new[] { nameof(IsRunning), nameof(IsSuccess), nameof(IsWarning), nameof(IsError), nameof(StatusGlyph), nameof(TimeText), nameof(CanCancel), nameof(CanRestart) })
                 OnPropertyChanged(p);
             CommandManager.InvalidateRequerySuggested();
         }
@@ -99,6 +108,9 @@ public sealed class ActivityViewModel : ObservableObject
         : $"{(int)t.TotalHours}:{t.Minutes:00} h";
 
     internal void Tick() => OnPropertyChanged(nameof(TimeText));
+
+    /// <summary>Gestarteter Eintrag (für die Anzeige „läuft“ in der Liste).</summary>
+    public string? ItemPath { get; init; }
 
     /// <summary>Exit-Code eines lokalen Prozesses (falls lesbar).</summary>
     public int? ExitCode { get; internal set; }
@@ -163,6 +175,7 @@ public sealed class ActivityList
 
     private void Tick()
     {
+        if (_doneFiles.Count > 0) CheckDoneFiles();
         foreach (var a in Items.Where(a => a.IsRunning)) a.Tick();
         var before = Items.Count;
         Trim();
@@ -181,10 +194,11 @@ public sealed class ActivityList
     /// Lokal gestarteten Prozess verfolgen (Scripte): Ende und Exit-Code. Programme mit Fenster werden nicht verfolgt,
     /// sie würden dauerhaft als „läuft“ erscheinen.
     /// </summary>
-    public void TrackProcess(LaunchItem item, string displayName, Process process, string detail, Action<ActivityViewModel>? created = null)
+    public void TrackProcess(LaunchItem item, string displayName, Process process, string detail, Action<ActivityViewModel>? created = null, Action? restart = null)
     {
-        var activity = Add(new ActivityViewModel(displayName, detail, BadgeOf(item)));
+        var activity = Add(new ActivityViewModel(displayName, detail, BadgeOf(item)) { RestartAction = restart, ItemPath = item.FullPath });
         created?.Invoke(activity);
+        if (PowerExec.Services.Launcher.DoneFileOf(process) is { } doneFile) _doneFiles[activity] = doneFile;
         try
         {
             process.EnableRaisingEvents = true;
@@ -200,14 +214,59 @@ public sealed class ActivityList
         }
     }
 
-    private static void Finish(ActivityViewModel activity, Process process)
+    /// <summary>Fertig-Markierungen laufender Scripte (Fenster bleibt offen) – im Sekundentakt geprüft.</summary>
+    private readonly Dictionary<ActivityViewModel, string> _doneFiles = new();
+
+    private void CheckDoneFiles()
     {
-        if (!activity.IsRunning) return;
+        foreach (var (activity, file) in _doneFiles.ToList())
+        {
+            if (!activity.IsRunning) { Forget(activity, file); continue; }
+            string text;
+            try
+            {
+                if (!File.Exists(file)) continue;
+                text = File.ReadAllText(file).Trim();
+            }
+            catch (IOException) { continue; } // wird gerade geschrieben
+            catch (UnauthorizedAccessException) { continue; }
+            Forget(activity, file);
+            activity.WindowStillOpen = true;
+            // „E“: Batch mit Fehler (Exit-Code dort nicht sicher ermittelbar)
+            if (text.Equals("E", StringComparison.OrdinalIgnoreCase))
+            {
+                activity.Complete(ActivityState.Error, "fertig mit Fehler · Fenster noch offen");
+                continue;
+            }
+            var code = int.TryParse(text, out var c) ? c : 0;
+            activity.ExitCode = code;
+            if (code == 0) activity.Complete(ActivityState.Success, "fertig · Fenster noch offen");
+            else activity.Complete(ActivityState.Error, $"fertig · Exit-Code {code} · Fenster noch offen");
+        }
+    }
+
+    private void Forget(ActivityViewModel activity, string file)
+    {
+        _doneFiles.Remove(activity);
+        try { File.Delete(file); } catch { /* später beim nächsten Start egal */ }
+    }
+
+    private void Finish(ActivityViewModel activity, Process process)
+    {
+        if (_doneFiles.TryGetValue(activity, out var file))
+        {
+            // Fenster geschlossen, bevor die Markierung gelesen wurde: zuerst die Markierung auswerten
+            CheckDoneFiles();
+            if (activity.IsRunning) Forget(activity, file);
+        }
+        if (!activity.IsRunning) { process.Dispose(); return; }
         int? code = null;
         try { code = process.ExitCode; } catch { /* erhöhter Prozess: Exit-Code nicht lesbar */ }
         process.Dispose();
         activity.ExitCode = code;
-        if (code is null or 0) activity.Complete(ActivityState.Success, code == null ? "beendet" : "beendet · Exit-Code 0");
+        // 0xC000013A: Konsolenfenster geschlossen (Strg+C / ✕) – abgebrochen, kein Script-Fehler
+        if (code == unchecked((int)0xC000013A)) activity.Complete(ActivityState.Warning, "Fenster geschlossen");
+        else if (code is null or 0) activity.Complete(ActivityState.Success, code == null ? "beendet" : "beendet · Exit-Code 0");
         else activity.Complete(ActivityState.Error, $"beendet · Exit-Code {code}");
     }
 
