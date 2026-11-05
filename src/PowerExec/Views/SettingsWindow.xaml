@@ -1500,6 +1500,13 @@
                             <TextBlock Text="{Binding Frost, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                         </StackPanel>
                     </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="{Binding OpacityDescription}">
+                            <StackPanel Orientation="Horizontal">
+                                <Slider Width="180" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding PanelOpacity}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Deckkraft"/>
+                                <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                            </StackPanel>
+                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
                                     Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand"/>
@@ -1518,12 +1525,7 @@
                     <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">
                         <CheckBox Style="{StaticResource ToggleSwitch}" IsChecked="{Binding ShowScrollBar}" AutomationProperties.Name="Scrollbalken"/>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="Unter 100 % scheint der Desktop leicht durch; Schrift bleibt voll deckend.">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="50" Maximum="100" TickFrequency="5" Value="{Binding PanelOpacity}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
+
                     <c:SettingsCard Icon="&#xE9A6;" Header="Breite" Description="Breite und Höhe lassen sich auch direkt am Panel per Ziehen am Innenrand ändern.">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="280" Maximum="900" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"/>

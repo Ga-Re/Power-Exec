@@ -349,24 +349,57 @@ public sealed partial class AppController
 
             Step("Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica");
             {
+                // Messung für den CI-Bericht: Fenster so groß wie das Panel? Ist hinter dem Panel weichgezeichnet?
+                // Dafür liegt ein Streifenmuster hinter dem Panel; ohne Weichzeichner bleibt der Kontrast benachbarter Pixel hoch.
                 var cfg = Settings.Panels[0];
-                var before = cfg.Backdrop;
+                var (beforeBackdrop, beforeOpacity, beforeFrost, beforeWidth) = (cfg.Backdrop, cfg.PanelOpacity, cfg.Frost, cfg.PanelWidth);
+                var report = new System.Text.StringBuilder();
+                report.AppendLine("### Hintergrund hinter dem Panel");
+                report.AppendLine();
+                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(SystemParameters.IsGlassEnabled ? "an" : "aus")} · Deckkraft 40 %, Milchglas 0 %, Breite 560");
+                report.AppendLine();
+                report.AppendLine("| Gewählt | Läuft als | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s |");
+                report.AppendLine("|---|---|---|---|---:|---:|");
+                cfg.PanelOpacity = 40;
+                cfg.Frost = 0;
+                cfg.PanelWidth = 560;
                 foreach (var b in new[] { PanelBackdrop.Clear, PanelBackdrop.Aero, PanelBackdrop.Mica, PanelBackdrop.Acrylic })
                 {
                     cfg.Backdrop = b;
-                    cfg.Frost = 30;
                     CreateHosts();
                     var host = _hosts[0];
                     var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
-                    host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                    var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                    var rect = ScreenService.PanelRect(monitor, host.Config);
+                    var stripes = StripeWindow(rect);
+                    stripes.Show();
                     await Settle();
+                    host.Window.ShowPanel(monitor, viaHotkey: true);
+                    await Settle();
+                    await Task.Delay(400);
+                    var hwnd = new System.Windows.Interop.WindowInteropHelper(host.Window).Handle;
+                    Interop.NativeMethods.GetWindowRect(hwnd, out var wr);
+                    var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(host.Window);
+                    var bw = (int)Math.Round(host.Window.PanelBorder.ActualWidth * dpi.DpiScaleX);
+                    var bh = (int)Math.Round(host.Window.PanelBorder.ActualHeight * dpi.DpiScaleY);
+                    var c1 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
+                    await Task.Delay(1500);
+                    var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
+                    report.AppendLine($"| {b} | {expected} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} |");
+                    if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
+                        Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
                     if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + b.ToString().ToLowerInvariant());
                     host.Window.HidePanel();
+                    stripes.Close();
                     await Settle();
                 }
-                cfg.Backdrop = before;
+                report.AppendLine();
+                report.AppendLine("Kontrast: mittlerer Helligkeitsunterschied benachbarter Pixel über einem Schwarz-Weiß-Streifenmuster hinter dem Panel. Hoch = nicht weichgezeichnet, niedrig = weichgezeichnet.");
+                var reportDir = _progressFile != null ? Path.GetDirectoryName(Path.GetFullPath(_progressFile))! : Path.GetTempPath();
+                File.WriteAllText(Path.Combine(reportDir, "selftest-backdrop.md"), report.ToString(), new System.Text.UTF8Encoding(false));
+                (cfg.Backdrop, cfg.PanelOpacity, cfg.Frost, cfg.PanelWidth) = (beforeBackdrop, beforeOpacity, beforeFrost, beforeWidth);
                 CreateHosts();
             }
 
@@ -1028,6 +1061,43 @@ public sealed partial class AppController
         if (caret < 25) Fail($"Textfeld: Innenabstand fehlt ({caret:0} px)");
         if (!double.IsNaN(placeholderLeft) && Math.Abs(caret - placeholderLeft) > 4)
             Fail($"Textfeld: Cursor ({caret:0} px) und Platzhalter ({placeholderLeft:0} px) beginnen nicht an derselben Stelle");
+    }
+
+    /// <summary>Fenster mit feinem Schwarz-Weiß-Streifenmuster an der Stelle des Panels (Messung des Weichzeichners).</summary>
+    private static Window StripeWindow(System.Drawing.Rectangle px)
+    {
+        var brush = new System.Windows.Media.DrawingBrush
+        {
+            TileMode = System.Windows.Media.TileMode.Tile, Viewport = new Rect(0, 0, 4, 4), ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute,
+            Drawing = new System.Windows.Media.GeometryDrawing(System.Windows.Media.Brushes.Black, null, new System.Windows.Media.RectangleGeometry(new Rect(0, 0, 2, 4)))
+        };
+        var scale = Interop.NativeMethods.ScaleForPoint(px.Left + 1, px.Top + 1);
+        return new Window
+        {
+            WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, ShowInTaskbar = false, ShowActivated = false,
+            Background = System.Windows.Media.Brushes.White, Content = new System.Windows.Controls.Border { Background = brush },
+            Left = px.Left / scale - 40, Top = px.Top / scale - 40, Width = px.Width / scale + 80, Height = px.Height / scale + 80, Title = "Streifen"
+        };
+    }
+
+    /// <summary>Mittlerer Helligkeitsunterschied benachbarter Pixel (120×40 px ab x, y auf dem Bildschirm).</summary>
+    private static double StripeContrast(int x, int y)
+    {
+        try
+        {
+            using var bmp = new System.Drawing.Bitmap(120, 40);
+            using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(x, y, 0, 0, bmp.Size);
+            double sum = 0; int n = 0;
+            for (int yy = 0; yy < bmp.Height; yy += 4)
+            for (int xx = 0; xx < bmp.Width - 1; xx++)
+            {
+                var a = bmp.GetPixel(xx, yy); var c = bmp.GetPixel(xx + 1, yy);
+                sum += Math.Abs((a.R + a.G + a.B) / 3.0 - (c.R + c.G + c.B) / 3.0);
+                n++;
+            }
+            return n == 0 ? -1 : sum / n;
+        }
+        catch { return -1; }
     }
 
     private static async Task Settle()

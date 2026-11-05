@@ -51,6 +51,11 @@ jobs:
             Get-Content $perf
             Get-Content $perf | Add-Content $env:GITHUB_STEP_SUMMARY
           } else { Write-Host 'Keine Leistungsmessung vorhanden.' }
+          $bg = Join-Path $env:RUNNER_TEMP 'selftest-backdrop.md'
+          if (Test-Path $bg) {
+            Get-Content $bg
+            Get-Content $bg | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
 
       - uses: actions/upload-artifact@v4
         if: always()

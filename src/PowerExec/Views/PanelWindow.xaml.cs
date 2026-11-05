@@ -56,6 +56,7 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
+        if (_systemWindow) Interop.NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
         if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
         {
             if (src.CompositionTarget != null) src.CompositionTarget.BackgroundColor = Colors.Transparent;
@@ -315,6 +316,11 @@ public partial class PanelWindow : Window
         if (_monitor == null) return;
         _rect = ScreenService.PanelRect(_monitor, Cfg);
         ScreenService.Place(_hwnd, _rect);
+        // WPF-Größe angleichen: sonst bleibt der Inhalt bei der Größe aus der XAML und das Fenster ist breiter als das Panel
+        // (bei Weichzeichner sichtbar als unscharfer Streifen neben dem Panel)
+        var dpi = VisualTreeHelper.GetDpi(this);
+        Width = _rect.Width / dpi.DpiScaleX;
+        Height = _rect.Height / dpi.DpiScaleY;
         PlaceGrips();
     }
 

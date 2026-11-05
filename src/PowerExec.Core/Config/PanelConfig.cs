@@ -116,7 +116,7 @@ public sealed class PanelConfig
         Categories.Clear();
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
-        PanelOpacity = Math.Clamp(PanelOpacity, 50, 100);
+        PanelOpacity = Math.Clamp(PanelOpacity, 20, 100);
         Backdrop ??= Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear;
         Acrylic = Backdrop != PanelBackdrop.Clear;
         Frost = Math.Clamp(Frost, 0, 60);
