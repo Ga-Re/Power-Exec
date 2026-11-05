@@ -255,23 +255,23 @@ public sealed partial class AppController
                 vm.Rebuild();
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                 await Settle();
-                var leer = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Leer");
-                var admin = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
-                if (leer == null || admin == null) Fail("Gruppen ziehen: Testgruppen „Leer“/„Admin“ fehlen im Panel");
+                var dragLeer = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Leer");
+                var dragAdmin = vm.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
+                if (dragLeer == null || dragAdmin == null) Fail("Gruppen ziehen: Testgruppen „Leer“/„Admin“ fehlen im Panel");
                 else
                 {
-                    vm.BeginGroupDrag(leer);
-                    if (!leer.IsDragSource || !vm.IsDraggingGroup) Fail("Gruppen ziehen: gezogene Gruppe macht keinen Platz");
-                    var into = vm.PreviewGroupDrop(admin, GroupDropZone.Into, 0);
-                    if (into is not { IsValid: true, Position: GroupDropPosition.Into } || !admin.GapInside)
+                    vm.BeginGroupDrag(dragLeer);
+                    if (!dragLeer.IsDragSource || !vm.IsDraggingGroup) Fail("Gruppen ziehen: gezogene Gruppe macht keinen Platz");
+                    var into = vm.PreviewGroupDrop(dragAdmin, GroupDropZone.Into, 0);
+                    if (into is not { IsValid: true, Position: GroupDropPosition.Into } || !dragAdmin.GapInside)
                         Fail("Gruppen ziehen: keine Lücke für „als Untergruppe“");
                     await Settle();
                     if (host.Window.Content is FrameworkElement intoRoot) Screenshot(intoRoot, "panel-gruppe-ziehen-untergruppe");
-                    var before = vm.PreviewGroupDrop(admin, GroupDropZone.Before, 0);
-                    if (before is not { IsValid: true } || !admin.GapBefore || admin.GapInside) Fail("Gruppen ziehen: Lücke wandert nicht mit");
+                    var before = vm.PreviewGroupDrop(dragAdmin, GroupDropZone.Before, 0);
+                    if (before is not { IsValid: true } || !dragAdmin.GapBefore || dragAdmin.GapInside) Fail("Gruppen ziehen: Lücke wandert nicht mit");
                     await Settle();
                     if (host.Window.Content is FrameworkElement beforeRoot) Screenshot(beforeRoot, "panel-gruppe-ziehen-davor");
-                    vm.PreviewGroupDrop(admin, GroupDropZone.Into, 0);
+                    vm.PreviewGroupDrop(dragAdmin, GroupDropZone.Into, 0);
                     if (!vm.CommitGroupDrop()) Fail("Gruppen ziehen: Ablegen bewirkt nichts");
                     await Settle();
                     if (!GroupManager.Exists(Settings, "Admin/Leer")) Fail("Gruppen ziehen: „Leer“ ist nicht in „Admin“ gelandet");
