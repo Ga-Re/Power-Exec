@@ -54,7 +54,21 @@ public static class SmokeTest
                 : zone.SuppressedByFullscreen ? "ausgeblendet (Vollbild erkannt)" : throw new InvalidOperationException("Zone nicht sichtbar");
         });
 
-        await Step("P2 Vollbild-Erkennung", () => Task.FromResult(Native.IsFullscreenAppActive() ? "Vollbild aktiv erkannt" : "kein Vollbild (erwartet)"));
+        await Step("P2 Hover-Zone löst aus (Maus an den Rand)", async () =>
+        {
+            Native.GetCursorPos(out var before);
+            var (x, y) = zone.Center;
+            Native.SetCursorPos(x + 2, y); // ganz an den Rand: Windows hält den Zeiger am letzten Pixel
+            var sw = Stopwatch.StartNew();
+            while (!panel.IsShown && sw.ElapsedMilliseconds < 3000) await Task.Delay(20);
+            var shown = panel.IsShown;
+            var ms = sw.ElapsedMilliseconds;
+            Native.SetCursorPos(before.X, before.Y);
+            if (shown) await panel.SlideAsync(false);
+            return shown ? $"Panel nach {ms} ms ausgefahren (Verweilzeit 250 ms + Gleiten)" : throw new InvalidOperationException("Panel fährt nicht aus");
+        });
+
+        await Step("P2 Vollbild-Erkennung", () => Task.FromResult(Native.FullscreenReason() is { } r ? "Vollbild erkannt: " + r : "kein Vollbild (erwartet)"));
 
         await Step("P2 Pulsieren", async () =>
         {

@@ -59,6 +59,9 @@ internal static class Native
     public static extern bool GetCursorPos(out POINT point);
 
     [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll")]
     public static extern uint GetDpiForWindow(IntPtr hWnd);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
@@ -98,18 +101,24 @@ internal static class Native
     /// Läuft gerade ein Vollbild-Programm (Video, Präsentation, Spiel, RDP)? Wie die WPF-App: Windows-Status plus
     /// Vordergrundfenster, das seinen Monitor vollständig bedeckt (ohne Desktop und Shell).
     /// </summary>
-    public static bool IsFullscreenAppActive()
+    public static bool IsFullscreenAppActive() => FullscreenReason() != null;
+
+    /// <summary>Grund für „Vollbild aktiv“ (für das Protokoll) oder null.</summary>
+    public static string? FullscreenReason()
     {
-        if (SHQueryUserNotificationState(out var state) == 0 && state is 2 or 3 or 4) return true;
+        if (SHQueryUserNotificationState(out var state) == 0 && state is 2 or 3 or 4)
+            return state switch { 2 => "Windows meldet „beschäftigt“ (Vollbild)", 3 => "Direct3D-Vollbild", _ => "Präsentationsmodus" };
         var fg = GetForegroundWindow();
-        if (fg == IntPtr.Zero || fg == GetShellWindow() || fg == GetDesktopWindow()) return false;
+        if (fg == IntPtr.Zero || fg == GetShellWindow() || fg == GetDesktopWindow()) return null;
         var cls = new System.Text.StringBuilder(64);
         GetClassName(fg, cls, cls.Capacity);
-        if (cls.ToString() is "WorkerW" or "Progman") return false;
-        if (!GetWindowRect(fg, out var r)) return false;
+        if (cls.ToString() is "WorkerW" or "Progman") return null;
+        if (!GetWindowRect(fg, out var r)) return null;
         var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
-        if (!GetMonitorInfo(MonitorFromWindow(fg, 2), ref info)) return false;
+        if (!GetMonitorInfo(MonitorFromWindow(fg, 2), ref info)) return null;
         var m = info.rcMonitor;
-        return r.Left <= m.Left && r.Top <= m.Top && r.Right >= m.Right && r.Bottom >= m.Bottom;
+        return r.Left <= m.Left && r.Top <= m.Top && r.Right >= m.Right && r.Bottom >= m.Bottom
+            ? $"Vordergrundfenster „{cls}“ bedeckt den ganzen Monitor"
+            : null;
     }
 }

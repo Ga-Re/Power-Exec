@@ -135,6 +135,11 @@ Unterwegs gelernt (gilt für WinUI ohne XAML-Dateien, nicht für Phase 2 mit XAM
 unpackaged nötig (sonst fehlt die `.pri`-Datei mit den WinUI-Themes), und die App muss `IXamlMetadataProvider`
 selbst an `XamlControlsXamlMetaDataProvider` weiterreichen.
 
+**Sichtprüfung (Rückmeldung, 6. November 2026):** Panel fährt unter WinUI **ohne Flackern** aus (unter WPF
+flackert es) → P1 „Gleiten“ erfüllt. Hover-Zone reagierte nicht auf die Maus (Panel nur über das Tray) → Zone
+erkennt die Maus jetzt zusätzlich per Abfrage der Mausposition (unabhängig vom Treffer auf das schmale Fenster),
+protokolliert Auslöser und Vollbild-Ausblendung in `spike.log`; der Smoke-Test fährt die Maus echt an den Rand.
+
 **Sichtprüfung offen:** Glas-Wirkung, Ruckeln beim Gleiten, Taskleiste und zweiter Monitor, echtes Ziehen aus
 Explorer/Browser, Lücke beim Gruppen-Ziehen, Tray-Menü, Start ohne Fenster nach Neuanmeldung.
 
