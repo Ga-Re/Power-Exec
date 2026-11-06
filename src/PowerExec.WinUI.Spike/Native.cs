@@ -6,6 +6,13 @@ namespace PowerExec.WinUI.Spike;
 internal static class Native
 {
     public const int WM_HOTKEY = 0x0312;
+    public const int WM_GETMINMAXINFO = 0x0024;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MINMAXINFO
+    {
+        public POINT ptReserved, ptMaxSize, ptMaxPosition, ptMinTrackSize, ptMaxTrackSize;
+    }
     public const uint MOD_ALT = 0x0001, MOD_CONTROL = 0x0002, MOD_NOREPEAT = 0x4000;
     public const uint VK_SPACE = 0x20;
 

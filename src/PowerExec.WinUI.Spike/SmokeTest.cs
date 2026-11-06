@@ -47,6 +47,7 @@ public static class SmokeTest
             zone.ShowZone();
             await UiIdle.NextAsync(panel.DispatcherQueue);
             var s = zone.SizePx;
+            if (s.Width > 12) throw new InvalidOperationException($"Zone ist {s.Width} px breit (Windows-Mindestbreite?) – sie würde Klicks am Rand abfangen");
             return zone.IsZoneVisible ? $"sichtbar, {s.Width}×{s.Height} px"
                 : zone.SuppressedByFullscreen ? "ausgeblendet (Vollbild erkannt)" : throw new InvalidOperationException("Zone nicht sichtbar");
         });

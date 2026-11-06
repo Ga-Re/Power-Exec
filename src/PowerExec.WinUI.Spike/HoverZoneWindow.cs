@@ -25,6 +25,7 @@ public sealed class HoverZoneWindow : Window
     private readonly Grid _strip;
     private readonly DispatcherQueueTimer _dwell, _fullscreenCheck, _pulse;
     private bool _wanted;
+    private readonly WinUIEx.Messaging.WindowMessageMonitor _messages;
     private double _pulsePhase;
 
     public HoverZoneWindow(PanelWindow panel)
@@ -41,6 +42,18 @@ public sealed class HoverZoneWindow : Window
             p.IsMinimizable = false;
         }
         _appWindow.IsShownInSwitchers = false;
+        // Windows gibt Fenstern sonst eine Mindestbreite (~136 px) – die Zone soll nur wenige Pixel breit sein,
+        // damit sie am Bildschirmrand keine Klicks abfängt.
+        _messages = new WinUIEx.Messaging.WindowMessageMonitor(this);
+        _messages.WindowMessageReceived += (_, e) =>
+        {
+            if (e.Message.MessageId != Native.WM_GETMINMAXINFO) return;
+            var info = System.Runtime.InteropServices.Marshal.PtrToStructure<Native.MINMAXINFO>((IntPtr)e.Message.LParam);
+            info.ptMinTrackSize = new Native.POINT { X = 1, Y = 1 };
+            System.Runtime.InteropServices.Marshal.StructureToPtr(info, (IntPtr)e.Message.LParam, false);
+            e.Result = 0;
+            e.Handled = true;
+        };
         SystemBackdrop = new WinUIEx.TransparentTintBackdrop { TintColor = Color.FromArgb(0, 0, 0, 0) };
 
         _strip = new Grid { Background = new SolidColorBrush(Color.FromArgb(0x70, 0x00, 0x78, 0xD4)), AllowDrop = true };
@@ -71,7 +84,7 @@ public sealed class HoverZoneWindow : Window
             _pulsePhase += 0.12;
             _strip.Opacity = 0.45 + 0.55 * (0.5 + 0.5 * Math.Sin(_pulsePhase));
         };
-        _appWindow.Closing += (_, e) => { _fullscreenCheck.Stop(); _pulse.Stop(); };
+        _appWindow.Closing += (_, e) => { _fullscreenCheck.Stop(); _pulse.Stop(); _messages.Dispose(); };
     }
 
     /// <summary>Wird gerade ein Vollbild-Programm erkannt (Zone dann ausgeblendet)?</summary>

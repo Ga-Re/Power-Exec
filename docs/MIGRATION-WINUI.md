@@ -124,6 +124,17 @@ damit der Code auch ohne Windows typgeprüft werden kann. Er nutzt das echte `Pa
 `PowerExec.WinUI.Spike.exe` starten. Läuft neben der WPF-Version. `PowerExec.WinUI.Spike.exe --smoke ergebnis.md`
 spielt die Prüfpunkte automatisch durch (das macht auch CI). Protokoll: `spike.log` neben der EXE.
 
+**Smoke-Test in CI** (Windows Server 2025, 4 Kerne, ein Monitor; [Lauf 3](https://github.com/Ga-Re/Power-Exec/actions/runs/42218229820)):
+alle Schritte ohne Fehler. Gleiten Ø 14 Bilder in ~210 ms (größte Bildlücke 31 ms); Tippen mit 500 Einträgen
+Ø 23 ms, p95 34 ms (WPF-App im selben Runner: Ø 223 ms – WinUI virtualisiert die Gruppenliste, der Vergleich ist
+also nur grob); Klarglas/Acrylic/Mica, Tray, Strg+Alt+Leertaste, Autostart-Eintrag funktionieren. Gefunden:
+Windows erzwang 136 px Mindestbreite für die Hover-Zone → per `WM_GETMINMAXINFO` behoben, der Smoke-Test prüft
+jetzt ≤ 12 px.
+
+Unterwegs gelernt (gilt für WinUI ohne XAML-Dateien, nicht für Phase 2 mit XAML): `EnableMsixTooling` ist auch
+unpackaged nötig (sonst fehlt die `.pri`-Datei mit den WinUI-Themes), und die App muss `IXamlMetadataProvider`
+selbst an `XamlControlsXamlMetaDataProvider` weiterreichen.
+
 **Sichtprüfung offen:** Glas-Wirkung, Ruckeln beim Gleiten, Taskleiste und zweiter Monitor, echtes Ziehen aus
 Explorer/Browser, Lücke beim Gruppen-Ziehen, Tray-Menü, Start ohne Fenster nach Neuanmeldung.
 
