@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Phase 1 der Migration (docs/MIGRATION-WINUI.md): Machbarkeits-Prototyp für die kritischen Teile unter WinUI 3 –
+    Panel mit Gleiten und Glas, Hover-Zone, Tray/Hotkey/Autostart, Drag & Drop, Leistung.
+    Bewusst ohne XAML-Dateien (Oberfläche in C#), damit der Code auch ohne Windows typgeprüft werden kann.
+    Nutzt die UI-neutralen ViewModels aus PowerExec.UI.Core.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <RootNamespace>PowerExec.WinUI.Spike</RootNamespace>
+    <AssemblyName>PowerExec.WinUI.Spike</AssemblyName>
+    <UseWinUI>true</UseWinUI>
+    <!-- Unpackaged und self-contained, wie für die echte App beschlossen -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <!-- Eigener Main (Program.cs) statt des vom XAML-Compiler erzeugten -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\PowerExec\Assets\PowerExec.ico</ApplicationIcon>
+    <!-- Im Panel stehen viele Bindungen auf ViewModels aus UI.Core ({Binding} per Reflexion): nicht kürzen -->
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <PackageReference Include="WinUIEx" Version="2.9.3" />
+    <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PowerExec.UI.Core\PowerExec.UI.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\PowerExec\Assets\PowerExec.ico" Link="Assets\PowerExec.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

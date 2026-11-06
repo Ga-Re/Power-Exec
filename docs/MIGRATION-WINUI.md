@@ -106,6 +106,27 @@ Eigenes Projekt `src/PowerExec.WinUI.Spike`. Er prüft nur das Unsichere – kei
 **Fertig, wenn:** alle vier Kriterien erfüllt sind oder jedes nicht erfüllte als Einzelfall entschieden ist.
 Ansatz für P1: eigene `SystemBackdrop` bzw. Composition (z. B. WinUIEx `TransparentTintBackdrop`).
 
+#### Stand Phase 1
+
+Prototyp `src/PowerExec.WinUI.Spike` (Windows App SDK 2.6.5, WinUIEx 2.9.3, H.NotifyIcon 2.4.1; unpackaged,
+self-contained). Bewusst ohne XAML-Dateien – die Oberfläche entsteht in C#, Vorlagen werden zur Laufzeit geladen –,
+damit der Code auch ohne Windows typgeprüft werden kann. Er nutzt das echte `PanelViewModel` aus UI.Core mit
+500 erfundenen Einträgen in 20 Gruppen. Nicht in `PowerExec.sln` (baut nur unter Windows).
+
+| Kriterium | Umsetzung im Prototyp |
+|---|---|
+| P1 | Rahmenloses Topmost-Fenster; Gleiten je Bildschirmbild per `AppWindow.Move`, außerhalb des Monitors per Fensterregion abgeschnitten; Klarglas (`TransparentTintBackdrop`), Acrylic, Mica; Milchglas-Regler |
+| P2 | 5-px-Streifen am rechten Rand, 250 ms Verweilzeit, Ablegen am Rand fährt das Panel aus; Vollbild-Erkennung wie in der WPF-App; Pulsieren |
+| P3 | Tray-Symbol mit Menü (H.NotifyIcon), Strg+Alt+Leertaste (sonst Strg+Alt+Umschalt+Leertaste), Autostart über Run-Schlüssel mit `--background` |
+| P4 | Ablegen aus Explorer/Browser → Gruppe „Abgelegt“; Gruppen umsortieren mit Lücke (`ListView.CanReorderItems`); Tipp-Messung in der Fußzeile |
+
+**Ausprobieren:** Workflow „WinUI-Prototyp“ → Artefakt `PowerExec-WinUI-Prototyp` herunterladen, entpacken,
+`PowerExec.WinUI.Spike.exe` starten. Läuft neben der WPF-Version. `PowerExec.WinUI.Spike.exe --smoke ergebnis.md`
+spielt die Prüfpunkte automatisch durch (das macht auch CI). Protokoll: `spike.log` neben der EXE.
+
+**Sichtprüfung offen:** Glas-Wirkung, Ruckeln beim Gleiten, Taskleiste und zweiter Monitor, echtes Ziehen aus
+Explorer/Browser, Lücke beim Gruppen-Ziehen, Tray-Menü, Start ohne Fenster nach Neuanmeldung.
+
 ### Phase 2 – Kernfenster
 
 Reihenfolge nach Nutzung, aufbauend auf dem Prototyp:

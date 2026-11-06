@@ -1,0 +1,58 @@
+name: WinUI-Prototyp
+
+# Phase 1 der Migration (docs/MIGRATION-WINUI.md): baut den WinUI-3-Prototyp, spielt den Smoke-Test durch
+# und stellt den Programmordner als Artefakt bereit (herunterladen, entpacken, PowerExec.WinUI.Spike.exe starten).
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'src/PowerExec.WinUI.Spike/**'
+      - 'src/PowerExec.UI.Core/**'
+      - 'src/PowerExec.Core/**'
+      - '.github/workflows/winui-spike.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  spike:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Veröffentlichen (unpackaged, self-contained)
+        run: >
+          dotnet publish src/PowerExec.WinUI.Spike/PowerExec.WinUI.Spike.csproj -c Release -r win-x64
+          -p:Platform=x64 -o out/spike
+
+      - name: Smoke-Test (P1–P4)
+        shell: pwsh
+        timeout-minutes: 5
+        run: |
+          $result = Join-Path $env:RUNNER_TEMP 'winui-smoke.md'
+          $p = Start-Process -FilePath out\spike\PowerExec.WinUI.Spike.exe -ArgumentList '--smoke', $result -PassThru
+          $null = $p.Handle
+          if (-not $p.WaitForExit(180000)) {
+            $p.Kill()
+            if (Test-Path out\spike\spike.log) { Get-Content out\spike\spike.log | Select-Object -Last 30 }
+            throw 'Smoke-Test hat nicht rechtzeitig beendet.'
+          }
+          if (Test-Path $result) {
+            Get-Content $result
+            Get-Content $result | Add-Content $env:GITHUB_STEP_SUMMARY
+          } else { Write-Host 'Keine Ergebnisdatei.' }
+          if (Test-Path out\spike\spike.log) { Get-Content out\spike\spike.log | Select-Object -Last 40 }
+          if ($p.ExitCode -ne 0) { throw "Smoke-Test fehlgeschlagen (Code $($p.ExitCode))." }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PowerExec-WinUI-Prototyp
+          path: out/spike
+          retention-days: 14
+          if-no-files-found: ignore
