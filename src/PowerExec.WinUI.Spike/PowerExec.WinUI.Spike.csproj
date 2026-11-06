@@ -16,6 +16,8 @@
     <!-- Unpackaged und self-contained, wie für die echte App beschlossen -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Nötig auch ohne MSIX: erzeugt die Ressourcen-Datei (.pri) mit den Theme-Ressourcen von WinUI -->
+    <EnableMsixTooling>true</EnableMsixTooling>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>

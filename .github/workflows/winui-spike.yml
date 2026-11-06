@@ -30,6 +30,13 @@ jobs:
           dotnet publish src/PowerExec.WinUI.Spike/PowerExec.WinUI.Spike.csproj -c Release -r win-x64
           -p:Platform=x64 -o out/spike
 
+      - name: Ressourcen-Dateien prüfen
+        shell: pwsh
+        run: |
+          $pri = Get-ChildItem out\spike -Filter *.pri
+          $pri | ForEach-Object { Write-Host "$($_.Name) ($([math]::Round($_.Length / 1kb)) KB)" }
+          if (-not $pri) { throw 'Keine .pri-Datei im Programmordner – WinUI findet seine Theme-Ressourcen nicht.' }
+
       - name: Smoke-Test (P1–P4)
         shell: pwsh
         timeout-minutes: 5
