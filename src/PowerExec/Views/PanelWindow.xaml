@@ -451,7 +451,7 @@
                             <Border Style="{StaticResource Badge}" Width="34" Height="22" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                 <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <Image x:Name="TileImage" Source="{Binding Icon}" Width="26" Height="26" RenderOptions.BitmapScalingMode="HighQuality"
+                            <Image x:Name="TileImage" Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="26" Height="26" RenderOptions.BitmapScalingMode="HighQuality"
                                    Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
                             <c:IconPresenter x:Name="TileCustom" Icon="{Binding CustomIcon}" Size="26" Foreground="{DynamicResource Text.Primary}"
                                              Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}}"/>
@@ -546,7 +546,7 @@
                                 <Border Style="{StaticResource Badge}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                     <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Image Source="{Binding Icon}" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,-1,0,0"
+                                <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="24" Height="24" HorizontalAlignment="Center" Margin="0,-1,0,0"
                                        RenderOptions.BitmapScalingMode="HighQuality" ToolTip="{Binding BadgeText}"
                                        Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
                                 <c:IconPresenter Icon="{Binding CustomIcon}" Size="24" HorizontalAlignment="Center" Foreground="{DynamicResource Text.Primary}"

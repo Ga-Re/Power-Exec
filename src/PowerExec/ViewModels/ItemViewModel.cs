@@ -6,6 +6,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
 using PowerExec.Infrastructure;
+using PowerExec.Services;
 
 namespace PowerExec.ViewModels;
 
@@ -14,7 +15,7 @@ public sealed class ItemViewModel : ObservableObject
     private readonly AppController _app;
     private readonly PanelViewModel _panel;
     private bool _isSelected;
-    private ImageSource? _icon;
+    private IconImage? _icon;
     private readonly EntryConfig? _entry;
     private readonly string? _subtitle;
     /// <summary>„Zuletzt ausgeführt“: mit genau diesem Profil starten (nicht nachfragen).</summary>
@@ -89,27 +90,27 @@ public sealed class ItemViewModel : ObservableObject
     /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
     /// EXE/Verknüpfung/Snap-in und sonstige Dateien = Shell-Symbol. Scripte behalten ihr Kürzel (PS1, CMD …).
     /// </summary>
-    private ImageSource? LoadIcon(AppController app, LaunchItem item) => LoadIcon(app, item, img => Icon = img);
+    private IconImage? LoadIcon(AppController app, LaunchItem item) => LoadIcon(app.IconProvider, item, img => Icon = img);
 
     /// <summary>Symbol laden (auch für die Liste „Eigene Einträge“); <paramref name="Done"/> liefert nachgeladene Symbole.</summary>
-    internal static ImageSource? LoadIcon(AppController app, LaunchItem item, Action<ImageSource> Done)
+    internal static IconImage? LoadIcon(IIconProvider icons, LaunchItem item, Action<IconImage> Done)
     {
         switch (item.CustomKind)
         {
-            case CustomEntryKind.Url: return app.Icons.GetFavicon(item.Source?.Target.Trim() ?? item.LaunchTarget ?? string.Empty, Done);
-            case CustomEntryKind.Folder: return app.Icons.GetFolder(Done);
-            case CustomEntryKind.Rdp: return app.Icons.GetProgram("mstsc.exe", Done);
+            case CustomEntryKind.Url: return icons.GetFavicon(item.Source?.Target.Trim() ?? item.LaunchTarget ?? string.Empty, Done);
+            case CustomEntryKind.Folder: return icons.GetFolder(Done);
+            case CustomEntryKind.Rdp: return icons.GetProgram("mstsc.exe", Done);
             case CustomEntryKind.Command:
             case CustomEntryKind.Ssh:
-                return app.Icons.GetProgram(item.LaunchTarget ?? string.Empty, Done);
+                return icons.GetProgram(item.LaunchTarget ?? string.Empty, Done);
             case CustomEntryKind.Tool:
                 var t = item.Source?.Target.Trim() ?? string.Empty;
-                return t.Contains(':') && !Path.IsPathRooted(t) ? null : app.Icons.GetProgram(t, Done);
+                return t.Contains(':') && !Path.IsPathRooted(t) ? null : icons.GetProgram(t, Done);
             case CustomEntryKind.Snippet:
                 return null;
         }
         if (item.Type is ItemType.PowerShell or ItemType.Batch) return null;
-        return app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, Done);
+        return icons.Get(item.FullPath, item.LastWriteTimeUtc, Done);
     }
 
     public LaunchItem Item { get; }
@@ -289,7 +290,7 @@ public sealed class ItemViewModel : ObservableObject
                                  (HasNotes ? "\n\nNotiz: " + Notes : string.Empty);
 
     /// <summary>Programmsymbol (EXE, Verknüpfung, Snap-in); null = Typ-Kürzel anzeigen.</summary>
-    public ImageSource? Icon
+    public IconImage? Icon
     {
         get => _icon;
         private set

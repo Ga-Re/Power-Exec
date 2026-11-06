@@ -23,6 +23,10 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
     public IDialogs Dialogs => _uiDialogs ??= new WpfDialogs(() => AskForTest);
     private IDialogs? _uiDialogs;
 
+    /// <summary>Symbole für die UI-neutralen ViewModels (Griff auf die Bilder des <see cref="IconService"/>).</summary>
+    public IIconProvider IconProvider => _iconProvider ??= new WpfIconProvider(Icons);
+    private IIconProvider? _iconProvider;
+
     /// <summary>Kontrastdesign, hell/dunkel.</summary>
     public IThemeInfo Theme { get; } = new WpfThemeInfo();
 

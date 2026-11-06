@@ -52,13 +52,13 @@ public sealed class CustomEntryRowViewModel : ObservableObject
                 _imageLoaded = true;
                 try
                 {
-                    _image = ItemViewModel.LoadIcon(_owner.App, Entry.ToLaunchItem(), img =>
+                    _image = WpfIconProvider.Unwrap(ItemViewModel.LoadIcon(_owner.App.IconProvider, Entry.ToLaunchItem(), img =>
                     {
-                        _image = img;
+                        _image = WpfIconProvider.Unwrap(img);
                         OnPropertyChanged(nameof(Image));
                         OnPropertyChanged(nameof(HasImage));
                         OnPropertyChanged(nameof(ShowBadge));
-                    });
+                    }));
                 }
                 catch { _image = null; }
             }

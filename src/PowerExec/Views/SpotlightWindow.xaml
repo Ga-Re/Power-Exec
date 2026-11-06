@@ -42,7 +42,7 @@
                                     <Border CornerRadius="4" Width="32" Height="20" Background="{DynamicResource Bg.Chip}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                         <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <Image Source="{Binding Icon}" Width="22" Height="22" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                    <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="22" Height="22" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" RenderOptions.BitmapScalingMode="HighQuality"/>
                                     <c:IconPresenter Icon="{Binding CustomIcon}" Size="20" HorizontalAlignment="Center" Foreground="{DynamicResource Text.Primary}"
                                                      Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}}"/>
                                 </Grid>

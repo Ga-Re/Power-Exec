@@ -473,7 +473,7 @@ public sealed class CustomEntryViewModel : ObservableObject
             var item = _e.ToLaunchItem();
             AutoIcon = _e.Kind == CustomEntryKind.File && File.Exists(item.FullPath)
                 ? _app.Icons.Get(item.FullPath, File.GetLastWriteTimeUtc(item.FullPath), img => AutoIcon = img)
-                : ItemViewModel.LoadIcon(_app, item, img => AutoIcon = img);
+                : WpfIconProvider.Unwrap(ItemViewModel.LoadIcon(_app.IconProvider, item, img => AutoIcon = WpfIconProvider.Unwrap(img)));
         }
         catch { AutoIcon = null; }
     }

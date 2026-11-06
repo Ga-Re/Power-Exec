@@ -46,7 +46,7 @@ public sealed class DockSlot : ObservableObject
     public ICommand Command { get; }
     public bool IsMore { get; }
     public string Glyph => ""; // „⋯“
-    public ImageSource? Icon => _item?.Icon;
+    public ImageSource? Icon => WpfIconProvider.Unwrap(_item?.Icon);
     public bool HasIcon => _item?.HasIcon == true;
     public string CustomIcon => _item?.CustomIcon ?? string.Empty;
     public bool HasCustomIcon => _item?.HasCustomIcon == true;
