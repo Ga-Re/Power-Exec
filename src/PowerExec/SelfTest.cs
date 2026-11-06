@@ -126,7 +126,7 @@ public sealed partial class AppController
             ThemeService.Apply(Settings);
 
             Icons = new IconService(dispatcher);
-            Health = new HealthService(dispatcher);
+            Health = new HealthService(new Infrastructure.WpfUiDispatcher(dispatcher));
             Repository = new ItemRepository(Settings, dispatcher);
             Launcher = new Launcher(() => Settings);
             Step("Scan");

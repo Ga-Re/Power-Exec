@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Windows.Threading;
 using PowerExec.Core.Config;
+using PowerExec.Infrastructure;
 
 namespace PowerExec.Services;
 
@@ -17,10 +17,10 @@ public sealed class HealthService
     private static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(10);
     private readonly ConcurrentDictionary<string, HealthResult> _results = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte> _running = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dispatcher _dispatcher;
+    private readonly IUiDispatcher _dispatcher;
     private readonly HttpClient _http;
 
-    public HealthService(Dispatcher dispatcher)
+    public HealthService(IUiDispatcher dispatcher)
     {
         _dispatcher = dispatcher;
         _http = new HttpClient(new HttpClientHandler { UseDefaultCredentials = true, AllowAutoRedirect = true }) { Timeout = TimeSpan.FromSeconds(8) };
@@ -67,7 +67,7 @@ public sealed class HealthService
                 limit.Release();
             }
         }));
-        if (changed) _ = _dispatcher.BeginInvoke(() => Changed?.Invoke());
+        if (changed) _dispatcher.Post(() => Changed?.Invoke());
     }
 
     private async Task<HealthResult> CheckOneAsync(CustomEntry e)
@@ -126,8 +126,8 @@ public sealed class HealthService
             case CustomEntryKind.Command:
             case CustomEntryKind.Tool:
                 if (target.Contains(':') && !Path.IsPathRooted(target)) return new HealthResult(true, "Wird von Windows geöffnet", now);
-                var exe = IconService.ResolveProgram(target) ?? (target.EndsWith(".msc", StringComparison.OrdinalIgnoreCase)
-                    ? IconService.ResolveProgram(Path.Combine(Environment.SystemDirectory, target)) : null);
+                var exe = ProgramResolver.Resolve(target) ?? (target.EndsWith(".msc", StringComparison.OrdinalIgnoreCase)
+                    ? ProgramResolver.Resolve(Path.Combine(Environment.SystemDirectory, target)) : null);
                 return exe != null ? new HealthResult(true, exe, now) : new HealthResult(false, $"{target} wurde nicht gefunden (nicht installiert?)", now);
             default:
                 return new HealthResult(true, string.Empty, now);

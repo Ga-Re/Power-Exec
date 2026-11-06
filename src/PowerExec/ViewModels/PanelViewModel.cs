@@ -468,8 +468,8 @@ public sealed class PanelViewModel : ObservableObject
     public bool ShowJumpRail => _host.Config.ShowJumpRail && Groups.Count >= 4 && !IsSearching;
 
     /// <summary>Scrollbalken der Liste anzeigen (ausgeblendet scrollt das Mausrad weiter).</summary>
-    public System.Windows.Controls.ScrollBarVisibility ListScrollBar =>
-        _host.Config.ShowScrollBar ? System.Windows.Controls.ScrollBarVisibility.Auto : System.Windows.Controls.ScrollBarVisibility.Hidden;
+    /// <summary>Scrollbalken der Liste anzeigen (sonst nur per Mausrad/Tastatur scrollen).</summary>
+    public bool ShowListScrollBar => _host.Config.ShowScrollBar;
 
     private string? _lastRailKey;
 

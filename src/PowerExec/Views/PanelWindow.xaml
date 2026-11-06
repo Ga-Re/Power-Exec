@@ -1117,7 +1117,7 @@
             </Border>
 
             <!-- Liste -->
-            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="{Binding ListScrollBar, Mode=OneWay}" HorizontalScrollBarVisibility="Disabled"
+            <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="{Binding ShowListScrollBar, Mode=OneWay, Converter={StaticResource ScrollBarAuto}}" HorizontalScrollBarVisibility="Disabled"
                           Background="Transparent" ScrollChanged="ListScroll_ScrollChanged">
                 <ScrollViewer.Style>
                     <Style TargetType="ScrollViewer">

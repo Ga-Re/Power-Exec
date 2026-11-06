@@ -53,7 +53,7 @@ public sealed partial class AppController : IDisposable
         Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
 
         Icons = new IconService(Application.Current.Dispatcher);
-        Health = new HealthService(Application.Current.Dispatcher);
+        Health = new HealthService(new Infrastructure.WpfUiDispatcher(Application.Current.Dispatcher));
         Health.Changed += RebuildPanels;
         Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
         Launcher = new Launcher(() => Settings);

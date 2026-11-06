@@ -1,6 +1,4 @@
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;

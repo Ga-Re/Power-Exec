@@ -96,3 +96,12 @@ public sealed class AllEqualConverter : IMultiValueConverter
 
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>true → Scrollbalken bei Bedarf (Auto), false → ausgeblendet (Scrollen bleibt möglich).</summary>
+public sealed class ScrollBarAutoConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? System.Windows.Controls.ScrollBarVisibility.Auto : System.Windows.Controls.ScrollBarVisibility.Hidden;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
