@@ -95,6 +95,10 @@ public interface IPanelHost : IHistoryHost, IWorkflowHost
     void DismissUndoToast();
     void PauseUndoToast(bool paused);
 
+    // ── Version ──────────────────────────────────────────────────────
+    /// <summary>Kurz unten im Panel: welche Oberfläche und Version läuft, welche ist installiert.</summary>
+    string VersionText { get; }
+
     // ── Updates und Neuerungen ───────────────────────────────────────
     ReleaseNote? WhatsNew { get; }
     void DismissWhatsNew();

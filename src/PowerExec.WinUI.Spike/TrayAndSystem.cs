@@ -33,7 +33,7 @@ public sealed class TrayIcon : IDisposable
 
         _icon = new TaskbarIcon
         {
-            ToolTipText = "Power-Exec (WinUI-Prototyp)",
+            ToolTipText = $"Power-Exec WinUI-Prototyp (Build {SpikeHost.BuildId})",
             IconSource = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "Assets", "PowerExec.ico"))),
             ContextMenuMode = ContextMenuMode.PopupMenu,
             ContextFlyout = menu,

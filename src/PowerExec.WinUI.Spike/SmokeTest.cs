@@ -39,6 +39,8 @@ public static class SmokeTest
             }
         }
 
+        await Step("Version", () => Task.FromResult(host.VersionText));
+
         await Step("Daten (UI.Core)", () => Task.FromResult(
             $"{panel.ViewModel.AllItems.Count()} Einträge in {panel.ViewModel.AllGroups.Count()} Gruppen über PanelViewModel"));
 

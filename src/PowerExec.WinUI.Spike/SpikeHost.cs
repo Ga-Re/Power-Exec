@@ -141,6 +141,24 @@ public sealed class SpikeHost : IPanelHost
     public string? UndoToast => null;
     public bool CanUndo => false;
     public ReleaseNote? WhatsNew => null;
+
+    /// <summary>„WinUI-Prototyp · Build abc1234 · installiert: WPF 0.19.5“.</summary>
+    public string VersionText => _versionText ??= $"WinUI-Prototyp · Build {BuildId} · " +
+        (InstalledVersion.Read() is { } v ? $"installiert: WPF {v}" : "WPF nicht installiert");
+    private string? _versionText;
+
+    /// <summary>Kurzer Commit aus CI (InformationalVersion „…+sha“), sonst Datum der EXE.</summary>
+    public static string BuildId
+    {
+        get
+        {
+            var info = typeof(SpikeHost).Assembly
+                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion;
+            if (info?.IndexOf('+') is int plus and >= 0 && info.Length > plus + 1) return info[(plus + 1)..Math.Min(info.Length, plus + 8)];
+            return File.GetLastWriteTime(Environment.ProcessPath ?? AppContext.BaseDirectory).ToString("dd.MM. HH:mm");
+        }
+    }
 #pragma warning disable CS0067 // im Prototyp nicht ausgelöst
     public event Action? HistoryChanged;
 #pragma warning restore CS0067

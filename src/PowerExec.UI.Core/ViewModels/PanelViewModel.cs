@@ -178,6 +178,9 @@ public sealed class PanelViewModel : ObservableObject
     public bool HasHotkey => !string.IsNullOrWhiteSpace(_host.Config.Hotkey);
 
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
+
+    /// <summary>Laufende und installierte Version (z. B. „WPF 0.19.5 · installiert“).</summary>
+    public string VersionText => _app.VersionText;
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
     public string EmptyHint => "Noch keine Gruppen. Lege eine Gruppe an – mit einem Ordner zeigt sie dessen Scripte und Programme – oder füge eigene Einträge hinzu.";

@@ -68,6 +68,17 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     // ── Panel, Gruppen, Einträge ─────────────────────────────────────
 
+    /// <summary>„WPF 0.19.5 · installiert“ bzw. „… · portabel (installiert: 0.19.4)“.</summary>
+    public string VersionText => _versionText ??= BuildVersionText();
+    private string? _versionText;
+
+    private static string BuildVersionText()
+    {
+        var running = $"WPF {UpdateService.CurrentVersionText}";
+        if (UpdateService.IsInstalledViaSetup) return running + " · installiert";
+        return InstalledVersion.Read() is { } v ? $"{running} · portabel (installiert: {v})" : running + " · portabel";
+    }
+
     IItemSource IPanelHost.Repository => Repository;
 
     void IPanelHost.OpenInEditor(LaunchItem item) => Launcher.OpenInEditor(item);

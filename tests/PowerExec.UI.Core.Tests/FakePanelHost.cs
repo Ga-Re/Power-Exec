@@ -81,6 +81,7 @@ internal sealed class FakePanelHost : IPanelHost
     public string? UndoToast { get; set; }
     public bool CanUndo => false;
     public ReleaseNote? WhatsNew { get; set; }
+    public string VersionText => "Test 1.0";
 #pragma warning disable CS0067 // im Test nicht ausgelöst
     public event Action? HistoryChanged;
 #pragma warning restore CS0067

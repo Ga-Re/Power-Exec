@@ -1666,6 +1666,8 @@
                     <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="Neue Gruppe">
                         <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="13"/>
                     </Button>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"
+                               Margin="8,0,4,0" ToolTip="Laufende Oberfläche und Version; in Klammern die über den Installer installierte Version"/>
                     <TextBlock Text="{Binding Footer}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
                 </StackPanel>

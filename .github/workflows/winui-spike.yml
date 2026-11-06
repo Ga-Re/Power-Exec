@@ -28,7 +28,7 @@ jobs:
       - name: Veröffentlichen (unpackaged, self-contained)
         run: >
           dotnet publish src/PowerExec.WinUI.Spike/PowerExec.WinUI.Spike.csproj -c Release -r win-x64
-          -p:Platform=x64 -o out/spike
+          -p:Platform=x64 -p:SourceRevisionId=${{ github.sha }} -o out/spike
 
       - name: Ressourcen-Dateien prüfen
         shell: pwsh

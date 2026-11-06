@@ -88,7 +88,19 @@ public sealed class PanelWindow : Window, IPanelContext
         tools.Children.Add(pin);
 
         var header = new StackPanel { Padding = new Thickness(12, 12, 12, 4) };
-        header.Children.Add(new TextBlock { Text = "Power-Exec · WinUI-Prototyp", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 8) });
+        // Unübersehbar: das ist der WinUI-Prototyp, nicht die WPF-App
+        var badge = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(0xFF, 0xC2, 0x18, 0x5B)),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8, 2, 8, 3),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock { Text = "WinUI 3", Foreground = new SolidColorBrush(Colors.White), FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold }
+        };
+        var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 0, 0, 8) };
+        titleRow.Children.Add(badge);
+        titleRow.Children.Add(new TextBlock { Text = "Power-Exec · Prototyp (500 Testeinträge)", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+        header.Children.Add(titleRow);
         header.Children.Add(_search);
         header.Children.Add(tools);
 
@@ -109,9 +121,11 @@ public sealed class PanelWindow : Window, IPanelContext
 
         _status = new TextBlock { FontSize = 11, Opacity = 0.75, TextWrapping = TextWrapping.Wrap };
         _dropInfo = new TextBlock { FontSize = 11, Opacity = 0.75, TextWrapping = TextWrapping.Wrap, Text = "Dateien, Ordner oder Links hierher ziehen." };
+        var version = new TextBlock { FontSize = 11, Opacity = 0.75, Text = host.VersionText };
         var footer = new StackPanel { Padding = new Thickness(12, 6, 12, 10), Spacing = 2 };
         footer.Children.Add(_status);
         footer.Children.Add(_dropInfo);
+        footer.Children.Add(version);
         Grid.SetRow(footer, 2);
 
         _root = new Grid { AllowDrop = true };
