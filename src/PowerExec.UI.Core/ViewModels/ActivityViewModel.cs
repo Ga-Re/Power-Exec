@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Input;
-using System.Windows.Threading;
 using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
@@ -59,7 +58,7 @@ public sealed class ActivityViewModel : ObservableObject
             if (!Set(ref _state, value)) return;
             foreach (var p in new[] { nameof(IsRunning), nameof(IsSuccess), nameof(IsWarning), nameof(IsError), nameof(StatusGlyph), nameof(TimeText), nameof(CanCancel), nameof(CanRestart) })
                 OnPropertyChanged(p);
-            CommandManager.InvalidateRequerySuggested();
+            CommandRequery.Invalidate();
         }
     }
 
@@ -135,14 +134,16 @@ public sealed class ActivityList
     public const int MaxFinished = 3;
     public static readonly TimeSpan KeepFinished = TimeSpan.FromMinutes(15);
 
-    private readonly DispatcherTimer _timer;
-    private readonly Dispatcher _dispatcher;
+    private readonly IUiTimer _timer;
+    private readonly IUiDispatcher _dispatcher;
+    private readonly Func<Process, string?> _doneFileOf;
 
-    public ActivityList(Dispatcher dispatcher)
+    /// <param name="doneFileOf">Fertig-Markierung eines gestarteten Scripts (Fenster bleibt offen), sonst null.</param>
+    public ActivityList(IUiDispatcher dispatcher, Func<Process, string?>? doneFileOf = null)
     {
         _dispatcher = dispatcher;
-        _timer = new DispatcherTimer(DispatcherPriority.Background, dispatcher) { Interval = TimeSpan.FromSeconds(1) };
-        _timer.Tick += (_, _) => Tick();
+        _doneFileOf = doneFileOf ?? (_ => null);
+        _timer = dispatcher.CreateTimer(TimeSpan.FromSeconds(1), Tick);
     }
 
     public ObservableCollection<ActivityViewModel> Items { get; } = new();
@@ -195,12 +196,12 @@ public sealed class ActivityList
     {
         var activity = Add(new ActivityViewModel(displayName, detail, BadgeOf(item)) { RestartAction = restart, ItemPath = item.FullPath });
         created?.Invoke(activity);
-        if (PowerExec.Services.Launcher.DoneFileOf(process) is { } doneFile) _doneFiles[activity] = doneFile;
+        if (_doneFileOf(process) is { } doneFile) _doneFiles[activity] = doneFile;
         try
         {
             process.EnableRaisingEvents = true;
-            process.Exited += (_, _) => _dispatcher.BeginInvoke(() => Finish(activity, process));
-            if (process.HasExited) _dispatcher.BeginInvoke(() => Finish(activity, process));
+            process.Exited += (_, _) => _dispatcher.Post(() => Finish(activity, process));
+            if (process.HasExited) _dispatcher.Post(() => Finish(activity, process));
         }
         catch (Exception ex)
         {
@@ -268,13 +269,13 @@ public sealed class ActivityList
     }
 
     /// <summary>Remote-/Massenlauf aus der Ergebnisliste anzeigen.</summary>
-    public ActivityViewModel TrackRemote(ResultsViewModel results, Action open)
+    public ActivityViewModel TrackRemote(IRemoteRunProgress results, Action open)
     {
-        var activity = Add(new ActivityViewModel(results.Title, RemoteDetail(results), "PS", open, () => results.CancelCommand.Execute(null)));
+        var activity = Add(new ActivityViewModel(results.Title, RemoteDetail(results), "PS", open, results.Cancel));
         activity.Progress = 0;
         results.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(ResultsViewModel.DoneCount) or nameof(ResultsViewModel.Progress))
+            if (e.PropertyName is nameof(IRemoteRunProgress.DoneCount) or nameof(IRemoteRunProgress.Progress))
             {
                 activity.Progress = results.Progress;
                 activity.Detail = RemoteDetail(results);
@@ -289,7 +290,7 @@ public sealed class ActivityList
         return activity;
     }
 
-    private static string RemoteDetail(ResultsViewModel r)
+    private static string RemoteDetail(IRemoteRunProgress r)
     {
         var parts = new List<string> { r.IsRunning ? $"{r.DoneCount} / {r.Total} Rechner" : $"{r.Total} Rechner" };
         if (r.SuccessCount > 0) parts.Add($"{r.SuccessCount} ✓");

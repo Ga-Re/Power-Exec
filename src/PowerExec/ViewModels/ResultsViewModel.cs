@@ -67,7 +67,7 @@ public sealed class ResultRowViewModel : ObservableObject
     }
 }
 
-public sealed class ResultsViewModel : ObservableObject
+public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
 {
     private readonly AppController _app;
     private readonly ExecutionRequest _request;
@@ -209,6 +209,8 @@ public sealed class ResultsViewModel : ObservableObject
 
     /// <summary>Wird ausgelöst, wenn alle Rechner fertig sind (oder der Lauf abgebrochen wurde).</summary>
     public event Action? Finished;
+
+    void IRemoteRunProgress.Cancel() => CancelCommand.Execute(null);
 
     private void OnCompleted(string? error)
     {
