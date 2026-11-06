@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
 
@@ -162,19 +161,18 @@ public sealed class GroupViewModel : ObservableObject
     public string OwnColorHex => GroupPath != null ? GroupManager.OwnColorOf(_app.Settings, GroupPath) : string.Empty;
     public bool HasColor => ColorHex.Length > 0;
 
-    private Brush? BrushOf(byte alpha, bool readable = false)
+    private ArgbColor? ColorOf(byte alpha, bool readable = false)
     {
         if (!PanelColors.TryParse(ColorHex, out var c)) return null;
         if (readable) c = PanelColors.Readable(c, _panel.IsDarkSurface);
-        return Freeze(new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B)));
+        return ArgbColor.From(c, alpha);
     }
-    private static Brush Freeze(Brush b) { b.Freeze(); return b; }
 
     /// <summary>Symbol und Rahmen in voller Farbe – im hellen Design bei Bedarf abgedunkelt (mind. 3:1 Kontrast).</summary>
-    public Brush? AccentBrush => BrushOf(255, readable: true);
+    public ArgbColor? AccentColor => ColorOf(255, readable: true);
     /// <summary>Getönte Karte: Hintergrund dezent, Rand etwas kräftiger.</summary>
-    public Brush CardBackground => BrushOf(0x24) ?? Brushes.Transparent;
-    public Brush CardBorder => BrushOf(0x73, readable: true) ?? Brushes.Transparent;
+    public ArgbColor CardBackgroundColor => ColorOf(0x24) ?? ArgbColor.Transparent;
+    public ArgbColor CardBorderColor => ColorOf(0x73, readable: true) ?? ArgbColor.Transparent;
 
     /// <summary>Untermenü „Farbe“: Vorgaben, dazu „Eigene Farbe …“ und – wenn gesetzt – „Farbe entfernen“.</summary>
     public IReadOnlyList<GroupColorChoice> ColorChoices
@@ -301,7 +299,7 @@ public sealed class GroupViewModel : ObservableObject
 public sealed record GroupColorChoice(string Name, string Hex, bool IsCurrent, ICommand Command)
 {
     /// <summary>Farbpunkt; bei Aktionen („Eigene Farbe …“, „Farbe entfernen“) keiner.</summary>
-    public Brush? Swatch { get; } = Hex.Length > 0 ? new SolidColorBrush((Color)ColorConverter.ConvertFromString(Hex)) : null;
+    public ArgbColor? SwatchColor { get; } = ArgbColor.FromHex(Hex);
 
     /// <summary>Symbol einer Aktion statt Farbpunkt.</summary>
     public string Glyph { get; init; } = string.Empty;

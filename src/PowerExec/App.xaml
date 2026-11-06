@@ -15,6 +15,7 @@
             <infra:ExpandAngleConverter x:Key="ExpandAngle"/>
             <infra:EqualsVisibilityConverter x:Key="EqVis"/>
             <infra:HexBrushConverter x:Key="HexBrush"/>
+            <infra:ArgbBrushConverter x:Key="ArgbBrush"/>
             <infra:AllEqualConverter x:Key="StringEquals"/>
         </ResourceDictionary>
     </Application.Resources>

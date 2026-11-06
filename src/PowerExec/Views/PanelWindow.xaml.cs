@@ -7,6 +7,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
+using PowerExec.Infrastructure;
 using PowerExec.Interop;
 using PowerExec.Services;
 
@@ -693,7 +694,7 @@ public partial class PanelWindow : Window
         _groupDragStartX = e.GetPosition(this).X;
         Vm.BeginGroupDrag(group);
         var settings = _app.Settings;
-        _dragFeedback = new DragFeedback(this, Vm.DragLabel, Vm.DragBrush, settings.GroupDragGhost, settings.GroupDragExplain);
+        _dragFeedback = new DragFeedback(this, Vm.DragLabel, WpfColors.ToBrush(Vm.DragColor), settings.GroupDragGhost, settings.GroupDragExplain);
         var source = (UIElement)sender;
         GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
         source.GiveFeedback += follow;

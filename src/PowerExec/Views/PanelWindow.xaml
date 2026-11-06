@@ -29,7 +29,7 @@
             <Setter Property="Fill" Value="{DynamicResource Text.Tertiary}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding HasColor}" Value="True">
-                    <Setter Property="Fill" Value="{Binding AccentBrush}"/>
+                    <Setter Property="Fill" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -103,7 +103,7 @@
                             <Setter.Value>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Ellipse x:Name="Dot" Width="14" Height="14" Fill="{Binding Swatch}" Margin="0,0,10,0" VerticalAlignment="Center"
+                                        <Ellipse x:Name="Dot" Width="14" Height="14" Fill="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}" Margin="0,0,10,0" VerticalAlignment="Center"
                                                  Stroke="{DynamicResource Border.Control}" StrokeThickness="1"/>
                                         <TextBlock x:Name="ActionIcon" Text="{Binding Glyph}" Style="{StaticResource Icon}" Width="14" Margin="0,0,10,0" FontSize="13"
                                                    VerticalAlignment="Center" Visibility="Collapsed"/>
@@ -652,7 +652,7 @@
                     </Style>
                 </StackPanel.Style>
                 <c:DropGap IsOpen="{Binding GapBefore}" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
                 <Border x:Name="GroupBox" CornerRadius="6" BorderThickness="1" Margin="0,2,0,0"
@@ -660,8 +660,8 @@
                 <!-- Farbe der Gruppe als getönte Karte (über den Stil, damit die Drag-Hervorhebung zurückgesetzt werden kann) -->
                 <Border.Style>
                     <Style TargetType="Border">
-                        <Setter Property="Background" Value="{Binding CardBackground}"/>
-                        <Setter Property="BorderBrush" Value="{Binding CardBorder}"/>
+                        <Setter Property="Background" Value="{Binding CardBackgroundColor, Converter={StaticResource ArgbBrush}}"/>
+                        <Setter Property="BorderBrush" Value="{Binding CardBorderColor, Converter={StaticResource ArgbBrush}}"/>
                     </Style>
                 </Border.Style>
                 <StackPanel>
@@ -695,7 +695,7 @@
                                                 <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding HasColor}" Value="True">
-                                                        <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
+                                                        <Setter Property="Foreground" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -710,7 +710,7 @@
                                                         <Setter Property="Foreground" Value="{DynamicResource Star}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding HasColor}" Value="True">
-                                                        <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
+                                                        <Setter Property="Foreground" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -770,7 +770,7 @@
                     </c:CollapsePanel>
                     <!-- Lücke für „als letzte Untergruppe“ (auch bei eingeklappter Gruppe sichtbar) -->
                     <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,4,0" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
                     <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
@@ -781,7 +781,7 @@
                 </StackPanel>
                 </Border>
                 <c:DropGap IsOpen="{Binding GapAfter}" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                           DotBrush="{Binding DataContext.DragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.DragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
             </StackPanel>
@@ -816,7 +816,7 @@
                         <Condition Binding="{Binding IsMouseOver, ElementName=GroupHeader}" Value="True"/>
                         <Condition Binding="{Binding HasColor}" Value="True"/>
                     </MultiDataTrigger.Conditions>
-                    <Setter TargetName="GroupBox" Property="BorderBrush" Value="{Binding AccentBrush}"/>
+                    <Setter TargetName="GroupBox" Property="BorderBrush" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>
                 </MultiDataTrigger>
                 <DataTrigger Binding="{Binding CanChangeLayout}" Value="False">
                     <Setter TargetName="LayoutToggle" Property="Visibility" Value="Collapsed"/>
@@ -1216,7 +1216,7 @@
                     CommandParameter="{Binding}" ToolTip="Zum Gruppenkopf springen"
                     Visibility="{Binding DataContext.HasStickyGroup, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
                 <Border Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="8,6" CornerRadius="6,6,0,0">
-                    <Border Background="{Binding CardBackground}" Margin="-8,-6" Padding="8,6" CornerRadius="6,6,0,0">
+                    <Border Background="{Binding CardBackgroundColor, Converter={StaticResource ArgbBrush}}" Margin="-8,-6" Padding="8,6" CornerRadius="6,6,0,0">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding IconGlyph}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center">
@@ -1225,7 +1225,7 @@
                                         <Setter Property="Foreground" Value="{DynamicResource Text.Secondary}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding HasColor}" Value="True">
-                                                <Setter Property="Foreground" Value="{Binding AccentBrush}"/>
+                                                <Setter Property="Foreground" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

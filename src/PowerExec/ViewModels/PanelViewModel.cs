@@ -542,7 +542,7 @@ public sealed class PanelViewModel : ObservableObject
             .Where(x => x.Score != null)
             .OrderByDescending(x => x.Score)
             .Select(x => new GroupJumpItem(x.Group, TextPart.Split(x.Group.Title, terms),
-                x.Group.Depth > 0 ? x.Group.Breadcrumb : string.Empty, x.Group.AccentBrush, x.Group.CountText))
+                x.Group.Depth > 0 ? x.Group.Breadcrumb : string.Empty, x.Group.AccentColor, x.Group.CountText))
             .ToList();
         GroupJumpResults = list;
         GroupJumpSelected = list.FirstOrDefault();
@@ -1144,13 +1144,13 @@ public sealed class PanelViewModel : ObservableObject
     private GroupViewModel? _gapGroup;
     private GroupDropPlan? _dropPlan;
     private string _dragLabel = string.Empty;
-    private System.Windows.Media.Brush? _dragBrush;
+    private ArgbColor? _dragColor;
     private bool _groupDragCompact;
 
     /// <summary>Text im Platzhalter und im Ziehbild: Name der Gruppe (+ Zahl der Untergruppen).</summary>
     public string DragLabel { get => _dragLabel; private set => Set(ref _dragLabel, value); }
     /// <summary>Farbe der gezogenen Gruppe (Punkt im Platzhalter).</summary>
-    public System.Windows.Media.Brush? DragBrush { get => _dragBrush; private set => Set(ref _dragBrush, value); }
+    public ArgbColor? DragColor { get => _dragColor; private set => Set(ref _dragColor, value); }
     /// <summary>Während des Ziehens nur Gruppenköpfe zeigen (Option „Inhalte beim Ziehen zuklappen“).</summary>
     public bool GroupDragCompact { get => _groupDragCompact; private set => Set(ref _groupDragCompact, value); }
     /// <summary>Lücke weich öffnen (Option und Einstellung „Animation“).</summary>
@@ -1167,7 +1167,7 @@ public sealed class PanelViewModel : ObservableObject
         _dragGroup = group;
         var sub = group.SelfAndDescendants.Count() - 1;
         DragLabel = group.Title + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
-        DragBrush = group.AccentBrush;
+        DragColor = group.AccentColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         group.IsDragSource = true;
         GroupDragCompact = _app.Settings.GroupDragCollapse;
@@ -1411,7 +1411,7 @@ public sealed record SearchChip(string Label, bool IsInvalid, string ToolTip, IC
 public sealed record ShortcutInfo(string Keys, string Action);
 
 /// <summary>Treffer in der Gruppensuche (Strg+K).</summary>
-public sealed record GroupJumpItem(GroupViewModel Group, IReadOnlyList<TextPart> TitleParts, string PathText, System.Windows.Media.Brush? Color, string CountText)
+public sealed record GroupJumpItem(GroupViewModel Group, IReadOnlyList<TextPart> TitleParts, string PathText, ArgbColor? Color, string CountText)
 {
     public bool HasPath => PathText.Length > 0;
 }

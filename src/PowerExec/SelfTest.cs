@@ -675,7 +675,7 @@ public sealed partial class AppController
                 host.Window.HidePanel();
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
-                if (colors == null || colors.Where(c => c.Swatch != null).Select(c => c.Swatch!.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
                 if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe"))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
                 var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
                 if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
