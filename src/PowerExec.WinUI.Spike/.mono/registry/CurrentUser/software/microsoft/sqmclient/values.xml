@@ -1,4 +1,4 @@
 ﻿<values>
-  <value name="MachineId" type="string">{00000000-0000-0000-0000-000000000000}</value>
   <value name="UserId" type="string">{9BA34394-A996-4B80-9135-54ABB6E527F5}</value>
+  <value name="MachineId" type="string">{00000000-0000-0000-0000-000000000000}</value>
 </values>

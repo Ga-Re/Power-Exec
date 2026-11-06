@@ -1,12 +1,24 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Markup;
+using Microsoft.UI.Xaml.XamlTypeInfo;
 using PowerExec.Infrastructure;
 
 namespace PowerExec.WinUI.Spike;
 
-/// <summary>Prototyp-App: Panel, Hover-Zone und Tray; hält sich selbst am Leben, bis „Beenden“ gewählt wird.</summary>
-public sealed class App : Application
+/// <summary>
+/// Prototyp-App: Panel, Hover-Zone und Tray; hält sich selbst am Leben, bis „Beenden“ gewählt wird.
+/// Ohne XAML-Dateien erzeugt der XAML-Compiler keinen Metadaten-Anbieter – die App reicht deshalb selbst an den
+/// der WinUI-Steuerelemente weiter, sonst lassen sich die Theme-Ressourcen (z. B. AcrylicBrush) nicht laden.
+/// </summary>
+public sealed class App : Application, IXamlMetadataProvider
 {
+    private readonly XamlControlsXamlMetaDataProvider _controlsMetadata = new();
+
+    public IXamlType GetXamlType(Type type) => _controlsMetadata.GetXamlType(type);
+    public IXamlType GetXamlType(string fullName) => _controlsMetadata.GetXamlType(fullName);
+    public XmlnsDefinition[] GetXmlnsDefinitions() => _controlsMetadata.GetXmlnsDefinitions();
+
     private readonly SpikeOptions _options;
     private SpikeHost? _host;
     private PanelWindow? _panel;
