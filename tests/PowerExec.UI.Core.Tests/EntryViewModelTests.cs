@@ -20,6 +20,20 @@ internal sealed class FakeEntryHost : IProfilesHost, ICustomEntryListHost
     public IUiDispatcher UiDispatcher => Ui;
     public HealthService Health { get; } = new(Ui);
     public object? SettingsDialogOwner => null;
+    public IThemeInfo Theme { get; } = new FakeTheme();
+    public FakeItemSource Items { get; } = new();
+    public IItemSource Repository => Items;
+    public List<string> AdSyncs { get; } = new();
+    public IReadOnlyList<string> AdAnswer { get; set; } = Array.Empty<string>();
+
+    public Task<IReadOnlyList<string>?> SyncMachineGroupAsync(MachineGroup group)
+    {
+        AdSyncs.Add(group.Name);
+        group.LastSyncUtc = DateTime.UtcNow;
+        return Task.FromResult<IReadOnlyList<string>?>(AdAnswer);
+    }
+
+    public Task<IReadOnlyList<string>> FindComputersAsync(string query) => Task.FromResult(AdAnswer);
 
     public List<(CustomEntry Entry, LaunchProfile Profile)> TestRuns { get; } = new();
     public int ProfilesSaved { get; private set; }

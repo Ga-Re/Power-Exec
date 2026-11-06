@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
 using PowerExec.Infrastructure;
@@ -14,8 +12,11 @@ public sealed class PanelSettingsViewModel : ObservableObject
 {
     private readonly PanelConfig _c;
 
-    public PanelSettingsViewModel(PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors)
+    private readonly ISettingsHost _app;
+
+    public PanelSettingsViewModel(ISettingsHost app, PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors)
     {
+        _app = app;
         _c = config.Clone();
         Monitors = monitors;
         ClearHotkeyCommand = new RelayCommand(() => Hotkey = string.Empty);
@@ -35,7 +36,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         {
             var edge = Edges.First(e => e.Key == _c.Edge).Value;
             var mon = Monitors.FirstOrDefault(m => m.Key == MonitorChoice).Value ?? "Monitor";
-            var hk = string.IsNullOrWhiteSpace(_c.Hotkey) ? "kein Tastenkürzel" : HotkeyService.Display(_c.Hotkey);
+            var hk = string.IsNullOrWhiteSpace(_c.Hotkey) ? "kein Tastenkürzel" : DisplayText.Hotkey(_c.Hotkey);
             return $"{edge} · {mon} · {hk}";
         }
     }
@@ -117,7 +118,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         get => _c.Hotkey;
         set { _c.Hotkey = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(HotkeyDisplay)); OnPropertyChanged(nameof(Summary)); }
     }
-    public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? "Kein Tastenkürzel" : HotkeyService.Display(_c.Hotkey);
+    public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? "Kein Tastenkürzel" : DisplayText.Hotkey(_c.Hotkey);
     public ICommand ClearHotkeyCommand { get; }
 
     // ---- Farbe ------------------------------------------------------------
@@ -143,7 +144,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
             OnPropertyChanged();
             OnPropertyChanged(nameof(CustomColor));
             OnPropertyChanged(nameof(ColorError));
-            OnPropertyChanged(nameof(PreviewBrush));
+            OnPropertyChanged(nameof(PreviewColor));
             OnPropertyChanged(nameof(PreviewText));
             foreach (var p in ColorPresets) p.Refresh();
         }
@@ -152,8 +153,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
     /// <summary>Eigene Panelfarbe im Farbwähler aussuchen.</summary>
     public System.Windows.Input.ICommand PickColorCommand => _pickColor ??= new RelayCommand(() =>
     {
-        var picked = Views.ColorPickerWindow.Pick("Panelfarbe", _c.PanelColor,
-            System.Windows.Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
+        var picked = _app.Dialogs.PickColor("Panelfarbe", _c.PanelColor, _app.SettingsDialogOwner);
         if (picked != null) PanelColor = picked;
     });
     private System.Windows.Input.ICommand? _pickColor;
@@ -172,9 +172,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public string? ColorError => _colorError;
 
-    public Brush PreviewBrush => PanelColors.TryParse(_c.PanelColor, out var c)
-        ? new SolidColorBrush(Color.FromArgb((byte)(255 * _c.PanelOpacity / 100), c.R, c.G, c.B))
-        : Application.Current.Resources["Bg.Panel"] as Brush ?? Brushes.Gray;
+    /// <summary>Vorschau der Panelfarbe mit Deckkraft; null = Farbe des Designs.</summary>
+    public ArgbColor? PreviewColor => ArgbColor.FromHex(_c.PanelColor, (byte)(255 * _c.PanelOpacity / 100));
 
     public string PreviewText => PanelColors.TryParse(_c.PanelColor, out var c)
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
@@ -229,7 +228,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
                 PanelBackdrop.Mica => "Nimmt nur die Farbstimmung des Hintergrundbilds auf, kein Durchblick – ruhig und gut lesbar.",
                 _ => "Kein Weichzeichner; unter 100 % Deckkraft scheint der Desktop leicht durch."
             };
-            var effective = PanelBackdrops.Effective(wanted, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+            var effective = PanelBackdrops.Effective(wanted, Environment.OSVersion.Version.Build, _app.Theme.IsHighContrast);
             if (effective != wanted)
                 text += effective == PanelBackdrop.Clear
                     ? " Im Kontrastdesign ist das Panel deckend."
@@ -245,7 +244,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     private void RaiseBackdrop()
     {
-        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewBrush), nameof(OpacityDescription) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
     }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
@@ -263,9 +262,35 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public int PanelOpacity
     {
         get => _c.PanelOpacity;
-        set { _c.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewBrush)); OnPropertyChanged(nameof(OpacityDescription)); }
+        set { _c.PanelOpacity = value; OnPropertyChanged(); OnPropertyChanged(nameof(PreviewColor)); OnPropertyChanged(nameof(OpacityDescription)); }
     }
 
     /// <summary>Erstellt die gespeicherte Panel-Konfiguration aus dem Formular.</summary>
     public PanelConfig ToConfig() => _c.Clone();
 }
+
+
+public sealed class ColorPresetViewModel : ObservableObject
+{
+    private readonly PanelSettingsViewModel _owner;
+
+    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset)
+    {
+        _owner = owner;
+        Name = preset.Name;
+        Hex = preset.Hex;
+        SwatchColor = ArgbColor.FromHex(preset.Hex);
+        SelectCommand = new RelayCommand(() => _owner.PanelColor = Hex);
+    }
+
+    public string Name { get; }
+    public string Hex { get; }
+    /// <summary>Farbpunkt; null = Farbe des Designs (die Oberfläche zeigt dann die Panelfarbe des Designs).</summary>
+    public ArgbColor? SwatchColor { get; }
+    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : $"{Name} ({Hex})";
+    public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
+    public ICommand SelectCommand { get; }
+    public void Refresh() => OnPropertyChanged(nameof(IsSelected));
+}
+
+/// <summary>Eine Gruppe in den Einstellungen (Inhalte › Gruppen); smarte Gruppen haben einen Ordner.</summary>

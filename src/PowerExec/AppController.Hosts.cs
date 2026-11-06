@@ -15,7 +15,7 @@ namespace PowerExec;
 /// Fensterbezug (<c>object? owner</c>) in <see cref="Window"/> und reicht WPF-/Win32-Dienste durch.
 /// Was schon öffentlich mit passender Signatur existiert, erfüllt die Schnittstellen direkt.
 /// </summary>
-public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost
+public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
     public IShell Shell { get; } = new WpfShell();
@@ -87,7 +87,13 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     string ICustomEntryHost.ToUnc(string path) => PathResolver.ToUnc(path);
 
-    object? ICustomEntryListHost.SettingsDialogOwner => Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
+    object? ISettingsHost.SettingsDialogOwner => Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
+
+    IItemSource ISettingsHost.Repository => Repository;
+
+    Task<IReadOnlyList<string>?> ISettingsHost.SyncMachineGroupAsync(MachineGroup group) => SyncMachineGroupAsync(group);
+
+    Task<IReadOnlyList<string>> ISettingsHost.FindComputersAsync(string query) => AdSearch.FindComputersAsync(query);
 
     EntryEditorResult ICustomEntryListHost.EditEntryModal(AppSettings target, CustomEntry? entry, bool isNew, string? group, object? owner) =>
         ProfilesWindow.EditEntryEx(this, target, entry, isNew, saveImmediately: false, group, null, owner as Window);

@@ -1,4 +1,3 @@
-using System.Windows;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
@@ -16,8 +15,11 @@ public sealed class MachineGroupViewModel : ObservableObject
     private string _status = string.Empty;
     private bool _searching;
 
-    public MachineGroupViewModel(MachineGroup group, Action<MachineGroupViewModel> remove)
+    private readonly ISettingsHost _app;
+
+    public MachineGroupViewModel(ISettingsHost app, MachineGroup group, Action<MachineGroupViewModel> remove)
     {
+        _app = app;
         _name = group.Name;
         _machines = string.Join(Environment.NewLine, group.Machines);
         RemoveCommand = new RelayCommand(() => remove(this));
@@ -55,7 +57,7 @@ public sealed class MachineGroupViewModel : ObservableObject
             if (value && Blocks.Count == 0) Blocks.Add(new AdBlockViewModel(this, NewBlock()));
             OnPropertyChanged(nameof(IsStatic));
             RulesChanged();
-            CommandManager.InvalidateRequerySuggested();
+            CommandRequery.Invalidate();
         }
     }
     public bool IsStatic => !_isDynamic;
@@ -97,7 +99,7 @@ public sealed class MachineGroupViewModel : ObservableObject
         try
         {
             var g = ToGroup();
-            var names = await AppController.SyncMachineGroupAsync(g);
+            var names = await _app.SyncMachineGroupAsync(g);
             _lastSyncUtc = g.LastSyncUtc;
             _lastSyncError = g.LastSyncError;
             if (names != null) Machines = string.Join(Environment.NewLine, names);
@@ -141,7 +143,7 @@ public sealed class MachineGroupViewModel : ObservableObject
     public string CountText { get { var n = Parse().Count; return n == 1 ? "1 Rechner" : $"{n} Rechner"; } }
     public string AdQuery { get => _adQuery; set => Set(ref _adQuery, value ?? string.Empty); }
     public string Status { get => _status; private set => Set(ref _status, value); }
-    public bool IsSearching { get => _searching; private set { if (Set(ref _searching, value)) CommandManager.InvalidateRequerySuggested(); } }
+    public bool IsSearching { get => _searching; private set { if (Set(ref _searching, value)) CommandRequery.Invalidate(); } }
 
     public ICommand RemoveCommand { get; }
     public ICommand ImportCommand { get; }
@@ -160,11 +162,11 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     private void Import()
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*" };
-        if (dlg.ShowDialog() != true) return;
+        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*");
+        if (file == null) return;
         try
         {
-            AddNames(MachineList.ParseImport(File.ReadAllText(dlg.FileName)), Path.GetFileName(dlg.FileName));
+            AddNames(MachineList.ParseImport(File.ReadAllText(file)), Path.GetFileName(file));
         }
         catch (Exception ex)
         {
@@ -178,7 +180,7 @@ public sealed class MachineGroupViewModel : ObservableObject
         Status = "Suche im Active Directory …";
         try
         {
-            var names = await AdSearch.FindComputersAsync(_adQuery);
+            var names = await _app.FindComputersAsync(_adQuery);
             AddNames(names, $"AD ({names.Count} gefunden)");
         }
         catch (Exception ex)
@@ -327,4 +329,45 @@ public sealed class WorkspaceRowViewModel : ObservableObject
 
     /// <summary>Welche Gruppen in diesem Arbeitsbereich im Panel erscheinen.</summary>
     public System.Collections.ObjectModel.ObservableCollection<WorkspaceGroupChoice> Groups { get; } = new();
+}
+
+
+/// <summary>Gruppe in der Auswahl eines Arbeitsbereichs (sichtbar oder ausgeblendet).</summary>
+public sealed class WorkspaceGroupChoice : ObservableObject
+{
+    private readonly Workspace _ws;
+    private readonly Action _changed;
+
+    public WorkspaceGroupChoice(Workspace ws, string path, string icon, Action changed)
+    {
+        _ws = ws;
+        Path = path;
+        Icon = icon;
+        _changed = changed;
+    }
+
+    public string Path { get; }
+    public string Icon { get; }
+    public string Display => IsFixed ? FixedGroups.Title(Path) : GroupManager.LeafOf(Path);
+    /// <summary>Einrückung links in Pixeln (Untergruppen tiefer).</summary>
+    public double IndentLeft => IsFixed ? 0 : GroupManager.DepthOf(Path) * 22;
+    /// <summary>Feste Gruppe (Schloss-Symbol): nur ein-/ausblendbar.</summary>
+    public bool IsFixed => FixedGroups.IsFixed(Path);
+    public string FixedGlyph => FixedGroups.Glyph(Path);
+
+    /// <summary>Die Gruppe selbst ist nicht ausgeblendet.</summary>
+    public bool IsVisible
+    {
+        get => !_ws.HiddenGroups.Contains(Path, StringComparer.CurrentCultureIgnoreCase);
+        set { WorkspaceManager.SetGroupHidden(_ws, Path, !value); OnPropertyChanged(); _changed(); }
+    }
+
+    /// <summary>Übergeordnete Gruppe ist sichtbar (sonst ist diese automatisch mit ausgeblendet).</summary>
+    public bool IsEnabled => GroupManager.ParentOf(Path) is not { } parent || WorkspaceManager.ShowsGroupIn(_ws, parent);
+
+    public void Refresh()
+    {
+        OnPropertyChanged(nameof(IsVisible));
+        OnPropertyChanged(nameof(IsEnabled));
+    }
 }

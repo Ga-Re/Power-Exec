@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
 
@@ -25,7 +23,7 @@ public sealed class TagRowViewModel : ObservableObject
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         CustomColorCommand = new RelayCommand(() =>
         {
-            var hex = Views.ColorPickerWindow.Pick($"Farbe für #{Tag}", _color, Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
+            var hex = _owner.App.Dialogs.PickColor($"Farbe für #{Tag}", _color, _owner.App.SettingsDialogOwner);
             if (hex != null) Color = hex;
         });
     }
@@ -47,19 +45,15 @@ public sealed class TagRowViewModel : ObservableObject
             if (!Set(ref _color, value ?? string.Empty)) return;
             _owner.SetColor(this, _color);
             OnPropertyChanged(nameof(Colors));
-            OnPropertyChanged(nameof(ChipBrush));
+            OnPropertyChanged(nameof(ChipColor));
         }
     }
     /// <summary>Palette plus die eigene Farbe, falls gesetzt (sonst bliebe die Auswahl leer).</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Colors =>
-        _color.Length > 0 && !CategoryItemViewModel.ColorList.Any(c => c.Key.Equals(_color, StringComparison.OrdinalIgnoreCase))
-            ? CategoryItemViewModel.ColorList.Append(new KeyValuePair<string, string>(_color, "Eigene " + _color)).ToList()
-            : CategoryItemViewModel.ColorList;
+    public IReadOnlyList<KeyValuePair<string, string>> Colors => ColorChoices.Including(_color);
 
     /// <summary>Hintergrund des Chips: getönt in der Farbe, sonst Standard.</summary>
-    public Brush ChipBrush => PanelColors.TryParse(_color, out var c)
-        ? new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x55, c.R, c.G, c.B))
-        : (Brush)Application.Current.Resources["Bg.Chip"];
+    /// <summary>Getönter Chip; null = Chip-Farbe des Designs.</summary>
+    public ArgbColor? ChipColor => ArgbColor.FromHex(_color, 0x55);
 
     public ICommand RenameCommand { get; }
     public ICommand DeleteCommand { get; }
@@ -69,7 +63,8 @@ public sealed class TagRowViewModel : ObservableObject
 /// <summary>Einstellungen › Schlagworte: arbeitet auf der Arbeitskopie der Einstellungen.</summary>
 public sealed class TagsViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly ISettingsHost _app;
+    internal ISettingsHost App => _app;
     private readonly AppSettings _s;
     private readonly Action _beforeChange;
     private readonly Action _afterChange;
@@ -77,7 +72,7 @@ public sealed class TagsViewModel : ObservableObject
 
     /// <param name="beforeChange">Offene Änderungen anderer Listen in die Arbeitskopie übernehmen.</param>
     /// <param name="afterChange">Andere Listen (Eigene Einträge) neu laden.</param>
-    public TagsViewModel(AppController app, AppSettings s, Action beforeChange, Action afterChange)
+    public TagsViewModel(ISettingsHost app, AppSettings s, Action beforeChange, Action afterChange)
     {
         _app = app;
         _s = s;
@@ -112,18 +107,17 @@ public sealed class TagsViewModel : ObservableObject
         return _app.Repository.Items.FirstOrDefault(i => i.FullPath.Equals(key, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? System.IO.Path.GetFileName(key);
     }
 
-    private static Window? Owner() => Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+    private object? Owner() => _app.SettingsDialogOwner;
 
     internal void Rename(TagRowViewModel row)
     {
-        var name = Views.InputWindow.Ask("Schlagwort umbenennen",
+        var name = _app.Dialogs.Ask("Schlagwort umbenennen",
             "Gibt es den neuen Namen schon, werden beide Schlagworte zusammengeführt.", row.Tag, "Umbenennen",
             t => t.Trim().TrimStart('#').Length == 0 ? "Bitte einen Namen eingeben." : t.Contains(',') || t.Contains(';') ? "Ohne Komma oder Semikolon." : null);
         if (name == null || name.Trim().TrimStart('#') == row.Tag) return;
         var target = name.Trim().TrimStart('#');
         var existing = Tags.All(_s).FirstOrDefault(t => t.Equals(target, StringComparison.CurrentCultureIgnoreCase) && !t.Equals(row.Tag, StringComparison.CurrentCultureIgnoreCase));
-        if (existing != null && MessageBox.Show(Owner()!, $"„#{existing}“ gibt es schon. „#{row.Tag}“ damit zusammenführen?", "Schlagworte zusammenführen",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (existing != null && !_app.Dialogs.Confirm($"„#{existing}“ gibt es schon. „#{row.Tag}“ damit zusammenführen?", "Schlagworte zusammenführen", owner: Owner())) return;
         _beforeChange();
         Tags.Rename(_s, row.Tag, existing ?? target);
         _afterChange();
@@ -132,8 +126,7 @@ public sealed class TagsViewModel : ObservableObject
 
     internal void Delete(TagRowViewModel row)
     {
-        if (MessageBox.Show(Owner()!, $"„#{row.Tag}“ von {row.CountText} entfernen?\n\nDie Einträge selbst bleiben erhalten.", "Schlagwort löschen",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!_app.Dialogs.Confirm($"„#{row.Tag}“ von {row.CountText} entfernen?\n\nDie Einträge selbst bleiben erhalten.", "Schlagwort löschen", destructive: true, owner: Owner())) return;
         _beforeChange();
         Tags.Delete(_s, row.Tag);
         _afterChange();

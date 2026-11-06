@@ -18,6 +18,7 @@
             <infra:HexBrushConverter x:Key="HexBrush"/>
             <infra:ArgbBrushConverter x:Key="ArgbBrush"/>
             <infra:ScrollBarAutoConverter x:Key="ScrollBarAuto"/>
+            <infra:LeftMarginConverter x:Key="LeftMargin"/>
             <svc:IconImageConverter x:Key="IconImage"/>
             <infra:AllEqualConverter x:Key="StringEquals"/>
         </ResourceDictionary>

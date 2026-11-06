@@ -379,32 +379,6 @@ public sealed class FolderViewModel : ObservableObject
     }
 }
 
-public sealed class ColorPresetViewModel : ObservableObject
-{
-    private readonly PanelSettingsViewModel _owner;
-
-    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset)
-    {
-        _owner = owner;
-        Name = preset.Name;
-        Hex = preset.Hex;
-        if (PanelColors.TryParse(preset.Hex, out var c))
-            Swatch = new SolidColorBrush(Color.FromRgb(c.R, c.G, c.B));
-        else
-            Swatch = Application.Current.Resources["Bg.Panel"] as Brush ?? Brushes.Gray;
-        SelectCommand = new RelayCommand(() => _owner.PanelColor = Hex);
-    }
-
-    public string Name { get; }
-    public string Hex { get; }
-    public Brush Swatch { get; }
-    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : $"{Name} ({Hex})";
-    public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
-    public ICommand SelectCommand { get; }
-    public void Refresh() => OnPropertyChanged(nameof(IsSelected));
-}
-
-/// <summary>Eine Gruppe in den Einstellungen (Inhalte › Gruppen); smarte Gruppen haben einen Ordner.</summary>
 public sealed class CategoryItemViewModel : ObservableObject
 {
     private string _icon = string.Empty;
@@ -503,15 +477,10 @@ public sealed class CategoryItemViewModel : ObservableObject
     /// <summary>Arbeitskopie der Einstellungen (Farbe/Darstellung werden dort direkt gesetzt).</summary>
     public AppSettings? Settings { get; init; }
 
-    public static IReadOnlyList<KeyValuePair<string, string>> ColorList { get; } =
-        new[] { new KeyValuePair<string, string>(string.Empty, "Keine / wie übergeordnet") }
-            .Concat(PanelColors.AccentPresets.Select(p => new KeyValuePair<string, string>(p.Hex, p.Name))).ToList();
+    public static IReadOnlyList<KeyValuePair<string, string>> ColorList => ColorChoices.WithNone;
 
     /// <summary>Palette plus eine eigene Farbe, falls gesetzt.</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Colors =>
-        ColorOwn.Length > 0 && !ColorList.Any(c => c.Key.Equals(ColorOwn, StringComparison.OrdinalIgnoreCase))
-            ? ColorList.Append(new KeyValuePair<string, string>(ColorOwn, "Eigene " + ColorOwn)).ToList()
-            : ColorList;
+    public IReadOnlyList<KeyValuePair<string, string>> Colors => ColorChoices.Including(ColorOwn);
 
     public string ColorOwn
     {
@@ -554,45 +523,6 @@ public sealed class CategoryItemViewModel : ObservableObject
             GroupManager.SetLayout(Settings, Name, value switch { "Grid" => ItemLayout.Grid, "List" => ItemLayout.List, _ => null });
             OnPropertyChanged();
         }
-    }
-}
-
-/// <summary>Gruppe in der Auswahl eines Arbeitsbereichs (sichtbar oder ausgeblendet).</summary>
-public sealed class WorkspaceGroupChoice : ObservableObject
-{
-    private readonly Workspace _ws;
-    private readonly Action _changed;
-
-    public WorkspaceGroupChoice(Workspace ws, string path, string icon, Action changed)
-    {
-        _ws = ws;
-        Path = path;
-        Icon = icon;
-        _changed = changed;
-    }
-
-    public string Path { get; }
-    public string Icon { get; }
-    public string Display => IsFixed ? FixedGroups.Title(Path) : GroupManager.LeafOf(Path);
-    public Thickness Indent => new(IsFixed ? 0 : GroupManager.DepthOf(Path) * 22, 0, 0, 0);
-    /// <summary>Feste Gruppe (Schloss-Symbol): nur ein-/ausblendbar.</summary>
-    public bool IsFixed => FixedGroups.IsFixed(Path);
-    public string FixedGlyph => FixedGroups.Glyph(Path);
-
-    /// <summary>Die Gruppe selbst ist nicht ausgeblendet.</summary>
-    public bool IsVisible
-    {
-        get => !_ws.HiddenGroups.Contains(Path, StringComparer.CurrentCultureIgnoreCase);
-        set { WorkspaceManager.SetGroupHidden(_ws, Path, !value); OnPropertyChanged(); _changed(); }
-    }
-
-    /// <summary>Übergeordnete Gruppe ist sichtbar (sonst ist diese automatisch mit ausgeblendet).</summary>
-    public bool IsEnabled => GroupManager.ParentOf(Path) is not { } parent || WorkspaceManager.ShowsGroupIn(_ws, parent);
-
-    public void Refresh()
-    {
-        OnPropertyChanged(nameof(IsVisible));
-        OnPropertyChanged(nameof(IsEnabled));
     }
 }
 
@@ -654,10 +584,10 @@ public sealed class SettingsViewModel : ObservableObject
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
-        Panel = new PanelSettingsViewModel(_s.Panels[0], _monitors);
+        Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors);
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
-        foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(g, RemoveGroup));
+        foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
@@ -942,7 +872,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var name = "Gruppe";
         for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Gruppe {i}";
-        MachineGroups.Add(new MachineGroupViewModel(new MachineGroup { Name = name }, RemoveGroup));
+        MachineGroups.Add(new MachineGroupViewModel(_app, new MachineGroup { Name = name }, RemoveGroup));
         OnPropertyChanged(nameof(HasNoGroups));
     }
 

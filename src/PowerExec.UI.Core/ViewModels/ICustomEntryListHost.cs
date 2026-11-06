@@ -10,16 +10,10 @@ namespace PowerExec.ViewModels;
 public sealed record EntryEditorResult(string? SavedKey, string? Alternative, string? SmartGroupPath);
 
 /// <summary>Was die Liste „Eigene Einträge“ in den Einstellungen (<see cref="CustomEntryListViewModel"/>) von der App braucht.</summary>
-public interface ICustomEntryListHost
+public interface ICustomEntryListHost : ISettingsHost
 {
-    /// <summary>Gespeicherte Einstellungen (nicht die Arbeitskopie des Einstellungsfensters).</summary>
-    AppSettings Settings { get; }
-    IDialogs Dialogs { get; }
     IIconProvider IconProvider { get; }
     HealthService Health { get; }
-
-    /// <summary>Fenster, über dem Rückfragen erscheinen (das Einstellungsfenster), oder null.</summary>
-    object? SettingsDialogOwner { get; }
 
     /// <summary>Eintragsdialog modal öffnen; arbeitet auf <paramref name="target"/> (Arbeitskopie), speichert nicht.</summary>
     EntryEditorResult EditEntryModal(AppSettings target, CustomEntry? entry, bool isNew, string? group, object? owner);

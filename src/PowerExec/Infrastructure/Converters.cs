@@ -105,3 +105,12 @@ public sealed class ScrollBarAutoConverter : IValueConverter
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>Zahl → linker Rand (<c>Thickness(Zahl, 0, 0, 0)</c>), z. B. für eingerückte Untergruppen.</summary>
+public sealed class LeftMarginConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        new Thickness(value is double d ? d : 0, 0, 0, 0);
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}

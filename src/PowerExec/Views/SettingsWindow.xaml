@@ -989,7 +989,7 @@
                                                 </Button>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
-                                                <Border Background="{Binding ChipBrush}" CornerRadius="11" Padding="10,2,10,3">
+                                                <Border Background="{Binding ChipColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Chip}" CornerRadius="11" Padding="10,2,10,3">
                                                     <TextBlock Text="{Binding Tag, StringFormat=#{0}}" FontSize="13"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
@@ -1070,7 +1070,7 @@
                                                 <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <CheckBox IsChecked="{Binding IsVisible}" IsEnabled="{Binding IsEnabled}" Margin="{Binding Indent}" Padding="6,0,0,0" MinHeight="30">
+                                                            <CheckBox IsChecked="{Binding IsVisible}" IsEnabled="{Binding IsEnabled}" Margin="{Binding IndentLeft, Converter={StaticResource LeftMargin}}" Padding="6,0,0,0" MinHeight="30">
                                                                 <StackPanel Orientation="Horizontal">
                                                                     <Grid Width="18" Margin="0,0,8,0">
                                                                         <c:IconPresenter Icon="{Binding Icon}" Size="15" Foreground="{DynamicResource Text.Primary}"
@@ -1429,7 +1429,7 @@
                     <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,4">
                         <StackPanel>
                             <DockPanel>
-                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewBrush}"
+                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                         BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
@@ -1448,7 +1448,7 @@
                                                 <ControlTemplate TargetType="Button">
                                                     <StackPanel Width="76">
                                                         <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
-                                                            <Border CornerRadius="15" Background="{Binding Swatch}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
+                                                            <Border CornerRadius="15" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
                                                                 <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                            Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
                                                             </Border>
@@ -1477,7 +1477,7 @@
                                 <Button Style="{StaticResource Btn.Standard}" Command="{Binding PickColorCommand}" ToolTip="Eigene Farbe im Farbwähler aussuchen">
                                     <StackPanel Orientation="Horizontal">
                                         <Border Width="18" Height="18" CornerRadius="9" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
-                                                Background="{Binding PreviewBrush}"/>
+                                                Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"/>
                                         <TextBlock Text="Eigene Farbe …"/>
                                     </StackPanel>
                                 </Button>
