@@ -128,8 +128,8 @@ spielt die Prüfpunkte automatisch durch (das macht auch CI). Protokoll: `spike.
 alle Schritte ohne Fehler. Gleiten Ø 14 Bilder in ~210 ms (größte Bildlücke 31 ms); Tippen mit 500 Einträgen
 Ø 23 ms, p95 34 ms (WPF-App im selben Runner: Ø 223 ms – WinUI virtualisiert die Gruppenliste, der Vergleich ist
 also nur grob); Klarglas/Acrylic/Mica, Tray, Strg+Alt+Leertaste, Autostart-Eintrag funktionieren. Gefunden:
-Windows erzwang 136 px Mindestbreite für die Hover-Zone → per `WM_GETMINMAXINFO` behoben, der Smoke-Test prüft
-jetzt ≤ 12 px.
+Windows erzwang 136 px Mindestbreite für die Hover-Zone → per `WM_GETMINMAXINFO` behoben, jetzt 6 px
+([Lauf 4](https://github.com/Ga-Re/Power-Exec/actions/runs/42219168771)); der Smoke-Test prüft ≤ 12 px.
 
 Unterwegs gelernt (gilt für WinUI ohne XAML-Dateien, nicht für Phase 2 mit XAML): `EnableMsixTooling` ist auch
 unpackaged nötig (sonst fehlt die `.pri`-Datei mit den WinUI-Themes), und die App muss `IXamlMetadataProvider`
