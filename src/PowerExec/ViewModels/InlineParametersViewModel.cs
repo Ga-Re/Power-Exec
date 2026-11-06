@@ -88,7 +88,7 @@ public sealed class InlineParametersViewModel : ObservableObject
         if (!Validate()) return;
         var values = Values();
         string? error = null;
-        var name = _app.AskForTest?.Invoke() ?? Views.InputWindow.Ask("Als Parameter-Set speichern",
+        var name = _app.Dialogs.Ask("Als Parameter-Set speichern",
             "Erscheint als Startprofil am Ausführen-Knopf (Pfeil rechts) und im Profil-Dialog. Kennwörter werden nicht gespeichert.",
             string.Empty, "Speichern", n =>
             {

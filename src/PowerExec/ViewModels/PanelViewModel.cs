@@ -68,9 +68,9 @@ public sealed class PanelViewModel : ObservableObject
     public PanelConfig Config => _host.Config;
 
     /// <summary>Dunkle Panelfläche (Design bzw. eigene Panelfarbe) – für lesbare Gruppenfarben.</summary>
-    public bool IsDarkSurface => !ThemeService.IsHighContrast && PanelColors.TryParse(_host.Config.PanelColor, out var c)
+    public bool IsDarkSurface => !_app.Theme.IsHighContrast && PanelColors.TryParse(_host.Config.PanelColor, out var c)
         ? !PanelColors.IsLight(c)
-        : ThemeService.IsDark;
+        : _app.Theme.IsDark;
     public string PanelName => _host.Config.Name;
     public bool IsMultiPanel => _app.Settings.Panels.Count > 1;
 
@@ -608,7 +608,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         var items = CheckedItems;
         if (items.Count == 0) return;
-        var name = _app.AskForTest?.Invoke() ?? Views.InputWindow.Ask("Als Ablauf speichern",
+        var name = _app.Dialogs.Ask("Als Ablauf speichern",
             $"{items.Count} Schritte: {string.Join(" → ", items.Select(i => i.DisplayName))}. Der Ablauf erscheint als eigener Eintrag – auch in Suche, Favoriten und Mini-Dock.",
             "Neuer Ablauf", "Speichern", n => n.Trim().Length == 0 ? "Bitte einen Namen eingeben." : null);
         if (name == null) return;
@@ -692,7 +692,7 @@ public sealed class PanelViewModel : ObservableObject
     public ICommand ShowAllWhatsNewCommand => _showAllWhatsNewCommand ??= new RelayCommand(() =>
     {
         if (_app.WhatsNew is { } n)
-            Services.Launcher.OpenUrl($"https://github.com/{Core.Updates.UpdateChecker.Owner}/{Core.Updates.UpdateChecker.Repo}/releases/tag/v{n.Version.ToString(3)}");
+            _app.Shell.OpenUrl($"https://github.com/{Core.Updates.UpdateChecker.Owner}/{Core.Updates.UpdateChecker.Repo}/releases/tag/v{n.Version.ToString(3)}");
     });
     private ICommand? _dismissWhatsNewCommand, _showAllWhatsNewCommand;
 

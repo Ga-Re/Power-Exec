@@ -351,8 +351,8 @@ public sealed class ItemViewModel : ObservableObject
 
     private void OpenLocation()
     {
-        if (Item.CustomKind == CustomEntryKind.Folder) Services.Launcher.OpenLocation(Item.Source?.Target.Trim() ?? Item.LaunchTarget ?? string.Empty, isFolder: true);
-        else Services.Launcher.OpenLocation(Item.FullPath);
+        if (Item.CustomKind == CustomEntryKind.Folder) _app.Shell.OpenLocation(Item.Source?.Target.Trim() ?? Item.LaunchTarget ?? string.Empty, isFolder: true);
+        else _app.Shell.OpenLocation(Item.FullPath);
     }
 
     // ---- Notizen ------------------------------------------------------------
@@ -380,7 +380,7 @@ public sealed class ItemViewModel : ObservableObject
         {
             if (Requirements.NeedsPowerShell7(Item))
             {
-                if (Services.Launcher.IsPwshInstalled) parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}: wird mit pwsh.exe gestartet.");
+                if (_app.Shell.IsPwshInstalled) parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}: wird mit pwsh.exe gestartet.");
                 else { parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}, aber PowerShell 7 ist nicht installiert."); warn = true; }
             }
             else parts.Add($"Benötigt PowerShell {Item.RequiredPsVersion}.");
@@ -413,7 +413,7 @@ public sealed class ItemViewModel : ObservableObject
     private ICommand? _openLocationCommand;
     public ICommand OpenLocationCommand => _openLocationCommand ??= new RelayCommand(OpenLocation, () => Item.CustomKind is null or CustomEntryKind.Folder or CustomEntryKind.File);
     private ICommand? _copyPathCommand;
-    public ICommand CopyPathCommand => _copyPathCommand ??= new RelayCommand(() => { try { Clipboard.SetText(Item.LaunchTarget ?? Item.FullPath); } catch { } });
+    public ICommand CopyPathCommand => _copyPathCommand ??= new RelayCommand(() => _app.Shell.SetClipboardText(Item.LaunchTarget ?? Item.FullPath));
     private ICommand? _toggleFavoriteCommand;
     public ICommand ToggleFavoriteCommand => _toggleFavoriteCommand ??= new RelayCommand(() => _app.ToggleFavorite(Item));
     private ICommand? _hideCommand;

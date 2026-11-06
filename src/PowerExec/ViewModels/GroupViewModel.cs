@@ -38,7 +38,7 @@ public sealed class GroupViewModel : ObservableObject
             IsExpanded = !IsExpanded;
             AnimateExpand = false;
         });
-        OpenInExplorerCommand = new RelayCommand(() => { if (FolderPath != null) Services.Launcher.OpenLocation(FolderPath, isFolder: true); }, () => FolderPath != null);
+        OpenInExplorerCommand = new RelayCommand(() => { if (FolderPath != null) app.Shell.OpenLocation(FolderPath, isFolder: true); }, () => FolderPath != null);
         RescanCommand = new RelayCommand(() => _ = app.Repository.ScanAsync());
         CollapseOthersCommand = new RelayCommand(() => _panel.CollapseAllExcept(this));
         CollapseAllCommand = new RelayCommand(() => _panel.SetAllExpanded(false));

@@ -16,6 +16,16 @@ namespace PowerExec;
 /// </summary>
 public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost
 {
+    /// <summary>Explorer, Browser, Zwischenablage.</summary>
+    public IShell Shell { get; } = new WpfShell();
+
+    /// <summary>Rückfragen (im Selbsttest über <see cref="AskForTest"/> beantwortet).</summary>
+    public IDialogs Dialogs => _uiDialogs ??= new WpfDialogs(() => AskForTest);
+    private IDialogs? _uiDialogs;
+
+    /// <summary>Kontrastdesign, hell/dunkel.</summary>
+    public IThemeInfo Theme { get; } = new WpfThemeInfo();
+
     // ── Ausführen-Dialog ─────────────────────────────────────────────
 
     bool IRunHost.ConfirmRun(LaunchItem item, LaunchProfile profile, int targetCount, object? owner) =>
