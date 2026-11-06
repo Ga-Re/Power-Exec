@@ -42,7 +42,7 @@ Power-Exec wird **vollständig** von WPF auf **WinUI 3 (Windows App SDK)** umges
 
 ## Phasen
 
-### Phase 0 – ViewModels herauslösen (in WPF)
+### Phase 0 – ViewModels herauslösen (in WPF) – abgeschlossen
 
 - Neues Projekt `src/PowerExec.UI.Core` (net10.0, ohne WPF/WinUI) mit CommunityToolkit.Mvvm.
 - Logik aus dem Code-behind in ViewModels und Dienste verschieben; UI-Abhängigkeiten hinter Schnittstellen
@@ -81,7 +81,8 @@ Vorgehen je ViewModel: WPF-Abhängigkeiten durch eine schmale Host-Schnittstelle
 
 **Stand:** Alle ViewModels liegen in `PowerExec.UI.Core` (net10.0, ohne WPF); das WPF-Projekt enthält nur noch
 Fenster, Steuerelemente, Converter und die Win32-/WPF-Dienste. `IDialogs` deckt alle Rückfragen und
-Auswahldialoge ab. Abschlusskriterium von Phase 0: CI (Selbsttest der WPF-App) grün.
+Auswahldialoge ab. **Phase 0 ist abgeschlossen** (6. November 2026): Unit-Tests der Oberflächenlogik (111) und
+CI mit Selbsttest der WPF-App grün ([Lauf 148](https://github.com/Ga-Re/Power-Exec/actions/runs/42195899834)).
 
 Muster für die Oberfläche (WPF heute, WinUI später): Farben als `ArgbColor`, Symbole als `IconImage`, Sichtbarkeit
 als `bool` – die Oberfläche wandelt per Converter um. Die WPF-App greift über `InternalsVisibleTo` auf interne
