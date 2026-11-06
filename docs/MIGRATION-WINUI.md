@@ -74,8 +74,14 @@ Vorgehen je ViewModel: WPF-Abhängigkeiten durch eine schmale Host-Schnittstelle
 | `ActivityViewModel`, `ActivityList` – `IUiDispatcher`/`IUiTimer` statt `Dispatcher`, `IRemoteRunProgress` statt `ResultsViewModel` | erledigt, 12 Tests |
 | **Panel-Block**: `PanelViewModel`, `GroupViewModel`, `ItemViewModel`, `PeekViewModel`, `InlineParametersViewModel`, `SpotlightViewModel` über `IPanelHost`/`IPanelContext` | erledigt, 13 Tests |
 | ↳ dafür: `ArgbColor` + `ArgbBrushConverter` (Farben), `IconImage`/`IIconProvider` + `IconImageConverter` (Symbole), `IShell`, `IDialogs`, `IThemeInfo`, `IItemSource`, `HealthService`, `SignatureService`, `TextPart`, `EntryBadge` | erledigt |
-| `ProfilesViewModel` | offen – hängt an `CustomEntryViewModel` |
-| `CustomEntryViewModel`, `CustomEntryListViewModel`, `TagsViewModel`, `PanelSettingsViewModel`, `SettingsViewModel`, `SettingsExtras`, `ResultsViewModel` | offen – Brushes/Bilder wie beim Panel-Block, dazu `MessageBox`/Fenster (`IDialogs` erweitern) und `CollectionView` (Filter im ViewModel) |
+| `ResultsViewModel` + `RemoteSession` über `IResultsHost`; `FilteredView<T>` statt `CollectionView` | erledigt, 9 Tests |
+| `CustomEntryViewModel`, `ProfilesViewModel`, `CustomEntryListViewModel` über `ICustomEntryHost`/`IProfilesHost`/`ICustomEntryListHost`; `BrowserCatalog` | erledigt, 14 Tests |
+| `TagsViewModel`, `PanelSettingsViewModel`, `SettingsExtras` über `ISettingsHost` | erledigt, 11 Tests |
+| `SettingsViewModel` (+ Ordner-, Gruppen-, Katalog-, Designvorlagen-Zeilen) über `ISettingsWindowHost` | erledigt, 12 Tests |
+
+**Stand:** Alle ViewModels liegen in `PowerExec.UI.Core` (net10.0, ohne WPF); das WPF-Projekt enthält nur noch
+Fenster, Steuerelemente, Converter und die Win32-/WPF-Dienste. `IDialogs` deckt alle Rückfragen und
+Auswahldialoge ab. Abschlusskriterium von Phase 0: CI (Selbsttest der WPF-App) grün.
 
 Muster für die Oberfläche (WPF heute, WinUI später): Farben als `ArgbColor`, Symbole als `IconImage`, Sichtbarkeit
 als `bool` – die Oberfläche wandelt per Converter um. Die WPF-App greift über `InternalsVisibleTo` auf interne

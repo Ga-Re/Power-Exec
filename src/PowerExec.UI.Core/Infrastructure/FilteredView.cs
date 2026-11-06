@@ -38,5 +38,28 @@ public sealed class FilteredView<T> where T : class
         CollectionSync.SyncTo(Items, visible.ToList());
     }
 
-    private void OnSourceChanged(object? sender, NotifyCollectionChangedEventArgs e) => Refresh();
+    private int _deferred;
+
+    /// <summary>Viele Änderungen an der Quelle am Stück: erst am Ende einmal abgleichen.</summary>
+    public IDisposable DeferRefresh()
+    {
+        _deferred++;
+        return new Deferral(this);
+    }
+
+    private sealed class Deferral(FilteredView<T> view) : IDisposable
+    {
+        private bool _done;
+        public void Dispose()
+        {
+            if (_done) return;
+            _done = true;
+            if (--view._deferred == 0) view.Refresh();
+        }
+    }
+
+    private void OnSourceChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (_deferred == 0) Refresh();
+    }
 }

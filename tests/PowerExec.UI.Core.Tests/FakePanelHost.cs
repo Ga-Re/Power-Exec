@@ -46,6 +46,10 @@ internal sealed class FakeItemSource : IItemSource
     public bool IsScanning { get; set; }
     public int ScanCount { get; private set; }
     public Task ScanAsync() { ScanCount++; return Task.CompletedTask; }
+#pragma warning disable CS0067 // im Test nicht ausgelöst
+    public event EventHandler? Changed;
+#pragma warning restore CS0067
+    public LaunchItem Reload(LaunchItem item) => item;
 }
 
 internal sealed class FakePanelContext : IPanelContext

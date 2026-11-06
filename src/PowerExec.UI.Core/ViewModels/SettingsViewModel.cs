@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
 using PowerExec.Core.Profiles;
@@ -36,9 +34,9 @@ public sealed class EntryRowViewModel : ObservableObject
 {
     private readonly FolderViewModel _folder;
     private readonly AppSettings _settings;
-    private ImageSource? _icon;
+    private IconImage? _icon;
 
-    public EntryRowViewModel(FolderViewModel folder, AppController app, AppSettings settings, LaunchItem? item, string fullPath, string relativePath, string? pattern)
+    public EntryRowViewModel(FolderViewModel folder, ISettingsWindowHost app, AppSettings settings, LaunchItem? item, string fullPath, string relativePath, string? pattern)
     {
         _folder = folder;
         _settings = settings;
@@ -50,7 +48,7 @@ public sealed class EntryRowViewModel : ObservableObject
         ToggleCommand = new RelayCommand(() => IsVisibleInPanel = !IsVisibleInPanel, () => !IsLocked);
         ConfigureCommand = new RelayCommand(() => _folder.Configure(this), () => Item != null && !IsLocked);
         if (item != null && settings.ShowProgramIcons && Type is ItemType.Executable or ItemType.Shortcut or ItemType.ConsoleSnapIn)
-            _icon = app.Icons.Get(item.FullPath, item.LastWriteTimeUtc, img => { _icon = img; OnPropertyChanged(nameof(Icon)); OnPropertyChanged(nameof(HasIcon)); });
+            _icon = app.IconProvider.Get(item.FullPath, item.LastWriteTimeUtc, img => { _icon = img; OnPropertyChanged(nameof(Icon)); OnPropertyChanged(nameof(HasIcon)); });
     }
 
     public LaunchItem? Item { get; }
@@ -61,7 +59,7 @@ public sealed class EntryRowViewModel : ObservableObject
     public bool IsLocked => Pattern != null;
     public bool CanToggle => !IsLocked;
     public bool IsBlocked => Item?.IsBlocked == true;
-    public ImageSource? Icon => _icon;
+    public IconImage? Icon => _icon;
     public bool HasIcon => _icon != null;
 
     public string Badge => Type switch
@@ -148,7 +146,7 @@ public sealed class EntryRowViewModel : ObservableObject
 
 public sealed class FolderViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly ISettingsWindowHost _app;
     private readonly AppSettings _settings;
     private string _path;
     private bool _recursive;
@@ -160,7 +158,7 @@ public sealed class FolderViewModel : ObservableObject
     private string _query = string.Empty;
     private string _typeFilter = "all";
 
-    public FolderViewModel(AppController app, AppSettings settings, FolderConfig f, string status, Action<FolderViewModel> remove)
+    public FolderViewModel(ISettingsWindowHost app, AppSettings settings, FolderConfig f, string status, Action<FolderViewModel> remove)
     {
         _app = app;
         _settings = settings;
@@ -181,15 +179,15 @@ public sealed class FolderViewModel : ObservableObject
         DismissPendingCommand = new RelayCommand(() => ResolvePending(false));
         SetTypeFilterCommand = new RelayCommand(p => TypeFilter = p?.ToString() ?? "all");
 
+        _rowsView = new FilteredView<EntryRowViewModel>(Rows, Matches);
         LoadRows();
-        RowsView = System.Windows.Data.CollectionViewSource.GetDefaultView(Rows);
-        RowsView.Filter = o => o is EntryRowViewModel r && Matches(r);
         _isExpanded = Rows.Any(r => r.IsNew);
     }
 
     /// <summary>Gefundene Einträge (auch ausgeblendete) und per Muster ausgeschlossene Dateien laden.</summary>
     private void LoadRows()
     {
+        using var defer = _rowsView.DeferRefresh();
         Rows.Clear();
         var f = Config;
         foreach (var item in _app.Repository.Items.Where(i => i.RootFolder.Equals(f.Path, StringComparison.OrdinalIgnoreCase))
@@ -206,7 +204,6 @@ public sealed class FolderViewModel : ObservableObject
     {
         if (!Path.Equals(Config.Path, StringComparison.OrdinalIgnoreCase)) Config.Path = Path;
         LoadRows();
-        RowsView.Refresh();
         foreach (var p in new[] { nameof(HasNoEntries), nameof(NoRows) }) OnPropertyChanged(p);
         OnRowsChanged();
     }
@@ -227,7 +224,9 @@ public sealed class FolderViewModel : ObservableObject
     public ObservableCollection<ExclusionViewModel> Exclusions { get; } = new();
 
     public ObservableCollection<EntryRowViewModel> Rows { get; } = new();
-    public System.ComponentModel.ICollectionView RowsView { get; }
+    private readonly FilteredView<EntryRowViewModel> _rowsView;
+    /// <summary>Zeilen, die zu Suche und Typfilter passen.</summary>
+    public ObservableCollection<EntryRowViewModel> VisibleRows => _rowsView.Items;
 
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
     public bool ShowOptions { get => _showOptions; set => Set(ref _showOptions, value); }
@@ -235,13 +234,13 @@ public sealed class FolderViewModel : ObservableObject
     public string Query
     {
         get => _query;
-        set { if (Set(ref _query, value ?? string.Empty)) { RowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
+        set { if (Set(ref _query, value ?? string.Empty)) { _rowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
     }
 
     public string TypeFilter
     {
         get => _typeFilter;
-        set { if (Set(ref _typeFilter, value)) { RowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
+        set { if (Set(ref _typeFilter, value)) { _rowsView.Refresh(); OnPropertyChanged(nameof(NoRows)); } }
     }
 
     public bool NoRows => Rows.Count > 0 && !Rows.Any(Matches);
@@ -346,16 +345,12 @@ public sealed class FolderViewModel : ObservableObject
         var item = row.Item.IsPowerShell ? _app.Repository.Reload(row.Item) : row.Item;
         var vm = new ProfilesViewModel(_app, item, _settings, saveImmediately: false);
         vm.Saved += row.Refresh;
-        var w = new Views.ProfilesWindow(vm, _app);
-        w.Owner = Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
-        w.ShowDialog();
+        _app.ShowProfilesDialog(vm, _app.SettingsDialogOwner);
     }
 
     private void Browse()
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner auswählen" };
-        if (Directory.Exists(Path)) dlg.InitialDirectory = Path;
-        if (dlg.ShowDialog() == true) Path = dlg.FolderName;
+        if (_app.Dialogs.PickFolder("Ordner auswählen", _app.SettingsDialogOwner) is { } folder) Path = folder;
     }
 
     private void AddExclusion()
@@ -405,7 +400,7 @@ public sealed class CategoryItemViewModel : ObservableObject
         set
         {
             if (!Set(ref _name, value)) return;
-            foreach (var p in new[] { nameof(Display), nameof(Indent), nameof(CardMargin), nameof(ColorOwn), nameof(Colors), nameof(Swatch), nameof(Layout) })
+            foreach (var p in new[] { nameof(Display), nameof(IndentLeft), nameof(CardIndentLeft), nameof(ColorOwn), nameof(Colors), nameof(SwatchColor), nameof(Layout) })
                 OnPropertyChanged(p);
         }
     }
@@ -419,8 +414,9 @@ public sealed class CategoryItemViewModel : ObservableObject
     public bool IsCustomFixed => IsFixed && Name == FixedGroups.Custom;
     public string Icon { get => _icon; set { if (Set(ref _icon, value ?? string.Empty)) OnPropertyChanged(nameof(HasIcon)); } }
     public bool HasIcon => _icon.Length > 0;
-    public Thickness Indent => new(GroupManager.DepthOf(Name) * 22, 0, 0, 0);
-    public Thickness CardMargin => new(GroupManager.DepthOf(Name) * 28, 0, 0, 6);
+    /// <summary>Einrückung links in Pixeln (Zeile bzw. Karte), je nach Tiefe der Gruppe.</summary>
+    public double IndentLeft => GroupManager.DepthOf(Name) * 22;
+    public double CardIndentLeft => GroupManager.DepthOf(Name) * 28;
 
     /// <summary>Ordner der smarten Gruppe (null = normale Gruppe).</summary>
     public FolderViewModel? Folder
@@ -477,6 +473,10 @@ public sealed class CategoryItemViewModel : ObservableObject
     /// <summary>Arbeitskopie der Einstellungen (Farbe/Darstellung werden dort direkt gesetzt).</summary>
     public AppSettings? Settings { get; init; }
 
+    /// <summary>Dialoge für „Eigene Farbe …“ (setzt das Einstellungsfenster).</summary>
+    public IDialogs? Dialogs { get; init; }
+    public object? DialogOwner { get; init; }
+
     public static IReadOnlyList<KeyValuePair<string, string>> ColorList => ColorChoices.WithNone;
 
     /// <summary>Palette plus eine eigene Farbe, falls gesetzt.</summary>
@@ -491,19 +491,16 @@ public sealed class CategoryItemViewModel : ObservableObject
             GroupManager.SetColor(Settings, Name, value);
             OnPropertyChanged();
             OnPropertyChanged(nameof(Colors));
-            OnPropertyChanged(nameof(Swatch));
+            OnPropertyChanged(nameof(SwatchColor));
         }
     }
 
-    public System.Windows.Media.Brush Swatch =>
-        Settings != null && PanelColors.TryParse(GroupManager.ColorOf(Settings, Name), out var c)
-            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(c.R, c.G, c.B))
-            : System.Windows.Media.Brushes.Transparent;
+    /// <summary>Wirksame Gruppenfarbe (eigene oder geerbt); null = keine.</summary>
+    public ArgbColor? SwatchColor => Settings != null ? ArgbColor.FromHex(GroupManager.ColorOf(Settings, Name)) : null;
 
     public ICommand CustomColorCommand => new RelayCommand(() =>
     {
-        var t = Views.ColorPickerWindow.Pick($"Farbe für „{Display}“", ColorOwn,
-            Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault());
+        var t = Dialogs?.PickColor($"Farbe für „{Display}“", ColorOwn, DialogOwner);
         if (t != null) ColorOwn = t;
     });
 
@@ -530,7 +527,7 @@ public sealed record FolderTimeInfo(string Path, string Text, bool IsProblem);
 
 public sealed class SettingsViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly ISettingsWindowHost _app;
     private readonly AppSettings _s;
     private string _section = "general";
     private string _defaultExtensions;
@@ -539,7 +536,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string? _hotkeyError;
     private bool _machinesCleared;
 
-    public SettingsViewModel(AppController app, string? focusFolder)
+    public SettingsViewModel(ISettingsWindowHost app, string? focusFolder)
     {
         _app = app;
         _s = SettingsStore.Clone(app.Settings);
@@ -553,21 +550,21 @@ public sealed class SettingsViewModel : ObservableObject
             Folders.Add(vm);
         }
         _monitors = new[] { new KeyValuePair<int, string>(-1, "Hauptmonitor"), new KeyValuePair<int, string>(-2, "Alle Monitore") }
-            .Concat(ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)))
+            .Concat(app.Monitors)
             .ToList();
 
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
         CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
         InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
-        ReleaseNotesCommand = new RelayCommand(() => { if (_app.Updates.Available is { } r) Launcher.OpenUrl(r.HtmlUrl); });
+        ReleaseNotesCommand = new RelayCommand(() => { if (_app.AvailableUpdate is { } r) _app.Shell.OpenUrl(r.HtmlUrl); });
         ShowWelcomeCommand = new RelayCommand(() => _app.ShowWelcome());
-        CurrentReleaseNotesCommand = new RelayCommand(() => Launcher.OpenUrl(
-            $"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}/releases/tag/v{UpdateService.CurrentVersionText}"));
+        CurrentReleaseNotesCommand = new RelayCommand(() => _app.Shell.OpenUrl(
+            $"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}/releases/tag/v{_app.CurrentVersionText}"));
         _app.Update.PropertyChanged += OnUpdateChanged;
         _app.Repository.Changed += OnRepositoryChanged;
         AppLog.Changed += OnLogChanged;
-        OpenLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
-        OpenRepoCommand = new RelayCommand(() => Launcher.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
+        OpenLogFolderCommand = new RelayCommand(() => _app.Shell.OpenLocation(_s.EffectiveLogFolder, isFolder: true));
+        OpenRepoCommand = new RelayCommand(() => _app.Shell.OpenUrl($"https://github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}"));
         BrowseEditorCommand = new RelayCommand(BrowseEditor);
         BrowseLogFolderCommand = new RelayCommand(BrowseLogFolder);
         SelectSectionCommand = new RelayCommand(p => Section = p?.ToString() ?? "general");
@@ -592,13 +589,13 @@ public sealed class SettingsViewModel : ObservableObject
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
 
-        CopyLogCommand = new RelayCommand(() => { try { Clipboard.SetText(DiagnosticsText()); } catch { } });
-        OpenAppLogFolderCommand = new RelayCommand(() => Launcher.OpenLocation(System.IO.Path.GetDirectoryName(AppLog.FilePath)!, isFolder: true));
+        CopyLogCommand = new RelayCommand(() => _app.Shell.SetClipboardText(DiagnosticsText()));
+        OpenAppLogFolderCommand = new RelayCommand(() => _app.Shell.OpenLocation(System.IO.Path.GetDirectoryName(AppLog.FilePath)!, isFolder: true));
         RefreshLogCommand = new RelayCommand(() => OnPropertyChanged(nameof(LogText)));
         ExportCommand = new RelayCommand(Export);
         ImportCommand = new RelayCommand(Import);
-        UpdateStatus = app.Updates.LastCheck is { } t
-            ? (app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar (geprüft {t:HH:mm})." : $"Aktuell (geprüft {t:HH:mm}).")
+        UpdateStatus = app.LastUpdateCheck is { } t
+            ? (app.AvailableUpdate is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar (geprüft {t:HH:mm})." : $"Aktuell (geprüft {t:HH:mm}).")
             : "Noch nicht geprüft.";
 
     }
@@ -778,14 +775,14 @@ public sealed class SettingsViewModel : ObservableObject
         get => _s.WindowBackdrop == WindowBackdrop.Mica;
         set { _s.WindowBackdrop = value ? WindowBackdrop.Mica : WindowBackdrop.Solid; OnPropertyChanged(); RaisePresets(); }
     }
-    public bool IsMicaSupported => Views.WindowHelper.IsMicaSupported;
+    public bool IsMicaSupported => _app.IsMicaSupported;
     public string MicaDescription => IsMicaSupported
         ? "Einstellungen und Dialoge nehmen die Desktopfarbe dezent auf (wie der Explorer). Gilt für neu geöffnete Fenster."
         : "Benötigt Windows 11 (22H2 oder neuer). Für das Panel gibt es Acrylic unter „Panel“.";
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
-    public bool IsHighContrast => Services.ThemeService.IsHighContrast;
+    public bool IsHighContrast => _app.Theme.IsHighContrast;
 
     /// <summary>Designvorlagen: Design, Panelfarbe, Deckkraft, Acrylic und Akzent mit einem Klick.</summary>
     public IReadOnlyList<DesignPresetChoice> DesignPresets => Appearance.Presets.Select(p => new DesignPresetChoice(p,
@@ -825,9 +822,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ICommand SubscribeCatalogCommand => _subscribeCatalog ??= new RelayCommand(async () =>
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Title = "Team-Katalog abonnieren (Exportdatei, z. B. auf einer Freigabe)", Filter = EntryShare.FileFilter };
-        if (dlg.ShowDialog() != true) return;
-        CatalogError = await _app.SubscribeCatalogAsync(dlg.FileName);
+        var file = _app.Dialogs.OpenFile(EntryShare.FileFilter, "Team-Katalog abonnieren (Exportdatei, z. B. auf einer Freigabe)", _app.SettingsDialogOwner);
+        if (file == null) return;
+        CatalogError = await _app.SubscribeCatalogAsync(file);
         RaiseCatalogs();
     });
     public ICommand CheckCatalogsCommand => _checkCatalogs ??= new RelayCommand(async () => { await _app.CheckCatalogsAsync(); RaiseCatalogs(); });
@@ -945,8 +942,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void RemoveWorkspace(WorkspaceRowViewModel w)
     {
-        if (MessageBox.Show($"Arbeitsbereich „{w.OriginalName}“ mit seinen Favoriten, Startprofilen und der Gruppenauswahl löschen?\nGruppen und Einträge bleiben erhalten.", "Arbeitsbereich löschen",
-                MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!_app.Dialogs.Confirm($"Arbeitsbereich „{w.OriginalName}“ mit seinen Favoriten, Startprofilen und der Gruppenauswahl löschen?\nGruppen und Einträge bleiben erhalten.", "Arbeitsbereich löschen",
+                destructive: true)) return;
         ApplyWorkspaceRenames();
         WorkspaceManager.Delete(_s, w.Name);
         LoadWorkspaces();
@@ -986,7 +983,7 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _treeSuspended;
 
     private CategoryItemViewModel NewCategoryVm(string name, string icon = "") =>
-        new(name, MoveCategory, RemoveCategory, icon, ChooseCategoryIcon, RenameCategory) { Settings = _s };
+        new(name, MoveCategory, RemoveCategory, icon, ChooseCategoryIcon, RenameCategory) { Settings = _s, Dialogs = _app.Dialogs, DialogOwner = _app.SettingsDialogOwner };
 
     /// <summary>Karten der festen Gruppen (stehen nicht in <see cref="Categories"/>, nur in <see cref="CategoryRoots"/>).</summary>
     private readonly Dictionary<string, CategoryItemViewModel> _fixedVms = new();
@@ -1029,7 +1026,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ChooseCategoryIcon(CategoryItemViewModel c)
     {
-        var picked = Views.IconPickerWindow.Pick(IconRef.Parse(c.Icon), $"Symbol für „{c.Display}“");
+        var picked = _app.Dialogs.PickIcon(IconRef.Parse(c.Icon), $"Symbol für „{c.Display}“");
         if (picked == null) return;
         GroupManager.SetIcon(_s, c.Name, picked.Value);
         c.Icon = picked.Value.ToString();
@@ -1042,10 +1039,10 @@ public sealed class SettingsViewModel : ObservableObject
     private GroupDropPlan? _categoryPlan;
     private Dictionary<CategoryItemViewModel, bool>? _expandedBeforeDrag;
     private string _categoryDragLabel = string.Empty;
-    private Brush? _categoryDragBrush;
+    private ArgbColor? _categoryDragColor;
 
     public string CategoryDragLabel { get => _categoryDragLabel; private set { _categoryDragLabel = value; OnPropertyChanged(); } }
-    public Brush? CategoryDragBrush { get => _categoryDragBrush; private set { _categoryDragBrush = value; OnPropertyChanged(); } }
+    public ArgbColor? CategoryDragColor { get => _categoryDragColor; private set { _categoryDragColor = value; OnPropertyChanged(); } }
     public GroupDropPlan? CurrentCategoryPlan => _categoryPlan;
     public bool IsDraggingCategory => _dragCategory != null;
 
@@ -1058,7 +1055,7 @@ public sealed class SettingsViewModel : ObservableObject
         _dragCategory = c;
         var sub = SubtreeOf(c).Count() - 1;
         CategoryDragLabel = c.Display + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
-        CategoryDragBrush = c.Swatch;
+        CategoryDragColor = c.SwatchColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         foreach (var x in SubtreeOf(c)) x.IsDragSource = true;
         c.IsDragSource = true; // auch feste Gruppen
@@ -1227,7 +1224,7 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
-    private static Window? OwnerWindow() => Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+    private object? OwnerWindow() => _app.SettingsDialogOwner;
 
     /// <summary>Entfernt die Gruppe samt Untergruppen (nach Rückfrage); smarte Gruppen lesen ihren Ordner nicht mehr ein.</summary>
     private void RemoveCategory(CategoryItemViewModel c)
@@ -1237,7 +1234,7 @@ public sealed class SettingsViewModel : ObservableObject
         var text = $"Gruppe „{c.Display}“" + (affected.Count > 1 ? $" mit {affected.Count - 1} Untergruppe(n)" : string.Empty) + " löschen?" +
                    (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
                    "\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.";
-        if (MessageBox.Show(OwnerWindow()!, text, "Gruppe löschen", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!_app.Dialogs.Confirm(text, "Gruppe löschen", destructive: true, owner: OwnerWindow())) return;
         foreach (var x in affected)
         {
             Categories.Remove(x);
@@ -1249,7 +1246,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void RenameCategory(CategoryItemViewModel c)
     {
         var parent = GroupManager.ParentOf(c.Name);
-        var newName = Views.InputWindow.Ask("Gruppe umbenennen", c.IsSmart ? "Der Name erscheint im Panel; der Ordner bleibt gleich." : string.Empty, c.Display, "Umbenennen",
+        var newName = _app.Dialogs.Ask("Gruppe umbenennen", c.IsSmart ? "Der Name erscheint im Panel; der Ordner bleibt gleich." : string.Empty, c.Display, "Umbenennen",
             n =>
             {
                 var path = parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
@@ -1290,7 +1287,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void AddGroupPrompt(string? parent)
     {
         string PathOf(string n) => parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
-        var spec = Views.NewGroupWindow.Ask(parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“",
+        var spec = _app.Dialogs.AskNewGroup(parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“",
             parent == null ? "Neue Gruppe" : "Neue Untergruppe",
             n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null,
             f => NewGroup.FolderError(Folders.Where(x => x.Path.Length > 0).Select(x => x.Config), f));
@@ -1370,12 +1367,12 @@ public sealed class SettingsViewModel : ObservableObject
     public string MachinesText => $"{_s.Machines.Count(m => !m.Favorite)} zuletzt verwendet · {_s.Machines.Count(m => m.Favorite)} Favoriten";
 
     // Updates
-    public string CurrentVersion => UpdateService.CurrentVersionText;
+    public string CurrentVersion => _app.CurrentVersionText;
     public string RepoText => $"github.com/{UpdateChecker.Owner}/{UpdateChecker.Repo}";
     public bool CheckUpdatesOnStart { get => _s.CheckUpdatesOnStart; set { _s.CheckUpdatesOnStart = value; OnPropertyChanged(); } }
     public bool IncludePrereleases { get => _s.IncludePrereleases; set { _s.IncludePrereleases = value; OnPropertyChanged(); } }
     public string UpdateStatus { get => _updateStatus; set => Set(ref _updateStatus, value); }
-    public string SettingsFile => _app.Store.FilePath;
+    public string SettingsFile => _app.SettingsFilePath;
 
     public ICommand ClearMachinesCommand { get; }
     public ICommand CheckUpdatesCommand { get; }
@@ -1396,22 +1393,20 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Ordner von der smarten Gruppe trennen (Gruppe bleibt als normale Gruppe).</summary>
     private void RemoveFolder(FolderViewModel f)
     {
-        if (MessageBox.Show(OwnerWindow()!, $"Ordner {f.Path} von der Gruppe trennen?\n\nSeine Dateien erscheinen dann nicht mehr im Panel; die Gruppe selbst und hineingezogene Einträge bleiben.",
-                "Ordner entfernen", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!_app.Dialogs.Confirm($"Ordner {f.Path} von der Gruppe trennen?\n\nSeine Dateien erscheinen dann nicht mehr im Panel; die Gruppe selbst und hineingezogene Einträge bleiben.",
+                "Ordner entfernen", destructive: true, owner: OwnerWindow())) return;
         Folders.Remove(f);
         foreach (var c in Categories.Where(c => c.Folder == f)) c.Folder = null;
     }
 
     private void BrowseEditor()
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Programme (*.exe)|*.exe" };
-        if (dlg.ShowDialog() == true) EditorPath = dlg.FileName;
+        if (_app.Dialogs.OpenFile("Programme (*.exe)|*.exe", owner: OwnerWindow()) is { } file) EditorPath = file;
     }
 
     private void BrowseLogFolder()
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog();
-        if (dlg.ShowDialog() == true) LogFolder = dlg.FolderName;
+        if (_app.Dialogs.PickFolder(owner: OwnerWindow()) is { } folder) LogFolder = folder;
     }
 
     // ---- Update-Hinweis in den Einstellungen ----------------------------
@@ -1419,9 +1414,9 @@ public sealed class SettingsViewModel : ObservableObject
     private bool _isChecking;
 
     public UpdateState Update => _app.Update;
-    public bool HasUpdate => _app.Updates.Available != null;
-    public string UpdateBannerTitle => _app.Updates.Available is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar" : string.Empty;
-    public bool IsChecking { get => _isChecking; private set { if (Set(ref _isChecking, value)) CommandManager.InvalidateRequerySuggested(); } }
+    public bool HasUpdate => _app.AvailableUpdate != null;
+    public string UpdateBannerTitle => _app.AvailableUpdate is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar" : string.Empty;
+    public bool IsChecking { get => _isChecking; private set { if (Set(ref _isChecking, value)) CommandRequery.Invalidate(); } }
 
     public ICommand InstallUpdateCommand { get; }
     public ICommand ReleaseNotesCommand { get; }
@@ -1432,7 +1427,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(HasUpdate));
         OnPropertyChanged(nameof(UpdateBannerTitle));
-        CommandManager.InvalidateRequerySuggested();
+        CommandRequery.Invalidate();
     }
 
     private void OnRepositoryChanged(object? sender, EventArgs e)
@@ -1454,7 +1449,7 @@ public sealed class SettingsViewModel : ObservableObject
     public string LogText => AppLog.Recent(400);
     public string LogFile => AppLog.FilePath;
 
-    private void OnLogChanged() => Application.Current?.Dispatcher.BeginInvoke(() => OnPropertyChanged(nameof(LogText)));
+    private void OnLogChanged() => _app.UiDispatcher.Post(() => OnPropertyChanged(nameof(LogText)));
 
     public IReadOnlyList<FolderTimeInfo> FolderTimes => _app.Repository.FolderStatuses.Select(st => new FolderTimeInfo(st.Path,
         st.Error != null ? st.Error
@@ -1462,8 +1457,8 @@ public sealed class SettingsViewModel : ObservableObject
         : $"{st.Count} Dateien · {st.Duration.TotalMilliseconds:0} ms", st.Error != null)).ToList();
 
     public string SystemInfo =>
-        $"Power-Exec {UpdateService.CurrentVersionText} · {(UpdateService.IsInstalledViaSetup ? "installiert" : "portabel")} · " +
-        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(Launcher.IsPwshInstalled ? "ja" : "nein")}";
+        $"Power-Exec {_app.CurrentVersionText} · {(_app.IsInstalledViaSetup ? "installiert" : "portabel")} · " +
+        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(_app.Shell.IsPwshInstalled ? "ja" : "nein")}";
 
     public ICommand CopyLogCommand { get; }
     public ICommand OpenAppLogFolderCommand { get; }
@@ -1484,49 +1479,44 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Export()
     {
-        var dlg = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = "Power-Exec-Einstellungen (*.json)|*.json",
-            FileName = $"Power-Exec-Einstellungen_{DateTime.Now:yyyy-MM-dd}.json"
-        };
-        if (dlg.ShowDialog() != true) return;
+        var file = _app.Dialogs.SaveFile("Power-Exec-Einstellungen (*.json)|*.json", $"Power-Exec-Einstellungen_{DateTime.Now:yyyy-MM-dd}.json");
+        if (file == null) return;
         try
         {
-            File.WriteAllText(dlg.FileName, SettingsTransfer.Export(_app.Settings));
-            AppLog.Info($"Einstellungen exportiert: {dlg.FileName}");
-            MessageBox.Show("Die gespeicherten Einstellungen wurden exportiert.\nKennwörter sind darin nicht enthalten.", "Exportieren",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            File.WriteAllText(file, SettingsTransfer.Export(_app.Settings));
+            AppLog.Info($"Einstellungen exportiert: {file}");
+            _app.Dialogs.Inform("Die gespeicherten Einstellungen wurden exportiert.\nKennwörter sind darin nicht enthalten.", "Exportieren");
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Exportieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _app.Dialogs.Warn(ex.Message, "Exportieren");
         }
     }
 
     private void Import()
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Power-Exec-Einstellungen (*.json)|*.json|Alle Dateien (*.*)|*.*" };
-        if (dlg.ShowDialog() != true) return;
+        var file = _app.Dialogs.OpenFile("Power-Exec-Einstellungen (*.json)|*.json|Alle Dateien (*.*)|*.*");
+        if (file == null) return;
         AppSettings imported;
         try
         {
-            imported = SettingsTransfer.Parse(File.ReadAllText(dlg.FileName));
+            imported = SettingsTransfer.Parse(File.ReadAllText(file));
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _app.Dialogs.Warn("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren");
             return;
         }
-        var answer = MessageBox.Show(
+        var merge = _app.Dialogs.ConfirmOrCancel(
             $"{imported.Folders.Count} Ordner, {imported.Entries.Count} konfigurierte Einträge, {imported.Favorites.Count} Favoriten.\n\n" +
             "Ja = zusammenführen (vorhandene Einstellungen bleiben, Ordner und Profile werden ergänzt)\n" +
             "Nein = alles ersetzen\nAbbrechen = nichts ändern",
-            "Einstellungen importieren", MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel);
-        if (answer == MessageBoxResult.Cancel) return;
-        var result = answer == MessageBoxResult.Yes ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
+            "Einstellungen importieren");
+        if (merge == null) return;
+        var result = merge == true ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
         result.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         _app.ApplySettings(result);
-        AppLog.Info($"Einstellungen importiert ({(answer == MessageBoxResult.Yes ? "zusammengeführt" : "ersetzt")}): {dlg.FileName}");
+        AppLog.Info($"Einstellungen importiert ({(merge == true ? "zusammengeführt" : "ersetzt")}): {file}");
         ReopenRequested?.Invoke();
     }
 
@@ -1536,9 +1526,9 @@ public sealed class SettingsViewModel : ObservableObject
         UpdateStatus = "Suche nach Updates …";
         var r = await _app.CheckUpdatesAsync(manual: true, includePrereleases: _s.IncludePrereleases);
         IsChecking = false;
-        UpdateStatus = _app.Updates.LastError != null
-            ? "Prüfung fehlgeschlagen: " + _app.Updates.LastError
-            : r != null ? $"Version {r.Version.ToString(3)} ist verfügbar – siehe Hinweis oben." : $"Du verwendest die aktuelle Version ({UpdateService.CurrentVersionText}).";
+        UpdateStatus = _app.UpdateError != null
+            ? "Prüfung fehlgeschlagen: " + _app.UpdateError
+            : r != null ? $"Version {r.Version.ToString(3)} ist verfügbar – siehe Hinweis oben." : $"Du verwendest die aktuelle Version ({_app.CurrentVersionText}).";
         OnPropertyChanged(nameof(HasUpdate));
         OnPropertyChanged(nameof(UpdateBannerTitle));
     }
@@ -1588,20 +1578,21 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
     public string Name => Preset.Name;
     public string Description => Preset.Description;
     /// <summary>Vorschau: Panelfarbe bzw. Grundfarbe des Designs.</summary>
-    public Brush Swatch { get; } = new SolidColorBrush(PanelColors.TryParse(Preset.PanelColor, out var c)
-        ? Color.FromRgb(c.R, c.G, c.B)
-        : Preset.Theme == ThemeMode.Light ? Color.FromRgb(0xF3, 0xF3, 0xF3) : Color.FromRgb(0x2B, 0x2B, 0x2B));
-    public Brush Ink { get; } = new SolidColorBrush(PanelColors.TryParse(Preset.PanelColor, out var c) && PanelColors.IsLight(c) || Preset.Theme == ThemeMode.Light && Preset.PanelColor.Length == 0
-        ? Colors.Black : Colors.White);
+    public ArgbColor SwatchColor { get; } = PanelColors.TryParse(Preset.PanelColor, out var c)
+        ? ArgbColor.From(c)
+        : Preset.Theme == ThemeMode.Light ? new ArgbColor(255, 0xF3, 0xF3, 0xF3) : new ArgbColor(255, 0x2B, 0x2B, 0x2B);
+    /// <summary>Schriftfarbe auf der Vorschau (schwarz auf hell, weiß auf dunkel).</summary>
+    public ArgbColor InkColor { get; } = PanelColors.TryParse(Preset.PanelColor, out var c) && PanelColors.IsLight(c) || Preset.Theme == ThemeMode.Light && Preset.PanelColor.Length == 0
+        ? new ArgbColor(255, 0, 0, 0) : new ArgbColor(255, 255, 255, 255);
 }
 
 /// <summary>Ein abonnierter Team-Katalog in den Einstellungen.</summary>
 public sealed class CatalogRow
 {
-    private readonly AppController _app;
+    private readonly ISettingsWindowHost _app;
     private readonly Action _changed;
 
-    public CatalogRow(AppController app, CatalogSubscription sub, Action changed)
+    public CatalogRow(ISettingsWindowHost app, CatalogSubscription sub, Action changed)
     {
         _app = app;
         Subscription = sub;

@@ -3,6 +3,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
+using PowerExec.Core.Updates;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -15,7 +16,7 @@ namespace PowerExec;
 /// Fensterbezug (<c>object? owner</c>) in <see cref="Window"/> und reicht WPF-/Win32-Dienste durch.
 /// Was schon öffentlich mit passender Signatur existiert, erfüllt die Schnittstellen direkt.
 /// </summary>
-public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost
+public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost, ISettingsWindowHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
     public IShell Shell { get; } = new WpfShell();
@@ -100,6 +101,26 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     void ICustomEntryListHost.ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, object? owner, AppSettings? source) =>
         ExportEntries(entries, rootGroup, owner as Window, source);
+
+    // ── Einstellungsfenster ──────────────────────────────────────────
+
+    string ISettingsWindowHost.SettingsFilePath => Store.FilePath;
+    ReleaseInfo? ISettingsWindowHost.AvailableUpdate => Updates.Available;
+    string? ISettingsWindowHost.UpdateError => Updates.LastError;
+    DateTime? ISettingsWindowHost.LastUpdateCheck => Updates.LastCheck;
+    string ISettingsWindowHost.CurrentVersionText => UpdateService.CurrentVersionText;
+    bool ISettingsWindowHost.IsInstalledViaSetup => UpdateService.IsInstalledViaSetup;
+    bool ISettingsWindowHost.IsMicaSupported => WindowHelper.IsMicaSupported;
+
+    IReadOnlyList<KeyValuePair<int, string>> ISettingsWindowHost.Monitors =>
+        ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)).ToList();
+
+    void ISettingsWindowHost.ShowProfilesDialog(ProfilesViewModel vm, object? owner)
+    {
+        var w = new ProfilesWindow(vm, this);
+        if (owner is Window o) w.Owner = o;
+        w.ShowDialog();
+    }
 
     // ── Einführung ───────────────────────────────────────────────────
 

@@ -218,7 +218,7 @@
                                         <TextBlock Grid.Column="3" Text="Startprofile" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="4" Text="Admin" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                     </Grid>
-                                    <ItemsControl ItemsSource="{Binding RowsView}" Focusable="False">
+                                    <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Border x:Name="Row" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" MinHeight="50" Background="Transparent">
@@ -239,7 +239,7 @@
                                                                 <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                            Foreground="{DynamicResource Badge.Other.Fg}"/>
                                                             </Border>
-                                                            <Image Source="{Binding Icon}" Width="22" Height="22" HorizontalAlignment="Left" Margin="7,0,0,0"
+                                                            <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="22" Height="22" HorizontalAlignment="Left" Margin="7,0,0,0"
                                                                    Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
                                                         </Grid>
                                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,6,12,6">
@@ -1360,11 +1360,11 @@
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="Card" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                                         <StackPanel>
-                                                            <Border Height="44" CornerRadius="4" Background="{Binding Swatch}" Padding="8,6">
+                                                            <Border Height="44" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}" Padding="8,6">
                                                                 <StackPanel>
                                                                     <Border Height="5" Width="54" HorizontalAlignment="Left" CornerRadius="2" Background="{DynamicResource Accent}"/>
-                                                                    <Border Height="4" Width="80" HorizontalAlignment="Left" CornerRadius="2" Margin="0,6,0,0" Background="{Binding Ink}" Opacity="0.5"/>
-                                                                    <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding Ink}" Opacity="0.3"/>
+                                                                    <Border Height="4" Width="80" HorizontalAlignment="Left" CornerRadius="2" Margin="0,6,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.5"/>
+                                                                    <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.3"/>
                                                                 </StackPanel>
                                                             </Border>
                                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0"/>

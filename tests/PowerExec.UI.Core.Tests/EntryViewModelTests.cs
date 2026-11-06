@@ -1,4 +1,5 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Updates;
 using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
@@ -7,7 +8,7 @@ using PowerExec.ViewModels;
 namespace PowerExec.UI.Core.Tests;
 
 /// <summary>App-Ersatz für Eintrags-, Profil-Dialog und die Liste „Eigene Einträge“.</summary>
-internal sealed class FakeEntryHost : IProfilesHost, ICustomEntryListHost
+internal sealed class FakeEntryHost : ISettingsWindowHost
 {
     private static readonly FakeUiDispatcher Ui = new();
 
@@ -54,6 +55,30 @@ internal sealed class FakeEntryHost : IProfilesHost, ICustomEntryListHost
         Calls.Add($"ExportEntries {entries.Count}");
 
     public void CreateSmartGroupFor(string folderPath, string? parent) => Calls.Add($"CreateSmartGroupFor {folderPath}");
+
+    // ── Einstellungsfenster ──────────────────────────────────────────
+    public UpdateState Update { get; } = new();
+    public List<AppSettings> Applied { get; } = new();
+    public void SaveSettings() => Calls.Add("SaveSettings");
+    public string? ApplySettings(AppSettings updated) { Applied.Add(updated); return null; }
+    public string SettingsFilePath => @"C:\Users\test\AppData\Local\Power-Exec\settings.json";
+    public Task CheckCatalogsAsync(bool force = false) { Calls.Add("CheckCatalogs"); return Task.CompletedTask; }
+    public string? SubscribeAnswer { get; set; }
+    public Task<string?> SubscribeCatalogAsync(string path, string? name = null) { Calls.Add("Subscribe " + path); return Task.FromResult(SubscribeAnswer); }
+    public void UnsubscribeCatalog(CatalogSubscription subscription) => Calls.Add("Unsubscribe " + subscription.Name);
+    public Task ApplyPendingCatalogsAsync() => Task.CompletedTask;
+    public ReleaseInfo? AvailableUpdate { get; set; }
+    public string? UpdateError { get; set; }
+    public DateTime? LastUpdateCheck { get; set; }
+    public ReleaseInfo? CheckAnswer { get; set; }
+    public Task<ReleaseInfo?> CheckUpdatesAsync(bool manual, bool includePrereleases) { Calls.Add("CheckUpdates"); AvailableUpdate = CheckAnswer; return Task.FromResult(CheckAnswer); }
+    public Task InstallUpdateAsync() { Calls.Add("InstallUpdate"); return Task.CompletedTask; }
+    public string CurrentVersionText => "0.19.5";
+    public bool IsInstalledViaSetup => false;
+    public void ShowWelcome() => Calls.Add("ShowWelcome");
+    public IReadOnlyList<KeyValuePair<int, string>> Monitors { get; } = new[] { new KeyValuePair<int, string>(0, "Monitor 1 (Hauptmonitor)") };
+    public bool IsMicaSupported => true;
+    public void ShowProfilesDialog(ProfilesViewModel vm, object? owner) => Calls.Add("ShowProfilesDialog " + vm.Item.FullPath);
 }
 
 public class CustomEntryViewModelTests

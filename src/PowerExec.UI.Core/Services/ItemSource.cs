@@ -26,4 +26,10 @@ public interface IItemSource
 
     /// <summary>Alle Ordner neu einlesen.</summary>
     Task ScanAsync();
+
+    /// <summary>Einträge haben sich geändert (nach dem Einlesen oder durch den Dateiwächter).</summary>
+    event EventHandler? Changed;
+
+    /// <summary>Einen Eintrag frisch von der Platte lesen (Parameter, Hilfe); liefert den neuen Stand.</summary>
+    LaunchItem Reload(LaunchItem item);
 }
