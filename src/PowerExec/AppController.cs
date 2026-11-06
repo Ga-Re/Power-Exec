@@ -668,7 +668,7 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Ergebnis des Eintragsdialogs: gespeichert, oder Vorlagen / Dateien / smarte Gruppe gewählt.</summary>
-    private bool HandleEditorResult(ProfilesWindow.EditorResult result, string? group)
+    private bool HandleEditorResult(EntryEditorResult result, string? group)
     {
         if (result.SavedKey != null) { CommitUserChange(); return true; }
         switch (result.Alternative)
@@ -1160,8 +1160,7 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Startmodus eines Profils: Administrator, anderer Benutzer (Anmeldung beim Start) oder aktuelles Konto.</summary>
-    public static ExecutionMode ProfileMode(LaunchProfile p) =>
-        p.RunAsAdmin ? ExecutionMode.Administrator : p.RunAsOtherUser ? ExecutionMode.OtherUser : ExecutionMode.CurrentUser;
+    public static ExecutionMode ProfileMode(LaunchProfile p) => ProfileResolver.ModeOf(p);
 
     private ExecutionRequest BuildRequest(LaunchItem item, LaunchProfile profile, ExecutionMode mode, Dictionary<string, object> values) => new()
     {

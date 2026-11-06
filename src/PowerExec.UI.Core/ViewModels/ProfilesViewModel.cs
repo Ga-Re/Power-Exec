@@ -232,7 +232,7 @@ public sealed class ProfileEditViewModel : ObservableObject
             var request = new ExecutionRequest
             {
                 Item = item,
-                Mode = AppController.ProfileMode(p),
+                Mode = ProfileResolver.ModeOf(p),
                 Engine = p.Engine,
                 NoExit = p.NoExit,
                 NoProfile = p.NoProfile,
@@ -282,7 +282,7 @@ public sealed class ProfileEditViewModel : ObservableObject
 /// <summary>Bearbeitet Anzeigename, Beschreibung und Startprofile eines Eintrags.</summary>
 public sealed class ProfilesViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IProfilesHost _app;
     private readonly AppSettings _target;
     private readonly bool _saveImmediately;
     private ProfileEditViewModel? _selected;
@@ -292,7 +292,7 @@ public sealed class ProfilesViewModel : ObservableObject
 
     /// <param name="customEntry">Eigener Eintrag, der hier mitbearbeitet wird (null = aus <paramref name="target"/> ermitteln).</param>
     /// <param name="isNew">Neuer eigener Eintrag: wird beim Speichern hinzugefügt.</param>
-    public ProfilesViewModel(AppController app, LaunchItem item, AppSettings target, bool saveImmediately,
+    public ProfilesViewModel(IProfilesHost app, LaunchItem item, AppSettings target, bool saveImmediately,
         CustomEntry? customEntry = null, bool isNew = false, string? initialGroup = null, IEnumerable<string>? initialTags = null,
         bool pickKind = false)
     {
@@ -358,7 +358,7 @@ public sealed class ProfilesViewModel : ObservableObject
     private LaunchItem _item;
     private bool _kindChosen;
 
-    internal AppController App => _app;
+    internal IProfilesHost App => _app;
 
     /// <summary>Element mit den Startoptionen eines Profils (für die Befehlsvorschau).</summary>
     internal LaunchItem ItemFor(LaunchProfile p)
@@ -388,7 +388,7 @@ public sealed class ProfilesViewModel : ObservableObject
             OnPropertyChanged(nameof(Title));
             OnPropertyChanged(nameof(WindowTitle));
             if (value) LoadClipboardSuggestion();
-            CommandManager.InvalidateRequerySuggested();
+            CommandRequery.Invalidate();
         }
     }
     public bool ShowForm => !_showKindPicker;
@@ -420,7 +420,7 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         try
         {
-            var text = System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : string.Empty;
+            var text = _app.Shell.GetClipboardText();
             ClipboardSuggestion = text.Trim().Length is > 0 and < 20000
                 ? ClipboardClassifier.Suggest(text, System.IO.Directory.Exists, System.IO.File.Exists)
                 : null;
@@ -478,7 +478,7 @@ public sealed class ProfilesViewModel : ObservableObject
     };
     public string FileInfo => Item.ParseError ?? (Item.Synopsis.Length > 0 ? Item.Synopsis : "Keine Beschreibung im Script (Comment-Based Help .SYNOPSIS).");
     public string FileParametersText => Item.Parameters.Count == 0 ? "Keine Parameter" : "Parameter: " + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? " (Pflicht)" : string.Empty)));
-    public ICommand OpenFileLocationCommand => new RelayCommand(() => Launcher.OpenLocation(Item.FullPath));
+    public ICommand OpenFileLocationCommand => new RelayCommand(() => _app.Shell.OpenLocation(Item.FullPath));
 
     /// <summary>Startprofile gibt es für alle Arten.</summary>
     public bool ShowStartSection => true;

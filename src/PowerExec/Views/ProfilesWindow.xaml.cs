@@ -16,9 +16,6 @@ public partial class ProfilesWindow : Window
     private readonly AppController? _app;
     private string _sizeKey = string.Empty;
 
-    /// <summary>Ergebnis: gespeicherter Schlüssel oder eine Alternative aus Schritt 1 (Vorlagen, Dateien, smarte Gruppe).</summary>
-    public sealed record EditorResult(string? SavedKey, string? Alternative, string? SmartGroupPath);
-
     public ProfilesWindow(ProfilesViewModel vm) : this(vm, null) { }
 
     public ProfilesWindow(ProfilesViewModel vm, AppController? app)
@@ -81,7 +78,7 @@ public partial class ProfilesWindow : Window
     }
 
     /// <summary>Eigenen Eintrag modal anlegen oder bearbeiten. <paramref name="entry"/> = null: erst die Art wählen.</summary>
-    public static EditorResult EditEntryEx(AppController app, AppSettings target, CustomEntry? entry, bool isNew, bool saveImmediately,
+    public static EntryEditorResult EditEntryEx(AppController app, AppSettings target, CustomEntry? entry, bool isNew, bool saveImmediately,
         string? group = null, IEnumerable<string>? tags = null, Window? owner = null)
     {
         bool pick = entry == null;
@@ -91,7 +88,7 @@ public partial class ProfilesWindow : Window
         var w = new ProfilesWindow(vm, app);
         if (owner != null) { w.Owner = owner; w.WindowStartupLocation = WindowStartupLocation.CenterOwner; }
         var ok = w.ShowDialog() == true;
-        return new EditorResult(ok ? vm.SavedKey : null, vm.AlternativeRequested, vm.SmartGroupPath);
+        return new EntryEditorResult(ok ? vm.SavedKey : null, vm.AlternativeRequested, vm.SmartGroupPath);
     }
 
     /// <returns>Schlüssel des gespeicherten Eintrags oder null bei Abbruch.</returns>

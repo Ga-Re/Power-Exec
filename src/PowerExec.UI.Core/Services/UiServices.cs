@@ -14,6 +14,12 @@ public interface IShell
     /// <summary>Text in die Zwischenablage legen; Fehler (Zwischenablage belegt) werden still ignoriert.</summary>
     void SetClipboardText(string text);
 
+    /// <summary>Snippet kopieren: als Text oder als HTML (mit Textfassung); Fehler werden weitergereicht.</summary>
+    void CopyToClipboard(string text, bool asHtml);
+
+    /// <summary>Text der Zwischenablage; leer, wenn keiner da oder nicht lesbar.</summary>
+    string GetClipboardText();
+
     /// <summary>Ist PowerShell 7 (pwsh.exe) installiert?</summary>
     bool IsPwshInstalled { get; }
 }
@@ -38,9 +44,9 @@ public interface IDialogs
 
     /// <summary>
     /// Ja/Nein-Frage; true = Ja. <paramref name="destructive"/>: Warnsymbol und „Nein“ als Vorgabe
-    /// (Löschen, Entfernen), sonst Fragezeichen und „Ja“ als Vorgabe.
+    /// (Löschen), sonst Fragezeichen und – außer bei <paramref name="defaultNo"/> – „Ja“ als Vorgabe.
     /// </summary>
-    bool Confirm(string message, string title, bool destructive = false, object? owner = null);
+    bool Confirm(string message, string title, bool destructive = false, object? owner = null, bool defaultNo = false);
 
     /// <summary>Ja/Nein/Abbrechen; true = Ja, false = Nein, null = Abbrechen (Vorgabe).</summary>
     bool? ConfirmOrCancel(string message, string title, object? owner = null);

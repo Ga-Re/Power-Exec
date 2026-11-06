@@ -201,7 +201,7 @@
                             IsEnabled="{Binding HasEntry}" ToolTip="Symbol wählen (Fluent 2, Heroicons, Emoji, eigenes Bild)">
                         <Grid>
                             <c:IconPresenter Icon="{Binding Entry.Icon}" Size="32" Visibility="{Binding Entry.HasIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
-                            <Image Source="{Binding Entry.AutoIcon}" Width="32" Height="32" Visibility="{Binding Entry.ShowAutoIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
+                            <Image Source="{Binding Entry.AutoIcon, Converter={StaticResource IconImage}}" Width="32" Height="32" Visibility="{Binding Entry.ShowAutoIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
                             <TextBlock Text="{Binding Entry.Badge}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="{Binding Entry.ShowBadge, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
                             <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"

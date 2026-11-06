@@ -37,6 +37,7 @@ public static class BrowserCatalog
     public static bool IsInstalled(BrowserChoice b)
     {
         if (b == BrowserChoice.Default) return true;
+        if (OperatingSystem.IsWindows())
         try
         {
             foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })

@@ -18,6 +18,9 @@ internal sealed class FakeShell : IShell
     public void OpenLocation(string path, bool isFolder = false) => Opened.Add((path, isFolder));
     public void OpenUrl(string url) => Urls.Add(url);
     public void SetClipboardText(string text) => Clipboard.Add(text);
+    public void CopyToClipboard(string text, bool asHtml) => Clipboard.Add(asHtml ? "html:" + text : text);
+    public string ClipboardContent { get; set; } = string.Empty;
+    public string GetClipboardText() => ClipboardContent;
 }
 
 internal sealed class FakeTheme : IThemeInfo

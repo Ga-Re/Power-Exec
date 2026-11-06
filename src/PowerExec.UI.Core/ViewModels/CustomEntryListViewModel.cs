@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
@@ -40,10 +38,10 @@ public sealed class CustomEntryRowViewModel : ObservableObject
     public string Icon => Entry.Icon;
     public bool HasIcon => Entry.Icon.Length > 0;
 
-    private System.Windows.Media.ImageSource? _image;
+    private IconImage? _image;
     private bool _imageLoaded;
     /// <summary>Automatisches Symbol wie im Panel (Favicon, Programm-, Ordner-, Verknüpfungssymbol).</summary>
-    public System.Windows.Media.ImageSource? Image
+    public IconImage? Image
     {
         get
         {
@@ -52,13 +50,13 @@ public sealed class CustomEntryRowViewModel : ObservableObject
                 _imageLoaded = true;
                 try
                 {
-                    _image = WpfIconProvider.Unwrap(ItemViewModel.LoadIcon(_owner.App.IconProvider, Entry.ToLaunchItem(), img =>
+                    _image = ItemViewModel.LoadIcon(_owner.App.IconProvider, Entry.ToLaunchItem(), img =>
                     {
-                        _image = WpfIconProvider.Unwrap(img);
+                        _image = img;
                         OnPropertyChanged(nameof(Image));
                         OnPropertyChanged(nameof(HasImage));
                         OnPropertyChanged(nameof(ShowBadge));
-                    }));
+                    });
                 }
                 catch { _image = null; }
             }
@@ -110,10 +108,10 @@ public sealed class CustomEntryRowViewModel : ObservableObject
 /// </summary>
 public sealed class CustomEntryListViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly ICustomEntryListHost _app;
     private readonly AppSettings _s;
 
-    internal AppController App => _app;
+    internal ICustomEntryListHost App => _app;
     internal bool ShowImages => _app.Settings.ShowProgramIcons;
     internal bool IsSingleClick(string key) => _s.FindEntry(key)?.SingleClick == true;
     private readonly Func<IReadOnlyList<string>> _groups;
@@ -125,17 +123,16 @@ public sealed class CustomEntryListViewModel : ObservableObject
     private bool _checking;
     private readonly HashSet<string> _removedKeys = new(StringComparer.OrdinalIgnoreCase);
 
-    public CustomEntryListViewModel(AppController app, AppSettings s, Func<IReadOnlyList<string>> groups)
+    public CustomEntryListViewModel(ICustomEntryListHost app, AppSettings s, Func<IReadOnlyList<string>> groups)
     {
         _app = app;
         _s = s;
         _groups = groups;
         foreach (var e in s.CustomEntries)
             Rows.Add(new CustomEntryRowViewModel(this, e.Clone(), GroupManager.GroupOf(s, e.Key), Core.Config.Tags.Of(s, e.Key).ToList()));
-        RowsView = CollectionViewSource.GetDefaultView(Rows);
-        RowsView.Filter = o => o is CustomEntryRowViewModel r && Matches(r);
-        RowsView.SortDescriptions.Add(new SortDescription(nameof(CustomEntryRowViewModel.Name), ListSortDirection.Ascending));
+        _rowsView = new FilteredView<CustomEntryRowViewModel>(Rows, Matches, rows => rows.OrderBy(r => r.Name, StringComparer.CurrentCulture));
         foreach (var r in Rows) r.SetHealth(app.Health?.Get(r.Entry.Key));
+        _rowsView.Refresh();
 
         NewCommand = new RelayCommand(p => New(p?.ToString()));
         CatalogCommand = new RelayCommand(AddFromCatalog);
@@ -144,16 +141,18 @@ public sealed class CustomEntryListViewModel : ObservableObject
         RemoveSelectedCommand = new RelayCommand(() => Remove(Selected.ToList()), () => Selected.Any());
         MoveSelectedCommand = new RelayCommand(MoveSelected, () => Selected.Any());
         ClearSelectionCommand = new RelayCommand(() => { foreach (var r in Selected.ToList()) r.IsSelected = false; });
-        SelectAllCommand = new RelayCommand(() => { foreach (var r in RowsView.Cast<CustomEntryRowViewModel>()) r.IsSelected = true; });
+        SelectAllCommand = new RelayCommand(() => { foreach (var r in VisibleRows.ToList()) r.IsSelected = true; });
         CheckCommand = new RelayCommand(() => _ = CheckAsync(), () => !_checking);
         SetKindFilterCommand = new RelayCommand(p => KindFilter = p?.ToString() ?? "all");
     }
 
     public ObservableCollection<CustomEntryRowViewModel> Rows { get; } = new();
-    public ICollectionView RowsView { get; }
+    private readonly FilteredView<CustomEntryRowViewModel> _rowsView;
+    /// <summary>Einträge, die zu Suche und Filtern passen, nach Name sortiert.</summary>
+    public ObservableCollection<CustomEntryRowViewModel> VisibleRows => _rowsView.Items;
     public int Count => Rows.Count;
     public bool IsEmpty => Rows.Count == 0;
-    public bool NoMatches => Rows.Count > 0 && !RowsView.Cast<object>().Any();
+    public bool NoMatches => Rows.Count > 0 && VisibleRows.Count == 0;
 
     public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Refilter(); } }
     public string KindFilter { get => _kindFilter; set { if (Set(ref _kindFilter, value)) Refilter(); } }
@@ -196,7 +195,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         get
         {
-            var visible = RowsView.Cast<object>().Count();
+            var visible = VisibleRows.Count;
             var problems = Rows.Count(r => r.HealthOk == false);
             return (visible == Rows.Count ? $"{Rows.Count} Einträge" : $"{visible} von {Rows.Count} Einträgen") +
                    (problems > 0 ? $" · {problems} mit Problemen" : string.Empty);
@@ -233,7 +232,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void Refilter()
     {
-        RowsView.Refresh();
+        _rowsView.Refresh();
         OnPropertyChanged(nameof(NoMatches));
         OnPropertyChanged(nameof(SummaryText));
     }
@@ -243,7 +242,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedCount));
         OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(SelectionText));
-        CommandManager.InvalidateRequerySuggested();
+        CommandRequery.Invalidate();
     }
 
     /// <summary>Schlagworte wurden in der Verwaltung geändert: Zeilen aus der Arbeitskopie neu lesen.</summary>
@@ -260,17 +259,17 @@ public sealed class CustomEntryListViewModel : ObservableObject
         OnSelectionChanged();
     }
 
-    private static Window? Owner() => Application.Current.Windows.OfType<Views.SettingsWindow>().FirstOrDefault();
+    private object? Owner() => _app.SettingsDialogOwner;
 
     private IEnumerable<CustomEntryRowViewModel> SelectedOrVisible() =>
-        Selected.Any() ? Selected : RowsView.Cast<CustomEntryRowViewModel>();
+        Selected.Any() ? Selected : VisibleRows.ToList();
 
     private void New(string? kindKey) => AddWithEditor(CustomEntry.FromKindKey(kindKey), _groupFilter is "*" ? string.Empty : _groupFilter);
 
     private void AddWithEditor(CustomEntry? template, string group)
     {
         ApplyTo(_s); // Liste → Arbeitskopie, damit der Dialog den aktuellen Stand sieht
-        var result = Views.ProfilesWindow.EditEntryEx(_app, _s, template, isNew: true, saveImmediately: false, group, null, Owner());
+        var result = _app.EditEntryModal(_s, template, isNew: true, group, Owner());
         if (result.Alternative == "catalog") { AddFromCatalog(); return; }
         if (result.Alternative == "files") { AddFiles(group); return; }
         if (result.SmartGroupPath is { } folder) { _app.CreateSmartGroupFor(folder, group.Length > 0 ? group : null); return; }
@@ -284,13 +283,10 @@ public sealed class CustomEntryListViewModel : ObservableObject
     /// <summary>Dateien auswählen und als eigene Einträge (Art „Datei“) übernehmen.</summary>
     private void AddFiles(string group)
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Multiselect = true,
-            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
-        };
-        if (dlg.ShowDialog(Owner()) != true) return;
-        foreach (var f in dlg.FileNames)
+        var files = _app.Dialogs.OpenFiles(
+            "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*", owner: Owner());
+        if (files.Count == 0) return;
+        foreach (var f in files)
         {
             if (Rows.Any(r => r.Entry.Key.Equals(f, StringComparison.OrdinalIgnoreCase))) continue;
             Rows.Add(new CustomEntryRowViewModel(this, new CustomEntry { Kind = CustomEntryKind.File, Target = f }, group, Array.Empty<string>()));
@@ -303,7 +299,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         ApplyTo(_s);
         var oldKey = row.Entry.Key;
-        var key = Views.ProfilesWindow.EditEntry(_app, _s, row.Entry, isNew: false, saveImmediately: false, owner: Owner());
+        var key = _app.EditEntryModal(_s, row.Entry, isNew: false, group: null, Owner()).SavedKey;
         if (key == null) return;
         if (!key.Equals(oldKey, StringComparison.OrdinalIgnoreCase)) _removedKeys.Add(oldKey);
         var e = _s.CustomEntries.First(c => c.Id == row.Entry.Id);
@@ -317,8 +313,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         if (rows.Count == 0) return;
         var text = rows.Count == 1 ? $"„{rows[0].Name}“ entfernen?" : $"{rows.Count} Einträge entfernen?";
-        if (MessageBox.Show(Owner()!, text + "\n\nDateien und Ordner selbst bleiben unverändert.", "Entfernen",
-                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!_app.Dialogs.Confirm(text + "\n\nDateien und Ordner selbst bleiben unverändert.", "Entfernen", owner: Owner(), defaultNo: true)) return;
         foreach (var r in rows)
         {
             _removedKeys.Add(r.Entry.Key);
@@ -337,7 +332,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void AddFromCatalog()
     {
-        var chosen = Views.CatalogWindow.Pick();
+        var chosen = _app.Dialogs.PickCatalogTemplates();
         if (chosen == null) return;
         var group = _groupFilter is "*" ? string.Empty : _groupFilter;
         foreach (var t in chosen)
@@ -351,11 +346,11 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void Import()
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*" };
-        if (dlg.ShowDialog(Owner()) != true) return;
+        var path = _app.Dialogs.OpenFile(EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*", owner: Owner());
+        if (path == null) return;
         try
         {
-            var file = EntryShare.Parse(File.ReadAllText(dlg.FileName));
+            var file = EntryShare.Parse(File.ReadAllText(path));
             var preview = BuildPreview();
             var (added, updated) = EntryShare.Import(preview, file);
             foreach (var e in preview.CustomEntries)
@@ -373,12 +368,11 @@ public sealed class CustomEntryListViewModel : ObservableObject
                 if (_s.FindEntry(cfg.Path) is { } target) target.Profiles = cfg.Profiles.Select(p => p.Clone()).ToList();
                 else _s.Entries.Add(cfg.Clone());
             CountsChanged();
-            MessageBox.Show(Owner()!, $"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            _app.Dialogs.Inform($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", Owner());
         }
         catch (Exception ex)
         {
-            MessageBox.Show(Owner()!, "Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _app.Dialogs.Warn("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", Owner());
         }
     }
 
@@ -386,7 +380,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         _checking = true;
         OnPropertyChanged(nameof(CheckText));
-        CommandManager.InvalidateRequerySuggested();
+        CommandRequery.Invalidate();
         try
         {
             var rows = SelectedOrVisible().ToList();
@@ -398,7 +392,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
             _checking = false;
             OnPropertyChanged(nameof(CheckText));
             Refilter();
-            CommandManager.InvalidateRequerySuggested();
+            CommandRequery.Invalidate();
         }
     }
 

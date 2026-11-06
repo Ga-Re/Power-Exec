@@ -16,6 +16,14 @@ public sealed class WpfShell : IShell
         try { System.Windows.Clipboard.SetText(text); } catch { /* Zwischenablage belegt */ }
     }
 
+    public void CopyToClipboard(string text, bool asHtml) => ClipboardText.Set(text, asHtml);
+
+    public string GetClipboardText()
+    {
+        try { return System.Windows.Clipboard.ContainsText() ? System.Windows.Clipboard.GetText() : string.Empty; }
+        catch { return string.Empty; }
+    }
+
     public bool IsPwshInstalled => Launcher.IsPwshInstalled;
 }
 
@@ -37,10 +45,10 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
     public void Warn(string message, string title, object? owner = null) =>
         Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
 
-    public bool Confirm(string message, string title, bool destructive = false, object? owner = null) =>
+    public bool Confirm(string message, string title, bool destructive = false, object? owner = null, bool defaultNo = false) =>
         Show(owner, message, title, MessageBoxButton.YesNo,
             destructive ? MessageBoxImage.Warning : MessageBoxImage.Question,
-            destructive ? MessageBoxResult.No : MessageBoxResult.None) == MessageBoxResult.Yes;
+            destructive || defaultNo ? MessageBoxResult.No : MessageBoxResult.None) == MessageBoxResult.Yes;
 
     public bool? ConfirmOrCancel(string message, string title, object? owner = null) =>
         Show(owner, message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel) switch

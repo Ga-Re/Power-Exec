@@ -29,7 +29,7 @@ internal sealed class FakeDialogs : IDialogs
     public void Inform(string message, string title, object? owner = null) => Messages.Add(("info", title, message));
     public void Warn(string message, string title, object? owner = null) => Messages.Add(("warn", title, message));
 
-    public bool Confirm(string message, string title, bool destructive = false, object? owner = null)
+    public bool Confirm(string message, string title, bool destructive = false, object? owner = null, bool defaultNo = false)
     {
         Messages.Add((destructive ? "confirm-destructive" : "confirm", title, message));
         return ConfirmAnswer;

@@ -3,10 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
@@ -31,16 +28,16 @@ public sealed record ToolChoice(CatalogTemplate Template)
 /// </summary>
 public sealed class CustomEntryViewModel : ObservableObject
 {
-    private readonly AppController? _app;
+    private readonly ICustomEntryHost _app;
     private CustomEntry _e;
     private IReadOnlyList<EntryIssue> _issues = Array.Empty<EntryIssue>();
-    private readonly DispatcherTimer _checkTimer;
+    private readonly IUiTimer _checkTimer;
     private bool _useRdpFile;
     private string _autoTitle = string.Empty;
     private int _checkVersion;
 
     /// <param name="optionsOnly">Nur die Startoptionen eines Profils bearbeiten (ohne Ziel/Code, ohne Netzwerkprüfungen).</param>
-    public CustomEntryViewModel(CustomEntry entry, AppController? app = null, bool optionsOnly = false)
+    public CustomEntryViewModel(CustomEntry entry, ICustomEntryHost app, bool optionsOnly = false)
     {
         _app = app;
         _optionsOnly = optionsOnly;
@@ -57,8 +54,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         FetchTitleCommand = new RelayCommand(() => _ = FetchTitleAsync(force: true), () => IsUrl && Uri.TryCreate(_e.Target.Trim(), UriKind.Absolute, out _));
         PickToolCommand = new RelayCommand(p => { if (p is ToolChoice t) ApplyTool(t.Template); });
         SmartGroupCommand = new RelayCommand(() => SmartGroupRequested?.Invoke(_e.Target.Trim()), () => IsFolder && _e.Target.Trim().Length > 0);
-        _checkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
-        _checkTimer.Tick += (_, _) => { _checkTimer.Stop(); RunDelayedChecks(); };
+        _checkTimer = app.UiDispatcher.CreateTimer(TimeSpan.FromMilliseconds(700), () => { _checkTimer!.Stop(); RunDelayedChecks(); });
         Revalidate();
         if (!optionsOnly) RunDelayedChecks();
     }
@@ -140,12 +136,12 @@ public sealed class CustomEntryViewModel : ObservableObject
     /// <summary>Vorschlag für den Anzeigenamen (Platzhalter im Namensfeld).</summary>
     public string NameSuggestion => _e.ToLaunchItem().DisplayName is { Length: > 0 } n && n != "Snippet" ? n : "Anzeigename";
 
-    public string Icon { get => _e.Icon; set { _e.Icon = value ?? string.Empty; Touch(); OnPropertyChanged(nameof(HasIcon)); OnPropertyChanged(nameof(ShowAutoIcon)); OnPropertyChanged(nameof(ShowBadge)); CommandManager.InvalidateRequerySuggested(); } }
+    public string Icon { get => _e.Icon; set { _e.Icon = value ?? string.Empty; Touch(); OnPropertyChanged(nameof(HasIcon)); OnPropertyChanged(nameof(ShowAutoIcon)); OnPropertyChanged(nameof(ShowBadge)); CommandRequery.Invalidate(); } }
     public bool HasIcon => _e.Icon.Length > 0;
 
-    private ImageSource? _autoIcon;
+    private IconImage? _autoIcon;
     /// <summary>Automatisches Symbol (Favicon, Programm-, Ordnersymbol) für die Vorschau im Kopf.</summary>
-    public ImageSource? AutoIcon { get => _autoIcon; private set { if (Set(ref _autoIcon, value)) { OnPropertyChanged(nameof(ShowAutoIcon)); OnPropertyChanged(nameof(ShowBadge)); } } }
+    public IconImage? AutoIcon { get => _autoIcon; private set { if (Set(ref _autoIcon, value)) { OnPropertyChanged(nameof(ShowAutoIcon)); OnPropertyChanged(nameof(ShowBadge)); } } }
     public bool ShowAutoIcon => !HasIcon && _autoIcon != null;
     public bool ShowBadge => !HasIcon && _autoIcon == null;
     public string Badge => PanelBadge(_e.Kind, _e.Target, _e.Language);
@@ -381,7 +377,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         foreach (var p in IssueProps) OnPropertyChanged(p);
         OnPropertyChanged(nameof(OptionsSummary));
         OnPropertyChanged(nameof(OptionsValid));
-        CommandManager.InvalidateRequerySuggested();
+        CommandRequery.Invalidate();
         Changed?.Invoke();
     }
 
@@ -449,13 +445,13 @@ public sealed class CustomEntryViewModel : ObservableObject
         bool? ok;
         try
         {
-            var check = Task.Run(() => IsFolder ? Directory.Exists(t) : IsFile ? File.Exists(t) : IconService.ResolveProgram(t) != null);
+            var check = Task.Run(() => IsFolder ? Directory.Exists(t) : IsFile ? File.Exists(t) : ProgramResolver.Resolve(t) != null);
             ok = await Task.WhenAny(check, Task.Delay(3000)) == check ? check.Result : null;
         }
         catch { ok = false; }
         if (version != _checkVersion) return;
         TargetOk = ok;
-        var unc = IsFolder || IsFile ? PathResolver.ToUnc(t) : t;
+        var unc = IsFolder || IsFile ? _app.ToUnc(t) : t;
         var uncHint = !unc.Equals(t, StringComparison.OrdinalIgnoreCase) ? $" · Netzlaufwerk – andere Konten erreichen es als {unc}" : string.Empty;
         TargetStatus = ok switch
         {
@@ -467,13 +463,13 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     private void LoadAutoIcon()
     {
-        if (_app == null || HasIcon) { AutoIcon = null; return; }
+        if (HasIcon) { AutoIcon = null; return; }
         try
         {
             var item = _e.ToLaunchItem();
             AutoIcon = _e.Kind == CustomEntryKind.File && File.Exists(item.FullPath)
-                ? _app.Icons.Get(item.FullPath, File.GetLastWriteTimeUtc(item.FullPath), img => AutoIcon = img)
-                : WpfIconProvider.Unwrap(ItemViewModel.LoadIcon(_app.IconProvider, item, img => AutoIcon = WpfIconProvider.Unwrap(img)));
+                ? _app.IconProvider.Get(item.FullPath, File.GetLastWriteTimeUtc(item.FullPath), img => AutoIcon = img)
+                : ItemViewModel.LoadIcon(_app.IconProvider, item, img => AutoIcon = img);
         }
         catch { AutoIcon = null; }
     }
@@ -553,21 +549,19 @@ public sealed class CustomEntryViewModel : ObservableObject
             : "Programme (*.exe;*.cmd;*.bat;*.msc)|*.exe;*.cmd;*.bat;*.msc|Alle Dateien (*.*)|*.*", f => Target = f);
     }
 
-    private static void PickFile(string filter, Action<string> done)
+    private void PickFile(string filter, Action<string> done)
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = filter };
-        if (dlg.ShowDialog() == true) done(dlg.FileName);
+        if (_app.Dialogs.OpenFile(filter) is { } file) done(file);
     }
 
-    private static void PickFolder(Action<string> done)
+    private void PickFolder(Action<string> done)
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog();
-        if (dlg.ShowDialog() == true) done(dlg.FolderName);
+        if (_app.Dialogs.PickFolder() is { } folder) done(folder);
     }
 
     private void ChooseIcon()
     {
-        var picked = Views.IconPickerWindow.Pick(IconRef.Parse(_e.Icon), "Symbol für den Eintrag");
+        var picked = _app.Dialogs.PickIcon(IconRef.Parse(_e.Icon), "Symbol für den Eintrag");
         if (picked != null) Icon = picked.Value.ToString();
     }
 
@@ -577,15 +571,15 @@ public sealed class CustomEntryViewModel : ObservableObject
         try
         {
             if (TestHandler != null) { TestHandler(entry); return; }
-            if (entry.CopiesToClipboard) { ClipboardText.Set(entry.Code, entry.CopyAsHtml); return; }
+            if (entry.CopiesToClipboard) { _app.Shell.CopyToClipboard(entry.Code, entry.CopyAsHtml); return; }
             var item = entry.ToLaunchItem();
-            if (entry.Kind == CustomEntryKind.File) { Launcher.OpenLocation(item.FullPath); return; }
+            if (entry.Kind == CustomEntryKind.File) { _app.Shell.OpenLocation(item.FullPath); return; }
             entry.PrepareLaunch();
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(item.LaunchTarget!, item.LaunchArguments) { UseShellExecute = true })?.Dispose();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Eintrag testen", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _app.Dialogs.Warn(ex.Message, "Eintrag testen");
         }
     }
 

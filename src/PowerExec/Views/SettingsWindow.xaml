@@ -721,7 +721,7 @@
                                 <TextBlock Grid.Column="2" Text="Eintrag" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                 <TextBlock Grid.Column="3" Text="Gruppe / Schlagworte" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                             </Grid>
-                            <ItemsControl ItemsSource="{Binding RowsView}" Focusable="False">
+                            <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border x:Name="EntryRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent"
@@ -742,7 +742,7 @@
                                                             Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
                                                         <TextBlock Text="{Binding Badge}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource Badge.Other.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
-                                                    <Image Source="{Binding Image}" Width="20" Height="20" HorizontalAlignment="Left" Margin="2,0,0,0"
+                                                    <Image Source="{Binding Image, Converter={StaticResource IconImage}}" Width="20" Height="20" HorizontalAlignment="Left" Margin="2,0,0,0"
                                                            Visibility="{Binding HasImage, Converter={StaticResource Vis}}"/>
                                                     <c:IconPresenter Icon="{Binding Icon}" Size="20" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Primary}"/>
                                                 </Grid>

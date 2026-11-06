@@ -6,6 +6,10 @@ namespace PowerExec.Core.Profiles;
 /// <summary>Ermittelt die Startprofile eines Eintrags und wertet sie aus.</summary>
 public static class ProfileResolver
 {
+    /// <summary>Ausführungsart eines Profils: Administrator, anderer Benutzer oder aktuelles Konto.</summary>
+    public static Execution.ExecutionMode ModeOf(LaunchProfile p) =>
+        p.RunAsAdmin ? Execution.ExecutionMode.Administrator : p.RunAsOtherUser ? Execution.ExecutionMode.OtherUser : Execution.ExecutionMode.CurrentUser;
+
     /// <summary>
     /// Profile des Eintrags. Ohne gespeicherte Konfiguration gibt es ein automatisches Standardprofil,
     /// das dem bisherigen Verhalten entspricht (mit Parametern: Dialog, sonst direkter Start).
