@@ -38,7 +38,7 @@
                                     </StackPanel.Style>
                                     <c:DropGap IsOpen="{Binding GapBefore}" OpenHeight="44"
                                                Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                                                Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                                                DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
                                 <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8" MinHeight="0"
@@ -329,14 +329,14 @@
                                                       Visibility="{Binding HasChildren, Converter={StaticResource Vis}}"/>
                                         <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,12,0" OpenHeight="44"
                                                    Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                                                    Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
                                     </StackPanel>
                                 </Border>
                                     <c:DropGap IsOpen="{Binding GapAfter}" OpenHeight="44"
                                                Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                                                Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                                                DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
                                 </StackPanel>
@@ -368,7 +368,7 @@
                 </StackPanel.Style>
                 <c:DropGap IsOpen="{Binding GapBefore}" OpenHeight="44"
                            Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                           DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
                 <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8" MinHeight="0" Background="{DynamicResource Bg.CardAlt}"
@@ -407,7 +407,7 @@
                 </Border>
                 <c:DropGap IsOpen="{Binding GapAfter}" OpenHeight="44"
                            Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
-                           DotBrush="{Binding DataContext.CategoryDragBrush, RelativeSource={RelativeSource AncestorType=Window}}"
+                           DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
                            DragOver="CategoryGap_DragOver" Drop="CategoryGap_Drop"/>
             </StackPanel>
