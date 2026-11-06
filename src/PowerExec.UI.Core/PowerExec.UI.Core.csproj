@@ -16,5 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="PowerExec.UI.Core.Tests" />
+    <!-- Die Oberflächen greifen auf interne Abgleich-/Drag-&-Drop-Hilfen der ViewModels zu -->
+    <InternalsVisibleTo Include="PowerExec" />
   </ItemGroup>
 </Project>

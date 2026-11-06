@@ -13,8 +13,8 @@ namespace PowerExec.ViewModels;
 
 public sealed class PanelViewModel : ObservableObject
 {
-    private readonly AppController _app;
-    private readonly PanelHost _host;
+    private readonly IPanelHost _app;
+    private readonly IPanelContext _host;
     private string _searchText = string.Empty;
     private TypeFilter _filter = TypeFilter.All;
     private string? _selectedKey;
@@ -22,7 +22,7 @@ public sealed class PanelViewModel : ObservableObject
     private bool _updateDismissed;
     private string? _folderWarning;
 
-    public PanelViewModel(AppController app, PanelHost host)
+    public PanelViewModel(IPanelHost app, IPanelContext host)
     {
         _app = app;
         _host = host;
@@ -174,7 +174,7 @@ public sealed class PanelViewModel : ObservableObject
     public bool HasWorkspaces => _app.Settings.Workspaces.Count > 1;
     public ICommand SwitchWorkspaceCommand { get; }
 
-    public string HotkeyHint => HotkeyService.Display(_host.Config.Hotkey);
+    public string HotkeyHint => DisplayText.Hotkey(_host.Config.Hotkey);
     public bool HasHotkey => !string.IsNullOrWhiteSpace(_host.Config.Hotkey);
 
     public string Footer { get => _footer; private set => Set(ref _footer, value); }

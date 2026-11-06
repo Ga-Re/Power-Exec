@@ -10,7 +10,7 @@ namespace PowerExec.ViewModels;
 
 public sealed class ItemViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IPanelHost _app;
     private readonly PanelViewModel _panel;
     private bool _isSelected;
     private IconImage? _icon;
@@ -19,7 +19,7 @@ public sealed class ItemViewModel : ObservableObject
     /// <summary>„Zuletzt ausgeführt“: mit genau diesem Profil starten (nicht nachfragen).</summary>
     private readonly LaunchProfile? _fixedProfile;
 
-    public ItemViewModel(AppController app, PanelViewModel panel, LaunchItem item, string groupKey,
+    public ItemViewModel(IPanelHost app, PanelViewModel panel, LaunchItem item, string groupKey,
         LaunchProfile? fixedProfile = null, string? subtitle = null, string? recentWhen = null)
     {
         _subtitle = subtitle;
@@ -88,7 +88,7 @@ public sealed class ItemViewModel : ObservableObject
     /// Symbol je Art: Webseite = Favicon, Ordner = Ordnersymbol, RDP = Remotedesktop, Befehl = Programmsymbol,
     /// EXE/Verknüpfung/Snap-in und sonstige Dateien = Shell-Symbol. Scripte behalten ihr Kürzel (PS1, CMD …).
     /// </summary>
-    private IconImage? LoadIcon(AppController app, LaunchItem item) => LoadIcon(app.IconProvider, item, img => Icon = img);
+    private IconImage? LoadIcon(IPanelHost app, LaunchItem item) => LoadIcon(app.IconProvider, item, img => Icon = img);
 
     /// <summary>Symbol laden (auch für die Liste „Eigene Einträge“); <paramref name="Done"/> liefert nachgeladene Symbole.</summary>
     internal static IconImage? LoadIcon(IIconProvider icons, LaunchItem item, Action<IconImage> Done)
@@ -215,7 +215,7 @@ public sealed class ItemViewModel : ObservableObject
     public string? ParseError => Item.ParseError;
 
     public string BadgeText => Item.Source is { Kind: CustomEntryKind.Snippet, Language: SnippetLanguage.Text } ? "TXT"
-        : Item.CustomKind is { } ck and not CustomEntryKind.File ? CustomEntryViewModel.PanelBadge(ck, Item.Source?.Target ?? string.Empty) : Item.Type switch
+        : Item.CustomKind is { } ck and not CustomEntryKind.File ? EntryBadge.For(ck, Item.Source?.Target ?? string.Empty) : Item.Type switch
     {
         ItemType.PowerShell => "PS1",
         ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
@@ -408,7 +408,7 @@ public sealed class ItemViewModel : ObservableObject
     public ICommand RunRemoteCommand => _runRemoteCommand ??= new RelayCommand(() => _app.OpenRunDialog(Item, DefaultProfile.RunAsAdmin ? ExecutionMode.Administrator : ExecutionMode.CurrentUser,
                 remote: true, DefaultProfile), () => Item.SupportsRemote);
     private ICommand? _editCommand;
-    public ICommand EditCommand => _editCommand ??= new RelayCommand(() => _app.Launcher.OpenInEditor(Item), () => CanEdit);
+    public ICommand EditCommand => _editCommand ??= new RelayCommand(() => _app.OpenInEditor(Item), () => CanEdit);
     private ICommand? _openLocationCommand;
     public ICommand OpenLocationCommand => _openLocationCommand ??= new RelayCommand(OpenLocation, () => Item.CustomKind is null or CustomEntryKind.Folder or CustomEntryKind.File);
     private ICommand? _copyPathCommand;

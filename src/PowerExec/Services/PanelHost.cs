@@ -5,7 +5,7 @@ using PowerExec.Views;
 namespace PowerExec.Services;
 
 /// <summary>Ein laufendes Panel: Einstellungen, ViewModel, Fenster, Hover-Zonen und Tastenkürzel-Kennung.</summary>
-public sealed class PanelHost : IDisposable
+public sealed class PanelHost : IPanelContext, IDisposable
 {
     public PanelHost(AppController app, PanelConfig config, int hotkeyId)
     {

@@ -13,13 +13,13 @@ namespace PowerExec.ViewModels;
 public sealed class SpotlightViewModel : ObservableObject
 {
     public const int MaxResults = 8;
-    private readonly AppController _app;
-    private readonly PanelHost _host;
+    private readonly IPanelHost _app;
+    private readonly IPanelContext _host;
     private string _searchText = string.Empty;
     private IReadOnlyList<ItemViewModel> _results = Array.Empty<ItemViewModel>();
     private int _selectedIndex;
 
-    public SpotlightViewModel(AppController app, PanelHost host)
+    public SpotlightViewModel(IPanelHost app, IPanelContext host)
     {
         _app = app;
         _host = host;

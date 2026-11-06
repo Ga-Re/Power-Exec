@@ -13,7 +13,7 @@ public sealed class GroupViewModel : ObservableObject
     private readonly PanelViewModel _panel;
     private bool _isExpanded;
 
-    public GroupViewModel(PanelViewModel panel, AppController app, string key, string title, bool isFavorites, string? folderPath,
+    public GroupViewModel(PanelViewModel panel, IPanelHost app, string key, string title, bool isFavorites, string? folderPath,
         IReadOnlyList<ItemViewModel> items, bool expanded, string? error, string kind = "folder", bool allowReorder = true)
     {
         Kind = kind;
@@ -136,7 +136,7 @@ public sealed class GroupViewModel : ObservableObject
 
     // ---- Farbe und Darstellung je Gruppe -----------------------------------------------
 
-    private readonly AppController _app;
+    private readonly IPanelHost _app;
 
     public ICommand SetLayoutCommand { get; }
     public ICommand ToggleLayoutCommand { get; }

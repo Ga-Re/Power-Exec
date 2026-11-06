@@ -71,9 +71,15 @@ Vorgehen je ViewModel: WPF-Abhängigkeiten durch eine schmale Host-Schnittstelle
 | `RunViewModel` (+ `ParameterViewModel`, `MachineViewModel`) über `IRunHost` | erledigt, 14 Tests |
 | `UpdateState`, `HistoryRowViewModel` (`IHistoryHost`), `ScheduleViewModel` (`IScheduleHost`), `WorkflowEditorViewModel` (`IWorkflowHost`), `WelcomeViewModel` (`IWelcomeHost`, Ordnerauswahl über den Host; Beispiel-Script als Ressource in UI.Core) | erledigt, 20 Tests |
 | `DisplayText` (Dauer, Tastenkürzel) – gemeinsam statt in `ActivityViewModel`/`HotkeyService` | erledigt |
-| `PeekViewModel`, `InlineParametersViewModel`, `SpotlightViewModel` | offen – einfach, hängen aber an `ItemViewModel` bzw. `PanelHost`; ziehen mit `ItemViewModel` um |
-| `ProfilesViewModel`, `ActivityViewModel` (`Dispatcher`), `PanelViewModel` | offen – mittel |
-| `ItemViewModel`, `GroupViewModel`, `TagsViewModel`, `CustomEntry*ViewModel`, `PanelSettingsViewModel`, `SettingsViewModel`, `SettingsExtras`, `ResultsViewModel` | offen – nutzen `Brush`/`ImageSource`/`CollectionView`/`Visibility`; brauchen UI-neutrale Farben/Symbole (z. B. `#RRGGBB`-Text, Converter in der Oberfläche) |
+| `ActivityViewModel`, `ActivityList` – `IUiDispatcher`/`IUiTimer` statt `Dispatcher`, `IRemoteRunProgress` statt `ResultsViewModel` | erledigt, 12 Tests |
+| **Panel-Block**: `PanelViewModel`, `GroupViewModel`, `ItemViewModel`, `PeekViewModel`, `InlineParametersViewModel`, `SpotlightViewModel` über `IPanelHost`/`IPanelContext` | erledigt, 13 Tests |
+| ↳ dafür: `ArgbColor` + `ArgbBrushConverter` (Farben), `IconImage`/`IIconProvider` + `IconImageConverter` (Symbole), `IShell`, `IDialogs`, `IThemeInfo`, `IItemSource`, `HealthService`, `SignatureService`, `TextPart`, `EntryBadge` | erledigt |
+| `ProfilesViewModel` | offen – hängt an `CustomEntryViewModel` |
+| `CustomEntryViewModel`, `CustomEntryListViewModel`, `TagsViewModel`, `PanelSettingsViewModel`, `SettingsViewModel`, `SettingsExtras`, `ResultsViewModel` | offen – Brushes/Bilder wie beim Panel-Block, dazu `MessageBox`/Fenster (`IDialogs` erweitern) und `CollectionView` (Filter im ViewModel) |
+
+Muster für die Oberfläche (WPF heute, WinUI später): Farben als `ArgbColor`, Symbole als `IconImage`, Sichtbarkeit
+als `bool` – die Oberfläche wandelt per Converter um. Die WPF-App greift über `InternalsVisibleTo` auf interne
+Abgleich-Hilfen der ViewModels zu.
 
 Hinweis zum Bauen: `PowerExec.UI.Core` und die Tests laufen auch unter Linux; die WPF-App kompiliert dort dank
 `EnableWindowsTargeting`, startet aber nur unter Windows. Der Test `V016Tests.WorkflowEntryDescribesStepsAndClonesDeep`

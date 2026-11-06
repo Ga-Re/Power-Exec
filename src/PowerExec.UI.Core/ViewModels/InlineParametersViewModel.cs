@@ -46,11 +46,11 @@ public sealed class InlineParameterViewModel : ObservableObject
 /// </summary>
 public sealed class InlineParametersViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IPanelHost _app;
     private readonly ItemViewModel _item;
     private string? _error;
 
-    public InlineParametersViewModel(AppController app, ItemViewModel item)
+    public InlineParametersViewModel(IPanelHost app, ItemViewModel item)
     {
         _app = app;
         _item = item;

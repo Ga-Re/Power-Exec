@@ -14,7 +14,7 @@ namespace PowerExec;
 /// Fensterbezug (<c>object? owner</c>) in <see cref="Window"/> und reicht WPF-/Win32-Dienste durch.
 /// Was schon öffentlich mit passender Signatur existiert, erfüllt die Schnittstellen direkt.
 /// </summary>
-public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost
+public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
     public IShell Shell { get; } = new WpfShell();
@@ -59,6 +59,20 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     Task<bool> IWorkflowHost.RunWorkflowAsync(string name, IReadOnlyList<WorkflowStep> steps, bool stopOnError) =>
         RunWorkflowAsync(name, steps, stopOnError);
+
+    // ── Panel, Gruppen, Einträge ─────────────────────────────────────
+
+    IItemSource IPanelHost.Repository => Repository;
+
+    void IPanelHost.OpenInEditor(LaunchItem item) => Launcher.OpenInEditor(item);
+
+    bool IPanelHost.ImportEntries(string? intoGroup) => ImportEntries(intoGroup);
+
+    void IPanelHost.ShowPanelFromHotkey(IPanelContext? panel, bool forcePanel) => ShowPanelFromHotkey(panel as PanelHost, forcePanel);
+
+    void IPanelHost.RememberForUndo(string description) => RememberForUndo(description);
+
+    void IPanelHost.ShowUndoToast(string text) => ShowUndoToast(text);
 
     // ── Einführung ───────────────────────────────────────────────────
 

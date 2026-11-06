@@ -7,20 +7,8 @@ using PowerExec.Core.Scanning;
 
 namespace PowerExec.Services;
 
-public sealed record FolderStatus(string Path, int Count, IReadOnlyList<ExcludedFile> ExcludedFiles, string? Error)
-{
-    public int Excluded => ExcludedFiles.Count;
-
-    /// <summary>Dauer des Einlesens.</summary>
-    public TimeSpan Duration { get; init; }
-
-    /// <summary>Angezeigt wird der zwischengespeicherte Stand (Ordner nicht erreichbar oder Start).</summary>
-    public bool FromCache { get; init; }
-    public DateTime? CachedAtUtc { get; init; }
-}
-
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
-public sealed class ItemRepository : IDisposable
+public sealed class ItemRepository : IItemSource, IDisposable
 {
     private readonly Dispatcher _dispatcher;
     private readonly ItemLoader _loader = new(new WindowsMetadata());

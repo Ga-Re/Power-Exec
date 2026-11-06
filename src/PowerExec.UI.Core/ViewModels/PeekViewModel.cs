@@ -20,7 +20,7 @@ public sealed record PeekParameter(string Name, string Type, bool IsMandatory, s
 /// </summary>
 public sealed class PeekViewModel
 {
-    public PeekViewModel(AppController app, ItemViewModel item)
+    public PeekViewModel(IPanelHost app, ItemViewModel item)
     {
         Item = item;
         item.LoadDetails();
