@@ -8,12 +8,12 @@ namespace PowerExec.ViewModels;
 /// <summary>Eine Zeile im Verlauf.</summary>
 public sealed class HistoryRowViewModel
 {
-    public HistoryRowViewModel(AppController app, HistoryEntry e)
+    public HistoryRowViewModel(IHistoryHost app, HistoryEntry e)
     {
         Entry = e;
         RunAgainCommand = new RelayCommand(() => app.Replay(e));
         RetryFailedCommand = new RelayCommand(() => app.Replay(e, onlyFailed: true), () => e.FailedTargets.Count > 0);
-        OpenLogCommand = new RelayCommand(() => Services.Launcher.OpenLocation(e.LogFile!), () => e.LogFile != null && File.Exists(e.LogFile));
+        OpenLogCommand = new RelayCommand(() => app.OpenLocation(e.LogFile!), () => e.LogFile != null && File.Exists(e.LogFile));
     }
 
     public HistoryEntry Entry { get; }
@@ -29,7 +29,7 @@ public sealed class HistoryRowViewModel
         Entry.Origin.Length > 0 ? Entry.Origin : null,
         Entry.Result == HistoryResult.Running ? "läuft …" : Entry.Summary.Length > 0 ? Entry.Summary : null
     }.Where(s => !string.IsNullOrEmpty(s)));
-    public string Duration => Entry.Duration is { } d ? ActivityViewModel.Format(d) : string.Empty;
+    public string Duration => Entry.Duration is { } d ? DisplayText.Duration(d) : string.Empty;
     /// <summary>Parameter in einer Zeile, z. B. „-ComputerName SRV01 -Force“.</summary>
     public string ParametersText => string.Join(" ", Entry.Parameters.Select(kv => kv.Value is "true" ? "-" + kv.Key : $"-{kv.Key} {kv.Value}"));
     public bool HasParameters => Entry.Parameters.Count > 0;

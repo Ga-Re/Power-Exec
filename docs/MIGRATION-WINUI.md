@@ -69,7 +69,9 @@ Vorgehen je ViewModel: WPF-Abhängigkeiten durch eine schmale Host-Schnittstelle
 | `ObservableObject`, `RelayCommand` – `CommandManager` ersetzt durch `CommandRequery` (WPF: `WpfCommandRequery`) | erledigt |
 | `AppLog`, `RunCredential` | erledigt |
 | `RunViewModel` (+ `ParameterViewModel`, `MachineViewModel`) über `IRunHost` | erledigt, 14 Tests |
-| `HistoryViewModel`, `InlineParametersViewModel`, `ScheduleViewModel`, `WorkflowEditorViewModel`, `SpotlightViewModel`, `WelcomeViewModel`, `PeekViewModel`, `UpdateState` | offen – nur `ICommand`/`AppController`-Bezug, einfach |
+| `UpdateState`, `HistoryRowViewModel` (`IHistoryHost`), `ScheduleViewModel` (`IScheduleHost`), `WorkflowEditorViewModel` (`IWorkflowHost`), `WelcomeViewModel` (`IWelcomeHost`, Ordnerauswahl über den Host; Beispiel-Script als Ressource in UI.Core) | erledigt, 20 Tests |
+| `DisplayText` (Dauer, Tastenkürzel) – gemeinsam statt in `ActivityViewModel`/`HotkeyService` | erledigt |
+| `PeekViewModel`, `InlineParametersViewModel`, `SpotlightViewModel` | offen – einfach, hängen aber an `ItemViewModel` bzw. `PanelHost`; ziehen mit `ItemViewModel` um |
 | `ProfilesViewModel`, `ActivityViewModel` (`Dispatcher`), `PanelViewModel` | offen – mittel |
 | `ItemViewModel`, `GroupViewModel`, `TagsViewModel`, `CustomEntry*ViewModel`, `PanelSettingsViewModel`, `SettingsViewModel`, `SettingsExtras`, `ResultsViewModel` | offen – nutzen `Brush`/`ImageSource`/`CollectionView`/`Visibility`; brauchen UI-neutrale Farben/Symbole (z. B. `#RRGGBB`-Text, Converter in der Oberfläche) |
 

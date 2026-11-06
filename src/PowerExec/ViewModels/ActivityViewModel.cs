@@ -102,10 +102,7 @@ public sealed class ActivityViewModel : ObservableObject
         }
     }
 
-    internal static string Format(TimeSpan t) =>
-        t.TotalSeconds < 60 ? $"{t.TotalSeconds:0.0} s".Replace('.', ',')
-        : t.TotalHours < 1 ? $"{(int)t.TotalMinutes}:{t.Seconds:00} min"
-        : $"{(int)t.TotalHours}:{t.Minutes:00} h";
+    internal static string Format(TimeSpan t) => DisplayText.Duration(t);
 
     internal void Tick() => OnPropertyChanged(nameof(TimeText));
 

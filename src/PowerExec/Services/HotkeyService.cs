@@ -84,14 +84,7 @@ public sealed class HotkeyService : IDisposable
     }
 
     /// <summary>Anzeige auf Deutsch: "Strg+Alt+Leertaste".</summary>
-    public static string Display(string hotkey) =>
-        string.Join("+", hotkey.Split('+').Select(p => p.Trim() switch
-        {
-            "Ctrl" => "Strg",
-            "Shift" => "Umschalt",
-            "Space" => "Leertaste",
-            var x => x
-        }));
+    public static string Display(string hotkey) => Infrastructure.DisplayText.Hotkey(hotkey);
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {

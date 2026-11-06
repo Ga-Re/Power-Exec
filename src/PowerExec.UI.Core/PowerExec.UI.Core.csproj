@@ -11,6 +11,10 @@
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Beispiel-Script für die Einführung (WelcomeViewModel liest es aus dieser Assembly) -->
+    <EmbeddedResource Include="..\..\samples\Get-DiskSpace.ps1" LogicalName="PowerExec.Sample.Get-DiskSpace.ps1" Link="Assets\Get-DiskSpace.ps1" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="PowerExec.UI.Core.Tests" />
   </ItemGroup>
 </Project>

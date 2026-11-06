@@ -11,7 +11,7 @@ public sealed class WorkflowStepViewModel : ObservableObject
 {
     private string _profileName;
 
-    public WorkflowStepViewModel(AppController app, WorkflowStep step)
+    public WorkflowStepViewModel(IWorkflowHost app, WorkflowStep step)
     {
         Step = step;
         var item = app.FindItem(step.Path);
@@ -37,13 +37,13 @@ public sealed class WorkflowStepViewModel : ObservableObject
 /// <summary>Ablauf bearbeiten (C3): Name, Reihenfolge der Schritte, Startprofil je Schritt, „bei Fehler abbrechen“.</summary>
 public sealed class WorkflowEditorViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IWorkflowHost _app;
     private readonly CustomEntry _original;
     private string _name;
     private bool _stopOnError;
     private WorkflowStepViewModel? _selected;
 
-    public WorkflowEditorViewModel(AppController app, CustomEntry workflow)
+    public WorkflowEditorViewModel(IWorkflowHost app, CustomEntry workflow)
     {
         _app = app;
         _original = workflow;

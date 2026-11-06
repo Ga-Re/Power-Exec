@@ -12,7 +12,7 @@ namespace PowerExec.ViewModels;
 public sealed class WelcomeViewModel : ObservableObject
 {
     public const int StepCount = 4;
-    private readonly AppController _app;
+    private readonly IWelcomeHost _app;
     private int _step;
     private string? _folder;
     private bool _createSample;
@@ -20,7 +20,7 @@ public sealed class WelcomeViewModel : ObservableObject
     private bool _startWithWindows;
     private bool _useWindowsAccent;
 
-    public WelcomeViewModel(AppController app)
+    public WelcomeViewModel(IWelcomeHost app)
     {
         _app = app;
         var panel = app.Settings.Panels.FirstOrDefault();
@@ -44,7 +44,7 @@ public sealed class WelcomeViewModel : ObservableObject
             if (!Set(ref _step, Math.Clamp(value, 0, StepCount - 1))) return;
             foreach (var p in new[] { nameof(IsLast), nameof(NextLabel), nameof(StepText), nameof(IsStep0), nameof(IsStep1), nameof(IsStep2), nameof(IsStep3) })
                 OnPropertyChanged(p);
-            CommandManager.InvalidateRequerySuggested();
+            CommandRequery.Invalidate();
         }
     }
 
@@ -80,7 +80,7 @@ public sealed class WelcomeViewModel : ObservableObject
     };
 
     // Schritt 3: Tastenkürzel und Start
-    public string HotkeyText => _app.Settings.Panels.FirstOrDefault() is { Hotkey.Length: > 0 } p ? HotkeyService.Display(p.Hotkey) : "keins (in den Einstellungen festlegen)";
+    public string HotkeyText => _app.Settings.Panels.FirstOrDefault() is { Hotkey.Length: > 0 } p ? DisplayText.Hotkey(p.Hotkey) : "keins (in den Einstellungen festlegen)";
     public bool StartWithWindows { get => _startWithWindows; set => Set(ref _startWithWindows, value); }
     public bool UseWindowsAccent { get => _useWindowsAccent; set => Set(ref _useWindowsAccent, value); }
 
@@ -95,10 +95,9 @@ public sealed class WelcomeViewModel : ObservableObject
 
     private void ChooseFolder()
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner mit Scripten und Programmen auswählen" };
-        if (dlg.ShowDialog() == true)
+        if (_app.PickFolder("Ordner mit Scripten und Programmen auswählen") is { } folder)
         {
-            Folder = dlg.FolderName;
+            Folder = folder;
             CreateSample = false;
         }
     }

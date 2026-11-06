@@ -25,12 +25,12 @@ public sealed record ScheduleRow(Schedule Schedule, string Text, string NextText
 /// <summary>Planen-Dialog (D4): einmal, täglich an Wochentagen oder im Intervall; Profil, Benachrichtigung, nachholen.</summary>
 public sealed class ScheduleViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IScheduleHost _app;
     private Schedule _editing;
     private string _onceDate, _onceTime, _dailyTime, _interval;
     private string? _error;
 
-    public ScheduleViewModel(AppController app, LaunchItem item)
+    public ScheduleViewModel(IScheduleHost app, LaunchItem item)
     {
         _app = app;
         Item = item;
