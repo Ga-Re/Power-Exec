@@ -20,18 +20,6 @@ internal sealed class FakeShell : IShell
     public void SetClipboardText(string text) => Clipboard.Add(text);
 }
 
-internal sealed class FakeDialogs : IDialogs
-{
-    public string? Answer { get; set; }
-    public List<string> Asked { get; } = new();
-
-    public string? Ask(string heading, string prompt, string initial = "", string okText = "OK", Func<string, string?>? validate = null)
-    {
-        Asked.Add(heading);
-        return Answer is { } a && validate?.Invoke(a) == null ? a : null;
-    }
-}
-
 internal sealed class FakeTheme : IThemeInfo
 {
     public bool IsHighContrast { get; set; }

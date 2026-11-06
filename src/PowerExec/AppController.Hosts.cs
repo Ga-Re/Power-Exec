@@ -3,6 +3,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
+using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
 using PowerExec.Views;
@@ -14,7 +15,7 @@ namespace PowerExec;
 /// Fensterbezug (<c>object? owner</c>) in <see cref="Window"/> und reicht WPF-/Win32-Dienste durch.
 /// Was schon öffentlich mit passender Signatur existiert, erfüllt die Schnittstellen direkt.
 /// </summary>
-public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost
+public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
     public IShell Shell { get; } = new WpfShell();
@@ -26,6 +27,10 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
     /// <summary>Symbole für die UI-neutralen ViewModels (Griff auf die Bilder des <see cref="IconService"/>).</summary>
     public IIconProvider IconProvider => _iconProvider ??= new WpfIconProvider(Icons);
     private IIconProvider? _iconProvider;
+
+    /// <summary>UI-Thread der App für die UI-neutralen Dienste.</summary>
+    public IUiDispatcher UiDispatcher => _uiDispatcher ??= new WpfUiDispatcher(Application.Current.Dispatcher);
+    private IUiDispatcher? _uiDispatcher;
 
     /// <summary>Kontrastdesign, hell/dunkel.</summary>
     public IThemeInfo Theme { get; } = new WpfThemeInfo();
@@ -73,6 +78,10 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
     void IPanelHost.RememberForUndo(string description) => RememberForUndo(description);
 
     void IPanelHost.ShowUndoToast(string text) => ShowUndoToast(text);
+
+    // ── Ergebnisliste ────────────────────────────────────────────────
+
+    bool IResultsHost.RetryRemote(ExecutionRequest request) => StartRemote(request, null);
 
     // ── Einführung ───────────────────────────────────────────────────
 

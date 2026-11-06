@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
+using PowerExec.Infrastructure;
 
 namespace PowerExec.Services;
 
@@ -13,7 +13,7 @@ namespace PowerExec.Services;
 /// </summary>
 public sealed class RemoteSession : IDisposable
 {
-    private readonly Dispatcher _dispatcher;
+    private readonly IUiDispatcher _dispatcher;
     private Process? _process;
     private readonly StringBuilder _stderr = new();
     private bool _done;
@@ -21,7 +21,7 @@ public sealed class RemoteSession : IDisposable
     public event Action<RemoteResult>? ResultReceived;
     public event Action<string?>? Completed;
 
-    public RemoteSession(Dispatcher dispatcher) => _dispatcher = dispatcher;
+    public RemoteSession(IUiDispatcher dispatcher) => _dispatcher = dispatcher;
 
     public static string WindowsPowerShellPath =>
         Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
@@ -43,7 +43,7 @@ public sealed class RemoteSession : IDisposable
         _process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         _process.OutputDataReceived += (_, e) => OnLine(e.Data);
         _process.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (_stderr) _stderr.AppendLine(e.Data); };
-        _process.Exited += (_, _) => _dispatcher.BeginInvoke(OnExited);
+        _process.Exited += (_, _) => _dispatcher.Post(OnExited);
 
         _process.Start();
         _process.BeginOutputReadLine();
@@ -97,7 +97,7 @@ public sealed class RemoteSession : IDisposable
             return;
         }
         var result = RemoteRunner.ParseResultLine(line);
-        if (result != null) _dispatcher.BeginInvoke(() => ResultReceived?.Invoke(result));
+        if (result != null) _dispatcher.Post(() => ResultReceived?.Invoke(result));
     }
 
     private void OnExited()
@@ -110,7 +110,7 @@ public sealed class RemoteSession : IDisposable
             lock (_stderr) error = _stderr.Length > 0 ? _stderr.ToString().Trim() : "Der Remote-Runner wurde unerwartet beendet.";
         }
         // Mit niedriger Priorität, damit noch wartende Ergebnisse vorher verarbeitet werden.
-        _dispatcher.BeginInvoke(DispatcherPriority.Background, () => Completed?.Invoke(error));
+        _dispatcher.Post(() => Completed?.Invoke(error));
     }
 
     public void Cancel()

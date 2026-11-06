@@ -930,8 +930,8 @@ public sealed partial class AppController
                     var tileStatus = n % 8 == 3 ? RemoteStatus.Error : n % 8 == 5 ? RemoteStatus.Unreachable : n > 18 ? RemoteStatus.Running : RemoteStatus.Success;
                     tilesVm.Rows[n].Update(new RemoteResult { Computer = tilesVm.Rows[n].Computer, Status = tileStatus, DurationMs = 800 + n * 37, Output = "C: 42 % frei", Error = tileStatus == RemoteStatus.Error ? "Zugriff verweigert" : string.Empty });
                 }
-                tilesVm.TilesView.Refresh();
-                var firstTile = tilesVm.TilesView.Cast<ResultRowViewModel>().First();
+                tilesVm.RefreshViews();
+                var firstTile = tilesVm.VisibleTiles.First();
                 if (firstTile.Status != RemoteStatus.Error) Fail("Kachelkarte: Fehler stehen nicht vorne");
                 tilesVm.SelectedTile = firstTile;
                 await ShowAndClose(new ResultsWindow(tilesVm));

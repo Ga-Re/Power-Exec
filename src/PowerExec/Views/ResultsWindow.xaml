@@ -122,7 +122,7 @@
                     </DockPanel>
                 </Border>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,14,24,14">
-                    <ItemsControl ItemsSource="{Binding TilesView}" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding VisibleTiles}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
@@ -188,7 +188,7 @@
                     <TextBlock Grid.Column="4" Text="Ausgabe" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                 </Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding RowsView}" Focusable="False">
+                    <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0">
