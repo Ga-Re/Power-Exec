@@ -54,6 +54,29 @@ Power-Exec wird **vollständig** von WPF auf **WinUI 3 (Windows App SDK)** umges
 
 **Fertig, wenn:** WPF unverändert auf den neuen ViewModels läuft und alle Tests grün sind.
 
+#### Fortschritt Phase 0
+
+Befund beim Start: Es gibt bereits 21 ViewModels in `src/PowerExec/ViewModels`. Phase 0 ist deshalb vor allem
+**Entkoppeln** (WPF-Typen und `AppController` hinter Schnittstellen) und **Verschieben**, weniger Neuschreiben.
+
+Vorgehen je ViewModel: WPF-Abhängigkeiten durch eine schmale Host-Schnittstelle ersetzen (`I…Host`, von
+`AppController` explizit implementiert, Fenster als `object? owner`), Datei nach `PowerExec.UI.Core` verschieben
+(Namespace bleibt), Tests mit einem Fake-Host schreiben.
+
+| Baustein | Stand |
+|---|---|
+| Projekte `PowerExec.UI.Core`, `PowerExec.UI.Core.Tests`; Tests in CI und Release | erledigt |
+| `ObservableObject`, `RelayCommand` – `CommandManager` ersetzt durch `CommandRequery` (WPF: `WpfCommandRequery`) | erledigt |
+| `AppLog`, `RunCredential` | erledigt |
+| `RunViewModel` (+ `ParameterViewModel`, `MachineViewModel`) über `IRunHost` | erledigt, 14 Tests |
+| `HistoryViewModel`, `InlineParametersViewModel`, `ScheduleViewModel`, `WorkflowEditorViewModel`, `SpotlightViewModel`, `WelcomeViewModel`, `PeekViewModel`, `UpdateState` | offen – nur `ICommand`/`AppController`-Bezug, einfach |
+| `ProfilesViewModel`, `ActivityViewModel` (`Dispatcher`), `PanelViewModel` | offen – mittel |
+| `ItemViewModel`, `GroupViewModel`, `TagsViewModel`, `CustomEntry*ViewModel`, `PanelSettingsViewModel`, `SettingsViewModel`, `SettingsExtras`, `ResultsViewModel` | offen – nutzen `Brush`/`ImageSource`/`CollectionView`/`Visibility`; brauchen UI-neutrale Farben/Symbole (z. B. `#RRGGBB`-Text, Converter in der Oberfläche) |
+
+Hinweis zum Bauen: `PowerExec.UI.Core` und die Tests laufen auch unter Linux; die WPF-App kompiliert dort dank
+`EnableWindowsTargeting`, startet aber nur unter Windows. Der Test `V016Tests.WorkflowEntryDescribesStepsAndClonesDeep`
+erwartet Windows-Pfade und schlägt nur unter Linux fehl.
+
 ### Phase 1 – Prototyp (Machbarkeit)
 
 Eigenes Projekt `src/PowerExec.WinUI.Spike`. Er prüft nur das Unsichere – keine Standard-Controls.

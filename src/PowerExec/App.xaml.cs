@@ -14,6 +14,7 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        Infrastructure.CommandRequery.Backend = new Infrastructure.WpfCommandRequery();
         if (e.Args.Length > 0 && e.Args[0] == "--selftest")
         {
             base.OnStartup(e);

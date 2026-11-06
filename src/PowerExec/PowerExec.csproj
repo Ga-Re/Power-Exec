@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+    <ProjectReference Include="..\PowerExec.UI.Core\PowerExec.UI.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Beispiel-Script für den Einführungs-Assistenten -->

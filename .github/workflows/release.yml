@@ -64,6 +64,10 @@ jobs:
         if: steps.version.outputs.skip == 'false'
         run: dotnet test tests/PowerExec.Core.Tests -c Release
 
+      - name: Tests (Oberflächenlogik)
+        if: steps.version.outputs.skip == 'false'
+        run: dotnet test tests/PowerExec.UI.Core.Tests -c Release
+
       - name: Portable Einzeldatei veröffentlichen
         if: steps.version.outputs.skip == 'false'
         run: >

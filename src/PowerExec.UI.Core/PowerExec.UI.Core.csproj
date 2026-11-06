@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    UI-neutrale Oberflächenlogik (ViewModels, Commands, Protokoll): kein WPF, kein WinUI.
+    Wird von der WPF-App und später von der WinUI-App gemeinsam genutzt (siehe docs/MIGRATION-WINUI.md).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PowerExec</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PowerExec.UI.Core.Tests" />
+  </ItemGroup>
+</Project>

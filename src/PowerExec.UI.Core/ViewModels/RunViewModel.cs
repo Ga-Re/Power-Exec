@@ -112,7 +112,7 @@ public sealed record MachineGroupChip(string Name, string CountText, string Memb
 
 public sealed class RunViewModel : ObservableObject
 {
-    private readonly AppController _app;
+    private readonly IRunHost _app;
     private ExecutionMode _mode;
     private PsEngine _engine;
     private bool _remote;
@@ -123,7 +123,7 @@ public sealed class RunViewModel : ObservableObject
     private string _preview = string.Empty;
     private string _validation = string.Empty;
 
-    public RunViewModel(AppController app, LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
+    public RunViewModel(IRunHost app, LaunchItem item, ExecutionMode mode, bool remote, LaunchProfile? profile = null)
     {
         _app = app;
         Item = item;
@@ -136,7 +136,7 @@ public sealed class RunViewModel : ObservableObject
         _copyFolder = item.CopyFolderByDefault;
         _engine = _remote && Profile.IsImplicit
             ? (s.RemoteEngine == RemoteEngineMode.PreferPowerShell7 ? PsEngine.PowerShell7 : PsEngine.WindowsPowerShell)
-            : _remote ? Profile.Engine : Launcher.EffectiveEngine(Profile.Engine);
+            : _remote ? Profile.Engine : EffectiveEngine(Profile.Engine);
         if (Requirements.NeedsPowerShell7(item)) _engine = PsEngine.PowerShell7;
 
         var initial = ProfileResolver.InitialValues(Profile, item);
@@ -175,6 +175,10 @@ public sealed class RunViewModel : ObservableObject
         UpdatePreview();
     }
 
+    /// <summary>PowerShell 7 nur, wenn installiert – sonst Windows PowerShell 5.1.</summary>
+    private PsEngine EffectiveEngine(PsEngine wanted) =>
+        wanted == PsEngine.PowerShell7 && !_app.IsPwshInstalled ? PsEngine.WindowsPowerShell : wanted;
+
     public LaunchItem Item { get; }
     public LaunchProfile Profile { get; }
     public string ProfileText => Profile.IsImplicit ? string.Empty : $"Startprofil: {Profile.Name}";
@@ -205,7 +209,7 @@ public sealed class RunViewModel : ObservableObject
             if (Item.RequiresAdmin && !_remote) parts.Add("Das Script verlangt Administratorrechte (#Requires -RunAsAdministrator).");
             if (Requirements.NeedsPowerShell7(Item))
                 parts.Add($"Das Script verlangt PowerShell {Item.RequiredPsVersion} (#Requires -Version)" +
-                          (!_remote && !Launcher.IsPwshInstalled ? " – PowerShell 7 ist hier nicht installiert." : "."));
+                          (!_remote && !_app.IsPwshInstalled ? " – PowerShell 7 ist hier nicht installiert." : "."));
             return parts.Count > 0 ? string.Join(" ", parts) : null;
         }
     }
@@ -290,7 +294,7 @@ public sealed class RunViewModel : ObservableObject
             if (_remote) return _engine == PsEngine.PowerShell7
                 ? "Auf den meisten Servern gibt es nur 5.1. Fehlt der Endpunkt PowerShell.7, wird automatisch 5.1 verwendet."
                 : null;
-            return _engine == PsEngine.PowerShell7 && !Launcher.IsPwshInstalled
+            return _engine == PsEngine.PowerShell7 && !_app.IsPwshInstalled
                 ? "PowerShell 7 ist auf diesem PC nicht installiert."
                 : null;
         }
@@ -334,7 +338,7 @@ public sealed class RunViewModel : ObservableObject
     public ICommand TestConnectionCommand { get; }
 
     private bool _testing;
-    public bool IsTesting { get => _testing; private set { if (Set(ref _testing, value)) { OnPropertyChanged(nameof(TestButtonText)); CommandManager.InvalidateRequerySuggested(); } } }
+    public bool IsTesting { get => _testing; private set { if (Set(ref _testing, value)) { OnPropertyChanged(nameof(TestButtonText)); CommandRequery.Invalidate(); } } }
     public string TestButtonText => _testing ? "Teste …" : "Verbindung testen";
     public string SslHint => _app.Settings.RemoteUseSsl ? "Verbindung über HTTPS (5986)" : "Verbindung über HTTP (5985)";
 
@@ -346,12 +350,12 @@ public sealed class RunViewModel : ObservableObject
         RunCredential? cred = null;
         if (_mode == ExecutionMode.OtherUser)
         {
-            cred = Views.CredentialWindow.Prompt(OwnerWindow?.Invoke(), "Verbindungstest", remote: true);
+            cred = _app.PromptCredential(OwnerWindow?.Invoke(), "Verbindungstest", remote: true);
             if (cred == null) return;
         }
         IsTesting = true;
         foreach (var m in machines) { m.TestText = "wird getestet …"; m.TestOk = null; }
-        var results = await RemoteTestService.RunAsync(machines.Select(m => m.Name).ToList(), _app.Settings, cred);
+        var results = await _app.TestConnectionsAsync(machines.Select(m => m.Name).ToList(), cred);
         foreach (var m in machines)
         {
             var r = results.FirstOrDefault(x => x.Computer.Equals(m.Name, StringComparison.OrdinalIgnoreCase));
@@ -364,7 +368,8 @@ public sealed class RunViewModel : ObservableObject
 
     /// <summary>Wird vom Fenster gesetzt, um sich nach erfolgreichem Start zu schließen.</summary>
     public Action? CloseRequested { get; set; }
-    public Func<System.Windows.Window?>? OwnerWindow { get; set; }
+    /// <summary>Liefert das Fenster der Oberfläche als Besitzer für Rückfragen (WPF: <c>Window</c>).</summary>
+    public Func<object?>? OwnerWindow { get; set; }
 
     internal void OnMachinesChanged()
     {
@@ -372,7 +377,7 @@ public sealed class RunViewModel : ObservableObject
         OnPropertyChanged(nameof(RunLabel));
         OnPropertyChanged(nameof(CanRun));
         UpdatePreview();
-        CommandManager.InvalidateRequerySuggested();
+        CommandRequery.Invalidate();
     }
 
     internal void OnFavoriteChanged(MachineViewModel m)
@@ -423,7 +428,7 @@ public sealed class RunViewModel : ObservableObject
         Targets = _remote ? SelectedMachines.Select(m => m.Name).ToList() : Array.Empty<string>(),
         CopyFolder = _remote && _copyFolder,
         ExtraArguments = (Item.LaunchArguments + " " + Profile.Arguments).Trim(),
-        ResolvedPath = Item.LaunchTarget ?? PathResolver.ToUnc(Item.FullPath)
+        ResolvedPath = Item.LaunchTarget ?? _app.ToUnc(Item.FullPath)
     };
 
     private void Execute()

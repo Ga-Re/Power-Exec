@@ -20,6 +20,10 @@ public abstract class ObservableObject : INotifyPropertyChanged
     }
 }
 
+/// <summary>
+/// Command mit Delegaten. <see cref="CanExecuteChanged"/> hängt an <see cref="CommandRequery"/>,
+/// das die jeweilige Oberfläche (WPF: <c>CommandManager</c>) bereitstellt.
+/// </summary>
 public sealed class RelayCommand : ICommand
 {
     private readonly Action<object?> _execute;
@@ -36,8 +40,8 @@ public sealed class RelayCommand : ICommand
 
     public event EventHandler? CanExecuteChanged
     {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
+        add { if (value != null) CommandRequery.Backend.Add(value); }
+        remove { if (value != null) CommandRequery.Backend.Remove(value); }
     }
 
     public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
