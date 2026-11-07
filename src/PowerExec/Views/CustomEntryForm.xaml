@@ -1,8 +1,12 @@
 <UserControl x:Class="PowerExec.Views.CustomEntryForm"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:c="clr-namespace:PowerExec.Controls">
     <UserControl.Resources>
+      <ResourceDictionary>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -34,18 +38,19 @@
         </Style>
         <!-- Chips zum Einfügen eingebauter Variablen -->
         <DataTemplate x:Key="BuiltinChip">
-            <Button Style="{StaticResource Btn.Subtle}" Content="{Binding}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
-                    Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{Binding}" ToolTip="An der Cursorposition einfügen"/>
+            <ui:Button Style="{StaticResource Btn.Subtle}" Content="{Binding}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
+                    Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{Binding}" ToolTip="An der Cursorposition einfügen" />
         </DataTemplate>
+      </ResourceDictionary>
     </UserControl.Resources>
 
     <StackPanel>
         <!-- Kopf des Abschnitts: Art + Testen -->
         <DockPanel Margin="0,0,0,2" Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" VerticalAlignment="Center"
+            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" VerticalAlignment="Center"
                     ToolTip="Ohne Speichern einmal starten (mit dem eingestellten Standardverhalten; nicht bei abzufragenden Platzhaltern)">
                 <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="Testen"/></StackPanel>
-            </Button>
+            </ui:Button>
             <TextBlock Text="{Binding KindGlyph}" Style="{StaticResource Icon}" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource Accent}"/>
             <TextBlock Text="{Binding KindLabel}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
         </DockPanel>
@@ -55,10 +60,10 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="Adresse" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Titel abrufen" Command="{Binding FetchTitleCommand}" Margin="6,0,0,0"
-                            ToolTip="Seitentitel als Anzeigename übernehmen"/>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="6,0,0,0" FontFamily="{StaticResource MonoFont}"
-                            Click="InsertPlaceholder_Click" ToolTip="Platzhalter einfügen – wird beim Start abgefragt, z. B. https://ticket/{{Nummer}}"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Titel abrufen" Command="{Binding FetchTitleCommand}" Margin="6,0,0,0"
+                            ToolTip="Seitentitel als Anzeigename übernehmen" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="6,0,0,0" FontFamily="{StaticResource MonoFont}"
+                            Click="InsertPlaceholder_Click" ToolTip="Platzhalter einfügen – wird beim Start abgefragt, z. B. https://ticket/{{Nummer}}" />
                     <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -85,7 +90,7 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="Pfad" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -104,7 +109,7 @@
                 </Border>
                 <StackPanel Visibility="{Binding IsOpenWithProgram, Converter={StaticResource Vis}}" Margin="0,8,0,0">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseOpenWithCommand}" Margin="6,0,0,0"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseOpenWithCommand}" Margin="6,0,0,0" />
                         <TextBox Text="{Binding OpenWithProgram, UpdateSourceTrigger=PropertyChanged}" Tag="z. B. C:\Program Files\totalcmd\TOTALCMD64.EXE" FontFamily="{StaticResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding OpenWithProgramError}" Style="{StaticResource FieldError}" Visibility="{Binding OpenWithProgramError, Converter={StaticResource Vis}}"/>
@@ -181,7 +186,7 @@
                 <StackPanel Visibility="{Binding UseRdpFile, Converter={StaticResource Vis}}">
                     <TextBlock Text=".rdp-Datei" Style="{StaticResource FieldLabel}"/>
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseRdpFileCommand}" Margin="6,0,0,0"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseRdpFileCommand}" Margin="6,0,0,0" />
                         <TextBox Text="{Binding RdpFile, UpdateSourceTrigger=PropertyChanged}" Tag="\\server\verbindungen\Server A.rdp" FontFamily="{StaticResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding RdpFileError}" Style="{StaticResource FieldError}" Visibility="{Binding RdpFileError, Converter={StaticResource Vis}}"/>
@@ -222,7 +227,7 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="Schlüsseldatei (optional)" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseKeyCommand}" Margin="6,0,0,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseKeyCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding KeyFile, UpdateSourceTrigger=PropertyChanged}" Tag="%USERPROFILE%\.ssh\id_ed25519" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>
@@ -320,8 +325,8 @@
                 <TextBlock Text="Variablen einfügen" Style="{StaticResource FieldLabel}"/>
                 <WrapPanel>
                     <ItemsControl ItemsSource="{Binding Builtins}" ItemTemplate="{StaticResource BuiltinChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
-                    <Button Style="{StaticResource Btn.Subtle}" Content="{}{{Abfrage}}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
-                            Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{}{{Name}}" ToolTip="Platzhalter, der beim Kopieren abgefragt wird"/>
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{}{{Abfrage}}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
+                            Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{}{{Name}}" ToolTip="Platzhalter, der beim Kopieren abgefragt wird" />
                 </WrapPanel>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
             </StackPanel>
@@ -383,7 +388,7 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="Programm" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -399,7 +404,7 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="Datei" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Durchsuchen …" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -419,7 +424,7 @@
             <StackPanel>
                 <TextBlock Text="Arbeitsordner (optional)" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="…" Command="{Binding BrowseWorkDirCommand}" Margin="6,0,0,0" Width="34" ToolTip="Ordner wählen"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="…" Command="{Binding BrowseWorkDirCommand}" Margin="6,0,0,0" Width="34" ToolTip="Ordner wählen" />
                     <TextBox Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Tag="leer = automatisch" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>

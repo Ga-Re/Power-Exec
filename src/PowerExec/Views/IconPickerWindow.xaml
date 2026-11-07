@@ -1,10 +1,15 @@
 <Window x:Class="PowerExec.Views.IconPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         Title="Symbol wählen" Style="{StaticResource AppWindow}"
         Width="640" Height="600" MinWidth="460" MinHeight="420" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">
+    <Window.Resources>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
+    </Window.Resources>
     <DockPanel Margin="20,16,20,16">
         <TextBlock x:Name="Heading" DockPanel.Dock="Top" Text="Symbol wählen" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
         <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
@@ -24,9 +29,9 @@
                 <c:IconPresenter x:Name="Preview" Size="28" Foreground="{DynamicResource Text.Primary}"/>
             </Border>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Style="{StaticResource Btn.Subtle}" Content="Kein Symbol" Click="None_Click" Margin="0,0,8,0"/>
-                <Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="90"/>
-                <Button Style="{StaticResource Btn.Accent}" Content="Übernehmen" IsDefault="True" MinWidth="100" Margin="8,0,0,0" Click="Ok_Click"/>
+                <ui:Button Style="{StaticResource Btn.Subtle}" Content="Kein Symbol" Click="None_Click" Margin="0,0,8,0" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="90" />
+                <ui:Button Style="{StaticResource Btn.Accent}" Content="Übernehmen" IsDefault="True" MinWidth="100" Margin="8,0,0,0" Click="Ok_Click" />
             </StackPanel>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="PreviewName" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
@@ -37,7 +42,7 @@
         <StackPanel x:Name="FilePanel" DockPanel.Dock="Top" Visibility="Collapsed" Margin="0,8,0,0">
             <TextBlock Text="PNG, ICO, JPG oder GIF – am besten quadratisch, mindestens 32 × 32 Pixel. Die Datei wird nicht kopiert; sie muss erreichbar bleiben."
                        Style="{StaticResource Caption}" TextWrapping="Wrap"/>
-            <Button Style="{StaticResource Btn.Standard}" Content="Bilddatei wählen …" HorizontalAlignment="Left" Margin="0,10,0,0" Click="BrowseImage_Click"/>
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="Bilddatei wählen …" HorizontalAlignment="Left" Margin="0,10,0,0" Click="BrowseImage_Click" />
         </StackPanel>
 
         <TextBlock x:Name="MoreText" DockPanel.Dock="Bottom" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"/>
@@ -49,10 +54,10 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Width="44" Height="44" Margin="2" Padding="0" ToolTip="{Binding Name}" Click="Icon_Click" MouseDoubleClick="Icon_DoubleClick"
+                            <ui:Button Width="44" Height="44" Margin="2" Padding="0" ToolTip="{Binding Name}" Click="Icon_Click" MouseDoubleClick="Icon_DoubleClick"
                                     Style="{StaticResource Btn.Subtle}">
                                 <c:IconPresenter Icon="{Binding Key}" Size="24"/>
-                            </Button>
+                            </ui:Button>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

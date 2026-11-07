@@ -8,6 +8,7 @@ public partial class WorkflowWindow : Window
     public WorkflowWindow(WorkflowEditorViewModel vm)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
         ViewModel = vm;

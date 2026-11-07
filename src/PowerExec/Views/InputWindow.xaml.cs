@@ -10,6 +10,7 @@ public partial class InputWindow : Window
     public InputWindow()
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Loaded += (_, _) => { ValueBox.Focus(); ValueBox.SelectAll(); };
     }

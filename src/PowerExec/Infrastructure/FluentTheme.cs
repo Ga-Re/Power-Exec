@@ -90,15 +90,15 @@ public static class FluentTheme
         var res = root.Resources;
         var merged = res.MergedDictionaries;
         var themeUri = new Uri(ThemePath + ThemeFile() + ".xaml", UriKind.Absolute);
-        var index = merged.ToList().FindIndex(d => d is ThemesDictionary || d.Source?.OriginalString.StartsWith(ThemePath, StringComparison.OrdinalIgnoreCase) == true);
-        if (index < 0)
+        // Das Fluent-Design steckt meist in Themes/Fluent.xaml (verschachtelt) – dort austauschen
+        if (FindTheme(res) is { } found)
+        {
+            if (found.Owner[found.Index].Source != themeUri) found.Owner[found.Index] = new ResourceDictionary { Source = themeUri };
+        }
+        else
         {
             merged.Insert(0, new ResourceDictionary { Source = themeUri });
-            if (!merged.OfType<ControlsDictionary>().Any()) merged.Insert(1, new ControlsDictionary());
-        }
-        else if (merged[index].Source != themeUri)
-        {
-            merged[index] = new ResourceDictionary { Source = themeUri };
+            if (!AllDictionaries(res).OfType<ControlsDictionary>().Any()) merged.Insert(1, new ControlsDictionary());
         }
 
         ApplyAccent(res);
@@ -168,6 +168,29 @@ public static class FluentTheme
         var b = new SolidColorBrush(c);
         b.Freeze();
         return b;
+    }
+
+    private static bool IsTheme(ResourceDictionary d) =>
+        d is ThemesDictionary || d.Source?.OriginalString.StartsWith(ThemePath, StringComparison.OrdinalIgnoreCase) == true;
+
+    private static (System.Collections.ObjectModel.Collection<ResourceDictionary> Owner, int Index)? FindTheme(ResourceDictionary d)
+    {
+        var list = d.MergedDictionaries;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (IsTheme(list[i])) return (list, i);
+            if (FindTheme(list[i]) is { } inner) return inner;
+        }
+        return null;
+    }
+
+    private static IEnumerable<ResourceDictionary> AllDictionaries(ResourceDictionary d)
+    {
+        foreach (var m in d.MergedDictionaries)
+        {
+            yield return m;
+            foreach (var mm in AllDictionaries(m)) yield return mm;
+        }
     }
 
     private static object? FindIn(IEnumerable<ResourceDictionary> dictionaries, string key)

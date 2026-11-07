@@ -11,6 +11,7 @@ public partial class ChoiceWindow : Window
     private ChoiceWindow(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Heading.Text = heading;
         Prompt.Text = prompt;

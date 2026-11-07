@@ -23,6 +23,7 @@ public partial class ProfilesWindow : Window
         _vm = vm;
         _app = app;
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
         vm.CloseRequested = () =>

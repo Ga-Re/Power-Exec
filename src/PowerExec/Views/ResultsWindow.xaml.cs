@@ -12,6 +12,7 @@ public partial class ResultsWindow : Window
     {
         _vm = vm;
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
     }

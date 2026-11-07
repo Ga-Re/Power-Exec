@@ -1149,7 +1149,20 @@ public sealed partial class SelfTestController : AppController
         Step("Fenster " + w.GetType().Name + " " + w.Title);
         w.Show();
         await Settle();
+        // Alle Dialoge nutzen Fluent-Bedienelemente (Themes/Fluent.xaml)
+        if (!VisualDescendants(w).OfType<Wpf.Ui.Controls.Button>().Any())
+            Fail($"Fluent: {w.GetType().Name} zeigt keine Fluent-Schaltflächen");
         if (w.Content is FrameworkElement root) Screenshot(root, "window-" + w.GetType().Name + "-" + (++_shotCounter));
         w.Close();
+    }
+
+    private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject d)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+        {
+            var c = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+            yield return c;
+            foreach (var cc in VisualDescendants(c)) yield return cc;
+        }
     }
 }

@@ -7,7 +7,11 @@ namespace PowerExec.Views;
 /// <summary>Felder eines eigenen Eintrags je Art; DataContext ist ein <see cref="CustomEntryViewModel"/>.</summary>
 public partial class CustomEntryForm : UserControl
 {
-    public CustomEntryForm() => InitializeComponent();
+    public CustomEntryForm()
+    {
+        InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
+    }
 
     private CustomEntryViewModel? Vm => DataContext as CustomEntryViewModel;
 

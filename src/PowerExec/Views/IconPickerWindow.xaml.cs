@@ -19,6 +19,7 @@ public partial class IconPickerWindow : Window
     private IconPickerWindow(IconRef current, string heading)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Heading.Text = heading;
         _selected = current;
