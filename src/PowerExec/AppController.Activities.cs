@@ -28,7 +28,7 @@ public sealed partial class AppController
         foreach (var h in _hosts)
         {
             h.ViewModel.RefreshActivities();
-            foreach (var t in h.Triggers) t.SetBusy(busy);
+            h.View.SetBusy(busy);
         }
     }
 
@@ -50,10 +50,10 @@ public sealed partial class AppController
     /// Lokal starten mit Verlauf und Aktivität; „Erneut starten“ in der Aktivität wiederholt denselben Start
     /// (gleiche Werte, neuer Verlaufseintrag).
     /// </summary>
-    public bool StartLocalTracked(LaunchItem item, ExecutionRequest request, Func<HistoryEntry> beginHistory, Window? owner)
+    public bool StartLocalTracked(LaunchItem item, ExecutionRequest request, Func<HistoryEntry> beginHistory, object? owner)
     {
         var entry = beginHistory();
-        var ok = Launcher.StartLocal(request, owner, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
+        var ok = Launcher.StartLocal(request, owner as System.Windows.Window, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
         if (!ok) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
         return ok;
     }

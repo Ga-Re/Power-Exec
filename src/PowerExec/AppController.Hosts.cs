@@ -19,40 +19,37 @@ namespace PowerExec;
 public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost, ISettingsWindowHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
-    public IShell Shell { get; } = new WpfShell();
+    public IShell Shell => Ui.Shell;
 
     /// <summary>Rückfragen (im Selbsttest über <see cref="AskForTest"/> beantwortet).</summary>
-    public IDialogs Dialogs => _uiDialogs ??= new WpfDialogs(() => AskForTest);
-    private IDialogs? _uiDialogs;
+    public IDialogs Dialogs => Ui.Dialogs;
 
-    /// <summary>Symbole für die UI-neutralen ViewModels (Griff auf die Bilder des <see cref="IconService"/>).</summary>
-    public IIconProvider IconProvider => _iconProvider ??= new WpfIconProvider(Icons);
-    private IIconProvider? _iconProvider;
+    /// <summary>Symbole für die UI-neutralen ViewModels.</summary>
+    public IIconProvider IconProvider => Ui.Icons;
 
     /// <summary>UI-Thread der App für die UI-neutralen Dienste.</summary>
-    public IUiDispatcher UiDispatcher => _uiDispatcher ??= new WpfUiDispatcher(Application.Current.Dispatcher);
-    private IUiDispatcher? _uiDispatcher;
+    public IUiDispatcher UiDispatcher => Ui.Dispatcher;
 
     /// <summary>Kontrastdesign, hell/dunkel.</summary>
-    public IThemeInfo Theme { get; } = new WpfThemeInfo();
+    public IThemeInfo Theme => Ui.Theme;
 
     // ── Ausführen-Dialog ─────────────────────────────────────────────
 
     bool IRunHost.ConfirmRun(LaunchItem item, LaunchProfile profile, int targetCount, object? owner) =>
-        ConfirmRun(item, profile, targetCount, owner as Window);
+        ConfirmRun(item, profile, targetCount, owner);
 
     bool IRunHost.StartRemote(ExecutionRequest request, object? owner, IReadOnlyDictionary<string, string?>? raw, LaunchProfile? profile) =>
-        StartRemote(request, owner as Window, raw, profile);
+        StartRemote(request, owner, raw, profile);
 
     bool IRunHost.StartLocalTracked(LaunchItem item, ExecutionRequest request, Func<HistoryEntry> beginHistory, object? owner) =>
-        StartLocalTracked(item, request, beginHistory, owner as Window);
+        StartLocalTracked(item, request, beginHistory, owner);
 
     bool IRunHost.IsPwshInstalled => Launcher.IsPwshInstalled;
 
     string IRunHost.ToUnc(string path) => PathResolver.ToUnc(path);
 
     RunCredential? IRunHost.PromptCredential(object? owner, string target, bool remote) =>
-        CredentialWindow.Prompt(owner as Window, target, remote);
+        Ui.AskCredential(owner, target, remote);
 
     Task<IReadOnlyList<RemoteTestResult>> IRunHost.TestConnectionsAsync(IReadOnlyList<string> targets, RunCredential? credential) =>
         RemoteTestService.RunAsync(targets, Settings, credential);
@@ -85,7 +82,7 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     bool IPanelHost.ImportEntries(string? intoGroup) => ImportEntries(intoGroup);
 
-    void IPanelHost.ShowPanelFromHotkey(IPanelContext? panel, bool forcePanel) => ShowPanelFromHotkey(panel as PanelHost, forcePanel);
+    void IPanelHost.ShowPanelFromHotkey(IPanelContext? panel, bool forcePanel) => ShowPanelFromHotkey(panel as AppPanel, forcePanel);
 
     void IPanelHost.RememberForUndo(string description) => RememberForUndo(description);
 
@@ -99,7 +96,7 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     string ICustomEntryHost.ToUnc(string path) => PathResolver.ToUnc(path);
 
-    object? ISettingsHost.SettingsDialogOwner => Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault();
+    object? ISettingsHost.SettingsDialogOwner => _settingsWindow?.Owner;
 
     IItemSource ISettingsHost.Repository => Repository;
 
@@ -108,7 +105,7 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
     Task<IReadOnlyList<string>> ISettingsHost.FindComputersAsync(string query) => AdSearch.FindComputersAsync(query);
 
     EntryEditorResult ICustomEntryListHost.EditEntryModal(AppSettings target, CustomEntry? entry, bool isNew, string? group, object? owner) =>
-        ProfilesWindow.EditEntryEx(this, target, entry, isNew, saveImmediately: false, group, null, owner as Window);
+        Ui.EditEntry(target, entry, isNew, group, null, owner);
 
     void ICustomEntryListHost.ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, object? owner, AppSettings? source) =>
         ExportEntries(entries, rootGroup, owner, source);
@@ -121,23 +118,13 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
     DateTime? ISettingsWindowHost.LastUpdateCheck => Updates.LastCheck;
     string ISettingsWindowHost.CurrentVersionText => UpdateService.CurrentVersionText;
     bool ISettingsWindowHost.IsInstalledViaSetup => UpdateService.IsInstalledViaSetup;
-    bool ISettingsWindowHost.IsMicaSupported => WindowHelper.IsMicaSupported;
+    bool ISettingsWindowHost.IsMicaSupported => Ui.IsMicaSupported;
 
-    IReadOnlyList<KeyValuePair<int, string>> ISettingsWindowHost.Monitors =>
-        ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)).ToList();
+    IReadOnlyList<KeyValuePair<int, string>> ISettingsWindowHost.Monitors => Ui.Monitors;
 
-    void ISettingsWindowHost.ShowProfilesDialog(ProfilesViewModel vm, object? owner)
-    {
-        var w = new ProfilesWindow(vm, this);
-        if (owner is Window o) w.Owner = o;
-        w.ShowDialog();
-    }
+    void ISettingsWindowHost.ShowProfilesDialog(ProfilesViewModel vm, object? owner) => Ui.ShowProfilesModal(vm, owner);
 
     // ── Einführung ───────────────────────────────────────────────────
 
-    string? IWelcomeHost.PickFolder(string title)
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = title };
-        return dlg.ShowDialog() == true ? dlg.FolderName : null;
-    }
+    string? IWelcomeHost.PickFolder(string title) => Dialogs.PickFolder(title);
 }

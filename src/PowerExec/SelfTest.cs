@@ -125,7 +125,6 @@ public sealed partial class AppController
             Views.WindowHelper.Settings = () => Settings;
             ThemeService.Apply(Settings);
 
-            Icons = new IconService(dispatcher);
             Health = new HealthService(UiDispatcher);
             Repository = new ItemRepository(Settings, UiDispatcher);
             Launcher = new Launcher(() => Settings);
@@ -143,7 +142,7 @@ public sealed partial class AppController
 
             foreach (var (layout, compact) in new[] { (ItemLayout.List, false), (ItemLayout.List, true), (ItemLayout.Grid, false), (ItemLayout.Grid, true) })
             {
-                foreach (var host in _hosts)
+                foreach (var host in WpfHosts)
                 {
                     host.Config.Layout = layout;
                     host.Config.Compact = compact;
@@ -165,7 +164,7 @@ public sealed partial class AppController
 
             Step("Suche: unscharf, Operatoren, Hervorhebung");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                 await Settle();
@@ -207,7 +206,7 @@ public sealed partial class AppController
 
             Step("Tastatur: Schnellstart und Übersicht");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.Rebuild();
                 if (!vm.AllItems.Any(i => i.QuickKeyText == "Alt+1")) Fail("Tastatur: Favorit ohne Schnellstart-Taste Alt+1");
@@ -262,7 +261,7 @@ public sealed partial class AppController
 
             Step("Gruppen ziehen: Lücke im Panel");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.SearchText = string.Empty;
                 vm.Rebuild();
@@ -335,7 +334,7 @@ public sealed partial class AppController
                 }
                 var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
                 remoteDemo.Progress = 0.7;
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 if (!host.ViewModel.HasActivities) Fail("Aktivitäten: Panel zeigt keine Aktivitäten");
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                 await Settle();
@@ -367,7 +366,7 @@ public sealed partial class AppController
                 {
                     cfg.Backdrop = b;
                     CreateHosts();
-                    var host = _hosts[0];
+                    var host = WpfHost(0);
                     var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
@@ -438,7 +437,7 @@ public sealed partial class AppController
                 if (!welcomeVm.IsLast || welcomeVm.NextLabel != "Fertig") Fail("Einführung: letzter Schritt zeigt nicht „Fertig“");
                 welcome.Close();
 
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 ShowWhatsNewForTest(PowerExec.Core.Updates.ReleaseNotes.All[0]);
                 if (!host.ViewModel.WhatsNewVisible) Fail("Neuerungen: Karte erscheint nicht");
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
@@ -452,7 +451,7 @@ public sealed partial class AppController
 
             Step("Mini-Dock");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 host.Config.ShowDock = true;
                 host.CreateTriggers(this);
                 host.ViewModel.Rebuild();
@@ -477,7 +476,7 @@ public sealed partial class AppController
 
             Step("Verlauf");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var histScript = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell)?.Item;
                 if (histScript == null) Fail("Verlauf: kein Script zum Eintragen");
                 else
@@ -505,21 +504,22 @@ public sealed partial class AppController
 
             Step("Spotlight-Modus");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 host.Config.HotkeyOpensSpotlight = true;
                 SpotlightStaysOpen = true;
-                ShowPanelFromHotkey(host);
+                ShowPanelFromHotkey(host.Panel);
                 await Settle();
-                if (Spotlight == null) Fail("Spotlight: Tastenkürzel öffnet kein Suchfenster");
+                var spotlight = (Spotlight as WpfAppUi.WindowHandle)?.Window as SpotlightWindow;
+                if (spotlight == null) Fail("Spotlight: Tastenkürzel öffnet kein Suchfenster");
                 else
                 {
                     if (host.Window.IsOpen) Fail("Spotlight: Panel öffnet zusätzlich");
-                    if (Spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
-                    Spotlight.ViewModel.SearchText = "clnup";
+                    if (spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
+                    spotlight.ViewModel.SearchText = "clnup";
                     await Settle();
-                    if (Spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");
-                    if (Spotlight.Content is FrameworkElement spotRoot) Screenshot(spotRoot, "spotlight");
-                    ShowPanelFromHotkey(host); // zweites Mal schließt
+                    if (spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");
+                    if (spotlight.Content is FrameworkElement spotRoot) Screenshot(spotRoot, "spotlight");
+                    ShowPanelFromHotkey(host.Panel); // zweites Mal schließt
                     await Settle();
                     if (Spotlight != null) Fail("Spotlight: Tastenkürzel schließt das Suchfenster nicht");
                 }
@@ -529,7 +529,7 @@ public sealed partial class AppController
 
             Step("Parameter im Panel und Parameter-Sets");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var withParams = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && i.Item.HasParameters && !i.IsSingleClick);
                 if (withParams == null) Fail("Parameter im Panel: kein Script mit Parametern");
                 else
@@ -553,7 +553,7 @@ public sealed partial class AppController
 
             Step("Mehrfachauswahl und Abläufe");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var pick = host.ViewModel.VisibleItems.Where(i => !i.IsCustom).Take(2).ToList();
                 if (pick.Count < 2) Fail("Abläufe: zu wenige Einträge für die Mehrfachauswahl");
                 else
@@ -581,7 +581,7 @@ public sealed partial class AppController
 
             Step("Zeitpläne");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var planned = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && !i.IsCustom);
                 if (planned == null) Fail("Zeitplan: kein Script");
                 else
@@ -606,7 +606,7 @@ public sealed partial class AppController
 
             Step("Team-Katalog");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var publisher = new AppSettings();
                 publisher.CustomEntries.Add(new CustomEntry { Id = "kat1", Kind = CustomEntryKind.Url, Name = "Team-Wiki", Target = "https://wiki.example.com" });
                 var catalogPath = Path.Combine(dir, "team.pxentries.json");
@@ -639,7 +639,7 @@ public sealed partial class AppController
 
             Step("Suchvorschläge, Farbwähler, Sprungleiste");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.UpdateSuggestions("typ:", 4);
                 if (!vm.HasSuggestions) Fail("Suchvorschläge: „typ:“ schlägt nichts vor");
@@ -701,7 +701,7 @@ public sealed partial class AppController
                 {
                     ToggleFavorite(cleanup); // ist Favorit → wird entfernt
                     if (IsFavorite(cleanupPath) || UndoToast == null) Fail("Rückgängig: kein Hinweis nach dem Entfernen des Favoriten");
-                    if (_hosts[0].Window.Content is FrameworkElement undoRoot) { await Settle(); Screenshot(undoRoot, "panel-rueckgaengig"); }
+                    if (WpfHost(0).Window.Content is FrameworkElement undoRoot) { await Settle(); Screenshot(undoRoot, "panel-rueckgaengig"); }
                     Undo();
                     if (!IsFavorite(cleanupPath)) Fail("Rückgängig: Favorit wurde nicht wiederhergestellt");
                     if (UndoToast != null) Fail("Rückgängig: Hinweis bleibt nach dem Zurücknehmen stehen");
@@ -1021,8 +1021,7 @@ public sealed partial class AppController
         }
         finally
         {
-            foreach (var h in _hosts) h.Dispose();
-            _hosts.Clear();
+            DisposePanels();
         }
         lock (bindingErrors.Errors)
             foreach (var e in bindingErrors.Errors.Take(25)) Fail("Bindungsfehler: " + e);
@@ -1030,6 +1029,11 @@ public sealed partial class AppController
     }
 
     private void Fail(string message) => _selfTestErrors.Add(message);
+
+    /// <summary>WPF-Seite der Panels (Fenster, Hover-Zonen, Docks) für die Prüfungen.</summary>
+    private IReadOnlyList<PanelHost> WpfHosts => _hosts.Select(h => (PanelHost)h.View).ToList();
+
+    private PanelHost WpfHost(int index) => (PanelHost)_hosts[index].View;
 
     /// <summary>Bildschirmfoto eines Fensters (Inhalt) für die Sichtprüfung als CI-Artefakt.</summary>
     private void Screenshot(FrameworkElement element, string name)

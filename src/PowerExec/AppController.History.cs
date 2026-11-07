@@ -84,7 +84,7 @@ public sealed partial class AppController
         var item = FindItem(entry.Path);
         if (item == null)
         {
-            _tray?.ShowBalloon("Nicht mehr vorhanden", $"{entry.Name} wurde nicht gefunden (umbenannt, gelöscht oder ausgeblendet).", warning: true);
+            Ui.Notify("Nicht mehr vorhanden", $"{entry.Name} wurde nicht gefunden (umbenannt, gelöscht oder ausgeblendet).", warning: true);
             return false;
         }
         if (onlyFailed && entry.FailedTargets.Count == 0) return false;

@@ -55,7 +55,7 @@ public sealed partial class AppController
             var item = FindItem(s.Path);
             if (item == null)
             {
-                _tray?.ShowBalloon("Geplanter Start nicht möglich", $"{s.Name} wurde nicht gefunden.", warning: true);
+                Ui.Notify("Geplanter Start nicht möglich", $"{s.Name} wurde nicht gefunden.", warning: true);
                 return;
             }
             AppLog.Info($"Zeitplan: {s.Name} ({Schedules.Describe(s)})");
@@ -66,7 +66,7 @@ public sealed partial class AppController
                 result = await RunStepAsync(new WorkflowStep { Path = s.Path, Name = s.Name, ProfileName = s.ProfileName }, s.Name, () => false, "Zeitplan · ");
             bool problem = result is HistoryResult.Error or HistoryResult.Warning or HistoryResult.Cancelled;
             if (problem || !s.NotifyOnlyOnError)
-                _tray?.ShowBalloon(problem ? $"Geplanter Start: {s.Name} mit Problemen" : $"Geplanter Start: {s.Name} fertig",
+                Ui.Notify(problem ? $"Geplanter Start: {s.Name} mit Problemen" : $"Geplanter Start: {s.Name} fertig",
                     History.Entries.FirstOrDefault(h => h.Path.Equals(s.Path, StringComparison.OrdinalIgnoreCase))?.Summary ?? string.Empty,
                     () => ShowHistoryInPanel(), warning: problem);
         }
@@ -113,8 +113,6 @@ public sealed partial class AppController
     public void ShowSchedule(Core.Models.LaunchItem item)
     {
         HidePanels(force: true);
-        var w = new Views.ScheduleWindow(new ViewModels.ScheduleViewModel(this, item));
-        w.Show();
-        w.Activate();
+        Ui.ShowSchedule(new ViewModels.ScheduleViewModel(this, item));
     }
 }

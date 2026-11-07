@@ -5,7 +5,7 @@ using PowerExec.Interop;
 namespace PowerExec.Services;
 
 /// <summary>Globales Tastenkürzel über RegisterHotKey.</summary>
-public sealed class HotkeyService : IDisposable
+public sealed class HotkeyService : IHotkeys
 {
     private readonly HwndSource _source;
     private readonly HashSet<int> _registered = new();

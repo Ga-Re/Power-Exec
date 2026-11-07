@@ -15,22 +15,25 @@ namespace PowerExec;
 /// <summary>Zentrale Steuerung: Einstellungen, Panel, Aktionen, Updates.</summary>
 public sealed partial class AppController : IDisposable
 {
-    private readonly List<PanelHost> _hosts = new();
-    private HotkeyService? _hotkey;
-    private TrayIcon? _tray;
-    private SettingsWindow? _settingsWindow;
+    private readonly List<AppPanel> _hosts = new();
+    private ISettingsWindow? _settingsWindow;
+
+    /// <summary>Die Oberfläche (WPF oder WinUI): Fenster, Panels, Tray, Tastenkürzel, Design.</summary>
+    public IAppUi Ui => _ui ??= new WpfAppUi(this);
+    private IAppUi? _ui;
 
     public SettingsStore Store { get; private set; } = new();
     public AppSettings Settings { get; private set; } = new();
     public ItemRepository Repository { get; private set; } = null!;
     public Launcher Launcher { get; private set; } = null!;
     public UpdateService Updates { get; } = new();
-    public IconService Icons { get; private set; } = null!;
+    /// <summary>Symbole als WPF-Bilder (für die WPF-Fenster).</summary>
+    public IconService Icons => ((WpfAppUi)Ui).IconService;
     public HealthService Health { get; private set; } = null!;
     /// <summary>Update-Hinweis für alle Panels und das Einstellungsfenster.</summary>
     public UpdateState Update { get; } = new();
 
-    public IReadOnlyList<PanelHost> Hosts => _hosts;
+    public IReadOnlyList<AppPanel> Hosts => _hosts;
 
     public void Start()
     {
@@ -42,18 +45,14 @@ public sealed partial class AppController : IDisposable
             Settings.StartWithWindows = AutostartService.IsEnabled();
             SaveSettings();
         }
-        Views.WindowHelper.Settings = () => Settings;
-        Views.WindowHelper.PanelsBehind = behind => { foreach (var h in _hosts) h.Window.SetBehindAppWindows(behind); };
-        ThemeService.Apply(Settings);
-        ThemeService.SystemChanged += OnSystemThemeChanged;
+        Ui.Initialize();
+        Ui.ApplyTheme(Settings);
+        Ui.SystemThemeChanged += OnSystemThemeChanged;
         SetupSnippetFolder();
-        Controls.MachineBox.GroupSource = () => Settings.MachineGroups;
-        Infrastructure.TagBrushConverter.Lookup = t => Tags.ColorOf(Settings, t);
-        CustomEntry.TerminalAvailable = () => IconService.ResolveProgram("wt.exe") != null;
+        CustomEntry.TerminalAvailable = () => ProgramResolver.Resolve("wt.exe") != null;
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => Shell.GetClipboardText();
 
-        Icons = new IconService(Application.Current.Dispatcher);
         Health = new HealthService(UiDispatcher);
         Health.Changed += RebuildPanels;
         Repository = new ItemRepository(Settings, UiDispatcher);
@@ -65,15 +64,14 @@ public sealed partial class AppController : IDisposable
             RebuildPanels();
         };
 
-        _hotkey = new HotkeyService();
-        _hotkey.Pressed += id => ShowPanelFromHotkey(_hosts.FirstOrDefault(h => h.HotkeyId == id));
+        Ui.Hotkeys.Pressed += id => ShowPanelFromHotkey(_hosts.FirstOrDefault(h => h.HotkeyId == id));
         var hotkeyError = CreateHosts();
         StartFullscreenWatch();
         StartScheduler();
         StartCatalogs();
         StartMachineSync();
 
-        _tray = new TrayIcon(this);
+        Ui.CreateTray();
 
         AppLog.Info($"Power-Exec {UpdateService.CurrentVersionText} gestartet ({Settings.Folders.Count} Ordner)");
         Repository.LoadCache();
@@ -94,12 +92,12 @@ public sealed partial class AppController : IDisposable
         }
         else if (Settings.Folders.Count == 0)
         {
-            _tray.ShowBalloon("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
+            Ui.Notify("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
             ShowSettings(section: "groups");
         }
         else if (hotkeyError != null)
         {
-            _tray.ShowBalloon("Tastenkürzel nicht verfügbar", hotkeyError);
+            Ui.Notify("Tastenkürzel nicht verfügbar", hotkeyError);
         }
 
         if (Settings.CheckUpdatesOnStart)
@@ -144,7 +142,7 @@ public sealed partial class AppController : IDisposable
         var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
         SaveSettings();
-        if (themeChanged) ThemeService.Apply(Settings);
+        if (themeChanged) Ui.ApplyTheme(Settings);
         if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
         string? hotkeyError = null;
         if (panelsChanged || themeChanged || _hosts.Count == 0) hotkeyError = CreateHosts();
@@ -163,9 +161,9 @@ public sealed partial class AppController : IDisposable
     /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
     private void OnSystemThemeChanged()
     {
-        var before = ThemeService.StateKey;
-        ThemeService.Apply(Settings);
-        if (before != ThemeService.StateKey) CreateHosts();
+        var before = Ui.ThemeStateKey;
+        Ui.ApplyTheme(Settings);
+        if (before != Ui.ThemeStateKey) CreateHosts();
     }
 
     /// <summary>Alles, was Panelfenster und Hover-Zonen betrifft (ohne „angeheftet“).</summary>
@@ -186,22 +184,32 @@ public sealed partial class AppController : IDisposable
     /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
     private string? CreateHosts()
     {
-        foreach (var h in _hosts) h.Dispose();
-        _hosts.Clear();
-        _hotkey?.UnregisterAll();
+        DisposePanels();
+        Ui.Hotkeys.UnregisterAll();
         if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig());
         var errors = new List<string>();
         int id = 0x5045; // "PE"
         foreach (var config in Settings.Panels)
         {
-            var host = new PanelHost(this, config, id++);
-            host.CreateTriggers(this);
+            var host = new AppPanel(config, id++);
+            host.ViewModel = new PanelViewModel(this, host);
+            host.View = Ui.CreatePanelView(host);
             _hosts.Add(host);
-            var err = _hotkey?.Register(host.HotkeyId, config.Hotkey);
+            var err = Ui.Hotkeys.Register(host.HotkeyId, config.Hotkey);
             if (err != null) errors.Add($"{config.Name}: {err}");
         }
         foreach (var h in _hosts) h.ViewModel.Rebuild();
         return errors.Count == 0 ? null : string.Join("\n", errors);
+    }
+
+    private void DisposePanels()
+    {
+        foreach (var h in _hosts)
+        {
+            h.View.Dispose();
+            h.ViewModel.Detach();
+        }
+        _hosts.Clear();
     }
 
     public void RebuildPanels()
@@ -217,10 +225,8 @@ public sealed partial class AppController : IDisposable
     /// <summary>Nach einer Aktion alle Panels einfahren (außer angeheftete, sofern nicht erzwungen).</summary>
     public void HidePanels(bool force = false)
     {
-        foreach (var h in _hosts) h.Window.HideAfterAction(force);
+        foreach (var h in _hosts) h.View.HideAfterAction(force);
     }
-
-    internal IEnumerable<EdgeTriggerWindow> AllTriggers => _hosts.SelectMany(h => h.Triggers);
 
     private IUiTimer? _fullscreenTimer;
 
@@ -235,32 +241,8 @@ public sealed partial class AppController : IDisposable
     {
         try
         {
-            if (!Settings.HideHotZoneInFullscreen)
-            {
-                foreach (var t in AllTriggers) t.SetSuspended(false);
-                foreach (var d in _hosts.SelectMany(h => h.Docks)) d.SetSuspended(false);
-                return;
-            }
-            var hwnd = Interop.NativeMethods.GetForegroundWindow();
-            System.Drawing.Rectangle? rect = null;
-            string cls = string.Empty;
-            if (hwnd != IntPtr.Zero && Interop.NativeMethods.IsWindowVisible(hwnd) &&
-                Interop.NativeMethods.GetWindowThreadProcessId(hwnd, out var pid) != 0 && pid != Environment.ProcessId &&
-                Interop.NativeMethods.GetWindowRect(hwnd, out var r))
-            {
-                rect = System.Drawing.Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom);
-                cls = Interop.NativeMethods.ClassNameOf(hwnd);
-            }
-            foreach (var h in _hosts)
-                foreach (var t in h.Triggers)
-                {
-                    bool full = rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, t.Monitor.Bounds, cls);
-                    if (full && !h.Window.IsOpen) t.SetSuspended(true);
-                    else if (!full) t.SetSuspended(false);
-                }
-            foreach (var h in _hosts)
-                foreach (var d in h.Docks)
-                    d.SetSuspended(rect.HasValue && Core.Layout.Fullscreen.IsFullscreen(rect.Value, d.Monitor.Bounds, cls));
+            var probe = Settings.HideHotZoneInFullscreen ? FullscreenProbe.Current() : null;
+            foreach (var h in _hosts) h.View.ApplyFullscreen(probe);
         }
         catch
         {
@@ -283,10 +265,8 @@ public sealed partial class AppController : IDisposable
         _settingsWindow?.Close(); // Einstellungen zeigen sonst noch den alten Arbeitsbereich
     }
 
-    public void ShowPanelFromTrigger(PanelHost host, MonitorInfo monitor) => host.Window.ShowPanel(monitor, viaHotkey: false);
-
     /// <summary>Tastenkürzel oder Tray: Panel öffnen bzw. wieder schließen.</summary>
-    public void ShowPanelFromHotkey(PanelHost? host = null, bool forcePanel = false)
+    public void ShowPanelFromHotkey(AppPanel? host = null, bool forcePanel = false)
     {
         host ??= _hosts.FirstOrDefault();
         if (host == null) return;
@@ -295,16 +275,13 @@ public sealed partial class AppController : IDisposable
             ToggleSpotlight(host);
             return;
         }
-        var w = host.Window;
+        var w = host.View;
         if (w.IsOpen && w.OpenedViaHotkey)
         {
-            w.HidePanel();
+            w.Hide();
             return;
         }
-        var monitor = host.Config.MonitorMode == MonitorMode.All
-            ? ScreenService.MonitorAtCursor()
-            : ScreenService.TriggerMonitors(host.Config)[0];
-        w.ShowPanel(monitor, viaHotkey: true);
+        w.ShowViaHotkey();
     }
 
     // ---- Aktionen -------------------------------------------------------
@@ -437,7 +414,7 @@ public sealed partial class AppController : IDisposable
             if (record) RecordRun(item, ProfileResolver.GetDefault(Settings, item));
             HidePanels();
             if (resolved.Source.PasteAfterCopy) _ = PasteAsync(item.DisplayName);
-            else _tray?.ShowBalloon("In die Zwischenablage kopiert", item.DisplayName);
+            else Ui.Notify("In die Zwischenablage kopiert", item.DisplayName);
         }
         catch (Exception ex)
         {
@@ -447,8 +424,8 @@ public sealed partial class AppController : IDisposable
 
     private async Task PasteAsync(string name)
     {
-        if (!await ForegroundTracker.PasteIntoPreviousAsync())
-            _tray?.ShowBalloon("In die Zwischenablage kopiert", $"{name}: Kein Zielfenster gefunden – mit Strg+V einfügen.");
+        if (!await Ui.PasteIntoPreviousAsync())
+            Ui.Notify("In die Zwischenablage kopiert", $"{name}: Kein Zielfenster gefunden – mit Strg+V einfügen.");
     }
 
     // ---- Eigene Gruppen ---------------------------------------------------
@@ -461,7 +438,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Ja/Nein-Frage über dem offenen Panel (das Panel liegt sonst darüber).</summary>
     private bool Confirm(string text, string title)
     {
-        var owner = _hosts.FirstOrDefault(h => h.Window.IsOpen)?.Window;
+        var owner = _hosts.FirstOrDefault(h => h.View.IsOpen)?.View.Owner;
         return WithDialog(() => Dialogs.Confirm(text, title, owner: owner, defaultNo: true));
     }
 
@@ -544,7 +521,7 @@ public sealed partial class AppController : IDisposable
         var result = GroupManager.MoveGroup(Settings, path, target, position);
         if (result == null)
         {
-            _tray?.ShowBalloon("Verschieben nicht möglich", "Am Ziel gibt es bereits eine Gruppe mit diesem Namen, oder die Gruppe würde in ihre eigene Untergruppe verschoben.");
+            Ui.Notify("Verschieben nicht möglich", "Am Ziel gibt es bereits eine Gruppe mit diesem Namen, oder die Gruppe würde in ihre eigene Untergruppe verschoben.");
             return;
         }
         if (position == GroupDropPosition.Into)
@@ -618,7 +595,7 @@ public sealed partial class AppController : IDisposable
         CommitUserChange();
         AppLog.Info($"Per Drag & Drop hinzugefügt{(group != null ? " (Gruppe " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
         if (group == null && keys.Count > 0 && Hosts.Any(h => !h.Config.ShowsFolder(PanelConfig.CustomEntriesKey)))
-            _tray?.ShowBalloon("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
+            Ui.Notify("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
     }
 
     private int AskFolderDrop(DroppedTarget folder, bool several, out bool forAll)
@@ -634,7 +611,7 @@ public sealed partial class AppController : IDisposable
     {
         if (NewGroup.FolderError(Settings.Folders, folderPath) is { } error)
         {
-            _tray?.ShowBalloon("Ordner schon vorhanden", error, warning: true);
+            Ui.Notify("Ordner schon vorhanden", error, warning: true);
             return;
         }
         RememberForUndo("Ordner als Gruppe hinzugefügt");
@@ -652,14 +629,14 @@ public sealed partial class AppController : IDisposable
     public void NewCustomEntry(string? kindKey, string? group)
     {
         var template = CustomEntry.FromKindKey(kindKey);
-        var result = WithDialog(() => ProfilesWindow.EditEntryEx(this, Settings, template, isNew: true, saveImmediately: false, group, null));
+        var result = WithDialog(() => Ui.EditEntry(Settings, template, isNew: true, group, null, null));
         HandleEditorResult(result, group);
     }
 
     /// <summary>Eintrag vorbelegt anlegen (Zwischenablage, Vorlage, Duplikat) – der Eintragsdialog zeigt ihn zum Bestätigen.</summary>
     public bool NewCustomEntry(CustomEntry template, string? group, IEnumerable<string>? tags = null)
     {
-        var result = WithDialog(() => ProfilesWindow.EditEntryEx(this, Settings, template, isNew: true, saveImmediately: false, group, tags));
+        var result = WithDialog(() => Ui.EditEntry(Settings, template, isNew: true, group, tags, null));
         return HandleEditorResult(result, group);
     }
 
@@ -720,8 +697,8 @@ public sealed partial class AppController : IDisposable
         var entry = Settings.CustomEntries.FirstOrDefault(c => c.Key.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         if (entry == null || entry.Kind == CustomEntryKind.File) return;
         var copy = entry.Duplicate();
-        var key = WithDialog(() => ProfilesWindow.EditEntry(this, Settings, copy, isNew: true, saveImmediately: false,
-            GroupManager.GroupOf(Settings, entry.Key), Tags.Of(Settings, entry.Key)));
+        var key = WithDialog(() => Ui.EditEntry(Settings, copy, isNew: true,
+            GroupManager.GroupOf(Settings, entry.Key), Tags.Of(Settings, entry.Key), null).SavedKey);
         if (key == null) return;
         var source = Settings.FindEntry(entry.Key);
         if (source != null && source.Profiles.Count > 0 && Settings.FindEntry(key) is { Profiles.Count: 0 } target)
@@ -760,7 +737,7 @@ public sealed partial class AppController : IDisposable
         catch { }
         if (string.IsNullOrWhiteSpace(text))
         {
-            _tray?.ShowBalloon("Zwischenablage leer", "Kopiere eine Adresse, einen Pfad, einen Rechnernamen oder Code und versuche es erneut.");
+            Ui.Notify("Zwischenablage leer", "Kopiere eine Adresse, einen Pfad, einen Rechnernamen oder Code und versuche es erneut.");
             return;
         }
         NewCustomEntry(ClipboardClassifier.Suggest(text, Directory.Exists, File.Exists), group);
@@ -830,7 +807,7 @@ public sealed partial class AppController : IDisposable
         {
             File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
             AppLog.Info($"{entries.Count} eigene Einträge exportiert: {fileName}");
-            _tray?.ShowBalloon("Exportiert", $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
+            Ui.Notify("Exportiert", $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
         }
         catch (Exception ex)
         {
@@ -984,7 +961,7 @@ public sealed partial class AppController : IDisposable
             if (moves.Count > 0)
             {
                 RebuildPanels();
-                _tray?.ShowBalloon("Datei wiedergefunden", moves.Count == 1
+                Ui.Notify("Datei wiedergefunden", moves.Count == 1
                     ? $"{Path.GetFileName(moves[0].OldPath)} heißt jetzt {Path.GetFileName(moves[0].NewPath)}. Profile und Favorit wurden übernommen."
                     : $"{moves.Count} umbenannte oder verschobene Dateien erkannt. Profile und Favoriten wurden übernommen.");
             }
@@ -1167,10 +1144,7 @@ public sealed partial class AppController : IDisposable
         if (ResolvePlaceholders(item) is not { } resolvedItem) return;
         item = resolvedItem;
         HidePanels();
-        var vm = new RunViewModel(this, item, mode, remote, profile);
-        var w = new RunWindow(vm);
-        w.Show();
-        w.Activate();
+        Ui.ShowRun(new RunViewModel(this, item, mode, remote, profile));
     }
 
     /// <summary>Profil-Dialog aus dem Panel: arbeitet direkt auf den Einstellungen und speichert sofort.</summary>
@@ -1179,10 +1153,7 @@ public sealed partial class AppController : IDisposable
         if (item.Source is { Kind: CustomEntryKind.Workflow } wf) { EditWorkflow(wf); return; }
         HidePanels(force: true);
         item = Refresh(item);
-        var vm = new ProfilesViewModel(this, item, Settings, saveImmediately: true);
-        var w = new ProfilesWindow(vm, this);
-        w.Show();
-        w.Activate();
+        Ui.ShowProfiles(new ProfilesViewModel(this, item, Settings, saveImmediately: true));
     }
 
     /// <summary>Wird vom Profil-Dialog nach dem Speichern aufgerufen.</summary>
@@ -1193,25 +1164,23 @@ public sealed partial class AppController : IDisposable
 
     /// <summary>Startet die Remote-/Massenausführung und öffnet die Ergebnisliste.</summary>
     /// <param name="raw">Parameterwerte als Text für den Verlauf (null = aus den typisierten Werten).</param>
-    public bool StartRemote(ExecutionRequest request, Window? owner, IReadOnlyDictionary<string, string?>? raw = null, LaunchProfile? profile = null)
+    public bool StartRemote(ExecutionRequest request, object? owner, IReadOnlyDictionary<string, string?>? raw = null, LaunchProfile? profile = null)
     {
         RunCredential? cred = null;
         if (request.Mode == ExecutionMode.OtherUser)
         {
-            cred = CredentialWindow.Prompt(owner, request.Item.DisplayName, remote: true);
+            cred = Ui.AskCredential(owner, request.Item.DisplayName, remote: true);
             if (cred == null) return false;
         }
         var account = cred?.Account ?? $"{Environment.UserDomainName}\\{Environment.UserName}";
         var vm = new ResultsViewModel(this, request, account);
-        var w = new ResultsWindow(vm);
         var history = BeginHistory(request.Item, profile, request.Mode, request.Engine, request.Targets,
             raw ?? RunHistory.RawFrom(request.Parameters), HistoryOrigin);
+        IAppWindow? w = null;
         var activity = Activities.TrackRemote(vm, () =>
         {
-            if (!w.IsLoaded) { w = new ResultsWindow(vm); w.Show(); }
-            if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
             HidePanels();
-            w.Activate();
+            w?.BringToFront();
         });
         activity.Completed += () => CompleteHistory(history,
             vm.RunnerError != null ? HistoryResult.Error : vm.ErrorCount + vm.UnreachableCount > 0 ? HistoryResult.Warning : HistoryResult.Success,
@@ -1219,20 +1188,17 @@ public sealed partial class AppController : IDisposable
             vm.Rows.Where(r => r.Status is RemoteStatus.Error or RemoteStatus.Unreachable).Select(r => r.Computer), vm.LogFile);
         vm.Finished += () =>
         {
-            if (!Settings.NotifyOnFinish || w.IsActive) return;
+            if (!Settings.NotifyOnFinish || w?.IsActive == true) return;
             bool problems = vm.ErrorCount + vm.UnreachableCount > 0 || vm.RunnerError != null;
-            _tray?.ShowBalloon($"{request.Item.DisplayName} ist fertig",
+            Ui.Notify($"{request.Item.DisplayName} ist fertig",
                 vm.RunnerError ?? $"{vm.SuccessCount} erfolgreich · {vm.ErrorCount} Fehler · {vm.UnreachableCount} nicht erreichbar",
                 () =>
                 {
-                    if (!w.IsLoaded) return;
-                    if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
-                    w.Activate();
+                    if (w?.IsOpen == true) w.BringToFront();
                 },
                 warning: problems);
         };
-        w.Show();
-        w.Activate();
+        w = Ui.ShowResults(vm);
         vm.Start(cred);
         return true;
     }
@@ -1242,17 +1208,16 @@ public sealed partial class AppController : IDisposable
         HidePanels(force: true);
         if (_settingsWindow != null)
         {
-            if (folderPath != null) _settingsWindow.CurrentViewModel.FocusGroup(folderPath);
-            if (section != null) _settingsWindow.CurrentViewModel.Section = section;
-            _settingsWindow.Activate();
+            if (folderPath != null) _settingsWindow.ViewModel.FocusGroup(folderPath);
+            if (section != null) _settingsWindow.ViewModel.Section = section;
+            _settingsWindow.BringToFront();
             return;
         }
         var vm = new SettingsViewModel(this, folderPath);
         if (section != null) vm.Section = section;
-        _settingsWindow = new SettingsWindow(vm, this);
-        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        _settingsWindow.Show();
-        _settingsWindow.Activate();
+        var w = Ui.ShowSettings(vm);
+        _settingsWindow = w;
+        w.Closed += () => { if (_settingsWindow == w) _settingsWindow = null; };
     }
 
     // ---- Updates --------------------------------------------------------
@@ -1265,7 +1230,7 @@ public sealed partial class AppController : IDisposable
             Update.Title = $"Version {r.Version.ToString(3)} ist verfügbar";
             Update.Subtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases";
             Update.Available = true;
-            if (!manual) _tray?.ShowBalloon("Update verfügbar", $"Power-Exec {r.Version.ToString(3)} kann installiert werden. Öffne das Panel.");
+            if (!manual) Ui.Notify("Update verfügbar", $"Power-Exec {r.Version.ToString(3)} kann installiert werden. Öffne das Panel.");
         }
         return r;
     }
@@ -1305,18 +1270,13 @@ public sealed partial class AppController : IDisposable
         // Offene Fenster (Einstellungen, Dialoge) zuerst schließen, solange die Panels noch existieren
         _settingsWindow?.Close();
         Dispose();
-        Application.Current.Shutdown();
+        Ui.Shutdown();
     }
 
     public void Dispose()
     {
-        _hotkey?.Dispose();
-        _hotkey = null;
-        _tray?.Dispose();
-        Icons?.Dispose();
-        _tray = null;
         Repository?.Dispose();
-        foreach (var h in _hosts) h.Dispose();
-        _hosts.Clear();
+        DisposePanels();
+        _ui?.Dispose();
     }
 }

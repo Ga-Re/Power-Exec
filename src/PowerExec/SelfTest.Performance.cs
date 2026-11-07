@@ -45,7 +45,7 @@ public sealed partial class AppController
     {
         var dispatcher = Application.Current.Dispatcher;
         var samples = new List<PerfSample>();
-        var host = _hosts[0];
+        var host = WpfHost(0);
         var vm = host.ViewModel;
         var monitor = ScreenService.TriggerMonitors(host.Config)[0];
         var animation = Settings.Animation;

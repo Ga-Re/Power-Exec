@@ -120,7 +120,7 @@ public partial class DockWindow : Window
     public MonitorInfo Monitor => _monitor;
     public int SlotCount => _slotCount;
 
-    private void OpenPanel() => _app.ShowPanelFromTrigger(_host, _monitor);
+    private void OpenPanel() => _host.ShowFromTrigger(_monitor);
 
     /// <summary>Favoriten neu einlesen (Reihenfolge wie in der Gruppe „Favoriten“).</summary>
     private void OnPanelVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility();

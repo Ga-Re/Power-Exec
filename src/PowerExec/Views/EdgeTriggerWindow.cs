@@ -73,12 +73,12 @@ public sealed class EdgeTriggerWindow : Window
         _hoverTimer.Tick += (_, _) =>
         {
             _hoverTimer.Stop();
-            if (IsMouseOver || ScreenService.CursorInside(CurrentRect)) _app.ShowPanelFromTrigger(_host, _monitor);
+            if (IsMouseOver || ScreenService.CursorInside(CurrentRect)) _host.ShowFromTrigger(_monitor);
         };
 
         MouseEnter += (_, _) =>
         {
-            if (_app.Settings.HoverDelayMs <= 0) _app.ShowPanelFromTrigger(_host, _monitor);
+            if (_app.Settings.HoverDelayMs <= 0) _host.ShowFromTrigger(_monitor);
             else _hoverTimer.Start();
         };
         MouseLeave += (_, _) => _hoverTimer.Stop();

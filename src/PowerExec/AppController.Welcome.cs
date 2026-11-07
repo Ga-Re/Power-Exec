@@ -8,7 +8,7 @@ namespace PowerExec;
 /// <summary>Einführungs-Assistent und „Neu in dieser Version“.</summary>
 public sealed partial class AppController
 {
-    private WelcomeWindow? _welcome;
+    private IAppWindow? _welcome;
 
     /// <summary>Neuerungen seit der zuletzt gesehenen Version (Karte im Panel), sonst null.</summary>
     public ReleaseNote? WhatsNew { get; private set; }
@@ -17,15 +17,14 @@ public sealed partial class AppController
     public void ShowWelcome()
     {
         HidePanels(force: true);
-        if (_welcome != null) { _welcome.Activate(); return; }
-        _welcome = new WelcomeWindow(new WelcomeViewModel(this), tryPanel =>
+        if (_welcome != null) { _welcome.BringToFront(); return; }
+        var w = Ui.ShowWelcome(new WelcomeViewModel(this), tryPanel =>
         {
             _welcome = null;
             if (tryPanel) ShowPanelFromHotkey(_hosts.FirstOrDefault());
         });
-        _welcome.Closed += (_, _) => _welcome = null;
-        _welcome.Show();
-        _welcome.Activate();
+        _welcome = w;
+        w.Closed += () => { if (_welcome == w) _welcome = null; };
     }
 
     /// <summary>Karte „Neu in dieser Version“ schließen; erscheint erst beim nächsten Update wieder.</summary>

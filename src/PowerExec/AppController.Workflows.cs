@@ -123,9 +123,7 @@ public sealed partial class AppController
     public void EditWorkflow(CustomEntry wf)
     {
         HidePanels(force: true);
-        var w = new Views.WorkflowWindow(new WorkflowEditorViewModel(this, wf));
-        w.Show();
-        w.Activate();
+        Ui.ShowWorkflow(new WorkflowEditorViewModel(this, wf));
     }
 
     /// <summary>Vom Ablauf-Editor nach dem Speichern.</summary>
