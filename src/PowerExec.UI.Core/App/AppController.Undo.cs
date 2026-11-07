@@ -9,7 +9,7 @@ namespace PowerExec;
 /// Rückgängig für Änderungen im Panel (Ausblenden, Entfernen, Verschieben, Gruppen …):
 /// vor der Änderung wird der Stand gemerkt, danach erscheint ein Hinweis mit „Rückgängig“ (auch Strg+Z).
 /// </summary>
-public sealed partial class AppController
+public partial class AppController
 {
     private readonly UndoStack<AppSettings> _undo = new(10);
     private IUiTimer? _undoTimer;

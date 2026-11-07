@@ -1,12 +1,11 @@
 using PowerExec.Core.Updates;
 using PowerExec.Services;
 using PowerExec.ViewModels;
-using PowerExec.Views;
 
 namespace PowerExec;
 
 /// <summary>Einführungs-Assistent und „Neu in dieser Version“.</summary>
-public sealed partial class AppController
+public partial class AppController
 {
     private IAppWindow? _welcome;
 

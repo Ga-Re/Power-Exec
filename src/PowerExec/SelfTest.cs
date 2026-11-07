@@ -14,8 +14,10 @@ namespace PowerExec;
 /// Öffnet Panels in allen Darstellungen, Einstellungen und Dialoge mit Beispieldaten und meldet Fehler,
 /// z. B. fehlende Ressourcen in XAML-Vorlagen. Verwendet eine eigene, temporäre Einstellungsdatei.
 /// </summary>
-public sealed partial class AppController
+public sealed partial class SelfTestController : AppController
 {
+    public SelfTestController() : base(app => new WpfAppUi(app)) { }
+
     private readonly List<string> _selfTestErrors = new();
     private string? _progressFile;
     private int _shotCounter;

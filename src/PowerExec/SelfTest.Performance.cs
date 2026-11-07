@@ -17,7 +17,7 @@ namespace PowerExec;
 /// die Zeit bis zum Ende des Rebuilds (synchron) und bis der UI-Thread wieder frei ist (inkl. Layout).
 /// Ergebnis: selftest-perf.md und selftest-perf.json neben der Fortschrittsdatei. Noch ohne Grenzwert.
 /// </summary>
-public sealed partial class AppController
+public sealed partial class SelfTestController
 {
     private const int PerfRounds = 5;
 

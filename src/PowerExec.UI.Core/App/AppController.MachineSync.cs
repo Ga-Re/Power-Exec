@@ -8,7 +8,7 @@ namespace PowerExec;
 /// Dynamische Rechnergruppen: beim Start und danach im eingestellten Intervall aus dem Active Directory aktualisieren.
 /// Die zuletzt gefundene Liste bleibt gespeichert – ohne AD-Verbindung gilt sie weiter.
 /// </summary>
-public sealed partial class AppController
+public partial class AppController
 {
     private IUiTimer? _adSyncTimer;
     private bool _adSyncRunning;

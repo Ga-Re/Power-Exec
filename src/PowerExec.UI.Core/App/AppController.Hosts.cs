@@ -1,4 +1,3 @@
-using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -7,7 +6,6 @@ using PowerExec.Core.Updates;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
-using PowerExec.Views;
 
 namespace PowerExec;
 
@@ -16,7 +14,7 @@ namespace PowerExec;
 /// Fensterbezug (<c>object? owner</c>) in <see cref="Window"/> und reicht WPF-/Win32-Dienste durch.
 /// Was schon öffentlich mit passender Signatur existiert, erfüllt die Schnittstellen direkt.
 /// </summary>
-public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost, ISettingsWindowHost
+public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWorkflowHost, IWelcomeHost, IPanelHost, IResultsHost, IProfilesHost, ICustomEntryListHost, ISettingsHost, ISettingsWindowHost
 {
     /// <summary>Explorer, Browser, Zwischenablage.</summary>
     public IShell Shell => Ui.Shell;

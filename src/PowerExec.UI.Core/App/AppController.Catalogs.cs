@@ -9,7 +9,7 @@ namespace PowerExec;
 /// ob sie sich geändert hat, und übernimmt die Änderungen (oder meldet sie zum Übernehmen).
 /// Katalogeinträge sind schreibgeschützt; eigene Ergänzungen bleiben lokal.
 /// </summary>
-public sealed partial class AppController
+public partial class AppController
 {
     public static readonly TimeSpan CatalogInterval = TimeSpan.FromMinutes(30);
     public static readonly TimeSpan CatalogReadTimeout = TimeSpan.FromSeconds(10);

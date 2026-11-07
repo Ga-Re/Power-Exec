@@ -33,7 +33,7 @@ public partial class App : Application
         base.OnStartup(e);
         DispatcherUnhandledException += OnUnhandledException;
 
-        _controller = new AppController();
+        _controller = new AppController(app => new Services.WpfAppUi(app));
         _controller.Start();
 
         _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
@@ -48,11 +48,12 @@ public partial class App : Application
     /// <summary>Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung.</summary>
     private void RunSelfTest(string resultFile)
     {
-        _controller = new AppController();
+        var selfTest = new SelfTestController();
+        _controller = selfTest;
         Dispatcher.BeginInvoke(async () =>
         {
             string? error;
-            try { error = await _controller.RunSelfTestAsync(resultFile + ".progress"); }
+            try { error = await selfTest.RunSelfTestAsync(resultFile + ".progress"); }
             catch (Exception ex) { error = ex.ToString(); }
             try { File.WriteAllText(resultFile, error ?? "OK"); } catch { }
             Shutdown(error == null ? 0 : 1);

@@ -9,7 +9,7 @@ using PowerExec.ViewModels;
 namespace PowerExec;
 
 /// <summary>Verlauf aller Starts (B3): mit Ergebnis, Dauer, Zielen und Parametern; „Erneut ausführen“ mit denselben Werten.</summary>
-public sealed partial class AppController
+public partial class AppController
 {
     private RunHistory? _history;
     private IUiTimer? _historySaveTimer;

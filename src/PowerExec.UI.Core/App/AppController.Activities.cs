@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Windows;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.ViewModels;
@@ -7,7 +6,7 @@ using PowerExec.ViewModels;
 namespace PowerExec;
 
 /// <summary>Aktivitäten-Leiste: laufende und gerade beendete Starts für alle Panels.</summary>
-public sealed partial class AppController
+public partial class AppController
 {
     private ActivityList? _activities;
 

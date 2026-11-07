@@ -12,7 +12,7 @@ namespace PowerExec;
 /// (lokale Scripte bis zum Prozessende, Remote bis alle Rechner fertig sind); bei „bei Fehler abbrechen“
 /// enden die restlichen Schritte nach einem Fehler.
 /// </summary>
-public sealed partial class AppController
+public partial class AppController
 {
     /// <summary>Höchstens so lange auf das Ende eines Schritts warten (z. B. Dialog offen gelassen).</summary>
     public static readonly TimeSpan StepTimeout = TimeSpan.FromHours(2);

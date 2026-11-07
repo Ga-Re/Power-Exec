@@ -1,4 +1,3 @@
-using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -8,28 +7,30 @@ using PowerExec.Core.Updates;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
-using PowerExec.Views;
 
 namespace PowerExec;
 
-/// <summary>Zentrale Steuerung: Einstellungen, Panel, Aktionen, Updates.</summary>
-public sealed partial class AppController : IDisposable
+/// <summary>
+/// Zentrale Steuerung (App-Kern): Einstellungen, Panels, Aktionen, Updates. Gemeinsam für die WPF- und die WinUI-App;
+/// Fenster, Tray, Tastenkürzel und Design erreicht er über <see cref="IAppUi"/>.
+/// </summary>
+public partial class AppController : IDisposable
 {
-    private readonly List<AppPanel> _hosts = new();
+    /// <param name="createUi">Erzeugt die Oberfläche (WPF oder WinUI) zu diesem Kern.</param>
+    public AppController(Func<AppController, IAppUi> createUi) => Ui = createUi(this);
+
+    protected readonly List<AppPanel> _hosts = new();
     private ISettingsWindow? _settingsWindow;
 
     /// <summary>Die Oberfläche (WPF oder WinUI): Fenster, Panels, Tray, Tastenkürzel, Design.</summary>
-    public IAppUi Ui => _ui ??= new WpfAppUi(this);
-    private IAppUi? _ui;
+    public IAppUi Ui { get; }
 
-    public SettingsStore Store { get; private set; } = new();
-    public AppSettings Settings { get; private set; } = new();
-    public ItemRepository Repository { get; private set; } = null!;
-    public Launcher Launcher { get; private set; } = null!;
+    public SettingsStore Store { get; protected set; } = new();
+    public AppSettings Settings { get; protected set; } = new();
+    public ItemRepository Repository { get; protected set; } = null!;
+    public Launcher Launcher { get; protected set; } = null!;
     public UpdateService Updates { get; } = new();
-    /// <summary>Symbole als WPF-Bilder (für die WPF-Fenster).</summary>
-    public IconService Icons => ((WpfAppUi)Ui).IconService;
-    public HealthService Health { get; private set; } = null!;
+    public HealthService Health { get; protected set; } = null!;
     /// <summary>Update-Hinweis für alle Panels und das Einstellungsfenster.</summary>
     public UpdateState Update { get; } = new();
 
@@ -182,7 +183,7 @@ public sealed partial class AppController : IDisposable
 
     /// <summary>Erzeugt alle Panels neu (nach dem Start und nach geänderten Einstellungen).</summary>
     /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
-    private string? CreateHosts()
+    protected string? CreateHosts()
     {
         DisposePanels();
         Ui.Hotkeys.UnregisterAll();
@@ -202,7 +203,7 @@ public sealed partial class AppController : IDisposable
         return errors.Count == 0 ? null : string.Join("\n", errors);
     }
 
-    private void DisposePanels()
+    protected void DisposePanels()
     {
         foreach (var h in _hosts)
         {
@@ -1277,6 +1278,6 @@ public sealed partial class AppController : IDisposable
     {
         Repository?.Dispose();
         DisposePanels();
-        _ui?.Dispose();
+        Ui.Dispose();
     }
 }

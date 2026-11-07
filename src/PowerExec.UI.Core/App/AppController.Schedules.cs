@@ -10,7 +10,7 @@ namespace PowerExec;
 /// Läuft, solange Power-Exec läuft (mit „Mit Windows starten“ also dauerhaft); verpasste Termine auf Wunsch nachholen.
 /// Ergebnisse landen im Verlauf, Benachrichtigung auf Wunsch nur bei Fehlern.
 /// </summary>
-public sealed partial class AppController
+public partial class AppController
 {
     /// <summary>Wie lange ein Termin zurückliegen darf, um ohne „nachholen“ noch zu starten.</summary>
     public static readonly TimeSpan ScheduleGrace = TimeSpan.FromMinutes(2);
