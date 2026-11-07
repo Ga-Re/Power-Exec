@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Services;
 
@@ -10,7 +10,7 @@ namespace PowerExec;
 /// </summary>
 public sealed partial class AppController
 {
-    private DispatcherTimer? _adSyncTimer;
+    private IUiTimer? _adSyncTimer;
     private bool _adSyncRunning;
 
     /// <summary>Synchronisierung beendet (Einstellungsfenster aktualisiert seine Anzeige).</summary>
@@ -18,11 +18,10 @@ public sealed partial class AppController
 
     private void StartMachineSync()
     {
-        _adSyncTimer ??= new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMinutes(10) };
-        _adSyncTimer.Tick += (_, _) => _ = SyncDueMachineGroupsAsync();
+        _adSyncTimer ??= UiDispatcher.CreateTimer(TimeSpan.FromMinutes(10), () => _ = SyncDueMachineGroupsAsync());
         _adSyncTimer.Start();
         // Kurz nach dem Start, damit der Start selbst nicht auf das AD wartet
-        _ = Task.Delay(TimeSpan.FromSeconds(15)).ContinueWith(_ => System.Windows.Application.Current?.Dispatcher.BeginInvoke(() => _ = SyncDueMachineGroupsAsync()));
+        _ = Task.Delay(TimeSpan.FromSeconds(15)).ContinueWith(_ => UiDispatcher.Post(() => _ = SyncDueMachineGroupsAsync()));
     }
 
     /// <summary>Alle fälligen dynamischen Gruppen aktualisieren (nie synchronisiert oder älter als das Intervall).</summary>

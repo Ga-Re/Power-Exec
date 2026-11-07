@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Services;
 
@@ -13,21 +13,17 @@ public sealed partial class AppController
 {
     public static readonly TimeSpan CatalogInterval = TimeSpan.FromMinutes(30);
     public static readonly TimeSpan CatalogReadTimeout = TimeSpan.FromSeconds(10);
-    private DispatcherTimer? _catalogTimer;
+    private IUiTimer? _catalogTimer;
 
     /// <summary>Kataloge geprüft oder übernommen (Panel-Hinweis und Einstellungen aktualisieren).</summary>
     public event Action? CatalogsChanged;
 
     public void StartCatalogs()
     {
-        _catalogTimer ??= new DispatcherTimer { Interval = CatalogInterval };
-        _catalogTimer.Tick -= OnCatalogTick;
-        _catalogTimer.Tick += OnCatalogTick;
+        _catalogTimer ??= UiDispatcher.CreateTimer(CatalogInterval, () => _ = CheckCatalogsAsync());
         _catalogTimer.Start();
         if (Settings.Catalogs.Count > 0) _ = CheckCatalogsAsync();
     }
-
-    private void OnCatalogTick(object? sender, EventArgs e) => _ = CheckCatalogsAsync();
 
     /// <summary>Katalogdatei lesen (mit Zeitlimit, Freigaben können hängen).</summary>
     private static async Task<(string? Content, string? Error)> ReadCatalogAsync(string path)

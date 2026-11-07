@@ -5,6 +5,7 @@ using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
 using PowerExec.Core.Search;
 using PowerExec.Core.Updates;
+using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
 using PowerExec.Views;
@@ -53,9 +54,9 @@ public sealed partial class AppController : IDisposable
         Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
 
         Icons = new IconService(Application.Current.Dispatcher);
-        Health = new HealthService(new Infrastructure.WpfUiDispatcher(Application.Current.Dispatcher));
+        Health = new HealthService(UiDispatcher);
         Health.Changed += RebuildPanels;
-        Repository = new ItemRepository(Settings, Application.Current.Dispatcher);
+        Repository = new ItemRepository(Settings, UiDispatcher);
         Launcher = new Launcher(() => Settings);
         Repository.Changed += (_, _) =>
         {
@@ -222,18 +223,16 @@ public sealed partial class AppController : IDisposable
 
     internal IEnumerable<EdgeTriggerWindow> AllTriggers => _hosts.SelectMany(h => h.Triggers);
 
-    private System.Windows.Threading.DispatcherTimer? _fullscreenTimer;
+    private IUiTimer? _fullscreenTimer;
 
     /// <summary>Prüft jede Sekunde, ob das Vordergrundfenster einen Monitor vollständig bedeckt.</summary>
     private void StartFullscreenWatch()
     {
-        _fullscreenTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _fullscreenTimer.Tick -= OnFullscreenTick;
-        _fullscreenTimer.Tick += OnFullscreenTick;
+        _fullscreenTimer ??= UiDispatcher.CreateTimer(TimeSpan.FromSeconds(1), OnFullscreenTick);
         _fullscreenTimer.Start();
     }
 
-    private void OnFullscreenTick(object? sender, EventArgs e)
+    private void OnFullscreenTick()
     {
         try
         {

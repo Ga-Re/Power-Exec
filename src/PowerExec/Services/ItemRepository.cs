@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
@@ -10,11 +10,11 @@ namespace PowerExec.Services;
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
 public sealed class ItemRepository : IItemSource, IDisposable
 {
-    private readonly Dispatcher _dispatcher;
+    private readonly IUiDispatcher _dispatcher;
     private readonly ItemLoader _loader = new(new WindowsMetadata());
     private readonly ConcurrentDictionary<string, LaunchItem> _cache = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<FileSystemWatcher> _watchers = new();
-    private readonly DispatcherTimer _debounce;
+    private readonly IUiTimer _debounce;
     private AppSettings _settings;
     private int _scanVersion;
 
@@ -26,16 +26,15 @@ public sealed class ItemRepository : IItemSource, IDisposable
     /// <summary>Wird auf dem UI-Thread ausgelöst, wenn sich die Liste geändert hat.</summary>
     public event EventHandler? Changed;
 
-    public ItemRepository(AppSettings settings, Dispatcher dispatcher)
+    public ItemRepository(AppSettings settings, IUiDispatcher dispatcher)
     {
         _settings = settings;
         _dispatcher = dispatcher;
-        _debounce = new DispatcherTimer(DispatcherPriority.Background, dispatcher) { Interval = TimeSpan.FromMilliseconds(800) };
-        _debounce.Tick += (_, _) =>
+        _debounce = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(800), () =>
         {
-            _debounce.Stop();
+            _debounce!.Stop();
             _ = ScanAsync();
-        };
+        });
     }
 
     public void UpdateSettings(AppSettings settings)
@@ -197,7 +196,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 {
                     _singleLoading.TryRemove(path, out _);
                 }
-                _dispatcher.BeginInvoke(() => Changed?.Invoke(this, EventArgs.Empty));
+                _dispatcher.Post(() => Changed?.Invoke(this, EventArgs.Empty));
             });
         }
         return c.Item != null ? Merge(c.Item, basic) : basic;
@@ -250,7 +249,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 w.Deleted += OnFsChange;
                 w.Renamed += OnFsChange;
                 w.Changed += OnFsChange;
-                w.Error += (_, _) => _dispatcher.BeginInvoke(SetupWatchers);
+                w.Error += (_, _) => _dispatcher.Post(SetupWatchers);
                 w.EnableRaisingEvents = true;
                 _watchers.Add(w);
             }
@@ -262,7 +261,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
     }
 
     private void OnFsChange(object sender, FileSystemEventArgs e) =>
-        _dispatcher.BeginInvoke(() =>
+        _dispatcher.Post(() =>
         {
             _debounce.Stop();
             _debounce.Start();

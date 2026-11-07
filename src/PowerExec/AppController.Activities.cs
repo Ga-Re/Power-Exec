@@ -16,7 +16,7 @@ public sealed partial class AppController
         get
         {
             if (_activities != null) return _activities;
-            _activities = new ActivityList(new Infrastructure.WpfUiDispatcher(Application.Current.Dispatcher), Services.Launcher.DoneFileOf);
+            _activities = new ActivityList(UiDispatcher, Services.Launcher.DoneFileOf);
             _activities.Changed += OnActivitiesChanged;
             return _activities;
         }

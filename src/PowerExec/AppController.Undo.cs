@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Services;
@@ -12,7 +12,7 @@ namespace PowerExec;
 public sealed partial class AppController
 {
     private readonly UndoStack<AppSettings> _undo = new(10);
-    private DispatcherTimer? _undoTimer;
+    private IUiTimer? _undoTimer;
     private bool _undoing;
 
     /// <summary>Wie lange der Hinweis sichtbar bleibt.</summary>
@@ -38,12 +38,7 @@ public sealed partial class AppController
     private string DisplayNameOf(LaunchItem item) =>
         Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
 
-    private DispatcherTimer CreateUndoTimer()
-    {
-        var t = new DispatcherTimer { Interval = UndoToastDuration };
-        t.Tick += (_, _) => DismissUndoToast();
-        return t;
-    }
+    private IUiTimer CreateUndoTimer() => UiDispatcher.CreateTimer(UndoToastDuration, DismissUndoToast);
 
     public void DismissUndoToast()
     {

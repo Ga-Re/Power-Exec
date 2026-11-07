@@ -126,8 +126,8 @@ public sealed partial class AppController
             ThemeService.Apply(Settings);
 
             Icons = new IconService(dispatcher);
-            Health = new HealthService(new Infrastructure.WpfUiDispatcher(dispatcher));
-            Repository = new ItemRepository(Settings, dispatcher);
+            Health = new HealthService(UiDispatcher);
+            Repository = new ItemRepository(Settings, UiDispatcher);
             Launcher = new Launcher(() => Settings);
             Step("Scan");
             await Repository.ScanAsync();

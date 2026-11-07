@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -12,7 +12,7 @@ namespace PowerExec;
 public sealed partial class AppController
 {
     private RunHistory? _history;
-    private DispatcherTimer? _historySaveTimer;
+    private IUiTimer? _historySaveTimer;
 
     /// <summary>Speicherort; der Selbsttest leitet ihn in seinen Temp-Ordner um.</summary>
     public string HistoryPath { get; set; } = Path.Combine(
@@ -61,14 +61,14 @@ public sealed partial class AppController
         _historySaveTimer.Start();
     }
 
-    private DispatcherTimer CreateHistorySaveTimer()
+    private IUiTimer CreateHistorySaveTimer()
     {
-        var t = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        t.Tick += (_, _) =>
+        IUiTimer? t = null;
+        t = UiDispatcher.CreateTimer(TimeSpan.FromSeconds(1), () =>
         {
-            t.Stop();
+            t!.Stop();
             SaveHistory();
-        };
+        });
         return t;
     }
 

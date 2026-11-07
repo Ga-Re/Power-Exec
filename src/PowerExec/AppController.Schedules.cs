@@ -1,4 +1,4 @@
-using System.Windows.Threading;
+using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Services;
@@ -14,7 +14,7 @@ public sealed partial class AppController
 {
     /// <summary>Wie lange ein Termin zurückliegen darf, um ohne „nachholen“ noch zu starten.</summary>
     public static readonly TimeSpan ScheduleGrace = TimeSpan.FromMinutes(2);
-    private DispatcherTimer? _scheduleTimer;
+    private IUiTimer? _scheduleTimer;
     private readonly HashSet<string> _scheduleRunning = new();
 
     /// <summary>Zeitpläne haben sich geändert (Anzeige im Panel aktualisieren).</summary>
@@ -29,14 +29,12 @@ public sealed partial class AppController
             // Verpasst und nicht nachholen: auf den nächsten Termin springen
             else if (s.NextRunLocal < now && !Schedules.IsDue(s, now, ScheduleGrace)) Schedules.Advance(s, now, ran: false);
         }
-        _scheduleTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
-        _scheduleTimer.Tick -= OnScheduleTick;
-        _scheduleTimer.Tick += OnScheduleTick;
+        _scheduleTimer ??= UiDispatcher.CreateTimer(TimeSpan.FromSeconds(20), OnScheduleTick);
         _scheduleTimer.Start();
-        OnScheduleTick(null, EventArgs.Empty);
+        OnScheduleTick();
     }
 
-    private void OnScheduleTick(object? sender, EventArgs e)
+    private void OnScheduleTick()
     {
         var now = DateTime.Now;
         foreach (var s in Settings.Schedules.ToList())
