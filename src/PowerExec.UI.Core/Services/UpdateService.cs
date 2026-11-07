@@ -16,9 +16,11 @@ public sealed class UpdateService
     {
         get
         {
-            var info = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            // Version der laufenden App (WPF- oder WinUI-EXE); alle Projekte erhalten sie aus Directory.Build.props
+            var asm = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+            var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
             if (info != null && UpdateChecker.TryParseVersion(info, out var v)) return v;
-            return UpdateChecker.Normalize(Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0));
+            return UpdateChecker.Normalize(asm.GetName().Version ?? new Version(0, 0, 0));
         }
     }
 

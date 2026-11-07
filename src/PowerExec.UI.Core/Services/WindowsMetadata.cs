@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
-using PowerExec.Interop;
 
 namespace PowerExec.Services;
 
@@ -87,7 +86,7 @@ public static class PathResolver
             var drive = path[..2];
             var sb = new StringBuilder(512);
             int len = sb.Capacity;
-            if (NativeMethods.WNetGetConnection(drive, sb, ref len) == 0)
+            if (OperatingSystem.IsWindows() && WNetGetConnection(drive, sb, ref len) == 0)
                 return sb.ToString().TrimEnd('\\') + path[2..];
         }
         catch
@@ -98,6 +97,9 @@ public static class PathResolver
     }
 
     public static bool IsNetworkPath(string path) => path.StartsWith(@"\\");
+
+    [System.Runtime.InteropServices.DllImport("mpr.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int WNetGetConnection(string localName, StringBuilder remoteName, ref int length);
 
     public static string ServerShare(string uncPath)
     {

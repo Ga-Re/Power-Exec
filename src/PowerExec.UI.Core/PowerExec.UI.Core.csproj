@@ -6,9 +6,16 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PowerExec</RootNamespace>
+    <!-- Registry, AD und Win32 werden nur unter Windows erreicht (beide Oberflächen sind Windows-Apps);
+         die Tests unter Linux berühren nur die neutralen Teile. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- AD-Suche für dynamische Rechnergruppen (in der WPF-App Teil des Windows-Desktop-Frameworks) -->
+    <PackageReference Include="System.DirectoryServices" Version="10.0.14" />
   </ItemGroup>
   <ItemGroup>
     <!-- Beispiel-Script für die Einführung (WelcomeViewModel liest es aus dieser Assembly) -->
