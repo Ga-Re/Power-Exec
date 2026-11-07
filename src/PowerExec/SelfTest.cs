@@ -897,6 +897,27 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
             }
 
+            Step("Fluent-Bedienelemente (WPF UI) im Einstellungsfenster");
+            {
+                settingsVm.Section = "general";
+                await Settle();
+                static IEnumerable<DependencyObject> Tree(DependencyObject d)
+                {
+                    for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+                    {
+                        var c = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+                        yield return c;
+                        foreach (var cc in Tree(c)) yield return cc;
+                    }
+                }
+                var visuals = Tree(settingsWindow).ToList();
+                if (!visuals.OfType<Wpf.Ui.Controls.ToggleSwitch>().Any()) Fail("Fluent: keine Fluent-Schalter im Abschnitt „Allgemein“");
+                if (!visuals.OfType<Wpf.Ui.Controls.Button>().Any()) Fail("Fluent: keine Fluent-Schaltflächen im Abschnitt „Allgemein“");
+                if (settingsWindow.TryFindResource("AccentFillColorDefaultBrush") is not System.Windows.Media.SolidColorBrush fluentAccent ||
+                    Application.Current.TryFindResource("Accent") is not System.Windows.Media.SolidColorBrush ownAccent || fluentAccent.Color != ownAccent.Color)
+                    Fail("Fluent: Akzentfarbe weicht vom Programm-Akzent ab");
+            }
+
             Step("Design bei offenem Fenster wechseln");
             {
                 var themeBefore = Settings.Theme;
@@ -908,6 +929,8 @@ public sealed partial class SelfTestController : AppController
                 if (!IsLightBrush(Application.Current.Resources[Views.WindowHelper.MicaTintKey])) Fail("Design: Mica-Tönung bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.Background is System.Windows.Media.SolidColorBrush { Color.A: 255 } && !IsLightBrush(settingsWindow.Background))
                     Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
+                if (settingsWindow.TryFindResource("TextFillColorPrimaryBrush") is not System.Windows.Media.SolidColorBrush fluentText || IsLightBrush(fluentText))
+                    Fail("Design: Fluent-Texte bleiben nach dem Wechsel auf Hell hell");
                 if (settingsWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "settings-hell-live");
                 Settings.Theme = themeBefore;
                 ThemeService.Apply(Settings);

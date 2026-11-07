@@ -30,6 +30,7 @@ public partial class SettingsWindow : Window
         _app = app;
         _snapshot = SettingsStore.Clone(app.Settings);
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Attach(vm);
         _lastApplied = Fingerprint(app.Settings);

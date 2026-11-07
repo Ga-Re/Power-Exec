@@ -30,6 +30,10 @@
     <EmbeddedResource Include="Assets\icons.json" LogicalName="PowerExec.icons.json" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Fluent-Bedienelemente (WPF UI, MIT); zunächst nur im Einstellungsfenster, siehe Infrastructure/FluentTheme.cs -->
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
     <ProjectReference Include="..\PowerExec.UI.Core\PowerExec.UI.Core.csproj" />
   </ItemGroup>

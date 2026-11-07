@@ -1,17 +1,24 @@
 # Drittanbieter-Komponenten
 
+## WPF UI
+
+Fluent-Bedienelemente für WPF (NuGet-Paket `WPF-UI`), MIT-Lizenz.
+Copyright (C) Leszek Pomianowski and WPF UI Contributors – https://github.com/lepoco/wpfui
+
+## Symbole
+
 Power-Exec enthält Symbole aus den folgenden Projekten (als Pfaddaten in `src/PowerExec/Assets/icons.json`,
 erzeugt mit `tools/build_icons.py`).
 
-## Fluent UI System Icons
+### Fluent UI System Icons
 
 Copyright (c) 2020 Microsoft Corporation – https://github.com/microsoft/fluentui-system-icons
 
-## Heroicons
+### Heroicons
 
 Copyright (c) Tailwind Labs, Inc. – https://github.com/tailwindlabs/heroicons
 
-## Lizenz (beide Projekte: MIT)
+## Lizenz (alle genannten Projekte: MIT)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation
