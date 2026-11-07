@@ -104,8 +104,9 @@ public static class FluentTheme
         if (current == null) merged.Add(new ResourceDictionary { Source = themeUri });
         else if (current.Source != themeUri)
         {
-            merged.Remove(current);
-            merged.Add(new ResourceDictionary { Source = themeUri });
+            // An derselben Stelle ersetzen (wie der ThemeService): Entfernen und neu Anhängen meldet WPF nicht an alle
+            // DynamicResource-Bindungen – Schaltflächen behielten nach Hell → Dunkel die dunkle Schrift.
+            merged[merged.IndexOf(current)] = new ResourceDictionary { Source = themeUri };
         }
 
         ApplyAccent(root);
