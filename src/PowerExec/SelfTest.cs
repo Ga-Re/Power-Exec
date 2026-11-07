@@ -944,10 +944,16 @@ public sealed partial class SelfTestController : AppController
                     fresh.Close();
                 }
                 if (settingsWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "settings-hell-live");
+                Settings.Theme = ThemeMode.Dark;
+                ThemeService.Apply(Settings);
+                await Settle();
+                CheckFluentReadable(settingsWindow, light: false, "Einstellungen nach Wechsel Hell → Dunkel");
+                if (settingsWindow.Content is FrameworkElement darkRoot) Screenshot(darkRoot, "settings-dunkel-live");
                 Settings.Theme = themeBefore;
                 ThemeService.Apply(Settings);
                 await Settle();
-                CheckFluentReadable(settingsWindow, light: false, "Einstellungen nach Wechsel zurück auf Dunkel");
+                // Zurück auf die Ausgangseinstellung (z. B. „wie Windows“ – auf dem Prüfrechner kann das hell sein)
+                CheckFluentReadable(settingsWindow, light: !ThemeService.IsDark, $"Einstellungen nach Wechsel zurück ({(ThemeService.IsDark ? "dunkel" : "hell")})");
             }
             settingsWindow.Close();
 
