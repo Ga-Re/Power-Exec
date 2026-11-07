@@ -90,15 +90,16 @@ public static class FluentTheme
         var res = root.Resources;
         var merged = res.MergedDictionaries;
         var themeUri = new Uri(ThemePath + ThemeFile() + ".xaml", UriKind.Absolute);
-        // Das Fluent-Design steckt meist in Themes/Fluent.xaml (verschachtelt) – dort austauschen
-        if (FindTheme(res) is { } found)
+        // Das aktuelle Design liegt als letztes Wörterbuch direkt am Fenster und überdeckt das dunkle Vorgabe-Design
+        // aus Themes/Fluent.xaml. Verschachtelt ausgetauschte Wörterbücher meldet WPF nicht zuverlässig weiter –
+        // Bedienelemente behielten sonst Farben des alten Designs (helle Schrift auf hellem Grund).
+        if (!AllDictionaries(res).OfType<ControlsDictionary>().Any()) merged.Add(new ControlsDictionary());
+        var current = merged.LastOrDefault(IsTheme);
+        if (current == null) merged.Add(new ResourceDictionary { Source = themeUri });
+        else if (current.Source != themeUri)
         {
-            if (found.Owner[found.Index].Source != themeUri) found.Owner[found.Index] = new ResourceDictionary { Source = themeUri };
-        }
-        else
-        {
-            merged.Insert(0, new ResourceDictionary { Source = themeUri });
-            if (!AllDictionaries(res).OfType<ControlsDictionary>().Any()) merged.Insert(1, new ControlsDictionary());
+            merged.Remove(current);
+            merged.Add(new ResourceDictionary { Source = themeUri });
         }
 
         ApplyAccent(res);
@@ -172,17 +173,6 @@ public static class FluentTheme
 
     private static bool IsTheme(ResourceDictionary d) =>
         d is ThemesDictionary || d.Source?.OriginalString.StartsWith(ThemePath, StringComparison.OrdinalIgnoreCase) == true;
-
-    private static (System.Collections.ObjectModel.Collection<ResourceDictionary> Owner, int Index)? FindTheme(ResourceDictionary d)
-    {
-        var list = d.MergedDictionaries;
-        for (int i = 0; i < list.Count; i++)
-        {
-            if (IsTheme(list[i])) return (list, i);
-            if (FindTheme(list[i]) is { } inner) return inner;
-        }
-        return null;
-    }
 
     private static IEnumerable<ResourceDictionary> AllDictionaries(ResourceDictionary d)
     {

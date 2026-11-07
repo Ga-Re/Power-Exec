@@ -931,10 +931,20 @@ public sealed partial class SelfTestController : AppController
                     Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.TryFindResource("TextFillColorPrimaryBrush") is not System.Windows.Media.SolidColorBrush fluentText || IsLightBrush(fluentText))
                     Fail("Design: Fluent-Texte bleiben nach dem Wechsel auf Hell hell");
+                // Tatsächliche Farben an den Bedienelementen (nicht nur im Wörterbuch): Schrift muss zum Design passen
+                CheckFluentReadable(settingsWindow, light: true, "Einstellungen nach Wechsel auf Hell");
+                {
+                    var fresh = ChoiceWindow.ForTest();
+                    fresh.Show();
+                    await Settle();
+                    CheckFluentReadable(fresh, light: true, "neuer Dialog im hellen Design");
+                    fresh.Close();
+                }
                 if (settingsWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "settings-hell-live");
                 Settings.Theme = themeBefore;
                 ThemeService.Apply(Settings);
                 await Settle();
+                CheckFluentReadable(settingsWindow, light: false, "Einstellungen nach Wechsel zurück auf Dunkel");
             }
             settingsWindow.Close();
 
@@ -1154,6 +1164,25 @@ public sealed partial class SelfTestController : AppController
             Fail($"Fluent: {w.GetType().Name} zeigt keine Fluent-Schaltflächen");
         if (w.Content is FrameworkElement root) Screenshot(root, "window-" + w.GetType().Name + "-" + (++_shotCounter));
         w.Close();
+    }
+
+    /// <summary>
+    /// Fluent-Schaltflächen (Standard) und Auswahllisten: Schrift dunkel im hellen, hell im dunklen Design – sonst ist
+    /// sie auf dem Hintergrund nicht lesbar (z. B. wenn ein Wörterbuch beim Designwechsel nicht nachgezogen wurde).
+    /// </summary>
+    private void CheckFluentReadable(Window w, bool light, string where)
+    {
+        static bool IsLight(System.Windows.Media.Brush? b) =>
+            b is System.Windows.Media.SolidColorBrush s && PanelColors.IsLight(new Rgb(s.Color.R, s.Color.G, s.Color.B));
+        var visuals = VisualDescendants(w).ToList();
+        var buttons = visuals.OfType<Wpf.Ui.Controls.Button>()
+            .Where(b => b.IsVisible && b.Appearance == Wpf.Ui.Controls.ControlAppearance.Secondary).ToList();
+        var combos = visuals.OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible).ToList();
+        if (buttons.Count == 0) Fail($"Fluent ({where}): keine sichtbare Standard-Schaltfläche zum Prüfen");
+        foreach (var b in buttons.Take(5))
+            if (IsLight(b.Foreground) == light) { Fail($"Fluent ({where}): Schaltfläche „{b.Content}“ mit unlesbarer Schrift"); break; }
+        foreach (var c in combos.Take(5))
+            if (IsLight(c.Foreground) == light) { Fail($"Fluent ({where}): Auswahlliste mit unlesbarer Schrift"); break; }
     }
 
     private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject d)

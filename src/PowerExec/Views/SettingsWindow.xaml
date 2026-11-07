@@ -1373,7 +1373,7 @@
                                                                     <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.3"/>
                                                                 </StackPanel>
                                                             </Border>
-                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0"/>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}"/>
                                                             <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30"/>
                                                         </StackPanel>
                                                     </Border>
