@@ -34,6 +34,30 @@ public static class FluentTheme
 
     private static readonly List<WeakReference<FrameworkElement>> Attached = new();
 
+    static FluentTheme()
+    {
+        // Das Kontrollkästchen von WPF UI animiert „Tag“ (Wert null). Verlässt es den Baum eines Fluent-Fensters
+        // (z. B. beim Neuaufbau einer Liste), fiele es auf den App-Stil zurück, die Vorlage würde mitten in der
+        // Animation getauscht – WPF wirft dann ArgumentNullException. Daher den Stil beim Laden fest setzen.
+        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.CheckBox), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((s, _) => PinStyle((FrameworkElement)s)));
+    }
+
+    /// <summary>Impliziten Fluent-Stil eines Elements in einem Fluent-Fenster lokal festschreiben.</summary>
+    private static void PinStyle(FrameworkElement e)
+    {
+        if (e.ReadLocalValue(FrameworkElement.StyleProperty) != DependencyProperty.UnsetValue) return;
+        if (!IsInFluentRoot(e)) return;
+        if (e.TryFindResource(e.GetType()) is Style s) e.Style = s;
+    }
+
+    private static bool IsInFluentRoot(DependencyObject e)
+    {
+        var window = Window.GetWindow(e);
+        if (window == null) return false;
+        lock (Attached) return Attached.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, window));
+    }
+
     /// <summary>
     /// Fenster (oder anderes Element) mit WPF UI ausstatten. Das XAML bindet <c>ui:ThemesDictionary</c> und
     /// <c>ui:ControlsDictionary</c> bereits ein (für <c>BasedOn</c>-Stile); hier werden Design und Farben angepasst
