@@ -140,10 +140,20 @@ flackert es) → P1 „Gleiten“ erfüllt. Hover-Zone reagierte nicht auf die M
 erkennt die Maus jetzt zusätzlich per Abfrage der Mausposition (unabhängig vom Treffer auf das schmale Fenster),
 protokolliert Auslöser und Vollbild-Ausblendung in `spike.log`; der Smoke-Test fährt die Maus echt an den Rand.
 
-**Sichtprüfung offen:** Glas-Wirkung, Ruckeln beim Gleiten, Taskleiste und zweiter Monitor, echtes Ziehen aus
+**Bestätigt am eigenen Rechner (7. November 2026):** Hover-Zone fährt das Panel aus, Panel über das Tray-Menü,
+Gleiten ohne Flackern. Damit gilt Phase 1 als bestanden; die übrigen Sichtprüfungen laufen nebenher weiter.
+
+**Noch nicht ausdrücklich bestätigt:** Glas-Wirkung, Ruckeln beim Gleiten, Taskleiste und zweiter Monitor, echtes Ziehen aus
 Explorer/Browser, Lücke beim Gruppen-Ziehen, Tray-Menü, Start ohne Fenster nach Neuanmeldung.
 
 ### Phase 2 – Kernfenster
+
+**Entscheidung (7. November 2026): gemeinsamer App-Kern.** `AppController` zieht – wie die ViewModels in Phase 0 –
+nach `PowerExec.UI.Core`; Fenster, Tray, Tastenkürzel und Bildschirme erreicht er über eine Schnittstelle
+(`IAppUi`), die WPF und WinUI je einmal umsetzen. So kann die Beta sofort alles mit den echten Daten; die
+WPF-App wird dafür noch einmal umgebaut, der CI-Selbsttest sichert das ab. XAML-Fenster lassen sich nur unter
+Windows übersetzen (XAML-Compiler), die Logik wird weiter unter Linux getestet.
+
 
 Reihenfolge nach Nutzung, aufbauend auf dem Prototyp:
 
