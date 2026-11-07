@@ -11,18 +11,18 @@ using PowerExec.ViewModels;
 namespace PowerExec;
 
 /// <summary>
-/// Zentrale Steuerung (App-Kern): Einstellungen, Panels, Aktionen, Updates. Gemeinsam für die WPF- und die WinUI-App;
-/// Fenster, Tray, Tastenkürzel und Design erreicht er über <see cref="IAppUi"/>.
+/// Zentrale Steuerung (App-Kern): Einstellungen, Panels, Aktionen, Updates. Ohne Oberflächen-Typen:
+/// Fenster, Tray, Tastenkürzel und Design erreicht er über <see cref="IAppUi"/> (umgesetzt von der WPF-App, in Tests durch Attrappen).
 /// </summary>
 public partial class AppController : IDisposable
 {
-    /// <param name="createUi">Erzeugt die Oberfläche (WPF oder WinUI) zu diesem Kern.</param>
+    /// <param name="createUi">Erzeugt die Oberfläche zu diesem Kern.</param>
     public AppController(Func<AppController, IAppUi> createUi) => Ui = createUi(this);
 
     protected readonly List<AppPanel> _hosts = new();
     private ISettingsWindow? _settingsWindow;
 
-    /// <summary>Die Oberfläche (WPF oder WinUI): Fenster, Panels, Tray, Tastenkürzel, Design.</summary>
+    /// <summary>Die Oberfläche: Fenster, Panels, Tray, Tastenkürzel, Design.</summary>
     public IAppUi Ui { get; }
 
     public SettingsStore Store { get; protected set; } = new();

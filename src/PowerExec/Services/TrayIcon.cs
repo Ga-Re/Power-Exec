@@ -13,7 +13,7 @@ public sealed class TrayIcon : IDisposable
     {
         _icon = new Forms.NotifyIcon
         {
-            Text = $"Power-Exec {UpdateService.CurrentVersionText} (WPF)",
+            Text = $"Power-Exec {UpdateService.CurrentVersionText}",
             Icon = LoadIcon(),
             Visible = true
         };

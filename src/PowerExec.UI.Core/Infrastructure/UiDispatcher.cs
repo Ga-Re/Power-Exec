@@ -1,8 +1,7 @@
 namespace PowerExec.Infrastructure;
 
 /// <summary>
-/// UI-Thread der Oberfläche ohne Framework-Bezug (WPF: <c>Dispatcher</c>/<c>DispatcherTimer</c>,
-/// WinUI: <c>DispatcherQueue</c>/<c>DispatcherQueueTimer</c>).
+/// UI-Thread der Oberfläche ohne Framework-Bezug (WPF: <c>Dispatcher</c>/<c>DispatcherTimer</c>; in Tests eine Attrappe).
 /// </summary>
 public interface IUiDispatcher
 {

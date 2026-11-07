@@ -9,7 +9,7 @@ namespace PowerExec.Services;
 
 /// <summary>
 /// Die Oberfläche aus Sicht des App-Kerns (<c>AppController</c>): Fenster, Panels, Tray, Tastenkürzel und Design.
-/// Einmal für WPF und einmal für WinUI umgesetzt; der Kern selbst kennt keine Oberflächen-Typen.
+/// Von der WPF-App umgesetzt (in Tests durch Attrappen); der Kern selbst kennt keine Oberflächen-Typen.
 /// </summary>
 public interface IAppUi : IDisposable
 {

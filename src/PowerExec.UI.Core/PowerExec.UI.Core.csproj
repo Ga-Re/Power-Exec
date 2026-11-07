@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    UI-neutrale Oberflächenlogik (ViewModels, Commands, Protokoll): kein WPF, kein WinUI.
-    Wird von der WPF-App und später von der WinUI-App gemeinsam genutzt (siehe docs/MIGRATION-WINUI.md).
+    App-Kern und Oberflächenlogik ohne WPF-Abhängigkeit (AppController, ViewModels, Dienste, Protokoll).
+    Die WPF-App setzt die Fenster darauf auf; so lässt sich die Logik ohne Oberfläche testen.
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>

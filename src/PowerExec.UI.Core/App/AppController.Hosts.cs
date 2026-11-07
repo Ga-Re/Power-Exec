@@ -69,7 +69,7 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
 
     private static string BuildVersionText()
     {
-        var running = $"WPF {UpdateService.CurrentVersionText}";
+        var running = $"Version {UpdateService.CurrentVersionText}";
         if (UpdateService.IsInstalledViaSetup) return running + " · installiert";
         return InstalledVersion.Read() is { } v ? $"{running} · portabel (installiert: {v})" : running + " · portabel";
     }
