@@ -51,7 +51,7 @@ public sealed partial class AppController : IDisposable
         Infrastructure.TagBrushConverter.Lookup = t => Tags.ColorOf(Settings, t);
         CustomEntry.TerminalAvailable = () => IconService.ResolveProgram("wt.exe") != null;
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
-        Placeholders.ClipboardText = () => { try { return Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty; } catch { return string.Empty; } };
+        Placeholders.ClipboardText = () => Shell.GetClipboardText();
 
         Icons = new IconService(Application.Current.Dispatcher);
         Health = new HealthService(UiDispatcher);
@@ -111,8 +111,7 @@ public sealed partial class AppController : IDisposable
         try { Store.Save(Settings); }
         catch (Exception ex)
         {
-            MessageBox.Show("Die Einstellungen konnten nicht gespeichert werden:\n" + ex.Message, "Power-Exec",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Warn("Die Einstellungen konnten nicht gespeichert werden:\n" + ex.Message, "Power-Exec");
         }
     }
 
@@ -400,7 +399,7 @@ public sealed partial class AppController : IDisposable
         if (item.PlaceholdersResolved || item.Source is not { } entry || !entry.NeedsResolving) return item;
         IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
         if (preset == null && entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
-            values = WithDialog(() => PlaceholderWindow.Ask(item.DisplayName, entry.Placeholders,
+            values = WithDialog(() => Dialogs.AskPlaceholders(item.DisplayName, entry.Placeholders,
                 name => ParameterHistory.Get(Settings, entry.Key, name)));
         if (values == null) return null;
         foreach (var kv in values) ParameterHistory.Add(Settings, entry.Key, kv.Key, kv.Value);
@@ -434,7 +433,7 @@ public sealed partial class AppController : IDisposable
         if (resolved?.Source == null) return;
         try
         {
-            ClipboardText.Set(resolved.Source.Code, resolved.Source.CopyAsHtml);
+            Shell.CopyToClipboard(resolved.Source.Code, resolved.Source.CopyAsHtml);
             if (record) RecordRun(item, ProfileResolver.GetDefault(Settings, item));
             HidePanels();
             if (resolved.Source.PasteAfterCopy) _ = PasteAsync(item.DisplayName);
@@ -442,7 +441,7 @@ public sealed partial class AppController : IDisposable
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Die Zwischenablage ist gerade belegt: " + ex.Message, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Warn("Die Zwischenablage ist gerade belegt: " + ex.Message, "Power-Exec");
         }
     }
 
@@ -463,9 +462,7 @@ public sealed partial class AppController : IDisposable
     private bool Confirm(string text, string title)
     {
         var owner = _hosts.FirstOrDefault(h => h.Window.IsOpen)?.Window;
-        return WithDialog(() => owner != null
-            ? MessageBox.Show(owner, text, title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)
-            : MessageBox.Show(text, title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)) == MessageBoxResult.Yes;
+        return WithDialog(() => Dialogs.Confirm(text, title, owner: owner, defaultNo: true));
     }
 
     public T WithDialog<T>(Func<T> show)
@@ -492,7 +489,7 @@ public sealed partial class AppController : IDisposable
     public string? CreateGroup(string? parent = null)
     {
         var heading = parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“";
-        var spec = WithDialog(() => NewGroupWindow.Ask(heading, parent == null ? "Neue Gruppe" : "Neue Untergruppe",
+        var spec = WithDialog(() => Dialogs.AskNewGroup(heading, parent == null ? "Neue Gruppe" : "Neue Untergruppe",
             n => GroupNameError(n, parent), f => NewGroup.FolderError(Settings.Folders, f)));
         if (spec == null) return null;
         var path = NewGroup.Create(Settings, spec, parent);
@@ -506,7 +503,7 @@ public sealed partial class AppController : IDisposable
     public void RenameGroup(string path)
     {
         var parent = GroupManager.ParentOf(path);
-        var newName = WithDialog(() => InputWindow.Ask("Gruppe umbenennen", string.Empty, GroupManager.LeafOf(path), "Umbenennen", n => GroupNameError(n, parent, path)));
+        var newName = WithDialog(() => Dialogs.Ask("Gruppe umbenennen", string.Empty, GroupManager.LeafOf(path), "Umbenennen", n => GroupNameError(n, parent, path)));
         if (newName == null || newName == GroupManager.LeafOf(path)) return;
         var before = SettingsStore.Clone(Settings);
         if (GroupManager.Rename(Settings, path, newName))
@@ -626,8 +623,8 @@ public sealed partial class AppController : IDisposable
 
     private int AskFolderDrop(DroppedTarget folder, bool several, out bool forAll)
     {
-        var (choice, all) = WithDialog(() => ChoiceWindow.Ask($"Ordner „{folder.Name}“ hinzufügen", "Wie soll der Ordner im Panel erscheinen?",
-            ChoiceWindow.FolderOptions, several ? "Für alle gezogenen Ordner übernehmen" : null));
+        var (choice, all) = WithDialog(() => Dialogs.Choose($"Ordner „{folder.Name}“ hinzufügen", "Wie soll der Ordner im Panel erscheinen?",
+            ChoiceOption.FolderDrop, several ? "Für alle gezogenen Ordner übernehmen" : null));
         forAll = all;
         return choice;
     }
@@ -682,14 +679,11 @@ public sealed partial class AppController : IDisposable
     /// <summary>Dateien auswählen und als Einträge anlegen.</summary>
     public void AddFilesDialog(string? group)
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = group != null ? $"Dateien zur Gruppe „{GroupManager.LeafOf(group)}“ hinzufügen" : "Dateien hinzufügen",
-            Multiselect = true,
-            Filter = "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
-        };
-        if (WithDialog(() => dlg.ShowDialog()) == true)
-            AddDropped(dlg.FileNames.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), group);
+        var files = WithDialog(() => Dialogs.OpenFiles(
+            "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*",
+            group != null ? $"Dateien zur Gruppe „{GroupManager.LeafOf(group)}“ hinzufügen" : "Dateien hinzufügen"));
+        if (files.Count > 0)
+            AddDropped(files.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), group);
     }
 
     /// <summary>Ordner als smarte Gruppe anlegen (aus dem Eintragsdialog).</summary>
@@ -697,7 +691,7 @@ public sealed partial class AppController : IDisposable
     {
         if (Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase)) is { } existing)
         {
-            MessageBox.Show($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialogs.Inform($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe");
             return;
         }
         SmartGroups.Add(Settings, folderPath, null, string.IsNullOrEmpty(parent) ? null : parent);
@@ -755,13 +749,13 @@ public sealed partial class AppController : IDisposable
         string? text = null;
         try
         {
-            if (Clipboard.ContainsFileDropList())
+            var files = Shell.GetClipboardFiles();
+            if (files.Count > 0)
             {
-                var files = Clipboard.GetFileDropList().Cast<string>().ToList();
                 AddDropped(files.Select(f => DropClassifier.Classify(f, Directory.Exists, p => { try { return File.ReadAllText(p); } catch { return null; } })).ToList(), group);
                 return;
             }
-            if (Clipboard.ContainsText()) text = Clipboard.GetText();
+            text = Shell.GetClipboardText();
         }
         catch { }
         if (string.IsNullOrWhiteSpace(text))
@@ -775,7 +769,7 @@ public sealed partial class AppController : IDisposable
     /// <summary>Vorlagen-Katalog: ausgewählte Vorlagen in die Gruppe übernehmen.</summary>
     public void AddFromCatalog(string? group)
     {
-        var chosen = WithDialog(() => CatalogWindow.Pick());
+        var chosen = WithDialog(() => Dialogs.PickCatalogTemplates());
         if (chosen == null || chosen.Count == 0) return;
         foreach (var t in chosen)
         {
@@ -808,42 +802,39 @@ public sealed partial class AppController : IDisposable
     public void PickGroupColor(string groupPath)
     {
         var current = GroupManager.OwnColorOf(Settings, groupPath);
-        var text = WithDialog(() => ColorPickerWindow.Pick($"Farbe für „{GroupManager.LeafOf(groupPath)}“", current));
+        var text = WithDialog(() => Dialogs.PickColor($"Farbe für „{GroupManager.LeafOf(groupPath)}“", current));
         if (text != null) SetGroupColor(groupPath, text);
     }
 
     public void ChooseGroupIcon(string groupPath)
     {
         var current = GroupManager.IconOf(Settings, groupPath);
-        var picked = WithDialog(() => IconPickerWindow.Pick(current, $"Symbol für „{GroupManager.LeafOf(groupPath)}“"));
+        var picked = WithDialog(() => Dialogs.PickIcon(current, $"Symbol für „{GroupManager.LeafOf(groupPath)}“"));
         if (picked == null) return;
         GroupManager.SetIcon(Settings, groupPath, picked.Value);
         CommitUserChange();
     }
 
     /// <summary>Eigene Einträge als Datei speichern (z. B. eine Gruppe für Kollegen).</summary>
-    public void ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, Window? owner = null, AppSettings? source = null)
+    public void ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, object? owner = null, AppSettings? source = null)
     {
         if (entries.Count == 0)
         {
-            MessageBox.Show("Es sind keine eigenen Einträge ausgewählt.", "Exportieren", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialogs.Inform("Es sind keine eigenen Einträge ausgewählt.", "Exportieren", owner);
             return;
         }
-        var dlg = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = EntryShare.FileFilter,
-            FileName = (rootGroup != null ? GroupManager.LeafOf(rootGroup) : "Eigene Einträge") + ".pxentries.json"
-        };
-        if (WithDialog(() => dlg.ShowDialog(owner)) != true) return;
+        var fileName = WithDialog(() => Dialogs.SaveFile(EntryShare.FileFilter,
+            (rootGroup != null ? GroupManager.LeafOf(rootGroup) : "Eigene Einträge") + ".pxentries.json", owner: owner));
+        if (fileName == null) return;
         try
         {
-            File.WriteAllText(dlg.FileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
-            AppLog.Info($"{entries.Count} eigene Einträge exportiert: {dlg.FileName}");
+            File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
+            AppLog.Info($"{entries.Count} eigene Einträge exportiert: {fileName}");
             _tray?.ShowBalloon("Exportiert", $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Exportieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Warn(ex.Message, "Exportieren", owner);
         }
     }
 
@@ -851,22 +842,22 @@ public sealed partial class AppController : IDisposable
         ExportEntries(Settings.CustomEntries.Where(c => GroupManager.GroupOf(Settings, c.Key) is { Length: > 0 } g && GroupManager.IsSameOrBelow(g, groupPath)).ToList(), groupPath);
 
     /// <returns>true, wenn etwas importiert wurde.</returns>
-    public bool ImportEntries(string? intoGroup = null, Window? owner = null)
+    public bool ImportEntries(string? intoGroup = null, object? owner = null)
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*" };
-        if (WithDialog(() => dlg.ShowDialog(owner)) != true) return false;
+        var fileName = WithDialog(() => Dialogs.OpenFile(EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*", owner: owner));
+        if (fileName == null) return false;
         try
         {
-            var file = EntryShare.Parse(File.ReadAllText(dlg.FileName));
+            var file = EntryShare.Parse(File.ReadAllText(fileName));
             var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
             CommitUserChange();
-            AppLog.Info($"Eigene Einträge importiert ({added} neu, {updated} aktualisiert): {dlg.FileName}");
-            MessageBox.Show($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppLog.Info($"Eigene Einträge importiert ({added} neu, {updated} aktualisiert): {fileName}");
+            Dialogs.Inform($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", owner);
             return added + updated > 0;
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Warn("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", owner);
             return false;
         }
     }
@@ -1028,7 +1019,7 @@ public sealed partial class AppController : IDisposable
             var placeholders = !current.PlaceholdersResolved && current.Source is { NeedsResolving: true, CopiesToClipboard: false } src
                 ? src.Placeholders : (IReadOnlyList<Placeholder>)Array.Empty<Placeholder>();
             var key = current.Source?.Key ?? item.FullPath;
-            var answer = WithDialog(() => PlaceholderWindow.AskWithProfile(item.DisplayName, placeholders,
+            var answer = WithDialog(() => Dialogs.AskProfile(item.DisplayName, placeholders,
                 name => ParameterHistory.Get(Settings, key, name), ProfileResolver.GetProfiles(Settings, item), ProfileResolver.GetDefault(Settings, item)));
             if (answer is not { } a) return;
             profile = a.Profile;
@@ -1113,17 +1104,14 @@ public sealed partial class AppController : IDisposable
     }
 
     /// <summary>Sicherheitsabfrage, falls im Profil eingestellt.</summary>
-    public bool ConfirmRun(LaunchItem item, LaunchProfile profile, int targetCount, Window? owner)
+    public bool ConfirmRun(LaunchItem item, LaunchProfile profile, int targetCount, object? owner)
     {
         if (!profile.ConfirmBeforeRun) return true;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
         var where = targetCount > 0 ? $" auf {targetCount} {(targetCount == 1 ? "Rechner" : "Rechnern")}" : string.Empty;
         var text = $"„{name}“ mit dem Profil „{profile.Name}“{where} wirklich ausführen?" +
                    (profile.RunAsAdmin ? "\n\nDer Start erfolgt mit Administratorrechten." : string.Empty);
-        var result = owner != null
-            ? MessageBox.Show(owner, text, "Ausführen bestätigen", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No)
-            : MessageBox.Show(text, "Ausführen bestätigen", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-        return result == MessageBoxResult.Yes;
+        return Dialogs.Confirm(text, "Ausführen bestätigen", owner: owner, defaultNo: true);
     }
 
     /// <summary>Entfernt die Zonen-Kennung („aus dem Internet“) einer Datei.</summary>
@@ -1137,8 +1125,7 @@ public sealed partial class AppController : IDisposable
         }
         else
         {
-            MessageBox.Show($"{item.FileName} konnte nicht entsperrt werden (fehlende Schreibrechte?).", "Entsperren",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialogs.Warn($"{item.FileName} konnte nicht entsperrt werden (fehlende Schreibrechte?).", "Entsperren");
         }
     }
 
@@ -1305,8 +1292,8 @@ public sealed partial class AppController : IDisposable
             return;
         }
         Update.Subtitle = "Update fehlgeschlagen";
-        if (MessageBox.Show(error + "\n\nRelease-Seite im Browser öffnen?", "Update", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-            Launcher.OpenUrl(r.HtmlUrl);
+        if (Dialogs.Confirm(error + "\n\nRelease-Seite im Browser öffnen?", "Update"))
+            Shell.OpenUrl(r.HtmlUrl);
     }
 
     /// <summary>Power-Exec wird gerade beendet (z. B. für ein Update).</summary>

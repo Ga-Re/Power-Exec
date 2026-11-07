@@ -24,6 +24,12 @@ public sealed class WpfShell : IShell
         catch { return string.Empty; }
     }
 
+    public IReadOnlyList<string> GetClipboardFiles()
+    {
+        try { return System.Windows.Clipboard.ContainsFileDropList() ? System.Windows.Clipboard.GetFileDropList().Cast<string>().ToList() : Array.Empty<string>(); }
+        catch { return Array.Empty<string>(); }
+    }
+
     public bool IsPwshInstalled => Launcher.IsPwshInstalled;
 }
 
@@ -95,6 +101,16 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
         NewGroupWindow.Ask(heading, initialName, validateName, validateFolder);
 
     public IReadOnlyList<CatalogTemplate>? PickCatalogTemplates() => CatalogWindow.Pick();
+
+    public IReadOnlyDictionary<string, string>? AskPlaceholders(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history) =>
+        PlaceholderWindow.Ask(title, placeholders, history);
+
+    public (LaunchProfile Profile, IReadOnlyDictionary<string, string> Values)? AskProfile(string title, IReadOnlyList<Placeholder> placeholders,
+        Func<string, IReadOnlyList<string>> history, IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected) =>
+        PlaceholderWindow.AskWithProfile(title, placeholders, history, profiles, selected) is { } a ? (a.Profile, a.Values) : null;
+
+    public (int Choice, bool ForAll) Choose(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText = null) =>
+        ChoiceWindow.Ask(heading, prompt, options, forAllText);
 }
 
 /// <summary><see cref="IThemeInfo"/> aus dem <see cref="ThemeService"/>.</summary>

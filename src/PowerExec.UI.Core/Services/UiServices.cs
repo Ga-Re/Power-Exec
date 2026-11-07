@@ -20,6 +20,9 @@ public interface IShell
     /// <summary>Text der Zwischenablage; leer, wenn keiner da oder nicht lesbar.</summary>
     string GetClipboardText();
 
+    /// <summary>Kopierte Dateien und Ordner (Explorer); leer, wenn keine da oder nicht lesbar.</summary>
+    IReadOnlyList<string> GetClipboardFiles();
+
     /// <summary>Ist PowerShell 7 (pwsh.exe) installiert?</summary>
     bool IsPwshInstalled { get; }
 }
@@ -74,6 +77,33 @@ public interface IDialogs
 
     /// <summary>Vorlagen aus dem Werkzeug-Katalog wählen; null = abgebrochen.</summary>
     IReadOnlyList<CatalogTemplate>? PickCatalogTemplates();
+
+    /// <summary>
+    /// Werte für die Platzhalter ({{Name}}) eines Starts abfragen; <paramref name="history"/> liefert die zuletzt
+    /// verwendeten Werte je Name (der erste ist die Vorgabe). null = abgebrochen.
+    /// </summary>
+    IReadOnlyDictionary<string, string>? AskPlaceholders(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history);
+
+    /// <summary>„Nach Profil fragen“: Profil wählen und – falls vorhanden – Platzhalter ausfüllen, in einem Dialog. null = abgebrochen.</summary>
+    (LaunchProfile Profile, IReadOnlyDictionary<string, string> Values)? AskProfile(string title, IReadOnlyList<Placeholder> placeholders,
+        Func<string, IReadOnlyList<string>> history, IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected);
+
+    /// <summary>
+    /// Eine von mehreren Möglichkeiten wählen (große Schaltflächen mit Beschreibung). Liefert den Index (−1 = abgebrochen) und,
+    /// wenn <paramref name="forAllText"/> gesetzt ist, ob die Wahl für alle weiteren gelten soll.
+    /// </summary>
+    (int Choice, bool ForAll) Choose(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText = null);
+}
+
+/// <summary>Möglichkeit in <see cref="IDialogs.Choose"/>: Symbol (Segoe-Glyphe oder leer), Titel und Beschreibung.</summary>
+public sealed record ChoiceOption(string Glyph, string Title, string Description)
+{
+    /// <summary>Möglichkeiten beim Ziehen eines Ordners ins Panel.</summary>
+    public static readonly IReadOnlyList<ChoiceOption> FolderDrop = new[]
+    {
+        new ChoiceOption("\uE8B7", "Als Gruppe", "Smarte Gruppe: Scripte und Programme im Ordner erscheinen als Einträge und bleiben aktuell."),
+        new ChoiceOption("\uE71B", "Als Link", "Ein Eintrag, der den Ordner im Explorer öffnet.")
+    };
 }
 
 /// <summary>Aktueller Zustand des Designs (Windows-Kontrastdesign, helles/dunkles Design der App).</summary>

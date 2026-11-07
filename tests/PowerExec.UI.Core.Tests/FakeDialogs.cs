@@ -55,4 +55,31 @@ internal sealed class FakeDialogs : IDialogs
     }
 
     public IReadOnlyList<CatalogTemplate>? PickCatalogTemplates() { Asked.Add("PickCatalogTemplates"); return CatalogAnswer; }
+
+    /// <summary>Antwort auf Platzhalter-Fragen; null = abgebrochen.</summary>
+    public Dictionary<string, string>? PlaceholderAnswer { get; set; }
+
+    /// <summary>Antwort auf „Nach Profil fragen“: Index des Profils oder null = abgebrochen.</summary>
+    public int? ProfileAnswer { get; set; }
+
+    public (int Choice, bool ForAll) ChoiceAnswer { get; set; } = (-1, false);
+
+    public IReadOnlyDictionary<string, string>? AskPlaceholders(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history)
+    {
+        Asked.Add("AskPlaceholders " + title);
+        return PlaceholderAnswer;
+    }
+
+    public (LaunchProfile Profile, IReadOnlyDictionary<string, string> Values)? AskProfile(string title, IReadOnlyList<Placeholder> placeholders,
+        Func<string, IReadOnlyList<string>> history, IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected)
+    {
+        Asked.Add("AskProfile " + title);
+        return ProfileAnswer is { } i ? (profiles[i], PlaceholderAnswer ?? new Dictionary<string, string>()) : null;
+    }
+
+    public (int Choice, bool ForAll) Choose(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText = null)
+    {
+        Asked.Add("Choose " + heading);
+        return ChoiceAnswer;
+    }
 }

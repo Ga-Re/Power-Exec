@@ -225,6 +225,7 @@ internal sealed class SpikeShell : IShell
     public void SetClipboardText(string text) => SpikeLog.Write($"Zwischenablage: {text}");
     public void CopyToClipboard(string text, bool asHtml) => SetClipboardText(text);
     public string GetClipboardText() => string.Empty;
+    public IReadOnlyList<string> GetClipboardFiles() => Array.Empty<string>();
     public bool IsPwshInstalled => File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "7", "pwsh.exe"));
 }
 
@@ -243,6 +244,10 @@ internal sealed class SpikeDialogs : IDialogs
     public IconRef? PickIcon(IconRef current, string heading) => null;
     public NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder) => null;
     public IReadOnlyList<CatalogTemplate>? PickCatalogTemplates() => null;
+    public IReadOnlyDictionary<string, string>? AskPlaceholders(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history) => null;
+    public (LaunchProfile Profile, IReadOnlyDictionary<string, string> Values)? AskProfile(string title, IReadOnlyList<Placeholder> placeholders,
+        Func<string, IReadOnlyList<string>> history, IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected) => null;
+    public (int Choice, bool ForAll) Choose(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText = null) => (-1, false);
 }
 
 internal sealed class SpikeTheme : IThemeInfo

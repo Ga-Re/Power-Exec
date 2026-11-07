@@ -111,7 +111,7 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
         ProfilesWindow.EditEntryEx(this, target, entry, isNew, saveImmediately: false, group, null, owner as Window);
 
     void ICustomEntryListHost.ExportEntries(IReadOnlyList<CustomEntry> entries, string? rootGroup, object? owner, AppSettings? source) =>
-        ExportEntries(entries, rootGroup, owner as Window, source);
+        ExportEntries(entries, rootGroup, owner, source);
 
     // ── Einstellungsfenster ──────────────────────────────────────────
 

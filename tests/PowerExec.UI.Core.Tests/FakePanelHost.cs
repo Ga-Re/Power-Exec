@@ -21,6 +21,8 @@ internal sealed class FakeShell : IShell
     public void CopyToClipboard(string text, bool asHtml) => Clipboard.Add(asHtml ? "html:" + text : text);
     public string ClipboardContent { get; set; } = string.Empty;
     public string GetClipboardText() => ClipboardContent;
+    public List<string> ClipboardFiles { get; } = new();
+    public IReadOnlyList<string> GetClipboardFiles() => ClipboardFiles;
 }
 
 internal sealed class FakeTheme : IThemeInfo
