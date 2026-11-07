@@ -110,9 +110,11 @@ public static class FluentTheme
 
         ApplyAccent(root);
 
+        // Panel: eigene Flächenfarben (Panelfarbe) bleiben unangetastet
+        if (!entry.MapPalette) return;
         foreach (var (own, fluent) in PaletteMap)
         {
-            if (ThemeService.IsHighContrast || !entry.MapPalette) res.Remove(own);
+            if (ThemeService.IsHighContrast) res.Remove(own);
             else if (FindIn(merged, fluent) is Brush b) res[own] = b;
         }
     }

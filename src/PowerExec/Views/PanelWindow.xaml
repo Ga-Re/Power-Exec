@@ -1,6 +1,7 @@
 <Window x:Class="PowerExec.Views.PanelWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         xmlns:infra="clr-namespace:PowerExec.Infrastructure"
         Title="Power-Exec"
@@ -9,6 +10,9 @@
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False"
         Width="400" Height="700">
     <Window.Resources>
+      <ResourceDictionary>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
         <!-- Gruppenkopf: ohne eigene Hover-Fläche (hervorgehoben wird der Rahmen der Gruppe) -->
         <Style x:Key="GroupHeaderButton" TargetType="Button">
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
@@ -290,7 +294,7 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource Btn.Standard}">
+        <Style x:Key="ActionButton" TargetType="ui:Button" BasedOn="{StaticResource Btn.Standard}">
             <Setter Property="MinHeight" Value="30"/>
             <Setter Property="Height" Value="30"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -322,8 +326,8 @@
                     <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
                     <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Entsperren" Command="{Binding UnblockCommand}"
-                                Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Entsperren" Command="{Binding UnblockCommand}"
+                                Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top" />
                         <TextBlock Text="{Binding BlockedText}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap"/>
                     </DockPanel>
                     <TextBlock x:Name="Sig" Text="{Binding SignatureText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,0,0,8"
@@ -341,7 +345,7 @@
                                             <TextBox x:Name="Field" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" Height="28" Padding="6,0" FontSize="12"
                                                      Tag="{Binding Placeholder}" ToolTip="{Binding Help}" Visibility="{Binding IsText, Converter={StaticResource Vis}}"
                                                      AutomationProperties.Name="{Binding Name}"/>
-                                            <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" Height="28" FontSize="12"
+                                            <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Text}" Height="28" FontSize="12" Padding="10,0,8,0" VerticalContentAlignment="Center"
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{Binding Name}"/>
                                             <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" FontSize="12" ToolTip="{Binding Help}"
                                                       Visibility="{Binding IsSwitch, Converter={StaticResource Vis}}"/>
@@ -359,30 +363,30 @@
                             <TextBlock Text="{Binding Error}" FontSize="11.5" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,0,0,6"
                                        Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
                             <StackPanel Orientation="Horizontal">
-                                <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="28" MinHeight="28" Padding="10,0" FontSize="12"
+                                <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="28" MinHeight="28" Padding="10,0" FontSize="12"
                                         ToolTip="Mit diesen Werten starten (Rechte und Ziel aus dem Standardprofil)">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
                                         <TextBlock Text="Mit diesen Werten"/>
                                     </StackPanel>
-                                </Button>
-                                <Button Style="{StaticResource Btn.Subtle}" Command="{Binding SaveSetCommand}" Height="28" MinHeight="28" Padding="8,0" Margin="6,0,0,0"
+                                </ui:Button>
+                                <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding SaveSetCommand}" Height="28" MinHeight="28" Padding="8,0" Margin="6,0,0,0"
                                         ToolTip="Als Parameter-Set speichern – erscheint als Startprofil am Ausführen-Knopf">
                                     <TextBlock Text="Speichern als …" FontSize="12" Foreground="{DynamicResource Accent}"/>
-                                </Button>
+                                </ui:Button>
                             </StackPanel>
                         </StackPanel>
                     </Border>
                     <WrapPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
                             <!-- Ein Profil: normaler Button -->
-                            <Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
+                            <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
                                     ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
                                     <TextBlock Text="{Binding RunLabel}"/>
                                 </StackPanel>
-                            </Button>
+                            </ui:Button>
                             <!-- Mehrere Profile: Split-Button (links Standardprofil, rechts Auswahl) -->
                             <Button Style="{StaticResource Btn.SplitLeft}" Command="{Binding RunCommand}" Height="30" MinHeight="30" Padding="12,0" FontSize="12"
                                     ToolTip="{Binding RunToolTip}" Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
@@ -398,31 +402,31 @@
                                 <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
                             </Button>
                         </StackPanel>
-                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)"
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="Als Administrator ausführen (UAC)"
                                 Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="Admin"/>
                             </StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen"
+                        </ui:Button>
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="Als anderer Benutzer ausführen"
                                 Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="Als …"/>
                             </StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="Auf einem oder mehreren Remote-Rechnern ausführen"
+                        </ui:Button>
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="Auf einem oder mehreren Remote-Rechnern ausführen"
                                 Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="Remote"/>
                             </StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="Weitere Aktionen"
+                        </ui:Button>
+                        <ui:Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="Weitere Aktionen"
                                 ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
                             <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
-                        </Button>
+                        </ui:Button>
                     </WrapPanel>
             </StackPanel>
             <DataTemplate.Triggers>
@@ -725,15 +729,15 @@
                         <StackPanel x:Name="HeaderTools" Grid.Column="1" Orientation="Horizontal" Opacity="0">
                             <StackPanel.LayoutTransform><ScaleTransform ScaleX="0"/></StackPanel.LayoutTransform>
                             <!-- Liste/Raster nur für diese Gruppe -->
-                            <Button x:Name="LayoutToggle" Style="{StaticResource Btn.Icon}" Width="28" Height="32" ToolTip="{Binding LayoutToolTip}"
+                            <ui:Button x:Name="LayoutToggle" Style="{StaticResource Btn.Icon}" Width="28" Height="32" ToolTip="{Binding LayoutToolTip}"
                                     Command="{Binding ToggleLayoutCommand}">
                                 <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="12"/>
-                            </Button>
+                            </ui:Button>
                             <!-- Menü erst beim Darüberfahren (wie Liste/Raster) – ruhigerer Gruppenkopf -->
-                            <Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
+                            <ui:Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="Menü"
                                     ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
                                 <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
-                            </Button>
+                            </ui:Button>
                         </StackPanel>
                     </Grid>
                     </Border>
@@ -829,6 +833,7 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+      </ResourceDictionary>
     </Window.Resources>
 
     <Border x:Name="PanelBorder" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}"
@@ -885,14 +890,14 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <ComboBox Grid.Column="2" x:Name="WorkspaceBox" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28"
+                <ComboBox Grid.Column="2" x:Name="WorkspaceBox" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28" Padding="10,0,8,0" VerticalContentAlignment="Center"
                           ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
                           ToolTip="Arbeitsbereich wechseln" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
-                    <Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
                         <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="15"/>
-                    </Button>
-                    <Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="Elementgröße: Klein, Mittel, Groß">
+                    </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="Elementgröße: Klein, Mittel, Groß">
                         <TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}" FontSize="15"/>
                         <Button.ContextMenu>
                             <ContextMenu>
@@ -907,7 +912,7 @@
                                 </MenuItem>
                             </ContextMenu>
                         </Button.ContextMenu>
-                    </Button>
+                    </ui:Button>
                     <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding ShowHistory}" ToolTip="Verlauf (Strg+H)"
                                   AutomationProperties.Name="Verlauf">
                         <TextBlock Text="&#xE81C;" Style="{StaticResource Icon}" FontSize="15"/>
@@ -915,9 +920,9 @@
                     <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsPinned}" ToolTip="Anheften: Panel bleibt offen">
                         <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ToggleButton>
-                    <Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding SettingsCommand}" ToolTip="Einstellungen">
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding SettingsCommand}" ToolTip="Einstellungen">
                         <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="15"/>
-                    </Button>
+                    </ui:Button>
                 </StackPanel>
             </Grid>
 
@@ -928,8 +933,8 @@
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding CatalogPending, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Übernehmen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
-                            Command="{Binding ApplyCatalogsCommand}" MinHeight="26" Height="26" Padding="8,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Übernehmen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                            Command="{Binding ApplyCatalogsCommand}" MinHeight="26" Height="26" Padding="8,0" />
                     <TextBlock Text="{Binding CatalogPending}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Info.Text}"/>
                 </DockPanel>
             </Border>
@@ -937,10 +942,10 @@
             <Border Margin="16,0,16,10" Padding="12,10,6,10" CornerRadius="6" Background="{DynamicResource Info.Bg}"
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" VerticalAlignment="Top" Command="{Binding DismissWhatsNewCommand}"
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" VerticalAlignment="Top" Command="{Binding DismissWhatsNewCommand}"
                             ToolTip="Gelesen – nicht mehr anzeigen" AutomationProperties.Name="Neuerungen schließen">
                         <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                    </Button>
+                    </ui:Button>
                     <TextBlock Text="&#xE789;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="16" VerticalAlignment="Top" Margin="0,1,10,0"/>
                     <StackPanel>
                         <TextBlock Text="{Binding WhatsNewTitle}" FontWeight="SemiBold" TextWrapping="Wrap"/>
@@ -951,8 +956,8 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Style="{StaticResource Btn.Subtle}" Content="Alle Neuerungen" Command="{Binding ShowAllWhatsNewCommand}" HorizontalAlignment="Left"
-                                Foreground="{DynamicResource Accent}" FontWeight="SemiBold" Padding="0" Margin="0,6,0,0" MinHeight="22" Height="22"/>
+                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="Alle Neuerungen" Command="{Binding ShowAllWhatsNewCommand}" HorizontalAlignment="Left"
+                                Foreground="{DynamicResource Accent}" FontWeight="SemiBold" Padding="0" Margin="0,6,0,0" MinHeight="22" Height="22" />
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -964,8 +969,8 @@
                         <TextBlock Text="{Binding UpdateTitle}" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding UpdateSubtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Style="{StaticResource Btn.Accent}" Content="Jetzt aktualisieren" Command="{Binding UpdateNowCommand}" Height="28" MinHeight="28" FontSize="12"/>
-                            <Button Style="{StaticResource Btn.Standard}" Content="Später" Command="{Binding UpdateLaterCommand}" Height="28" MinHeight="28" FontSize="12" Margin="8,0,0,0"/>
+                            <ui:Button Style="{StaticResource Btn.Accent}" Content="Jetzt aktualisieren" Command="{Binding UpdateNowCommand}" Height="28" MinHeight="28" FontSize="12" />
+                            <ui:Button Style="{StaticResource Btn.Standard}" Content="Später" Command="{Binding UpdateLaterCommand}" Height="28" MinHeight="28" FontSize="12" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>
                 </DockPanel>
@@ -974,8 +979,8 @@
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding PendingText, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Prüfen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
-                            Command="{Binding ReviewPendingCommand}" MinHeight="26" Height="26" Padding="8,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Prüfen" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                            Command="{Binding ReviewPendingCommand}" MinHeight="26" Height="26" Padding="8,0" />
                     <TextBlock Text="{Binding PendingText}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
             </Border>
@@ -1070,10 +1075,10 @@
                         </StackPanel>
                     </Border>
                 </Popup>
-                <Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,4,0" ToolTip="Suche leeren"
+                <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,4,0" ToolTip="Suche leeren"
                         Command="{Binding ClearSearchCommand}" Visibility="{Binding IsSearching, Converter={StaticResource Vis}}">
                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11"/>
-                </Button>
+                </ui:Button>
             </Grid>
 
             <!-- Aktive Filter (aus dem Suchfeld bzw. voreingestellt); gewählt werden sie über die Vorschläge beim Klick ins Suchfeld -->
@@ -1090,10 +1095,10 @@
                                 BorderThickness="1" BorderBrush="{DynamicResource Accent}" ToolTip="{Binding ToolTip}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="ChipText" Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
-                                <Button Style="{StaticResource Btn.Icon}" Width="20" Height="20" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
+                                <ui:Button Style="{StaticResource Btn.Icon}" Width="20" Height="20" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
                                         ToolTip="Filter entfernen" AutomationProperties.Name="Filter entfernen">
                                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
-                                </Button>
+                                </ui:Button>
                             </StackPanel>
                         </Border>
                         <DataTemplate.Triggers>
@@ -1175,7 +1180,7 @@
                         <TextBlock Text="Noch keine Gruppe mit Ordner." FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         <TextBlock Text="Lege eine Gruppe an und wähle einen Ordner – sie zeigt dann dessen Scripte und Programme. Eigene Einträge legst du per Rechtsklick an."
                                    Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,12"/>
-                        <Button Style="{StaticResource Btn.Accent}" Content="Neue Gruppe …" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center"/>
+                        <ui:Button Style="{StaticResource Btn.Accent}" Content="Neue Gruppe …" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
                                Style="{StaticResource Caption}" Text="Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten. Filter (Schlagwort, Typ, Gruppe, Merkmal) bietet ein Klick ins Suchfeld an."/>
@@ -1317,11 +1322,11 @@
                 <DockPanel>
                     <!-- Kopf -->
                     <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
                                 Command="{Binding DataContext.ClosePeekCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 ToolTip="Schließen (Leertaste oder Esc)" AutomationProperties.Name="Vorschau schließen">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                        </Button>
+                        </ui:Button>
                         <Border DockPanel.Dock="Left" Style="{StaticResource Badge}" DataContext="{Binding Item}" Margin="0,0,10,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding BadgeText}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -1333,13 +1338,13 @@
                     <!-- Aktionen -->
                     <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="12,8">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Style="{StaticResource Btn.Standard}" Command="{Binding Item.EditCommand}" Margin="0,0,8,0"
+                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding Item.EditCommand}" Margin="0,0,8,0"
                                     Visibility="{Binding Item.CanEdit, Converter={StaticResource Vis}}" ToolTip="Strg+E">
                                 <TextBlock Text="Im Editor öffnen"/>
-                            </Button>
-                            <Button Style="{StaticResource Btn.Accent}" Command="{Binding Item.RunCommand}" ToolTip="Enter">
+                            </ui:Button>
+                            <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding Item.RunCommand}" ToolTip="Enter">
                                 <TextBlock Text="{Binding Item.RunLabel}"/>
-                            </Button>
+                            </ui:Button>
                         </StackPanel>
                     </Border>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="14,0,14,10">
@@ -1411,10 +1416,10 @@
                 </Border.Effect>
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleHistoryCommand}"
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleHistoryCommand}"
                                 ToolTip="Schließen (Esc)" AutomationProperties.Name="Verlauf schließen">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                        </Button>
+                        </ui:Button>
                         <TextBlock Text="Verlauf" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <StackPanel DockPanel.Dock="Top" Margin="12,0,12,6">
@@ -1447,18 +1452,18 @@
                                                     <TextBlock Text="{Binding ParametersText}" FontSize="11" FontFamily="Cascadia Mono, Consolas" Foreground="{DynamicResource Text.Tertiary}"
                                                                TextTrimming="CharacterEllipsis" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}"/>
                                                     <WrapPanel Margin="0,4,0,0">
-                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding RunAgainCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                        <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding RunAgainCommand}" Padding="6,0" Height="24" MinHeight="24"
                                                                 ToolTip="Mit genau denselben Werten, Rechnern und Rechten erneut starten">
                                                             <TextBlock Text="↻ Gleiche Werte" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding RetryFailedCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                        </ui:Button>
+                                                        <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding RetryFailedCommand}" Padding="6,0" Height="24" MinHeight="24"
                                                                 Visibility="{Binding CanRetryFailed, Converter={StaticResource Vis}}">
                                                             <TextBlock Text="{Binding RetryText}" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource Btn.Subtle}" Command="{Binding OpenLogCommand}" Padding="6,0" Height="24" MinHeight="24"
+                                                        </ui:Button>
+                                                        <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding OpenLogCommand}" Padding="6,0" Height="24" MinHeight="24"
                                                                 Visibility="{Binding HasLog, Converter={StaticResource Vis}}" ToolTip="Log-Datei im Explorer zeigen">
                                                             <TextBlock Text="Log" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
-                                                        </Button>
+                                                        </ui:Button>
                                                     </WrapPanel>
                                                 </StackPanel>
                                             </DockPanel>
@@ -1488,10 +1493,10 @@
                 </Border.Effect>
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleShortcutsCommand}"
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleShortcutsCommand}"
                                 ToolTip="Schließen (Esc)" AutomationProperties.Name="Schließen">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                        </Button>
+                        </ui:Button>
                         <TextBlock Text="Tastenkürzel" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="460">
@@ -1530,14 +1535,14 @@
                     <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding DismissUndoCommand}"
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding DismissUndoCommand}"
                             ToolTip="Hinweis schließen" AutomationProperties.Name="Hinweis schließen">
                         <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                    </Button>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="28" Padding="10,0" Margin="8,0,2,0"
+                    </ui:Button>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="28" Padding="10,0" Margin="8,0,2,0"
                             Command="{Binding UndoCommand}" ToolTip="Rückgängig (Strg+Z)">
                         <TextBlock Text="Rückgängig" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
-                    </Button>
+                    </ui:Button>
                     <TextBlock Text="{Binding UndoToast}" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12.5" MaxHeight="40"
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
@@ -1562,9 +1567,9 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel DataContext="{Binding SelectedItem}">
                         <DockPanel Margin="0,0,0,6">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="Auswahl aufheben" Click="ClearSelection_Click">
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="Auswahl aufheben" Click="ClearSelection_Click">
                                 <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                            </Button>
+                            </ui:Button>
                             <TextBlock infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                         </DockPanel>
                         <TextBlock infra:Highlight.Parts="{Binding SynopsisParts}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,6"/>
@@ -1580,17 +1585,17 @@
                 <Border Margin="10,8,8,0" Padding="10,6,4,6" CornerRadius="6" Background="{DynamicResource Bg.Chip}"
                         Visibility="{Binding HasMultiSelection, Converter={StaticResource Vis}}">
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding ClearCheckedCommand}"
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding ClearCheckedCommand}"
                                 ToolTip="Auswahl aufheben" AutomationProperties.Name="Auswahl aufheben">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                        </Button>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding RunCheckedCommand}" Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="6,0,4,0"
+                        </ui:Button>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding RunCheckedCommand}" Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="6,0,4,0"
                                 ToolTip="In der Reihenfolge der Auswahl starten; jeder wartet auf den vorigen, bei Fehler Abbruch">
                             <TextBlock Text="▶ Nacheinander"/>
-                        </Button>
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding SaveCheckedAsWorkflowCommand}" Height="26" MinHeight="26" Padding="6,0">
+                        </ui:Button>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding SaveCheckedAsWorkflowCommand}" Height="26" MinHeight="26" Padding="6,0">
                             <TextBlock Text="Als Ablauf speichern" FontSize="12" Foreground="{DynamicResource Accent}"/>
-                        </Button>
+                        </ui:Button>
                         <TextBlock Text="{Binding MultiSelectionText}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
                 </Border>
@@ -1603,28 +1608,28 @@
                             <DataTemplate>
                                 <Border x:Name="ActRow" CornerRadius="6" Padding="4,4,2,4" Background="Transparent">
                                     <DockPanel>
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding CancelCommand}"
+                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding CancelCommand}"
                                                 ToolTip="Abbrechen" AutomationProperties.Name="Abbrechen" Visibility="{Binding CanCancel, Converter={StaticResource Vis}}">
                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
-                                        </Button>
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding DismissCommand}"
+                                        </ui:Button>
+                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding DismissCommand}"
                                                 ToolTip="Aus der Liste entfernen" AutomationProperties.Name="Entfernen"
                                                 Visibility="{Binding IsRunning, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Text.Tertiary}"/>
-                                        </Button>
+                                        </ui:Button>
                                         <!-- Nach dem Ende: denselben Start wiederholen (gleiche Werte und gleiches Profil) -->
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="6,0" Command="{Binding RestartCommand}"
+                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="6,0" Command="{Binding RestartCommand}"
                                                 Visibility="{Binding CanRestart, Converter={StaticResource Vis}}" ToolTip="Mit denselben Werten erneut starten"
                                                 AutomationProperties.Name="Erneut starten">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Accent}" Margin="0,0,5,0"/>
                                                 <TextBlock Text="Erneut starten" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                             </StackPanel>
-                                        </Button>
-                                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="8,0" Command="{Binding OpenCommand}"
+                                        </ui:Button>
+                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="8,0" Command="{Binding OpenCommand}"
                                                 Visibility="{Binding CanOpen, Converter={StaticResource Vis}}" ToolTip="Ergebnisliste öffnen">
                                             <TextBlock Text="Ausgabe" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
-                                        </Button>
+                                        </ui:Button>
                                         <Grid Width="22" VerticalAlignment="Center" Margin="0,0,8,0">
                                             <TextBlock x:Name="ActGlyph" Text="{Binding StatusGlyph}" Style="{StaticResource Icon}" FontSize="13" HorizontalAlignment="Center"
                                                        Foreground="{DynamicResource Accent}"/>
@@ -1660,12 +1665,12 @@
                     </ItemsControl>
                 </StackPanel>
                 <DockPanel Margin="16,4,8,4">
-                    <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="Ordner neu einlesen">
+                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="Ordner neu einlesen">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="13"/>
-                    </Button>
-                    <Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="Neue Gruppe">
+                    </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="Neue Gruppe">
                         <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="13"/>
-                    </Button>
+                    </ui:Button>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"
                                Margin="8,0,4,0" ToolTip="Laufende Oberfläche und Version; in Klammern die über den Installer installierte Version"/>
                     <TextBlock Text="{Binding Footer}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>

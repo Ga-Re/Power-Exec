@@ -157,6 +157,9 @@ public sealed partial class SelfTestController : AppController
                     first?.SelectCommand.Execute(null);
                     await Settle();
                     if (host.Window.Content is FrameworkElement panelRoot) Screenshot(panelRoot, $"panel-{host.Config.Name}-{layout}{(compact ? "-kompakt" : "")}");
+                    if (!VisualDescendants(host.Window).OfType<Wpf.Ui.Controls.Button>().Any()) Fail($"Fluent: Panel {host.Config.Name} zeigt keine Fluent-Schaltflächen");
+                    if (host.Window.SearchBox.Template?.FindName("Placeholder", host.Window.SearchBox) is not System.Windows.Controls.TextBlock { IsVisible: true })
+                        Fail($"Fluent: Suchfeld im Panel {host.Config.Name} ohne Hinweistext");
                     if (host.Config.Name == "Hauptpanel" && !host.ViewModel.AllGroups.Any(g => g.GroupPath == "Admin/AD" && g.Items.Count == 1))
                         Fail($"{layout}: Untergruppe Admin/AD fehlt oder ist leer");
                     host.Window.HidePanel();
