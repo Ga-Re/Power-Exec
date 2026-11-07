@@ -20,10 +20,11 @@ public sealed class WpfAppUi : IAppUi
         _app = app;
         Dispatcher = new WpfUiDispatcher(Application.Current.Dispatcher);
         Dialogs = new WpfDialogs(() => app.AskForTest);
+        Shell = new WpfShell(Dialogs);
     }
 
     public IUiDispatcher Dispatcher { get; }
-    public IShell Shell { get; } = new WpfShell();
+    public IShell Shell { get; }
     public IDialogs Dialogs { get; }
     public IThemeInfo Theme { get; } = new WpfThemeInfo();
 

@@ -56,7 +56,7 @@ public sealed partial class AppController : IRunHost, IHistoryHost, IScheduleHos
 
     // ── Verlauf ──────────────────────────────────────────────────────
 
-    void IHistoryHost.OpenLocation(string path) => Launcher.OpenLocation(path);
+    void IHistoryHost.OpenLocation(string path) => Shell.OpenLocation(path);
 
     // ── Ablauf-Editor ────────────────────────────────────────────────
 

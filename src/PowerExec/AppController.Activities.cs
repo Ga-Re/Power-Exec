@@ -53,7 +53,7 @@ public sealed partial class AppController
     public bool StartLocalTracked(LaunchItem item, ExecutionRequest request, Func<HistoryEntry> beginHistory, object? owner)
     {
         var entry = beginHistory();
-        var ok = Launcher.StartLocal(request, owner as System.Windows.Window, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
+        var ok = Launcher.StartLocal(request, owner, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
         if (!ok) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
         return ok;
     }

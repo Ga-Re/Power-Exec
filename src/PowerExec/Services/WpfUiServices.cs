@@ -5,9 +5,9 @@ using PowerExec.Views;
 namespace PowerExec.Services;
 
 /// <summary><see cref="IShell"/> für Windows/WPF.</summary>
-public sealed class WpfShell : IShell
+public sealed class WpfShell(IDialogs dialogs) : IShell
 {
-    public void OpenLocation(string path, bool isFolder = false) => Launcher.OpenLocation(path, isFolder);
+    public void OpenLocation(string path, bool isFolder = false) => Launcher.OpenLocation(path, isFolder, dialogs);
 
     public void OpenUrl(string url) => Launcher.OpenUrl(url);
 

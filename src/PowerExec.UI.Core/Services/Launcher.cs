@@ -1,11 +1,9 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security;
-using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
-using PowerExec.Views;
 
 namespace PowerExec.Services;
 
@@ -13,8 +11,16 @@ namespace PowerExec.Services;
 public sealed class Launcher
 {
     private readonly Func<AppSettings> _settings;
+    private readonly IDialogs _dialogs;
+    private readonly Func<object?, string, bool, RunCredential?> _askCredential;
 
-    public Launcher(Func<AppSettings> settings) => _settings = settings;
+    /// <param name="askCredential">Anmeldedaten abfragen (Fenster, Ziel, remote); null = abgebrochen.</param>
+    public Launcher(Func<AppSettings> settings, IDialogs dialogs, Func<object?, string, bool, RunCredential?> askCredential)
+    {
+        _settings = settings;
+        _dialogs = dialogs;
+        _askCredential = askCredential;
+    }
 
     public static bool IsPwshInstalled
     {
@@ -62,7 +68,7 @@ public sealed class Launcher
         return Path.Combine(dir, $"done-{Guid.NewGuid():N}.txt");
     }
 
-    public bool StartLocal(ExecutionRequest request, Window? owner, Action<Process>? started = null)
+    public bool StartLocal(ExecutionRequest request, object? owner, Action<Process>? started = null)
     {
         string? doneFile = null;
         if (started != null && CommandBuilder.SupportsDoneFile(request))
@@ -74,7 +80,7 @@ public sealed class Launcher
         RunCredential? cred = null;
         if (spec.RequiresCredential)
         {
-            cred = CredentialWindow.Prompt(owner, request.Item.DisplayName, remote: false);
+            cred = _askCredential(owner, request.Item.DisplayName, false);
             if (cred == null) return false;
         }
 
@@ -122,7 +128,7 @@ public sealed class Launcher
         }
     }
 
-    private static void ShowStartError(Window? owner, ExecutionRequest r, LocalLaunchSpec spec, RunCredential? cred, Exception ex)
+    private void ShowStartError(object? owner, ExecutionRequest r, LocalLaunchSpec spec, RunCredential? cred, Exception ex)
     {
         var path = r.EffectivePath;
         string hint = ex is Win32Exception w ? w.NativeErrorCode switch
@@ -143,8 +149,7 @@ public sealed class Launcher
             hint += $"\n\nHinweis: Das Script liegt auf {PathResolver.ServerShare(path)}. Prüfe, ob {cred.Account} dort Leserechte hat.";
 
         var title = $"{r.Item.DisplayName} konnte nicht gestartet werden";
-        if (owner is { IsLoaded: true }) MessageBox.Show(owner, hint, title, MessageBoxButton.OK, MessageBoxImage.Warning);
-        else MessageBox.Show(hint, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        _dialogs.Warn(hint, title, owner);
     }
 
     public void OpenInEditor(LaunchItem item)
@@ -171,12 +176,12 @@ public sealed class Launcher
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Der Editor konnte nicht gestartet werden.\n\n{ex.Message}\n\nDen Editor stellst du in den Einstellungen unter „Ausführung“ ein.",
-                "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+            _dialogs.Warn($"Der Editor konnte nicht gestartet werden.\n\n{ex.Message}\n\nDen Editor stellst du in den Einstellungen unter „Ausführung“ ein.", "Power-Exec");
         }
     }
 
-    public static void OpenLocation(string path, bool isFolder = false)
+    /// <summary>Im Explorer zeigen; Fehler meldet <paramref name="dialogs"/> (ohne: still).</summary>
+    public static void OpenLocation(string path, bool isFolder = false, IDialogs? dialogs = null)
     {
         try
         {
@@ -185,7 +190,7 @@ public sealed class Launcher
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Warning);
+            dialogs?.Warn(ex.Message, "Power-Exec");
         }
     }
 

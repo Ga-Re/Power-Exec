@@ -127,7 +127,7 @@ public sealed partial class AppController
 
             Health = new HealthService(UiDispatcher);
             Repository = new ItemRepository(Settings, UiDispatcher);
-            Launcher = new Launcher(() => Settings);
+            Launcher = new Launcher(() => Settings, Dialogs, Ui.AskCredential);
             Step("Scan");
             await Repository.ScanAsync();
             Step("Panels erzeugen");

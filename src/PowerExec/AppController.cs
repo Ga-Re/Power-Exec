@@ -56,7 +56,7 @@ public sealed partial class AppController : IDisposable
         Health = new HealthService(UiDispatcher);
         Health.Changed += RebuildPanels;
         Repository = new ItemRepository(Settings, UiDispatcher);
-        Launcher = new Launcher(() => Settings);
+        Launcher = new Launcher(() => Settings, Dialogs, Ui.AskCredential);
         Repository.Changed += (_, _) =>
         {
             UpdateKnownFiles();
