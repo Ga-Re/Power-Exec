@@ -11,6 +11,70 @@
         <ui:ControlsDictionary/>
     </ResourceDictionary.MergedDictionaries>
 
+    <!--
+        Eingabefelder: Fluent-Aussehen von WPF UI plus Hinweistext aus „Tag“ (wie bisher im ganzen Programm),
+        einzeilig mittig, mehrzeilig oben; Eckenradius über TextBox.CornerRadius (Suchfelder setzen ihn größer).
+    -->
+    <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+        <Setter Property="Padding" Value="10,0,8,0"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Border x:Name="ContentBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource TextBox.CornerRadius}" SnapsToDevicePixels="True">
+                            <Grid>
+                                <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Foreground="{DynamicResource TextControlPlaceholderForeground}"
+                                           Margin="{TemplateBinding Padding}" Padding="2,0" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                           IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
+                                <!-- Kein Margin: TextBox wendet Padding selbst auf den Textbereich an -->
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                              VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"/>
+                            </Grid>
+                        </Border>
+                        <!-- Fluent: Linie unten, beim Fokus in Akzentfarbe und dicker -->
+                        <Border x:Name="AccentBorder" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="0,0,0,1"
+                                CornerRadius="{DynamicResource TextBox.CornerRadius}" IsHitTestVisible="False"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Text" Value="">
+                            <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsEnabled" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsKeyboardFocused" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundFocused}"/>
+                            <Setter TargetName="AccentBorder" Property="BorderThickness" Value="0,0,0,2"/>
+                            <Setter TargetName="AccentBorder" Property="BorderBrush" Value="{DynamicResource TextControlFocusedBorderBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ContentBorder" Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}"/>
+                            <Setter TargetName="ContentBorder" Property="BorderBrush" Value="{DynamicResource TextControlBorderBrushDisabled}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="AcceptsReturn" Value="True">
+                <Setter Property="VerticalContentAlignment" Value="Top"/>
+                <Setter Property="Padding" Value="10,6,8,6"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- Die bisherigen Schaltflächen-Stile als Fluent-Schaltflächen (gleiche Namen, damit das Layout bleibt) -->
     <Style x:Key="Btn.Standard" TargetType="ui:Button" BasedOn="{StaticResource DefaultUiButtonStyle}">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>

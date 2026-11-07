@@ -32,7 +32,10 @@ public static class FluentTheme
         ("Text.Disabled", "TextFillColorDisabledBrush")
     };
 
-    private static readonly List<WeakReference<FrameworkElement>> Attached = new();
+    /// <summary>Ein Fluent-Fenster: eigenes Hell/Dunkel (Panel mit eigener Farbe) und ob die eigenen Farben umgelenkt werden.</summary>
+    private sealed record Entry(WeakReference<FrameworkElement> Root, Func<bool>? Dark, bool MapPalette);
+
+    private static readonly List<Entry> Attached = new();
 
     static FluentTheme()
     {
@@ -55,7 +58,7 @@ public static class FluentTheme
     {
         var window = Window.GetWindow(e);
         if (window == null) return false;
-        lock (Attached) return Attached.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, window));
+        lock (Attached) return Attached.Any(a => a.Root.TryGetTarget(out var r) && ReferenceEquals(r, window));
     }
 
     /// <summary>
@@ -63,33 +66,36 @@ public static class FluentTheme
     /// <c>ui:ControlsDictionary</c> bereits ein (für <c>BasedOn</c>-Stile); hier werden Design und Farben angepasst
     /// und bei jedem Designwechsel nachgezogen.
     /// </summary>
-    public static void Attach(FrameworkElement root)
+    /// <param name="dark">Eigenes Hell/Dunkel (z. B. Panel mit heller Panelfarbe im dunklen Design); null = wie das Programm.</param>
+    /// <param name="mapPalette">Eigene Farben (Karten, Texte, Flächen) auf Fluent-Farben umlenken. Das Panel setzt seine Flächenfarben selbst.</param>
+    public static void Attach(FrameworkElement root, Func<bool>? dark = null, bool mapPalette = true)
     {
+        var entry = new Entry(new WeakReference<FrameworkElement>(root), dark, mapPalette);
         lock (Attached)
         {
-            Attached.RemoveAll(w => !w.TryGetTarget(out _));
-            Attached.Add(new WeakReference<FrameworkElement>(root));
+            Attached.RemoveAll(a => !a.Root.TryGetTarget(out var r) || ReferenceEquals(r, root));
+            Attached.Add(entry);
         }
-        Apply(root);
+        Apply(root, entry);
     }
 
     /// <summary>Nach <see cref="ThemeService.Apply(PowerExec.Core.Config.AppSettings)"/>: alle Fluent-Fenster nachziehen.</summary>
     public static void Refresh()
     {
-        List<FrameworkElement> alive;
+        List<(FrameworkElement Root, Entry Entry)> alive;
         lock (Attached)
         {
-            Attached.RemoveAll(w => !w.TryGetTarget(out _));
-            alive = Attached.Select(w => w.TryGetTarget(out var e) ? e : null).OfType<FrameworkElement>().ToList();
+            Attached.RemoveAll(a => !a.Root.TryGetTarget(out _));
+            alive = Attached.Select(a => (a.Root.TryGetTarget(out var e) ? e : null, a)).Where(x => x.Item1 != null).Select(x => (x.Item1!, x.a)).ToList();
         }
-        foreach (var e in alive) Apply(e);
+        foreach (var (root, entry) in alive) Apply(root, entry);
     }
 
-    private static void Apply(FrameworkElement root)
+    private static void Apply(FrameworkElement root, Entry entry)
     {
         var res = root.Resources;
         var merged = res.MergedDictionaries;
-        var themeUri = new Uri(ThemePath + ThemeFile() + ".xaml", UriKind.Absolute);
+        var themeUri = new Uri(ThemePath + ThemeFile(entry.Dark?.Invoke() ?? ThemeService.IsDark) + ".xaml", UriKind.Absolute);
         // Das aktuelle Design liegt als letztes Wörterbuch direkt am Fenster und überdeckt das dunkle Vorgabe-Design
         // aus Themes/Fluent.xaml. Verschachtelt ausgetauschte Wörterbücher meldet WPF nicht zuverlässig weiter –
         // Bedienelemente behielten sonst Farben des alten Designs (helle Schrift auf hellem Grund).
@@ -102,19 +108,19 @@ public static class FluentTheme
             merged.Add(new ResourceDictionary { Source = themeUri });
         }
 
-        ApplyAccent(res);
+        ApplyAccent(root);
 
         foreach (var (own, fluent) in PaletteMap)
         {
-            if (ThemeService.IsHighContrast) res.Remove(own);
+            if (ThemeService.IsHighContrast || !entry.MapPalette) res.Remove(own);
             else if (FindIn(merged, fluent) is Brush b) res[own] = b;
         }
     }
 
     /// <summary>Datei des Fluent-Designs: Hell, Dunkel oder das passende Kontrastdesign von Windows.</summary>
-    private static string ThemeFile()
+    private static string ThemeFile(bool dark)
     {
-        if (!ThemeService.IsHighContrast) return ThemeService.IsDark ? "Dark" : "Light";
+        if (!ThemeService.IsHighContrast) return dark ? "Dark" : "Light";
         var w = SystemColors.WindowColor;
         return (w.R * 299 + w.G * 587 + w.B * 114) / 1000 < 128 ? "HCBlack" : "HCWhite";
     }
@@ -123,8 +129,12 @@ public static class FluentTheme
     /// Akzentfarbe wie im übrigen Programm (eigene Palette oder Windows-Akzent), in den Schlüsseln, die WPF UI
     /// erwartet. Direkt am Fenster gesetzt, damit sie die Vorgaben aus <c>Accent.xaml</c> überdecken.
     /// </summary>
-    private static void ApplyAccent(ResourceDictionary res)
+    private static void ApplyAccent(FrameworkElement root)
     {
+        var res = root.Resources;
+        // Akzent des Programms bzw. des Panels (Panels mit Gegen-Design haben eigene Akzentwerte)
+        System.Windows.Media.Color Color(string key, System.Windows.Media.Color fallback) =>
+            root.TryFindResource(key) is SolidColorBrush b ? b.Color : fallback;
         var accent = Color("Accent", Colors.DodgerBlue);
         var hover = Color("Accent.Hover", accent);
         var pressed = Color("Accent.Pressed", accent);
@@ -159,8 +169,6 @@ public static class FluentTheme
         res["AccentButtonForegroundPressed"] = Solid(WithAlpha(onAccent, 0xB3));
     }
 
-    private static Color Color(string key, Color fallback) =>
-        Application.Current?.TryFindResource(key) is SolidColorBrush b ? b.Color : fallback;
 
     private static Color WithAlpha(Color c, byte a) => System.Windows.Media.Color.FromArgb(a, c.R, c.G, c.B);
 

@@ -1179,6 +1179,10 @@ public sealed partial class SelfTestController : AppController
             .Where(b => b.IsVisible && b.Appearance == Wpf.Ui.Controls.ControlAppearance.Secondary).ToList();
         var combos = visuals.OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible).ToList();
         if (buttons.Count == 0) Fail($"Fluent ({where}): keine sichtbare Standard-Schaltfläche zum Prüfen");
+        // Hinweistexte („Tag“) leerer Eingabefelder müssen sichtbar sein
+        foreach (var t in visuals.OfType<System.Windows.Controls.TextBox>().Where(t => t.IsVisible && t.Text.Length == 0 && t.Tag is string { Length: > 0 }).Take(5))
+            if (t.Template?.FindName("Placeholder", t) is not System.Windows.Controls.TextBlock { IsVisible: true })
+            { Fail($"Fluent ({where}): Hinweistext „{t.Tag}“ im leeren Eingabefeld fehlt"); break; }
         foreach (var b in buttons.Take(5))
             if (IsLight(b.Foreground) == light) { Fail($"Fluent ({where}): Schaltfläche „{b.Content}“ mit unlesbarer Schrift"); break; }
         foreach (var c in combos.Take(5))
