@@ -442,6 +442,9 @@ public sealed partial class SelfTestController : AppController
                             Fail("Glas: Panelinhalt liegt nicht im Kindfenster über dem Weichzeichner");
                         if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
                             Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
+                        // Bindungen an die Panel-Wurzel (früher ans Fenster) müssen auch im Kindfenster greifen
+                        if (host.Window.PeekCard.IsVisible != host.ViewModel.ShowPeek)
+                            Fail("Glas: Vorschau-Karte sichtbar, obwohl keine Vorschau offen ist (Bindung an die Panel-Wurzel greift nicht)");
                         // Inaktiv: ein anderes Fenster bekommt den Fokus, der Weichzeichner muss bleiben (angeheftet, damit es nicht einfährt)
                         var pinned = host.Config.Pinned;
                         host.Config.Pinned = true;
@@ -462,6 +465,29 @@ public sealed partial class SelfTestController : AppController
                 File.WriteAllText(Path.Combine(reportDir, "selftest-backdrop.md"), report.ToString(), new System.Text.UTF8Encoding(false));
                 (cfg.Backdrop, cfg.PanelOpacity, cfg.Frost, cfg.PanelWidth) = (beforeBackdrop, beforeOpacity, beforeFrost, beforeWidth);
                 CreateHosts();
+            }
+
+            Step("Angeheftet: Klick auf die Hover-Zone fährt ein und aus");
+            {
+                var host = WpfHost(0);
+                var pinned = host.Config.Pinned;
+                host.Config.Pinned = true;
+                var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                host.ToggleFromTrigger(monitor); // direkt nach dem Ausfahren: gehört noch zum Öffnen
+                await Settle();
+                if (!host.Window.IsOpen || host.Window.IsHiding) Fail("Angeheftet: Klick direkt nach dem Ausfahren hat das Panel wieder eingefahren");
+                await Task.Delay(700);
+                host.ToggleFromTrigger(monitor);
+                await Settle();
+                if (host.Window.IsOpen) Fail("Angeheftet: Klick auf die Hover-Zone fährt das Panel nicht ein");
+                host.ToggleFromTrigger(monitor);
+                await Settle();
+                if (!host.Window.IsOpen) Fail("Angeheftet: Klick auf die Hover-Zone fährt das Panel nicht aus");
+                host.Config.Pinned = pinned;
+                host.Window.HidePanel();
+                await Settle();
             }
 
             Step("Darstellung: Windows-Akzentfarbe und Größe");

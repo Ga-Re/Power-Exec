@@ -181,6 +181,9 @@ public partial class PanelWindow : Window
         Close();
     }
 
+    /// <summary>Fährt gerade ein.</summary>
+    internal bool IsHiding => _hiding;
+
     public void HidePanel()
     {
         if (!IsOpen || _hiding) return;

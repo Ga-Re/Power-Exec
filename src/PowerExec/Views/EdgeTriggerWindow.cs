@@ -82,6 +82,14 @@ public sealed class EdgeTriggerWindow : Window
             else _hoverTimer.Start();
         };
         MouseLeave += (_, _) => _hoverTimer.Stop();
+        // Angeheftetes Panel: Klick auf die Zone fährt es ein bzw. aus
+        MouseLeftButtonUp += (_, e) =>
+        {
+            if (!_host.Config.Pinned) return;
+            _hoverTimer.Stop();
+            _host.ToggleFromTrigger(_monitor);
+            e.Handled = true;
+        };
 
         // Dateien aus dem Explorer an den Rand ziehen: Panel fährt aus, damit man sie in eine Gruppe ablegen kann
         AllowDrop = true;
@@ -103,6 +111,14 @@ public sealed class EdgeTriggerWindow : Window
         Loaded += (_, _) => Place();
         ContentRendered += (_, _) => Place();
         DpiChanged += (_, _) => Dispatcher.BeginInvoke(Place);
+    }
+
+    /// <summary>Über alle Fenster (auch das Panel) legen, ohne zu aktivieren.</summary>
+    public void BringAboveWindows()
+    {
+        if (_hwnd == IntPtr.Zero || !IsVisible) return;
+        NativeMethods.SetWindowPos(_hwnd, NativeMethods.HWND_TOPMOST, 0, 0, 0, 0,
+            NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
     }
 
     public System.Drawing.Rectangle CurrentRect => ScreenService.HotZone(_monitor, _host.Config);
