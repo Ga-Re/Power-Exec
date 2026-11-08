@@ -1032,8 +1032,12 @@ public sealed partial class SelfTestController : AppController
                 if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
-                    // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg
+                    // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg.
+                    // Erst aufklappen: WPF UI klappt Oberkategorien beim Einklappen des Rands mit zu.
+                    exec.IsExpanded = true;
+                    await Settle();
                     var fullHeight = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    if (fullHeight < 1) Fail("Navigation: aufgeklappte Oberkategorie zeigt keine Unterpunkte");
                     exec.IsExpanded = false;
                     await Task.Delay(70);
                     var midClose = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
