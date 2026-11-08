@@ -232,6 +232,15 @@ public sealed partial class SelfTestController : AppController
                     else if (!vm.Peek.HasCode) Fail("Vorschau: kein Code für ein PowerShell-Script");
                     await Settle();
                     if (!host.Window.PeekWindowVisible) Fail("Vorschau: eigenes Fenster neben dem Panel erscheint nicht");
+                    if (!ReferenceEquals(host.Window.PeekCard.DataContext, vm.Peek)) Fail("Vorschau: Fenster zeigt nicht den ausgewählten Eintrag (leer)");
+                    // Anderer Eintrag angeklickt: Vorschau folgt
+                    if (vm.VisibleItems.FirstOrDefault(i => !ReferenceEquals(i, psItem) && !i.IsSingleClick) is { } other)
+                    {
+                        vm.Select(other);
+                        await Settle();
+                        if (vm.Peek?.Item != other || !ReferenceEquals(host.Window.PeekCard.DataContext, vm.Peek))
+                            Fail("Vorschau: folgt dem angeklickten Eintrag nicht");
+                    }
                     Screenshot(host.Window.PeekCard, "panel-vorschau");
                     vm.TogglePeek();
                     await Settle();
@@ -1000,6 +1009,20 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
                 nav.IsPaneOpen = true;
                 await Settle();
+                // Oberkategorien (Inhalte, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
+                var categories = nav.MenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Where(i => i.MenuItems.Count > 0).ToList();
+                if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
+                if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
+                {
+                    exec.IsExpanded = false;
+                    await Settle();
+                    if (settingsWindow.Content is FrameworkElement navRoot) Screenshot(navRoot, "settings-navigation-kategorie-zu");
+                    exec.IsExpanded = true;
+                    await Settle();
+                    settingsVm.Section = "remote";
+                    await Settle();
+                    if (settingsWindow.NavigationSectionForTest != "remote") Fail("Navigation: Unterpunkt einer Oberkategorie lässt sich nicht auswählen");
+                }
                 settingsVm.Section = "custom";
                 await Settle();
                 // Auswahlspalte der eigenen Einträge: Kästchen ohne Beschriftung ohne Innenabstand (sonst halb verdeckt)
@@ -1038,7 +1061,6 @@ public sealed partial class SelfTestController : AppController
                 ThemeService.Apply(Settings);
                 await Settle();
                 static bool IsLightBrush(object? b) => b is System.Windows.Media.SolidColorBrush sb && PanelColors.IsLight(new Rgb(sb.Color.R, sb.Color.G, sb.Color.B));
-                if (!IsLightBrush(Application.Current.Resources[Views.WindowHelper.MicaTintKey])) Fail("Design: Mica-Tönung bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.Background is System.Windows.Media.SolidColorBrush { Color.A: 255 } && !IsLightBrush(settingsWindow.Background))
                     Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.TryFindResource("TextFillColorPrimaryBrush") is not System.Windows.Media.SolidColorBrush fluentText || IsLightBrush(fluentText))

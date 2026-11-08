@@ -1319,7 +1319,7 @@
                  Läuft in einem eigenen Fenster neben dem Panel (PeekWindow); die Karte zieht beim Start dorthin um. -->
             <Border x:Name="PeekCard" Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="29"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
-                    DataContext="{Binding Peek}" AutomationProperties.Name="Vorschau">
+                    AutomationProperties.Name="Vorschau">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>

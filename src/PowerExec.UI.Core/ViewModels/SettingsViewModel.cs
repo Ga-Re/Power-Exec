@@ -581,7 +581,7 @@ public sealed class SettingsViewModel : ObservableObject
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
-        Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors);
+        Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors, _s.RecentColors);
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
@@ -734,20 +734,10 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<ThemeMode, string>(ThemeMode.Light, "Hell")
     };
 
-    // ---- Darstellung: Akzent, Mica, Größe, Vorlagen ---------------------------------
+    // ---- Darstellung: Akzent, Größe, Vorlagen ---------------------------------------
 
     public bool UseWindowsAccent { get => _s.UseWindowsAccent; set { _s.UseWindowsAccent = value; OnPropertyChanged(); RaisePresets(); } }
 
-    /// <summary>Mica als Hintergrund von Einstellungen und Dialogen (Windows 11 22H2+).</summary>
-    public bool UseMica
-    {
-        get => _s.WindowBackdrop == WindowBackdrop.Mica;
-        set { _s.WindowBackdrop = value ? WindowBackdrop.Mica : WindowBackdrop.Solid; OnPropertyChanged(); RaisePresets(); }
-    }
-    public bool IsMicaSupported => _app.IsMicaSupported;
-    public string MicaDescription => IsMicaSupported
-        ? "Einstellungen und Dialoge nehmen die Desktopfarbe dezent auf (wie der Explorer). Gilt für neu geöffnete Fenster."
-        : "Benötigt Windows 11 (22H2 oder neuer). Für das Panel gibt es Acrylic unter „Panel“.";
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
@@ -771,7 +761,6 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Theme = p.Theme;
         UseWindowsAccent = p.WindowsAccent;
-        UseMica = p.Backdrop == WindowBackdrop.Mica;
         Panel.PanelColor = p.PanelColor;
         Panel.PanelOpacity = p.Opacity;
         if (p.Frosted) Panel.Frost = Appearance.FrostedPreset;

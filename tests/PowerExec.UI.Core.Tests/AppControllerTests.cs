@@ -63,7 +63,6 @@ internal sealed class FakeAppUi : IAppUi
     public RunCredential? AskCredential(object? owner, string target, bool remote) => null;
     public Task<bool> PasteIntoPreviousAsync() => Task.FromResult(true);
     public IReadOnlyList<KeyValuePair<int, string>> Monitors { get; } = new[] { new KeyValuePair<int, string>(0, "Monitor 1") };
-    public bool IsMicaSupported => false;
     public bool ShutDown { get; private set; }
     public void Shutdown() => ShutDown = true;
     public void Dispose() { }
@@ -215,6 +214,13 @@ public sealed class AppControllerTests : IDisposable
         Assert.Null(a.Restored);
         Assert.True(b.IsOpen);
         Assert.Equal(new PanelOpenState(1, true), b.Restored);
+
+        // Alte Fenster schließen erst etwas später (die neuen liegen schon darüber) – kein Aufblitzen
+        var oldViews = app.FakeUi.Panels.Take(2).ToList();
+        Assert.All(oldViews, v => Assert.False(v.Disposed));
+        var timer = app.FakeUi.FakeDispatcher.Timers.Last(t => t.IsRunning);
+        timer.Tick();
+        Assert.All(oldViews, v => Assert.True(v.Disposed));
     }
 
     [Fact]

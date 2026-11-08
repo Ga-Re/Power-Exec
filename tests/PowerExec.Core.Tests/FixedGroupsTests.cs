@@ -135,4 +135,16 @@ public class PanelBackdropTests
         Assert.Equal(0.50, PanelBackdrops.FrostBrightness(1, darkSurface: false), 2);
         Assert.Equal(0.70, PanelBackdrops.FrostBrightness(99, darkSurface: false), 3);
     }
+
+    [Fact]
+    public void RecentColorsStayShortAndUnique()
+    {
+        var recent = new List<string> { "#111111", "#222222", "#333333", "#444444", "#555555" };
+        var updated = PanelColors.AddRecent(recent, "#333333");
+        Assert.Equal(new[] { "#333333", "#111111", "#222222", "#444444", "#555555" }, updated);
+        updated = PanelColors.AddRecent(updated, "#abcdef");
+        Assert.Equal(PanelColors.RecentCount, updated.Count);
+        Assert.Equal("#ABCDEF", updated[0]);
+        Assert.Equal(new[] { "#ABCDEF" }, PanelColors.NormalizeRecent(new[] { "kaputt", "#abcdef", "#ABCDEF" }));
+    }
 }

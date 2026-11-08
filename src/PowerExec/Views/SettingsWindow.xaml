@@ -17,6 +17,35 @@
         <Style x:Key="RowDesc" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
+        <!-- Farbkachel wie in den Windows-Einstellungen: Quadrat, ausgewählt mit Rahmen und Häkchen -->
+        <DataTemplate x:Key="ColorTile">
+            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,6,6" Cursor="Hand"
+                    AutomationProperties.Name="{Binding ToolTip}" FocusVisualStyle="{StaticResource FocusVisual}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Width="46" Height="46">
+                            <Border x:Name="Swatch" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
+                                    BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"/>
+                            <Border x:Name="Ring" CornerRadius="4" BorderThickness="2" BorderBrush="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
+                            <Border x:Name="Check" Width="18" Height="18" CornerRadius="0,4,0,4" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Background="{DynamicResource Text.Primary}" Visibility="Collapsed">
+                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="{DynamicResource Bg.Window}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Ring" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Swatch" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
         <Style x:Key="RowCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Width" Value="260"/>
             <Setter Property="DisplayMemberPath" Value="Value"/>
@@ -431,7 +460,8 @@
         </Grid.ColumnDefinitions>
 
         <!--
-            Navigation (WPF UI): einklappbarer Rand (☰), Zurück-Schaltfläche über den Verlauf der Abschnitte. Die Leiste
+            Navigation (WPF UI): einklappbarer Rand (☰), einklappbare Oberkategorien, Zurück-Schaltfläche über den Verlauf
+            der Abschnitte. Die Leiste
             navigiert zu leeren Seiten (SettingsSectionPage); die Abschnitte liegen im Inhaltsbereich (ContentOverlay).
             Abschnitt ↔ Auswahl gleicht SettingsWindow.xaml.cs ab.
         -->
@@ -441,39 +471,59 @@
                 <ui:NavigationViewItem Content="Allgemein" TargetPageTag="general" TargetPageType="{x:Type v:SettingsSectionPage}">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItemHeader Text="Inhalte"/>
-                <ui:NavigationViewItem Content="Gruppen" TargetPageTag="groups" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8B7;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Eigene Einträge" TargetPageTag="custom" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Schlagworte" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Arbeitsbereiche" TargetPageTag="workspaces" TargetPageType="{x:Type v:SettingsSectionPage}">
+                <!-- Inhalte: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Inhalte" IsExpanded="True" AutomationProperties.Name="Inhalte">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Gruppen" TargetPageTag="groups" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8B7;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Eigene Einträge" TargetPageTag="custom" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Schlagworte" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Arbeitsbereiche" TargetPageTag="workspaces" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItemHeader Text="Panel"/>
-                <ui:NavigationViewItem Content="Darstellung" TargetPageTag="look" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                <!-- Panel: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Panel" IsExpanded="True" AutomationProperties.Name="Panel">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE737;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Darstellung" TargetPageTag="look" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Verhalten" TargetPageTag="behavior" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Verhalten" TargetPageTag="behavior" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                <!-- Ausführung: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Ausführung" IsExpanded="True" AutomationProperties.Name="Ausführung">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE768;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="PowerShell" TargetPageTag="exec" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Remote" TargetPageTag="remote" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE968;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Rechnergruppen" TargetPageTag="machines" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE7F4;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
-                <ui:NavigationViewItemHeader Text="Ausführung"/>
-                <ui:NavigationViewItem Content="PowerShell" TargetPageTag="exec" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Remote" TargetPageTag="remote" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE968;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItem Content="Rechnergruppen" TargetPageTag="machines" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE7F4;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-                <ui:NavigationViewItemHeader Text="Hilfe"/>
-                <ui:NavigationViewItem Content="Diagnose" TargetPageTag="diag" TargetPageType="{x:Type v:SettingsSectionPage}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE9D9;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                <!-- Hilfe: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Hilfe" IsExpanded="True" AutomationProperties.Name="Hilfe">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE897;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Diagnose" TargetPageTag="diag" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE9D9;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
             <ui:NavigationView.PaneFooter>
@@ -1317,9 +1367,6 @@
                                     Description="Knöpfe, Auswahl und Hover-Zone nutzen die Akzentfarbe aus den Windows-Einstellungen (Personalisierung › Farben) – passend aufgehellt bzw. abgedunkelt.">
                         <ui:ToggleSwitch IsChecked="{Binding UseWindowsAccent}" />
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE81E;" Header="Mica in Fenstern" Description="{Binding MicaDescription}">
-                        <ui:ToggleSwitch IsChecked="{Binding UseMica}" IsEnabled="{Binding IsMicaSupported}" />
-                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8D3;" Header="Schrift- und Elementgröße" Description="Vergrößert Schrift und Bedienelemente im Panel und in allen Fenstern (zusätzlich zur Windows-Skalierung).">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="80" Maximum="150" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding UiScalePercent}" VerticalAlignment="Center"
@@ -1346,66 +1393,50 @@
                     </c:SettingsCard>
 
                     <TextBlock Text="Panel" Style="{StaticResource SettingsSection}"/>
+                    <!-- Panelfarbe wie die Akzentfarbe in den Windows-Einstellungen: Auswahl rechts, darunter Farbkacheln -->
                     <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,4">
                         <StackPanel>
                             <DockPanel>
-                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
+                                <ComboBox DockPanel.Dock="Right" Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
+                                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Panelfarbe"/>
+                                <Border DockPanel.Dock="Right" Width="40" Height="32" CornerRadius="4" Margin="0,0,12,0" VerticalAlignment="Center"
+                                        Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                         BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
+                                <TextBlock DockPanel.Dock="Left" Text="&#xE790;" FontFamily="{StaticResource IconFont}" FontSize="18" VerticalAlignment="Center" Margin="0,0,16,0"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
                                     <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
                                 </StackPanel>
                             </DockPanel>
-                            <ItemsControl ItemsSource="{Binding ColorPresets}" Focusable="False" Margin="0,12,0,0">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
-                                                AutomationProperties.Name="{Binding Name}" FocusVisualStyle="{StaticResource FocusVisual}">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <StackPanel Width="76">
-                                                        <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
-                                                            <Border CornerRadius="15" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
-                                                                <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                           Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
-                                                            </Border>
-                                                        </Border>
-                                                        <TextBlock Text="{Binding Name}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
-                                                                   Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-                                                    <ControlTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Hex}" Value="">
-                                                            <Setter TargetName="DesignMark" Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Ring" Property="Opacity" Value="0.85"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding PickColorCommand}" ToolTip="Eigene Farbe im Farbwähler aussuchen">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Width="18" Height="18" CornerRadius="9" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
-                                                Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"/>
-                                        <TextBlock Text="Eigene Farbe …"/>
-                                    </StackPanel>
-                                </ui:Button>
-                                <TextBlock Text="{Binding CustomColor}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Foreground="{DynamicResource Text.Secondary}"/>
-                                <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
+                            <StackPanel Margin="34,14,0,0" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <StackPanel Visibility="{Binding HasRecentColors, Converter={StaticResource Vis}}">
+                                    <TextBlock Text="Zuletzt verwendete Farben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <TextBlock Text="Panelfarben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding PanelColorChoices}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Text="Windows-Farben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding WindowsColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
                             </StackPanel>
+                            <Border Margin="-16,12,-16,-12" Padding="50,10,16,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}"
+                                    Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <DockPanel>
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Farben anzeigen" Command="{Binding PickColorCommand}"
+                                               ToolTip="Eigene Farbe im Farbwähler aussuchen"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Benutzerdefinierte Farben" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Style="{StaticResource RowDesc}">
+                                            <Run Text="Aktuell:"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <c:SettingsCard Icon="&#xE790;" Header="Hintergrund" Description="{Binding BackdropDescription}">

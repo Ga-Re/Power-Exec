@@ -40,8 +40,6 @@ public interface ISettingsWindowHost : ICustomEntryListHost, IProfilesHost
     void ShowWelcome();
     /// <summary>Monitore: Index → Anzeigename.</summary>
     IReadOnlyList<KeyValuePair<int, string>> Monitors { get; }
-    /// <summary>Mica für Fenster verfügbar (Windows 11 22H2+).</summary>
-    bool IsMicaSupported { get; }
     /// <summary>Profil-Dialog modal zeigen (arbeitet auf der Arbeitskopie des Einstellungsfensters).</summary>
     void ShowProfilesDialog(ProfilesViewModel vm, object? owner);
 }

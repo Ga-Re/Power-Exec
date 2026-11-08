@@ -65,6 +65,7 @@ public sealed class SettingsStore
         s.HotZoneThickness = Math.Clamp(s.HotZoneThickness, 1, 40);
         s.HotZoneLength = Math.Clamp(s.HotZoneLength, 40, 4000);
         if (!PanelColors.TryParse(s.PanelColor, out _)) s.PanelColor = string.Empty;
+        s.RecentColors = PanelColors.NormalizeRecent(s.RecentColors);
         s.ThrottleLimit = Math.Clamp(s.ThrottleLimit, 1, 128);
         s.RemoteTimeoutSeconds = Math.Clamp(s.RemoteTimeoutSeconds, 5, 600);
         s.MaxRecentMachines = Math.Clamp(s.MaxRecentMachines, 1, 200);

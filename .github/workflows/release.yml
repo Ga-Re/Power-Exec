@@ -91,7 +91,10 @@ jobs:
         shell: pwsh
         run: |
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
-          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y }
+          # Mindestens Inno Setup 6.6: der Installer folgt dem Windows-Design (WizardStyle=modern dynamic)
+          $isccVersion = if (Test-Path $iscc) { [version](Get-Item $iscc).VersionInfo.ProductVersion } else { [version]'0.0' }
+          if ($isccVersion -lt [version]'6.6') { choco upgrade innosetup --no-progress -y }
+          Write-Host "Inno Setup: $((Get-Item $iscc).VersionInfo.ProductVersion)"
           if (-not (Test-Path $iscc)) { throw "ISCC.exe nicht gefunden: $iscc" }
           & $iscc "/DMyAppVersion=${{ steps.version.outputs.version }}" "/DMyFileVersion=${{ steps.version.outputs.fileversion }}" "/DSourceDir=..\out\app" installer\PowerExec.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup ist mit Code $LASTEXITCODE fehlgeschlagen." }

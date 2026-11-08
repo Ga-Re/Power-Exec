@@ -1315,6 +1315,12 @@ public sealed class PanelViewModel : ObservableObject
         g.IsExpanded ? g.Items.Concat(g.Children.SelectMany(VisibleIn)) : Enumerable.Empty<ItemViewModel>();
 
     public ItemViewModel? SelectedItem => AllItems.FirstOrDefault(i => i.IsSelected);
+
+    /// <summary>Schlüssel des ausgewählten Eintrags (bleibt über einen Neuaufbau erhalten).</summary>
+    public string? SelectedKey => _selectedKey;
+
+    /// <summary>Vor dem ersten <see cref="Rebuild"/>: diesen Eintrag wieder auswählen (Details bleiben aufgeklappt).</summary>
+    public void PreselectKey(string? key) => _selectedKey = key;
     public bool HasSelection => SelectedItem != null;
 
     public void Select(ItemViewModel item)
@@ -1324,6 +1330,8 @@ public sealed class PanelViewModel : ObservableObject
         item.IsSelected = !wasSelected;
         _selectedKey = item.IsSelected ? item.Key : null;
         OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
+        // Offene Vorschau folgt dem angeklickten Eintrag
+        if (_peek != null && item.IsSelected && !ReferenceEquals(_peek.Item, item)) Peek = new PeekViewModel(_app, item);
     }
 
     /// <summary>Pfeiltasten im Suchfeld: Auswahl verschieben.</summary>

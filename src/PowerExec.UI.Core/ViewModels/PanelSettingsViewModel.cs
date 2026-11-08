@@ -14,9 +14,12 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     private readonly ISettingsHost _app;
 
-    public PanelSettingsViewModel(ISettingsHost app, PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors)
+    /// <param name="recentColors">Zuletzt verwendete Panelfarben (wird beim Wählen einer Farbe ergänzt).</param>
+    public PanelSettingsViewModel(ISettingsHost app, PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors,
+        List<string>? recentColors = null)
     {
         _app = app;
+        _recentColors = recentColors ?? new List<string>();
         _c = config.Clone();
         _startSize = (config.PanelWidth, config.PanelHeightPercent);
         Monitors = monitors;
@@ -142,6 +145,52 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public IReadOnlyList<ColorPresetViewModel> ColorPresets =>
         _presets ??= PanelColors.Presets.Select(p => new ColorPresetViewModel(this, p)).ToList();
 
+    // Wie die Akzentfarbe in den Windows-Einstellungen: Auswahl „Wie das Design“ / „Manuell“, darunter zuletzt
+    // verwendete Farben, Panelfarben, Windows-Farben und „Benutzerdefinierte Farben“.
+
+    private readonly List<string> _recentColors;
+    private IReadOnlyList<ColorPresetViewModel>? _panelColors, _windowsColors, _recent;
+
+    public static IReadOnlyList<KeyValuePair<string, string>> ColorModes { get; } = new[]
+    {
+        new KeyValuePair<string, string>("design", "Wie das Design"),
+        new KeyValuePair<string, string>("manual", "Manuell")
+    };
+
+    public IReadOnlyList<KeyValuePair<string, string>> ColorModeList => ColorModes;
+
+    /// <summary>„design“ (Farbe des hellen bzw. dunklen Designs) oder „manual“ (eigene Farbe).</summary>
+    public string ColorMode
+    {
+        get => _manualMode || _c.PanelColor.Length > 0 ? "manual" : "design";
+        set
+        {
+            _manualMode = value == "manual";
+            if (!_manualMode) PanelColor = string.Empty;
+            else if (_c.PanelColor.Length == 0) PanelColor = _recentColors.FirstOrDefault() ?? "#1E1E1E";
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ShowManualColors));
+        }
+    }
+
+    private bool _manualMode;
+
+    public bool ShowManualColors => ColorMode == "manual";
+
+    /// <summary>Zuletzt verwendete Farben (neueste zuerst).</summary>
+    public IReadOnlyList<ColorPresetViewModel> RecentColors =>
+        _recent ??= _recentColors.Select(h => new ColorPresetViewModel(this, new ColorPreset(h, h))).ToList();
+
+    public bool HasRecentColors => _recentColors.Count > 0;
+
+    /// <summary>Ruhige Panelfarben (dunkel und hell).</summary>
+    public IReadOnlyList<ColorPresetViewModel> PanelColorChoices =>
+        _panelColors ??= PanelColors.Presets.Where(p => p.Hex.Length > 0).Select(p => new ColorPresetViewModel(this, p, remember: true)).ToList();
+
+    /// <summary>Die Farben aus den Windows-Einstellungen.</summary>
+    public IReadOnlyList<ColorPresetViewModel> WindowsColors =>
+        _windowsColors ??= PanelColors.WindowsPalette.Select(h => new ColorPresetViewModel(this, new ColorPreset(h, h), remember: true)).ToList();
+
     /// <summary>#RRGGBB oder leer (= Farbe des Designs).</summary>
     public string PanelColor
     {
@@ -158,15 +207,38 @@ public sealed class PanelSettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(ColorError));
             OnPropertyChanged(nameof(PreviewColor));
             OnPropertyChanged(nameof(PreviewText));
-            foreach (var p in ColorPresets) p.Refresh();
+            OnPropertyChanged(nameof(ColorMode));
+            OnPropertyChanged(nameof(ShowManualColors));
+            foreach (var p in ColorPresets.Concat(PanelColorChoices).Concat(WindowsColors).Concat(RecentColors)) p.Refresh();
         }
+    }
+
+    /// <summary>Farbe aus einer Kachel wählen; aus den Paletten gewählte Farben kommen unter „Zuletzt verwendet“.</summary>
+    internal void SelectColor(string hex, bool remember)
+    {
+        PanelColor = hex;
+        if (remember && hex.Length > 0) RememberColor(_c.PanelColor);
+    }
+
+    /// <summary>Farbe vorn in „Zuletzt verwendet“ übernehmen.</summary>
+    private void RememberColor(string hex)
+    {
+        var updated = PanelColors.AddRecent(_recentColors, hex);
+        if (updated.SequenceEqual(_recentColors, StringComparer.OrdinalIgnoreCase)) return;
+        _recentColors.Clear();
+        _recentColors.AddRange(updated);
+        _recent = null;
+        OnPropertyChanged(nameof(RecentColors));
+        OnPropertyChanged(nameof(HasRecentColors));
     }
 
     /// <summary>Eigene Panelfarbe im Farbwähler aussuchen.</summary>
     public System.Windows.Input.ICommand PickColorCommand => _pickColor ??= new RelayCommand(() =>
     {
         var picked = _app.Dialogs.PickColor("Panelfarbe", _c.PanelColor, _app.SettingsDialogOwner);
-        if (picked != null) PanelColor = picked;
+        if (picked == null) return;
+        PanelColor = picked;
+        RememberColor(_c.PanelColor); // benutzerdefinierte Farben landen unter „Zuletzt verwendet“
     });
     private System.Windows.Input.ICommand? _pickColor;
 
@@ -286,20 +358,21 @@ public sealed class ColorPresetViewModel : ObservableObject
 {
     private readonly PanelSettingsViewModel _owner;
 
-    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset)
+    /// <param name="remember">Beim Wählen unter „Zuletzt verwendet“ aufnehmen (Paletten, nicht die Zuletzt-Liste selbst).</param>
+    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset, bool remember = false)
     {
         _owner = owner;
         Name = preset.Name;
         Hex = preset.Hex;
         SwatchColor = ArgbColor.FromHex(preset.Hex);
-        SelectCommand = new RelayCommand(() => _owner.PanelColor = Hex);
+        SelectCommand = new RelayCommand(() => _owner.SelectColor(Hex, remember));
     }
 
     public string Name { get; }
     public string Hex { get; }
     /// <summary>Farbpunkt; null = Farbe des Designs (die Oberfläche zeigt dann die Panelfarbe des Designs).</summary>
     public ArgbColor? SwatchColor { get; }
-    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : $"{Name} ({Hex})";
+    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : Name == Hex ? Hex : $"{Name} ({Hex})";
     public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
     public ICommand SelectCommand { get; }
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));

@@ -1,13 +1,12 @@
 namespace PowerExec.Core.Config;
 
 /// <summary>Hintergrund normaler Fenster (Einstellungen, Dialoge).</summary>
-public enum WindowBackdrop { Solid, Mica }
 
 /// <summary>Akzentfarben für das Design, abgeleitet aus einer Grundfarbe (z. B. der Windows-Akzentfarbe).</summary>
 public sealed record AccentColors(Rgb Accent, Rgb Hover, Rgb Pressed, Rgb OnAccent, Rgb Highlight);
 
 /// <summary>Eine Designvorlage: Design, Panelfarbe, Deckkraft, Milchglas und Akzent in einem Klick.</summary>
-public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, bool Frosted, bool WindowsAccent, WindowBackdrop Backdrop);
+public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, bool Frosted, bool WindowsAccent);
 
 public static class Appearance
 {
@@ -34,11 +33,11 @@ public static class Appearance
 
     public static readonly IReadOnlyList<DesignPreset> Presets = new[]
     {
-        new DesignPreset("fluent", "Fluent", "Wie Windows: Design und Akzentfarbe vom System", ThemeMode.System, string.Empty, 100, false, true, WindowBackdrop.Mica),
-        new DesignPreset("glass", "Glas", "Dunkel, durchscheinend mit Milchglas", ThemeMode.Dark, string.Empty, 80, true, true, WindowBackdrop.Mica),
-        new DesignPreset("graphite", "Graphit", "Dunkel und deckend, klassische Akzentfarbe", ThemeMode.Dark, "#1C1C1C", 100, false, false, WindowBackdrop.Solid),
-        new DesignPreset("paper", "Papier", "Hell und ruhig", ThemeMode.Light, "#FAFAFA", 100, false, false, WindowBackdrop.Solid),
-        new DesignPreset("midnight", "Mitternacht", "Dunkelblau getönt", ThemeMode.Dark, "#14213D", 95, false, false, WindowBackdrop.Solid),
+        new DesignPreset("fluent", "Fluent", "Wie Windows: Design und Akzentfarbe vom System", ThemeMode.System, string.Empty, 100, false, true),
+        new DesignPreset("glass", "Glas", "Dunkel, durchscheinend mit Milchglas", ThemeMode.Dark, string.Empty, 80, true, true),
+        new DesignPreset("graphite", "Graphit", "Dunkel und deckend, klassische Akzentfarbe", ThemeMode.Dark, "#1C1C1C", 100, false, false),
+        new DesignPreset("paper", "Papier", "Hell und ruhig", ThemeMode.Light, "#FAFAFA", 100, false, false),
+        new DesignPreset("midnight", "Mitternacht", "Dunkelblau getönt", ThemeMode.Dark, "#14213D", 95, false, false),
     };
 
     /// <summary>Vorlage auf Einstellungen und Panels anwenden.</summary>
@@ -46,7 +45,6 @@ public static class Appearance
     {
         s.Theme = p.Theme;
         s.UseWindowsAccent = p.WindowsAccent;
-        s.WindowBackdrop = p.Backdrop;
         foreach (var panel in s.Panels)
         {
             panel.PanelColor = p.PanelColor;
@@ -63,6 +61,6 @@ public static class Appearance
 
     /// <summary>Passende Vorlage zum aktuellen Stand (für die Markierung), sonst null.</summary>
     public static DesignPreset? Current(AppSettings s) => Presets.FirstOrDefault(p =>
-        p.Theme == s.Theme && p.WindowsAccent == s.UseWindowsAccent && p.Backdrop == s.WindowBackdrop &&
+        p.Theme == s.Theme && p.WindowsAccent == s.UseWindowsAccent &&
         s.Panels.All(x => string.Equals(x.PanelColor, p.PanelColor, StringComparison.OrdinalIgnoreCase) && x.PanelOpacity == p.Opacity && (!p.Frosted || x.Frost > 0)));
 }

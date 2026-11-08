@@ -205,7 +205,6 @@ public class V016Tests
         Assert.Equal(Appearance.FrostedPreset, s.Panels[0].Frost);
         Assert.Equal(PanelBackdrop.Clear, s.Panels[0].Backdrop);
         Assert.True(s.UseWindowsAccent);
-        Assert.Equal(WindowBackdrop.Mica, s.WindowBackdrop);
         Assert.Equal("glass", Appearance.Current(s)?.Key);
         s.Panels[0].PanelOpacity = 60;
         Assert.Null(Appearance.Current(s));

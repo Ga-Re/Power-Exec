@@ -28,6 +28,32 @@ public static class PanelColors
         new("Eisblau", "#E3EEF7")
     ];
 
+    /// <summary>Farben wie in den Windows-Einstellungen (Personalisierung › Farben), zeilenweise.</summary>
+    public static readonly IReadOnlyList<string> WindowsPalette =
+    [
+        "#FFB900", "#FF8C00", "#F7630C", "#CA5010", "#DA3B01", "#EF6950", "#D13438", "#FF4343",
+        "#E74856", "#E81123", "#EA005E", "#C30052", "#E3008C", "#BF0077", "#C239B3", "#9A0089",
+        "#0078D7", "#0063B1", "#8E8CD8", "#6B69D6", "#8764B8", "#744DA9", "#B146C2", "#881798",
+        "#0099BC", "#2D7D9A", "#00B7C3", "#038387", "#00B294", "#018574", "#00CC6A", "#10893E",
+        "#7A7574", "#5D5A58", "#68768A", "#515C6B", "#567C73", "#486860", "#498205", "#107C10",
+        "#767676", "#4C4A48", "#69797E", "#4A5459", "#647C64", "#525E54", "#847545", "#7E735F"
+    ];
+
+    /// <summary>Anzahl der zuletzt verwendeten Farben (wie in Windows).</summary>
+    public const int RecentCount = 5;
+
+    /// <summary>Farbe vorn in die Liste der zuletzt verwendeten setzen (ohne Doppelte, höchstens <see cref="RecentCount"/>).</summary>
+    public static List<string> AddRecent(IEnumerable<string> recent, string hex)
+    {
+        if (!TryParse(hex, out var c)) return NormalizeRecent(recent);
+        return NormalizeRecent(new[] { c.Hex }.Concat(recent));
+    }
+
+    /// <summary>Nur gültige Farben, einheitlich geschrieben, ohne Doppelte, höchstens <see cref="RecentCount"/>.</summary>
+    public static List<string> NormalizeRecent(IEnumerable<string>? recent) =>
+        (recent ?? Enumerable.Empty<string>()).Select(h => TryParse(h, out var c) ? c.Hex : null).OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase).Take(RecentCount).ToList();
+
     /// <summary>Gruppen- und Schlagwortfarben: kräftig genug für Symbole, lesbar in hell und dunkel.</summary>
     public static readonly IReadOnlyList<ColorPreset> AccentPresets =
     [

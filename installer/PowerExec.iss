@@ -57,7 +57,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 Compression=lzma2/max
 SolidCompression=yes
-WizardStyle=modern
+; Hell oder dunkel wie Windows (Inno Setup 6.6 oder neuer)
+WizardStyle=modern dynamic
 ShowLanguageDialog=no
 
 [Languages]

@@ -13,27 +13,13 @@ internal static class WindowHelper
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Margins { public int Left, Right, Top, Bottom; }
-
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-    private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
-    private const int DWMSBT_MAINWINDOW = 2; // Mica
 
-    /// <summary>Aktuelle Einstellungen (Mica, Größe); setzt der AppController beim Start.</summary>
+    /// <summary>Aktuelle Einstellungen (Größe); setzt der AppController beim Start.</summary>
     public static Func<AppSettings>? Settings { get; set; }
 
-    /// <summary>Getönter Fensterhintergrund über Mica (Bg.Window, teilweise durchsichtig); setzt der ThemeService.</summary>
-    public const string MicaTintKey = "Bg.WindowMica";
-
-    private static readonly HashSet<Window> _micaWindows = new();
-
     /// <summary>
-    /// Design gewechselt: offene Fenster ziehen Titelleiste und Mica (hell/dunkel) nach – sonst bliebe z. B. die
-    /// Navigation der Einstellungen nach dem Wechsel auf „Hell“ dunkel hinterlegt.
+    /// Design gewechselt: offene Fenster ziehen die Titelleiste (hell/dunkel) nach.
     /// </summary>
     public static void RefreshOpenWindows()
     {
@@ -46,19 +32,14 @@ internal static class WindowHelper
             {
                 int dark = ThemeService.IsDark ? 1 : 0;
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
-                // Kontrastdesign: Mica aus, deckender Hintergrund
-                if (_micaWindows.Contains(w) && ThemeService.IsHighContrast) w.SetResourceReference(Control.BackgroundProperty, "Bg.Window");
             }
             catch { }
         }
     }
 
-    /// <summary>Mica gibt es ab Windows 11 22H2 (Build 22621).</summary>
-    public static bool IsMicaSupported => Environment.OSVersion.Version.Build >= 22621;
-
     /// <summary>
-    /// Titelleiste passend zum Farbschema (Windows 10 20H1+ / Windows 11), auf Wunsch Mica als Hintergrund
-    /// und die eingestellte Größe von Schrift und Bedienelementen.
+    /// Titelleiste passend zum Farbschema (Windows 10 20H1+ / Windows 11) und die eingestellte Größe von Schrift und
+    /// Bedienelementen.
     /// </summary>
     /// <summary>Panels hinter bzw. wieder vor die Fenster von Power-Exec legen (setzt der AppController).</summary>
     public static Action<bool>? PanelsBehind { get; set; }
@@ -90,27 +71,12 @@ internal static class WindowHelper
                 var hwnd = new WindowInteropHelper(w).Handle;
                 int dark = ThemeService.IsDark ? 1 : 0;
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
-                if (Settings?.Invoke().WindowBackdrop == WindowBackdrop.Mica && IsMicaSupported && !ThemeService.IsHighContrast && !w.AllowsTransparency)
-                    ApplyMica(w, hwnd);
             }
             catch { }
         }
 
         if (new WindowInteropHelper(w).Handle != IntPtr.Zero) Apply();
         else w.SourceInitialized += (_, _) => Apply();
-    }
-
-    private static void ApplyMica(Window w, IntPtr hwnd)
-    {
-        if (HwndSource.FromHwnd(hwnd) is { CompositionTarget: { } target }) target.BackgroundColor = Colors.Transparent;
-        // Leicht getönt statt ganz durchsichtig, damit Text auf jedem Hintergrund lesbar bleibt;
-        // als Ressource, damit ein Wechsel hell/dunkel offene Fenster mitnimmt
-        w.SetResourceReference(Control.BackgroundProperty, MicaTintKey);
-        if (_micaWindows.Add(w)) w.Closed += (_, _) => _micaWindows.Remove(w);
-        var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-        DwmExtendFrameIntoClientArea(hwnd, ref margins);
-        int type = DWMSBT_MAINWINDOW;
-        DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref type, sizeof(int));
     }
 
     /// <summary>Größe von Schrift und Bedienelementen (80–150 %): Inhalt skalieren, Fenster entsprechend größer.</summary>

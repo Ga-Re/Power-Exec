@@ -166,6 +166,15 @@ public partial class PanelWindow : Window
         if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
         _poll.Start();
+        if (!wasVisible && _contentHost is { IsDisposed: false } && !_skipNextAnimation)
+        {
+            // Glas: Fokus, Aktivierung und erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach.
+            // Sonst fallen diese Arbeiten in die ersten (schnellsten) Bilder des Ausfahrens, und es ruckelt.
+            Vm.OnShown();
+            if (viaHotkey) FocusSearch();
+            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => { if (IsOpen && !_hiding) Animate(show: true); });
+            return;
+        }
         Animate(show: true);
         Vm.OnShown();
         if (viaHotkey) FocusSearch();
@@ -192,12 +201,17 @@ public partial class PanelWindow : Window
         PeekCloseButton.Command = Vm.ClosePeekCommand;
         Vm.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(ViewModels.PanelViewModel.ShowPeek)) UpdatePeekWindow();
+            if (e.PropertyName is nameof(ViewModels.PanelViewModel.ShowPeek) or nameof(ViewModels.PanelViewModel.Peek)) UpdatePeekWindow();
         };
     }
 
+    /// <summary>
+    /// Vorschaufenster zeigen, ausblenden und mit dem aktuellen Eintrag füllen. Der Datenkontext wird direkt gesetzt:
+    /// eine Bindung der Karte an „Peek“ zieht nach dem Umzug ins eigene Fenster nicht zuverlässig nach.
+    /// </summary>
     private void UpdatePeekWindow()
     {
+        PeekCard.DataContext = Vm.Peek;
         if (Vm.ShowPeek && IsOpen && !_hiding && _monitor != null)
         {
             _peekWindow ??= new PeekWindow(PeekCard, Resources, this) { DataContext = Vm };

@@ -157,7 +157,7 @@ public partial class AppController : IDisposable
     }
 
     /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
-    private static string AppearanceKey(AppSettings s) => $"{s.Theme}|{s.UseWindowsAccent}|{s.WindowBackdrop}|{s.UiScalePercent}";
+    private static string AppearanceKey(AppSettings s) => $"{s.Theme}|{s.UseWindowsAccent}|{s.UiScalePercent}";
 
     /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
     private void OnSystemThemeChanged()
@@ -188,6 +188,7 @@ public partial class AppController : IDisposable
         // Offene Panels bleiben nach dem Neuaufbau offen – man soll sehen, was die geänderte Einstellung bewirkt.
         // Die alten Fenster schließen erst, wenn die neuen stehen: so verschwindet das Panel nicht kurz.
         var wasOpen = _hosts.Select(h => h.View.OpenState).ToList();
+        var selected = _hosts.Select(h => h.ViewModel.SelectedKey).ToList();
         var old = _hosts.ToList();
         _hosts.Clear();
         Ui.Hotkeys.UnregisterAll();
@@ -203,10 +204,19 @@ public partial class AppController : IDisposable
             var err = Ui.Hotkeys.Register(host.HotkeyId, config.Hotkey);
             if (err != null) errors.Add($"{config.Name}: {err}");
         }
+        for (var i = 0; i < Math.Min(selected.Count, _hosts.Count); i++) _hosts[i].ViewModel.PreselectKey(selected[i]);
         foreach (var h in _hosts) h.ViewModel.Rebuild();
+        var restored = false;
         for (var i = 0; i < Math.Min(wasOpen.Count, _hosts.Count); i++)
-            if (wasOpen[i] is { } state) _hosts[i].View.RestoreOpenState(state);
-        DisposePanels(old);
+            if (wasOpen[i] is { } state) { _hosts[i].View.RestoreOpenState(state); restored = true; }
+        if (!restored) DisposePanels(old);
+        else
+        {
+            // Die alten Fenster bleiben kurz darunter liegen, bis die neuen gezeichnet sind – sonst blitzt das Panel auf
+            IUiTimer? later = null;
+            later = Ui.Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(250), () => { later!.Stop(); DisposePanels(old); });
+            later.Start();
+        }
         return errors.Count == 0 ? null : string.Join("\n", errors);
     }
 

@@ -80,8 +80,6 @@ public interface IAppUi : IDisposable
     /// <summary>Angeschlossene Monitore (Nummer, Anzeigename) für die Panel-Einstellungen.</summary>
     IReadOnlyList<KeyValuePair<int, string>> Monitors { get; }
 
-    bool IsMicaSupported { get; }
-
     /// <summary>Anwendung beenden (nachdem der Kern aufgeräumt hat).</summary>
     void Shutdown();
 }
