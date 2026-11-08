@@ -1250,7 +1250,12 @@ public sealed class SettingsViewModel : ObservableObject
             n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null,
             f => NewGroup.FolderError(Folders.Where(x => x.Path.Length > 0).Select(x => x.Config), f));
         if (spec == null) return;
-        var path = PathOf(spec.Name);
+        AddGroup(spec, PathOf(spec.Name), parent);
+    }
+
+    /// <summary>Gruppe in die Formularlisten aufnehmen (mit Ordner: smarte Gruppe); übernommen wird wie sonst auch.</summary>
+    private void AddGroup(NewGroupSpec spec, string path, string? parent)
+    {
         var cat = NewCategoryVm(path, spec.Icon.ToString());
         if (spec.IsSmart)
         {
@@ -1268,6 +1273,28 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     public ICommand NewGroupCommand => new RelayCommand(() => AddGroupPrompt(null));
+
+    /// <summary>
+    /// Beispielscripte (auch neue aus einem Update) im Beispielordner anlegen und ihn als Gruppe „Beispiele“ einbinden,
+    /// falls er noch nicht eingebunden ist. Vorhandene, vielleicht angepasste Dateien bleiben unverändert.
+    /// </summary>
+    public ICommand AddSamplesCommand => new RelayCommand(() =>
+    {
+        var folder = WelcomeViewModel.CreateSampleFolder();
+        if (folder == null) { SamplesStatus = "Der Beispielordner konnte nicht angelegt werden – Einzelheiten im Protokoll."; return; }
+        if (Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))
+        {
+            SamplesStatus = $"Beispiele liegen in {folder}; der Ordner ist schon eingebunden.";
+            return;
+        }
+        var name = "Beispiele";
+        for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Beispiele {i}";
+        AddGroup(new NewGroupSpec(name, IconRef.None, folder, string.Empty, null), name, null);
+        SamplesStatus = $"Gruppe „{name}“ mit den Beispielscripten aus {folder} hinzugefügt.";
+    });
+
+    private string? _samplesStatus;
+    public string? SamplesStatus { get => _samplesStatus; private set => Set(ref _samplesStatus, value); }
 
     private void AddCategory()
     {

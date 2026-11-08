@@ -108,4 +108,26 @@ public class ScriptInfoReaderTests
         Assert.Equal("Hallo", BatchInfoReader.ReadSynopsis(new StringReader(":: Hallo\r\necho x")));
         Assert.Equal(string.Empty, BatchInfoReader.ReadSynopsis(new StringReader("echo x\r\nREM spät")));
     }
+
+    /// <summary>Beispielordner (samples/): jedes Script lässt sich lesen, hat Kurzbeschreibung und Hilfe zu jedem Parameter.</summary>
+    [Fact]
+    public void AllSamplesHaveSynopsisAndParameterHelp()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "samples"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        var files = Directory.GetFiles(Path.Combine(dir!.FullName, "samples"), "*.ps1");
+        Assert.True(files.Length >= 8, $"nur {files.Length} Beispiele");
+        foreach (var file in files)
+        {
+            // Mit BOM gespeichert: Windows PowerShell 5.1 liest Umlaute sonst falsch
+            var bytes = File.ReadAllBytes(file);
+            Assert.True(bytes.Length > 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF, $"{Path.GetFileName(file)}: ohne UTF-8-BOM");
+            var item = new LaunchItem { FullPath = file, RootFolder = Path.GetDirectoryName(file)!, Type = ItemType.PowerShell, DisplayName = Path.GetFileNameWithoutExtension(file) };
+            ScriptInfoReader.Fill(item);
+            Assert.Null(item.ParseError);
+            Assert.False(string.IsNullOrWhiteSpace(item.Synopsis), $"{item.DisplayName}: keine Kurzbeschreibung");
+            Assert.All(item.Parameters, p => Assert.False(string.IsNullOrWhiteSpace(p.HelpText), $"{item.DisplayName}: -{p.Name} ohne Hilfe"));
+        }
+    }
 }

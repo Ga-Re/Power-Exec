@@ -196,7 +196,22 @@ param(
 
 - Für Remote und Massenausführung kein `Read-Host` verwenden, sondern Parameter. Der Dialog warnt, wenn ein Script `Read-Host` enthält.
 - Scripte für Remote sollten unter Windows PowerShell 5.1 laufen.
-- Ein vollständiges Beispiel liegt in [`samples/Get-DiskSpace.ps1`](samples/Get-DiskSpace.ps1).
+- Scripte mit Umlauten als **UTF-8 mit BOM** speichern – sonst zeigt Windows PowerShell 5.1 sie falsch an.
+
+### Beispielscripte
+
+Die Einrichtung legt sie unter Dokumente › Power-Exec › Scripte an; später geht das unter Einstellungen › Hilfe › Diagnose › „Beispielscripte anlegen“ (vorhandene Dateien bleiben unverändert).
+
+| Script | Zeigt |
+|---|---|
+| [`Get-DiskSpace.ps1`](samples/Get-DiskSpace.ps1) | Pflichtparameter, Auswahlliste, Schalter, CSV-Export, `PowerExec: CopyFolder` |
+| [`Get-SystemInfo.ps1`](samples/Get-SystemInfo.ps1) | Systemdaten lokal oder remote auf vielen Rechnern, Ausgabe als JSON |
+| [`Test-NetworkConnection.ps1`](samples/Test-NetworkConnection.ps1) | mehrere Ziele in einem Feld, Ping oder TCP-Port mit Zeitlimit |
+| [`Get-LargeFiles.ps1`](samples/Get-LargeFiles.ps1) | Ordner durchsuchen, Wertebereiche, Export |
+| [`Get-InstalledSoftware.ps1`](samples/Get-InstalledSoftware.ps1) | installierte Programme aus der Registrierung, Filter mit Platzhaltern |
+| [`Get-RecentErrors.ps1`](samples/Get-RecentErrors.ps1) | Fehler aus der Ereignisanzeige, nach Quelle gruppiert |
+| [`Clear-TempFiles.ps1`](samples/Clear-TempFiles.ps1) | Probelauf (`-WhatIf`), Admin-Option für Windows-Temp |
+| [`New-Password.ps1`](samples/New-Password.ps1) | sichere Kennwörter, Ergebnis in der Zwischenablage |
 
 ## Entwicklung
 

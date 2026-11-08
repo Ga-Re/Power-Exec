@@ -1626,6 +1626,14 @@
                     <TextBlock Text="Diagnose" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Protokoll für die Fehlersuche und Einlesezeiten der Ordner." Style="{StaticResource Caption}"/>
 
+                    <TextBlock Text="Beispiele" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE943;" Header="Beispielscripte anlegen"
+                                    Description="Legt die mitgelieferten Beispielscripte unter Dokumente › Power-Exec › Scripte an (vorhandene Dateien bleiben unverändert) und bindet den Ordner als Gruppe „Beispiele“ ein.">
+                        <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddSamplesCommand}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="4,4,0,0" TextWrapping="Wrap"
+                               Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
+
                     <TextBlock Text="Einlesen der Ordner" Style="{StaticResource SettingsSection}"/>
 
                     <Border Style="{StaticResource Card}" Padding="16,12">

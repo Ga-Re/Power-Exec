@@ -277,6 +277,15 @@ public class WelcomeViewModelTests
     }
 
     [Fact]
+    public void AllSamplesAreShipped()
+    {
+        var names = typeof(WelcomeViewModel).Assembly.GetManifestResourceNames().Where(n => n.StartsWith("PowerExec.Sample.")).ToList();
+        Assert.Contains("PowerExec.Sample.Get-DiskSpace.ps1", names);
+        Assert.Contains("PowerExec.Sample.Test-NetworkConnection.ps1", names);
+        Assert.True(names.Count >= 8, $"nur {names.Count} Beispiele eingebettet");
+    }
+
+    [Fact]
     public void HotkeyDefaultsToCtrlAltSpaceAndIsAppliedOnFinish()
     {
         var host = new FakeWelcomeHost();
