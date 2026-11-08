@@ -148,11 +148,17 @@ public sealed class WelcomeViewModel : ObservableObject
         try
         {
             Directory.CreateDirectory(SampleFolder);
-            var target = Path.Combine(SampleFolder, "Get-DiskSpace.ps1");
-            if (!File.Exists(target))
+            const string prefix = "PowerExec.Sample.";
+            var assembly = typeof(WelcomeViewModel).Assembly;
+            var samples = assembly.GetManifestResourceNames().Where(n => n.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+            if (samples.Count == 0) return null;
+            foreach (var name in samples)
             {
-                using var stream = typeof(WelcomeViewModel).Assembly.GetManifestResourceStream("PowerExec.Sample.Get-DiskSpace.ps1");
-                if (stream == null) return null;
+                // Vorhandene Dateien bleiben unangetastet (vielleicht schon angepasst)
+                var target = Path.Combine(SampleFolder, name[prefix.Length..]);
+                if (File.Exists(target)) continue;
+                using var stream = assembly.GetManifestResourceStream(name);
+                if (stream == null) continue;
                 using var file = File.Create(target);
                 stream.CopyTo(file);
             }
