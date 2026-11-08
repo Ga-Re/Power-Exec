@@ -7,6 +7,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 20, 0), "Neues Aussehen im Stil von Windows 11", new[]
+        {
+            "Schaltflächen, Schalter, Eingabefelder, Auswahllisten, Menüs und Bildlaufleisten im Fluent-Design – in den Einstellungen, allen Dialogen, im Panel, in der Spotlight-Suche und im Mini-Dock",
+            "Hell, Dunkel, Kontrastdesign und Akzentfarbe gelten für alle Bedienelemente und wechseln auch bei offenen Fenstern mit; im Panel richten sie sich nach der Panelfarbe",
+            "Unten im Panel steht, welche Version läuft und ob sie installiert oder portabel ist"
+        }),
         new ReleaseNote(new Version(0, 19, 5), "Weichzeichner auch an Taskleiste und zweitem Monitor flüssig, .NET 10", new[]
         {
             "Liegt die Taskleiste oder ein weiterer Monitor an der Panelkante, gleitet das Panel jetzt ebenfalls als Ganzes herein und wird am Rand des Arbeitsbereichs abgeschnitten – kein Wachsen mehr, kein Ruckeln, nicht mehr über der Taskleiste",

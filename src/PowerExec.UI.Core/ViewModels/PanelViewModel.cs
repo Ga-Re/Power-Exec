@@ -179,7 +179,7 @@ public sealed class PanelViewModel : ObservableObject
 
     public string Footer { get => _footer; private set => Set(ref _footer, value); }
 
-    /// <summary>Laufende und installierte Version (z. B. „WPF 0.19.5 · installiert“).</summary>
+    /// <summary>Laufende und installierte Version (z. B. „Version 0.20.0 · installiert“).</summary>
     public string VersionText => _app.VersionText;
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;

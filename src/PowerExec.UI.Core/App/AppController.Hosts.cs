@@ -63,7 +63,7 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
 
     // ── Panel, Gruppen, Einträge ─────────────────────────────────────
 
-    /// <summary>„WPF 0.19.5 · installiert“ bzw. „… · portabel (installiert: 0.19.4)“.</summary>
+    /// <summary>„Version 0.20.0 · installiert“ bzw. „… · portabel (installiert: 0.19.4)“.</summary>
     public string VersionText => _versionText ??= BuildVersionText();
     private string? _versionText;
 
