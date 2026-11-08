@@ -269,7 +269,10 @@ public partial class PanelWindow : Window
         }
         catch (Exception ex)
         {
-            GlassError = ex.Message;
+            // Für Bericht und Fehlersuche: Typ, Meldung und die Stelle, an der es scheiterte
+            var frame = new System.Diagnostics.StackTrace(ex).GetFrames().FirstOrDefault(f => f.GetMethod()?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true)
+                        ?? new System.Diagnostics.StackTrace(ex).GetFrame(0);
+            GlassError = $"{ex.GetType().Name}: {ex.Message} (in {frame?.GetMethod()?.DeclaringType?.Name}.{frame?.GetMethod()?.Name})";
             AppLog.Error("Glas-Weichzeichner nicht verfügbar, Rückfall auf Milchglas", ex);
             DisposeGlass();
         }

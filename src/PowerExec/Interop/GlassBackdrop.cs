@@ -58,6 +58,8 @@ internal sealed class GlassBackdrop : IDisposable
 
     private const int DWMWA_USE_HOSTBACKDROPBRUSH = 17;
 
+    private delegate int CreateEffectFactoryFn(IntPtr self, IntPtr effect, out IntPtr factory);
+
     // ---- Instanz ---------------------------------------------------------------------------------
 
     private readonly DesktopWindowTarget _target;
@@ -103,13 +105,29 @@ internal sealed class GlassBackdrop : IDisposable
         GlassEffect effect = new SaturationGlassEffect(chain, saturation);
         if (luminosity.W > 0) effect = new CompositeGlassEffect(effect, new FloodGlassEffect(luminosity.X, luminosity.Y, luminosity.Z, luminosity.W));
 
+        // Die Effektbeschreibung geht direkt an ICompositor::CreateEffectFactory (Platz 11 der Methodentabelle laut
+        // Windows-Projektion) – das WinRT-Marshalling von .NET kann eigene COM-Objekte nicht umwickeln.
         var effectPtr = effect.GetEffectPointer();
         CompositionEffectBrush brush;
         try
         {
-            var description = WinRT.MarshalInterface<Windows.Graphics.Effects.IGraphicsEffect>.FromAbi(effectPtr);
-            using var factory = compositor.CreateEffectFactory(description);
-            brush = factory.CreateBrush();
+            var unknown = ((WinRT.IWinRTObject)compositor).NativeObject.ThisPtr;
+            var iid = new Guid("B403CA50-7F8C-4E83-985F-CC45060036D8"); // ICompositor
+            Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknown, in iid, out var icompositor));
+            IntPtr factoryPtr;
+            try
+            {
+                var create = Marshal.GetDelegateForFunctionPointer<CreateEffectFactoryFn>(
+                    Marshal.ReadIntPtr(Marshal.ReadIntPtr(icompositor), 11 * IntPtr.Size));
+                Marshal.ThrowExceptionForHR(create(icompositor, effectPtr, out factoryPtr));
+            }
+            finally { Marshal.Release(icompositor); }
+            try
+            {
+                using var factory = CompositionEffectFactory.FromAbi(factoryPtr);
+                brush = factory.CreateBrush();
+            }
+            finally { Marshal.Release(factoryPtr); }
         }
         finally { Marshal.Release(effectPtr); }
         brush.SetSourceParameter("Backdrop", compositor.CreateHostBackdropBrush());

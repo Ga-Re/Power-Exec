@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using Windows.Foundation;
 
 namespace PowerExec.Interop;
 
@@ -14,7 +13,7 @@ namespace PowerExec.Interop;
 public enum GraphicsEffectPropertyMapping { Unknown = 0, Direct = 1 }
 
 /// <summary>IInspectable + Windows.Graphics.Effects.IGraphicsEffectSource (ohne eigene Methoden).</summary>
-[ComVisible(true), Guid("2D8F9DDC-4339-4EB9-9216-F66DEB6B4D7A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+[ComVisible(true), Guid("2D8F9DDC-4339-4EB9-9216-F9DEB75658A2"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 public interface IGraphicsEffectSourceAbi
 {
     [PreserveSig] int GetIids(out int count, out IntPtr iids);
@@ -58,16 +57,13 @@ public sealed class GlassSourceParameter(string name) : GlassEffectSource
 {
     private readonly Windows.UI.Composition.CompositionEffectSourceParameter _parameter = new(name);
 
+    /// <summary>Direkt am Windows-Objekt nachgefragt (ohne Umweg über das WinRT-Marshalling von .NET).</summary>
     public override IntPtr GetSourcePointer()
     {
-        var inspectable = WinRT.MarshalInspectable<object>.FromManaged(_parameter);
-        try
-        {
-            var iid = typeof(IGraphicsEffectSourceAbi).GUID;
-            Marshal.ThrowExceptionForHR(Marshal.QueryInterface(inspectable, in iid, out var source));
-            return source;
-        }
-        finally { Marshal.Release(inspectable); }
+        var native = ((WinRT.IWinRTObject)_parameter).NativeObject.ThisPtr;
+        var iid = typeof(IGraphicsEffectSourceAbi).GUID;
+        Marshal.ThrowExceptionForHR(Marshal.QueryInterface(native, in iid, out var source));
+        return source;
     }
 }
 
@@ -134,14 +130,13 @@ public abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGrap
     /// <summary>Wert als Windows.Foundation.IPropertyValue (float, uint oder float[] für Vektoren/Farben).</summary>
     private static IntPtr ToPropertyValue(object value)
     {
-        var boxed = value switch
+        var inspectable = value switch
         {
-            float f => PropertyValue.CreateSingle(f),
-            uint u => PropertyValue.CreateUInt32(u),
-            float[] a => PropertyValue.CreateSingleArray(a),
+            float f => PropertyValues.CreateSingle(f),
+            uint u => PropertyValues.CreateUInt32(u),
+            float[] a => PropertyValues.CreateSingleArray(a),
             _ => throw new NotSupportedException(value.GetType().Name)
         };
-        var inspectable = WinRT.MarshalInspectable<object>.FromManaged(boxed);
         try
         {
             var iid = new Guid("4BD682DD-7554-40E9-9A9B-82654EDE7E62"); // IPropertyValue
@@ -149,6 +144,66 @@ public abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGrap
             return pv;
         }
         finally { Marshal.Release(inspectable); }
+    }
+}
+
+/// <summary>
+/// Windows.Foundation.PropertyValue direkt über die Aktivierungsfabrik (IPropertyValueStatics). Die Plätze in der
+/// Methodentabelle stammen aus der Windows-Projektion: CreateUInt32 = 11, CreateSingle = 14, CreateSingleArray = 33.
+/// </summary>
+internal static class PropertyValues
+{
+    [DllImport("combase.dll", CharSet = CharSet.Unicode)]
+    private static extern int WindowsCreateString(string source, int length, out IntPtr hstring);
+
+    [DllImport("combase.dll")]
+    private static extern int WindowsDeleteString(IntPtr hstring);
+
+    [DllImport("combase.dll")]
+    private static extern int RoGetActivationFactory(IntPtr classId, in Guid iid, out IntPtr factory);
+
+    private delegate int CreateSingleFn(IntPtr self, float value, out IntPtr result);
+    private delegate int CreateUInt32Fn(IntPtr self, uint value, out IntPtr result);
+    private delegate int CreateSingleArrayFn(IntPtr self, int length, float[] values, out IntPtr result);
+
+    private static IntPtr _statics;
+
+    private static IntPtr Statics
+    {
+        get
+        {
+            if (_statics != IntPtr.Zero) return _statics;
+            const string cls = "Windows.Foundation.PropertyValue";
+            Marshal.ThrowExceptionForHR(WindowsCreateString(cls, cls.Length, out var name));
+            try
+            {
+                var iid = new Guid("629BDBC8-D932-4FF4-96B9-8D96C5C1E858"); // IPropertyValueStatics
+                Marshal.ThrowExceptionForHR(RoGetActivationFactory(name, in iid, out _statics));
+            }
+            finally { WindowsDeleteString(name); }
+            return _statics;
+        }
+    }
+
+    private static T Slot<T>(int index) where T : Delegate =>
+        Marshal.GetDelegateForFunctionPointer<T>(Marshal.ReadIntPtr(Marshal.ReadIntPtr(Statics), index * IntPtr.Size));
+
+    public static IntPtr CreateUInt32(uint value)
+    {
+        Marshal.ThrowExceptionForHR(Slot<CreateUInt32Fn>(11)(Statics, value, out var result));
+        return result;
+    }
+
+    public static IntPtr CreateSingle(float value)
+    {
+        Marshal.ThrowExceptionForHR(Slot<CreateSingleFn>(14)(Statics, value, out var result));
+        return result;
+    }
+
+    public static IntPtr CreateSingleArray(float[] values)
+    {
+        Marshal.ThrowExceptionForHR(Slot<CreateSingleArrayFn>(33)(Statics, values.Length, values, out var result));
+        return result;
     }
 }
 
