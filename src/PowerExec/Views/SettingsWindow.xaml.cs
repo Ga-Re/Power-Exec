@@ -30,6 +30,7 @@ public partial class SettingsWindow : Window
         _app = app;
         _snapshot = SettingsStore.Clone(app.Settings);
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Attach(vm);
         _lastApplied = Fingerprint(app.Settings);
@@ -261,7 +262,7 @@ public partial class SettingsWindow : Window
         var vm = CurrentViewModel;
         _groupDragStartX = e.GetPosition(this).X;
         vm.BeginCategoryDrag(item);
-        _dragFeedback = new DragFeedback(this, vm.CategoryDragLabel, vm.CategoryDragBrush, vm.GroupDragGhost, vm.GroupDragExplain);
+        _dragFeedback = new DragFeedback(this, vm.CategoryDragLabel, Infrastructure.WpfColors.ToBrush(vm.CategoryDragColor), vm.GroupDragGhost, vm.GroupDragExplain);
         var source = (UIElement)sender;
         GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
         source.GiveFeedback += follow;

@@ -30,10 +30,11 @@
     <EmbeddedResource Include="Assets\icons.json" LogicalName="PowerExec.icons.json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+    <!-- Fluent-Bedienelemente (WPF UI, MIT); zunächst nur im Einstellungsfenster, siehe Infrastructure/FluentTheme.cs -->
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Beispiel-Script für den Einführungs-Assistenten -->
-    <EmbeddedResource Include="..\..\samples\Get-DiskSpace.ps1" LogicalName="PowerExec.Sample.Get-DiskSpace.ps1" Link="Assets\Get-DiskSpace.ps1" />
+    <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+    <ProjectReference Include="..\PowerExec.UI.Core\PowerExec.UI.Core.csproj" />
   </ItemGroup>
 </Project>

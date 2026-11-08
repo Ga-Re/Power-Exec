@@ -14,8 +14,10 @@ namespace PowerExec;
 /// Öffnet Panels in allen Darstellungen, Einstellungen und Dialoge mit Beispieldaten und meldet Fehler,
 /// z. B. fehlende Ressourcen in XAML-Vorlagen. Verwendet eine eigene, temporäre Einstellungsdatei.
 /// </summary>
-public sealed partial class AppController
+public sealed partial class SelfTestController : AppController
 {
+    public SelfTestController() : base(app => new WpfAppUi(app)) { }
+
     private readonly List<string> _selfTestErrors = new();
     private string? _progressFile;
     private int _shotCounter;
@@ -125,10 +127,9 @@ public sealed partial class AppController
             Views.WindowHelper.Settings = () => Settings;
             ThemeService.Apply(Settings);
 
-            Icons = new IconService(dispatcher);
-            Health = new HealthService(dispatcher);
-            Repository = new ItemRepository(Settings, dispatcher);
-            Launcher = new Launcher(() => Settings);
+            Health = new HealthService(UiDispatcher);
+            Repository = new ItemRepository(Settings, UiDispatcher);
+            Launcher = new Launcher(() => Settings, Dialogs, Ui.AskCredential);
             Step("Scan");
             await Repository.ScanAsync();
             Step("Panels erzeugen");
@@ -143,7 +144,7 @@ public sealed partial class AppController
 
             foreach (var (layout, compact) in new[] { (ItemLayout.List, false), (ItemLayout.List, true), (ItemLayout.Grid, false), (ItemLayout.Grid, true) })
             {
-                foreach (var host in _hosts)
+                foreach (var host in WpfHosts)
                 {
                     host.Config.Layout = layout;
                     host.Config.Compact = compact;
@@ -156,6 +157,9 @@ public sealed partial class AppController
                     first?.SelectCommand.Execute(null);
                     await Settle();
                     if (host.Window.Content is FrameworkElement panelRoot) Screenshot(panelRoot, $"panel-{host.Config.Name}-{layout}{(compact ? "-kompakt" : "")}");
+                    if (!VisualDescendants(host.Window).OfType<Wpf.Ui.Controls.Button>().Any()) Fail($"Fluent: Panel {host.Config.Name} zeigt keine Fluent-Schaltflächen");
+                    if (host.Window.SearchBox.Template?.FindName("Placeholder", host.Window.SearchBox) is not System.Windows.Controls.TextBlock { IsVisible: true })
+                        Fail($"Fluent: Suchfeld im Panel {host.Config.Name} ohne Hinweistext");
                     if (host.Config.Name == "Hauptpanel" && !host.ViewModel.AllGroups.Any(g => g.GroupPath == "Admin/AD" && g.Items.Count == 1))
                         Fail($"{layout}: Untergruppe Admin/AD fehlt oder ist leer");
                     host.Window.HidePanel();
@@ -165,7 +169,7 @@ public sealed partial class AppController
 
             Step("Suche: unscharf, Operatoren, Hervorhebung");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                 await Settle();
@@ -207,7 +211,7 @@ public sealed partial class AppController
 
             Step("Tastatur: Schnellstart und Übersicht");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.Rebuild();
                 if (!vm.AllItems.Any(i => i.QuickKeyText == "Alt+1")) Fail("Tastatur: Favorit ohne Schnellstart-Taste Alt+1");
@@ -262,7 +266,7 @@ public sealed partial class AppController
 
             Step("Gruppen ziehen: Lücke im Panel");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.SearchText = string.Empty;
                 vm.Rebuild();
@@ -335,7 +339,7 @@ public sealed partial class AppController
                 }
                 var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
                 remoteDemo.Progress = 0.7;
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 if (!host.ViewModel.HasActivities) Fail("Aktivitäten: Panel zeigt keine Aktivitäten");
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                 await Settle();
@@ -367,7 +371,7 @@ public sealed partial class AppController
                 {
                     cfg.Backdrop = b;
                     CreateHosts();
-                    var host = _hosts[0];
+                    var host = WpfHost(0);
                     var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
@@ -438,7 +442,7 @@ public sealed partial class AppController
                 if (!welcomeVm.IsLast || welcomeVm.NextLabel != "Fertig") Fail("Einführung: letzter Schritt zeigt nicht „Fertig“");
                 welcome.Close();
 
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 ShowWhatsNewForTest(PowerExec.Core.Updates.ReleaseNotes.All[0]);
                 if (!host.ViewModel.WhatsNewVisible) Fail("Neuerungen: Karte erscheint nicht");
                 host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
@@ -452,7 +456,7 @@ public sealed partial class AppController
 
             Step("Mini-Dock");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 host.Config.ShowDock = true;
                 host.CreateTriggers(this);
                 host.ViewModel.Rebuild();
@@ -463,6 +467,8 @@ public sealed partial class AppController
                 {
                     if (dock.SlotCount != host.ViewModel.DockItems.Count + 1) Fail($"Mini-Dock: {dock.SlotCount} Plätze statt {host.ViewModel.DockItems.Count + 1}");
                     if (dock.Content is FrameworkElement dockRoot) Screenshot(dockRoot, "mini-dock");
+                    if (dock.TryFindResource("DefaultUiButtonStyle") is null)
+                        Fail("Fluent: Mini-Dock ohne Fluent-Stile");
                     if (host.Triggers.Count > 0) Fail("Mini-Dock: Hover-Zone bleibt zusätzlich aktiv");
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
@@ -477,7 +483,7 @@ public sealed partial class AppController
 
             Step("Verlauf");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var histScript = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell)?.Item;
                 if (histScript == null) Fail("Verlauf: kein Script zum Eintragen");
                 else
@@ -505,21 +511,24 @@ public sealed partial class AppController
 
             Step("Spotlight-Modus");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 host.Config.HotkeyOpensSpotlight = true;
                 SpotlightStaysOpen = true;
-                ShowPanelFromHotkey(host);
+                ShowPanelFromHotkey(host.Panel);
                 await Settle();
-                if (Spotlight == null) Fail("Spotlight: Tastenkürzel öffnet kein Suchfenster");
+                var spotlight = (Spotlight as WpfAppUi.WindowHandle)?.Window as SpotlightWindow;
+                if (spotlight == null) Fail("Spotlight: Tastenkürzel öffnet kein Suchfenster");
                 else
                 {
                     if (host.Window.IsOpen) Fail("Spotlight: Panel öffnet zusätzlich");
-                    if (Spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
-                    Spotlight.ViewModel.SearchText = "clnup";
+                    if (spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
+                    if (spotlight.SearchBox.Template?.FindName("Placeholder", spotlight.SearchBox) is not System.Windows.Controls.TextBlock { IsVisible: true })
+                        Fail("Fluent: Spotlight-Suchfeld ohne Hinweistext");
+                    spotlight.ViewModel.SearchText = "clnup";
                     await Settle();
-                    if (Spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");
-                    if (Spotlight.Content is FrameworkElement spotRoot) Screenshot(spotRoot, "spotlight");
-                    ShowPanelFromHotkey(host); // zweites Mal schließt
+                    if (spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");
+                    if (spotlight.Content is FrameworkElement spotRoot) Screenshot(spotRoot, "spotlight");
+                    ShowPanelFromHotkey(host.Panel); // zweites Mal schließt
                     await Settle();
                     if (Spotlight != null) Fail("Spotlight: Tastenkürzel schließt das Suchfenster nicht");
                 }
@@ -529,7 +538,7 @@ public sealed partial class AppController
 
             Step("Parameter im Panel und Parameter-Sets");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var withParams = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && i.Item.HasParameters && !i.IsSingleClick);
                 if (withParams == null) Fail("Parameter im Panel: kein Script mit Parametern");
                 else
@@ -553,7 +562,7 @@ public sealed partial class AppController
 
             Step("Mehrfachauswahl und Abläufe");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var pick = host.ViewModel.VisibleItems.Where(i => !i.IsCustom).Take(2).ToList();
                 if (pick.Count < 2) Fail("Abläufe: zu wenige Einträge für die Mehrfachauswahl");
                 else
@@ -581,7 +590,7 @@ public sealed partial class AppController
 
             Step("Zeitpläne");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var planned = host.ViewModel.VisibleItems.FirstOrDefault(i => i.Item.IsPowerShell && !i.IsCustom);
                 if (planned == null) Fail("Zeitplan: kein Script");
                 else
@@ -606,7 +615,7 @@ public sealed partial class AppController
 
             Step("Team-Katalog");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var publisher = new AppSettings();
                 publisher.CustomEntries.Add(new CustomEntry { Id = "kat1", Kind = CustomEntryKind.Url, Name = "Team-Wiki", Target = "https://wiki.example.com" });
                 var catalogPath = Path.Combine(dir, "team.pxentries.json");
@@ -639,7 +648,7 @@ public sealed partial class AppController
 
             Step("Suchvorschläge, Farbwähler, Sprungleiste");
             {
-                var host = _hosts[0];
+                var host = WpfHost(0);
                 var vm = host.ViewModel;
                 vm.UpdateSuggestions("typ:", 4);
                 if (!vm.HasSuggestions) Fail("Suchvorschläge: „typ:“ schlägt nichts vor");
@@ -675,7 +684,7 @@ public sealed partial class AppController
                 host.Window.HidePanel();
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
-                if (colors == null || colors.Where(c => c.Swatch != null).Select(c => c.Swatch!.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
                 if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe"))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
                 var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
                 if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
@@ -701,7 +710,7 @@ public sealed partial class AppController
                 {
                     ToggleFavorite(cleanup); // ist Favorit → wird entfernt
                     if (IsFavorite(cleanupPath) || UndoToast == null) Fail("Rückgängig: kein Hinweis nach dem Entfernen des Favoriten");
-                    if (_hosts[0].Window.Content is FrameworkElement undoRoot) { await Settle(); Screenshot(undoRoot, "panel-rueckgaengig"); }
+                    if (WpfHost(0).Window.Content is FrameworkElement undoRoot) { await Settle(); Screenshot(undoRoot, "panel-rueckgaengig"); }
                     Undo();
                     if (!IsFavorite(cleanupPath)) Fail("Rückgängig: Favorit wurde nicht wiederhergestellt");
                     if (UndoToast != null) Fail("Rückgängig: Hinweis bleibt nach dem Zurücknehmen stehen");
@@ -895,6 +904,27 @@ public sealed partial class AppController
                 await Settle();
             }
 
+            Step("Fluent-Bedienelemente (WPF UI) im Einstellungsfenster");
+            {
+                settingsVm.Section = "general";
+                await Settle();
+                static IEnumerable<DependencyObject> Tree(DependencyObject d)
+                {
+                    for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+                    {
+                        var c = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+                        yield return c;
+                        foreach (var cc in Tree(c)) yield return cc;
+                    }
+                }
+                var visuals = Tree(settingsWindow).ToList();
+                if (!visuals.OfType<Wpf.Ui.Controls.ToggleSwitch>().Any()) Fail("Fluent: keine Fluent-Schalter im Abschnitt „Allgemein“");
+                if (!visuals.OfType<Wpf.Ui.Controls.Button>().Any()) Fail("Fluent: keine Fluent-Schaltflächen im Abschnitt „Allgemein“");
+                if (settingsWindow.TryFindResource("AccentFillColorDefaultBrush") is not System.Windows.Media.SolidColorBrush fluentAccent ||
+                    Application.Current.TryFindResource("Accent") is not System.Windows.Media.SolidColorBrush ownAccent || fluentAccent.Color != ownAccent.Color)
+                    Fail("Fluent: Akzentfarbe weicht vom Programm-Akzent ab");
+            }
+
             Step("Design bei offenem Fenster wechseln");
             {
                 var themeBefore = Settings.Theme;
@@ -906,10 +936,28 @@ public sealed partial class AppController
                 if (!IsLightBrush(Application.Current.Resources[Views.WindowHelper.MicaTintKey])) Fail("Design: Mica-Tönung bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.Background is System.Windows.Media.SolidColorBrush { Color.A: 255 } && !IsLightBrush(settingsWindow.Background))
                     Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
+                if (settingsWindow.TryFindResource("TextFillColorPrimaryBrush") is not System.Windows.Media.SolidColorBrush fluentText || IsLightBrush(fluentText))
+                    Fail("Design: Fluent-Texte bleiben nach dem Wechsel auf Hell hell");
+                // Tatsächliche Farben an den Bedienelementen (nicht nur im Wörterbuch): Schrift muss zum Design passen
+                CheckFluentReadable(settingsWindow, light: true, "Einstellungen nach Wechsel auf Hell");
+                {
+                    var fresh = ChoiceWindow.ForTest();
+                    fresh.Show();
+                    await Settle();
+                    CheckFluentReadable(fresh, light: true, "neuer Dialog im hellen Design");
+                    fresh.Close();
+                }
                 if (settingsWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "settings-hell-live");
+                Settings.Theme = ThemeMode.Dark;
+                ThemeService.Apply(Settings);
+                await Settle();
+                CheckFluentReadable(settingsWindow, light: false, "Einstellungen nach Wechsel Hell → Dunkel");
+                if (settingsWindow.Content is FrameworkElement darkRoot) Screenshot(darkRoot, "settings-dunkel-live");
                 Settings.Theme = themeBefore;
                 ThemeService.Apply(Settings);
                 await Settle();
+                // Zurück auf die Ausgangseinstellung (z. B. „wie Windows“ – auf dem Prüfrechner kann das hell sein)
+                CheckFluentReadable(settingsWindow, light: !ThemeService.IsDark, $"Einstellungen nach Wechsel zurück ({(ThemeService.IsDark ? "dunkel" : "hell")})");
             }
             settingsWindow.Close();
 
@@ -930,8 +978,8 @@ public sealed partial class AppController
                     var tileStatus = n % 8 == 3 ? RemoteStatus.Error : n % 8 == 5 ? RemoteStatus.Unreachable : n > 18 ? RemoteStatus.Running : RemoteStatus.Success;
                     tilesVm.Rows[n].Update(new RemoteResult { Computer = tilesVm.Rows[n].Computer, Status = tileStatus, DurationMs = 800 + n * 37, Output = "C: 42 % frei", Error = tileStatus == RemoteStatus.Error ? "Zugriff verweigert" : string.Empty });
                 }
-                tilesVm.TilesView.Refresh();
-                var firstTile = tilesVm.TilesView.Cast<ResultRowViewModel>().First();
+                tilesVm.RefreshViews();
+                var firstTile = tilesVm.VisibleTiles.First();
                 if (firstTile.Status != RemoteStatus.Error) Fail("Kachelkarte: Fehler stehen nicht vorne");
                 tilesVm.SelectedTile = firstTile;
                 await ShowAndClose(new ResultsWindow(tilesVm));
@@ -1021,8 +1069,7 @@ public sealed partial class AppController
         }
         finally
         {
-            foreach (var h in _hosts) h.Dispose();
-            _hosts.Clear();
+            DisposePanels();
         }
         lock (bindingErrors.Errors)
             foreach (var e in bindingErrors.Errors.Take(25)) Fail("Bindungsfehler: " + e);
@@ -1030,6 +1077,11 @@ public sealed partial class AppController
     }
 
     private void Fail(string message) => _selfTestErrors.Add(message);
+
+    /// <summary>WPF-Seite der Panels (Fenster, Hover-Zonen, Docks) für die Prüfungen.</summary>
+    private IReadOnlyList<PanelHost> WpfHosts => _hosts.Select(h => (PanelHost)h.View).ToList();
+
+    private PanelHost WpfHost(int index) => (PanelHost)_hosts[index].View;
 
     /// <summary>Bildschirmfoto eines Fensters (Inhalt) für die Sichtprüfung als CI-Artefakt.</summary>
     private void Screenshot(FrameworkElement element, string name)
@@ -1120,7 +1172,43 @@ public sealed partial class AppController
         Step("Fenster " + w.GetType().Name + " " + w.Title);
         w.Show();
         await Settle();
+        // Alle Dialoge nutzen Fluent-Bedienelemente (Themes/Fluent.xaml)
+        if (!VisualDescendants(w).OfType<Wpf.Ui.Controls.Button>().Any())
+            Fail($"Fluent: {w.GetType().Name} zeigt keine Fluent-Schaltflächen");
         if (w.Content is FrameworkElement root) Screenshot(root, "window-" + w.GetType().Name + "-" + (++_shotCounter));
         w.Close();
+    }
+
+    /// <summary>
+    /// Fluent-Schaltflächen (Standard) und Auswahllisten: Schrift dunkel im hellen, hell im dunklen Design – sonst ist
+    /// sie auf dem Hintergrund nicht lesbar (z. B. wenn ein Wörterbuch beim Designwechsel nicht nachgezogen wurde).
+    /// </summary>
+    private void CheckFluentReadable(Window w, bool light, string where)
+    {
+        static bool IsLight(System.Windows.Media.Brush? b) =>
+            b is System.Windows.Media.SolidColorBrush s && PanelColors.IsLight(new Rgb(s.Color.R, s.Color.G, s.Color.B));
+        var visuals = VisualDescendants(w).ToList();
+        var buttons = visuals.OfType<Wpf.Ui.Controls.Button>()
+            .Where(b => b.IsVisible && b.Appearance == Wpf.Ui.Controls.ControlAppearance.Secondary).ToList();
+        var combos = visuals.OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible).ToList();
+        if (buttons.Count == 0) Fail($"Fluent ({where}): keine sichtbare Standard-Schaltfläche zum Prüfen");
+        // Hinweistexte („Tag“) leerer Eingabefelder müssen sichtbar sein
+        foreach (var t in visuals.OfType<System.Windows.Controls.TextBox>().Where(t => t.IsVisible && t.Text.Length == 0 && t.Tag is string { Length: > 0 }).Take(5))
+            if (t.Template?.FindName("Placeholder", t) is not System.Windows.Controls.TextBlock { IsVisible: true })
+            { Fail($"Fluent ({where}): Hinweistext „{t.Tag}“ im leeren Eingabefeld fehlt"); break; }
+        foreach (var b in buttons.Take(5))
+            if (IsLight(b.Foreground) == light) { Fail($"Fluent ({where}): Schaltfläche „{b.Content}“ mit unlesbarer Schrift"); break; }
+        foreach (var c in combos.Take(5))
+            if (IsLight(c.Foreground) == light) { Fail($"Fluent ({where}): Auswahlliste mit unlesbarer Schrift"); break; }
+    }
+
+    private static IEnumerable<DependencyObject> VisualDescendants(DependencyObject d)
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+        {
+            var c = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+            yield return c;
+            foreach (var cc in VisualDescendants(c)) yield return cc;
+        }
     }
 }

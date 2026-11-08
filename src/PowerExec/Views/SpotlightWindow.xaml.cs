@@ -14,6 +14,7 @@ public partial class SpotlightWindow : Window
     public SpotlightWindow(SpotlightViewModel vm, MonitorInfo monitor)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyContentScale((FrameworkElement)Content);
         ViewModel = vm;
         DataContext = vm;

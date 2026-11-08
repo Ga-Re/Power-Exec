@@ -7,6 +7,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
+using PowerExec.Infrastructure;
 using PowerExec.Interop;
 using PowerExec.Services;
 
@@ -182,11 +183,15 @@ public partial class PanelWindow : Window
     /// Panelfarbe und Deckkraft anwenden. Bei einer hellen Farbe im dunklen Design (oder umgekehrt)
     /// wird für das Panel das passende Farbschema für Schrift und Symbole verwendet.
     /// </summary>
+    private static bool IsOwnPalette(ResourceDictionary d) =>
+        d.Source?.OriginalString is { } src && (src.EndsWith("/Themes/Light.xaml", StringComparison.OrdinalIgnoreCase) || src.EndsWith("/Themes/Dark.xaml", StringComparison.OrdinalIgnoreCase));
+
     public void ApplyAppearance()
     {
         var s = Cfg;
         if (PanelBorder.Child is FrameworkElement panelContent) WindowHelper.ApplyContentScale(panelContent);
-        Resources.MergedDictionaries.Clear();
+        // Nur das eigene Gegen-Farbschema entfernen – Themes/Fluent.xaml und das Fluent-Design bleiben eingebunden
+        foreach (var d in Resources.MergedDictionaries.Where(IsOwnPalette).ToList()) Resources.MergedDictionaries.Remove(d);
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
         // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
@@ -225,6 +230,8 @@ public partial class PanelWindow : Window
             var c = themeBrush.Color;
             Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
         }
+        // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
+        Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
         // Milchglas: heller Schleier (dunkle Panels halb so stark), nur über einem Weichzeichner
         var frost = PanelBackdrops.SupportsFrost(_backdrop) ? s.Frost / 100.0 : 0;
         if (!Vm.IsDarkSurface) FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost) : null;
@@ -693,7 +700,7 @@ public partial class PanelWindow : Window
         _groupDragStartX = e.GetPosition(this).X;
         Vm.BeginGroupDrag(group);
         var settings = _app.Settings;
-        _dragFeedback = new DragFeedback(this, Vm.DragLabel, Vm.DragBrush, settings.GroupDragGhost, settings.GroupDragExplain);
+        _dragFeedback = new DragFeedback(this, Vm.DragLabel, WpfColors.ToBrush(Vm.DragColor), settings.GroupDragGhost, settings.GroupDragExplain);
         var source = (UIElement)sender;
         GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
         source.GiveFeedback += follow;

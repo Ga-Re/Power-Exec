@@ -46,7 +46,7 @@ public sealed class DockSlot : ObservableObject
     public ICommand Command { get; }
     public bool IsMore { get; }
     public string Glyph => ""; // „⋯“
-    public ImageSource? Icon => _item?.Icon;
+    public ImageSource? Icon => WpfIconProvider.Unwrap(_item?.Icon);
     public bool HasIcon => _item?.HasIcon == true;
     public string CustomIcon => _item?.CustomIcon ?? string.Empty;
     public bool HasCustomIcon => _item?.HasCustomIcon == true;
@@ -81,6 +81,7 @@ public partial class DockWindow : Window
         _host = host;
         _monitor = monitor;
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         Orientation = host.Config.Edge is ScreenEdge.Left or ScreenEdge.Right ? Orientation.Vertical : Orientation.Horizontal;
         // Abgerundet nur zur Bildschirmmitte hin
         DockBorder.CornerRadius = host.Config.Edge switch
@@ -120,7 +121,7 @@ public partial class DockWindow : Window
     public MonitorInfo Monitor => _monitor;
     public int SlotCount => _slotCount;
 
-    private void OpenPanel() => _app.ShowPanelFromTrigger(_host, _monitor);
+    private void OpenPanel() => _host.ShowFromTrigger(_monitor);
 
     /// <summary>Favoriten neu einlesen (Reihenfolge wie in der Gruppe „Favoriten“).</summary>
     private void OnPanelVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility();

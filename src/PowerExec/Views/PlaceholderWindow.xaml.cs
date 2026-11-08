@@ -21,6 +21,7 @@ public partial class PlaceholderWindow : Window
     {
         _fields = fields;
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Heading.Text = title;
         Fields.ItemsSource = fields;

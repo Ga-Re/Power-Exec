@@ -19,6 +19,7 @@ public partial class CatalogWindow : Window
     private CatalogWindow()
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Filter();
         Loaded += (_, _) => SearchBox.Focus();

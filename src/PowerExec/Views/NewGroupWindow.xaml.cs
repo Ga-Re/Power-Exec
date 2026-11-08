@@ -19,6 +19,7 @@ public partial class NewGroupWindow : Window
     public NewGroupWindow()
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         _colors.Add(new KeyValuePair<string, string>(string.Empty, "Keine / wie übergeordnet"));
         _colors.AddRange(PanelColors.AccentPresets.Select(p => new KeyValuePair<string, string>(p.Hex, p.Name)));

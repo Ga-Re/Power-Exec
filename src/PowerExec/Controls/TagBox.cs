@@ -238,13 +238,13 @@ public sealed class TagBox : Control
     {
         var text = new TextBlock { Text = "#" + tag, VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Margin = new Thickness(8, 0, 2, 1) };
         text.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
-        var remove = new Button
+        var remove = new Wpf.Ui.Controls.Button
         {
             Content = new TextBlock { Text = "", FontSize = 8, FontFamily = TryFindResource("IconFont") as FontFamily ?? new FontFamily("Segoe MDL2 Assets") },
             Width = 20, Height = 20, MinHeight = 20, Padding = new Thickness(0), Margin = new Thickness(0, 0, 2, 0),
             ToolTip = "Entfernen", Focusable = false, Cursor = Cursors.Hand
         };
-        if (TryFindResource("Btn.Icon") is Style s) remove.Style = s;
+        remove.SetResourceReference(StyleProperty, "Btn.Icon");
         remove.Click += (_, _) => Remove(tag);
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
         panel.Children.Add(text);

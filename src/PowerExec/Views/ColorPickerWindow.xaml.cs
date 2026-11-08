@@ -16,6 +16,7 @@ public partial class ColorPickerWindow : Window
     public ColorPickerWindow(string title, string? initial)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Heading.Text = title;
         Presets.ItemsSource = PanelColors.AccentPresets;

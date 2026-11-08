@@ -17,7 +17,7 @@ namespace PowerExec;
 /// die Zeit bis zum Ende des Rebuilds (synchron) und bis der UI-Thread wieder frei ist (inkl. Layout).
 /// Ergebnis: selftest-perf.md und selftest-perf.json neben der Fortschrittsdatei. Noch ohne Grenzwert.
 /// </summary>
-public sealed partial class AppController
+public sealed partial class SelfTestController
 {
     private const int PerfRounds = 5;
 
@@ -45,7 +45,7 @@ public sealed partial class AppController
     {
         var dispatcher = Application.Current.Dispatcher;
         var samples = new List<PerfSample>();
-        var host = _hosts[0];
+        var host = WpfHost(0);
         var vm = host.ViewModel;
         var monitor = ScreenService.TriggerMonitors(host.Config)[0];
         var animation = Settings.Animation;

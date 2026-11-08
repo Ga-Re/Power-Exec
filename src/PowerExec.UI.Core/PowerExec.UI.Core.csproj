@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    App-Kern und Oberflächenlogik ohne WPF-Abhängigkeit (AppController, ViewModels, Dienste, Protokoll).
+    Die WPF-App setzt die Fenster darauf auf; so lässt sich die Logik ohne Oberfläche testen.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PowerExec</RootNamespace>
+    <!-- Registry, AD und Win32 werden nur unter Windows erreicht (beide Oberflächen sind Windows-Apps);
+         die Tests unter Linux berühren nur die neutralen Teile. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PowerExec.Core\PowerExec.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- AD-Suche für dynamische Rechnergruppen (in der WPF-App Teil des Windows-Desktop-Frameworks) -->
+    <PackageReference Include="System.DirectoryServices" Version="10.0.14" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Beispiel-Script für die Einführung (WelcomeViewModel liest es aus dieser Assembly) -->
+    <EmbeddedResource Include="..\..\samples\Get-DiskSpace.ps1" LogicalName="PowerExec.Sample.Get-DiskSpace.ps1" Link="Assets\Get-DiskSpace.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PowerExec.UI.Core.Tests" />
+    <!-- Die Oberflächen greifen auf interne Abgleich-/Drag-&-Drop-Hilfen der ViewModels zu -->
+    <InternalsVisibleTo Include="PowerExec" />
+  </ItemGroup>
+</Project>

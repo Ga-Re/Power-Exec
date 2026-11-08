@@ -1,11 +1,15 @@
 <Window x:Class="PowerExec.Views.ProfilesWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         xmlns:v="clr-namespace:PowerExec.Views"
         Title="{Binding WindowTitle}" Style="{StaticResource AppWindow}"
         Width="900" Height="800" MinWidth="680" MinHeight="480" WindowStartupLocation="CenterScreen">
     <Window.Resources>
+      <ResourceDictionary>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
         <Style x:Key="SectionCard" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource Bg.Card}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border.Default}"/>
@@ -183,6 +187,7 @@
                 <CheckBox Content="Vor dem Start bestätigen („Wirklich ausführen?“)" IsChecked="{Binding ConfirmBeforeRun}" Margin="0,12,0,0"/>
             </StackPanel>
         </DataTemplate>
+      </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -197,26 +202,26 @@
             <DockPanel>
                 <!-- Symbol -->
                 <StackPanel DockPanel.Dock="Left" Margin="0,0,16,0">
-                    <Button Width="60" Height="60" Style="{StaticResource Btn.Standard}" Padding="0" Command="{Binding Entry.ChooseIconCommand}"
+                    <ui:Button Width="60" Height="60" Style="{StaticResource Btn.Standard}" Padding="0" Command="{Binding Entry.ChooseIconCommand}"
                             IsEnabled="{Binding HasEntry}" ToolTip="Symbol wählen (Fluent 2, Heroicons, Emoji, eigenes Bild)">
                         <Grid>
                             <c:IconPresenter Icon="{Binding Entry.Icon}" Size="32" Visibility="{Binding Entry.HasIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
-                            <Image Source="{Binding Entry.AutoIcon}" Width="32" Height="32" Visibility="{Binding Entry.ShowAutoIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
+                            <Image Source="{Binding Entry.AutoIcon, Converter={StaticResource IconImage}}" Width="32" Height="32" Visibility="{Binding Entry.ShowAutoIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
                             <TextBlock Text="{Binding Entry.Badge}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="{Binding Entry.ShowBadge, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
                             <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="26" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="{Binding IsScannedFile, Converter={StaticResource Vis}}"/>
                         </Grid>
-                    </Button>
-                    <Button Style="{StaticResource Btn.Subtle}" Content="Automatisch" Command="{Binding Entry.ClearIconCommand}" FontSize="11" Padding="4,0" MinHeight="22" Height="22"
+                    </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="Automatisch" Command="{Binding Entry.ClearIconCommand}" FontSize="11" Padding="4,0" MinHeight="22" Height="22"
                             Margin="0,4,0,0" HorizontalAlignment="Center" ToolTip="Favicon, Programm- oder Ordnersymbol verwenden"
-                            Visibility="{Binding Entry.HasIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}"/>
+                            Visibility="{Binding Entry.HasIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}" />
                 </StackPanel>
                 <!-- Art -->
                 <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top">
                     <TextBlock Text="{Binding PathText}" Style="{StaticResource Caption}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
-                    <Button Style="{StaticResource Btn.Subtle}" Content="Art ändern …" Command="{Binding ChangeKindCommand}" FontSize="12" Padding="6,0" MinHeight="26" Height="26"
-                            HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding HasEntry, Converter={StaticResource Vis}}"/>
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="Art ändern …" Command="{Binding ChangeKindCommand}" FontSize="12" Padding="6,0" MinHeight="26" Height="26"
+                            HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding HasEntry, Converter={StaticResource Vis}}" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <TextBox x:Name="NameBox" Text="{Binding HeaderName, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding HeaderNameHint}" FontSize="18" FontWeight="SemiBold"
@@ -233,8 +238,8 @@
                 <!-- ===== Schritt 1: Art wählen ===== -->
                 <StackPanel Visibility="{Binding ShowKindPicker, Converter={StaticResource Vis}}">
                     <DockPanel Margin="0,0,0,12">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Zurück zum Eintrag" Command="{Binding BackToFormCommand}"
-                                Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource Vis}}"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="Zurück zum Eintrag" Command="{Binding BackToFormCommand}"
+                                Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource Vis}}" />
                         <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold"/>
                     </DockPanel>
                     <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
@@ -257,7 +262,7 @@
                     <TextBlock Text="Oder" Style="{StaticResource FieldLabel}" Margin="0,8,0,6"/>
                     <Border Style="{StaticResource SectionCard}" Padding="14,10" Visibility="{Binding HasClipboardSuggestion, Converter={StaticResource Vis}}">
                         <DockPanel>
-                            <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="Übernehmen" Command="{Binding UseClipboardCommand}" Margin="12,0,0,0"/>
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="Übernehmen" Command="{Binding UseClipboardCommand}" Margin="12,0,0,0" />
                             <TextBlock Text="&#xE77F;" Style="{StaticResource Icon}" FontSize="18" VerticalAlignment="Center" Margin="0,0,12,0"/>
                             <StackPanel VerticalAlignment="Center">
                                 <TextBlock Text="Aus der Zwischenablage" FontWeight="SemiBold"/>
@@ -266,12 +271,12 @@
                         </DockPanel>
                     </Border>
                     <WrapPanel>
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding CatalogCommand}" Margin="0,0,8,8">
+                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding CatalogCommand}" Margin="0,0,8,8">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0"/><TextBlock Text="Aus Vorlagen …"/></StackPanel>
-                        </Button>
-                        <Button Style="{StaticResource Btn.Standard}" Command="{Binding FilesCommand}" Margin="0,0,8,8">
+                        </ui:Button>
+                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding FilesCommand}" Margin="0,0,8,8">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,8,0"/><TextBlock Text="Dateien auswählen …"/></StackPanel>
-                        </Button>
+                        </ui:Button>
                     </WrapPanel>
                 </StackPanel>
 
@@ -286,7 +291,7 @@
                     <Border Style="{StaticResource SectionCard}" Visibility="{Binding IsScannedFile, Converter={StaticResource Vis}}">
                         <StackPanel>
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Im Explorer zeigen" Command="{Binding OpenFileLocationCommand}"/>
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Im Explorer zeigen" Command="{Binding OpenFileLocationCommand}" />
                                 <TextBlock Text="{Binding FileKindText}" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/>
                             </DockPanel>
                             <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" Margin="0,10,0,0"/>
@@ -311,9 +316,9 @@
                                 <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,1,0" CornerRadius="0,0,0,8">
                                     <DockPanel Margin="10,12">
                                         <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-                                            <Button Style="{StaticResource Btn.Standard}" Content="+ Neu" Command="{Binding AddCommand}" Margin="0,0,6,6" FontSize="12"/>
-                                            <Button Style="{StaticResource Btn.Standard}" Content="Duplizieren" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" FontSize="12"/>
-                                            <Button Style="{StaticResource Btn.Standard}" Content="Löschen" Command="{Binding DeleteCommand}" Margin="0,0,6,6" FontSize="12"/>
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="+ Neu" Command="{Binding AddCommand}" Margin="0,0,6,6" FontSize="12" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="Duplizieren" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" FontSize="12" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="Löschen" Command="{Binding DeleteCommand}" Margin="0,0,6,6" FontSize="12" />
                                         </WrapPanel>
                                         <ItemsControl ItemsSource="{Binding Profiles}" Focusable="False">
                                             <ItemsControl.ItemTemplate>
@@ -423,8 +428,8 @@
                     </ScrollViewer>
                 </Border>
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" MinWidth="110" Height="34" Margin="8,0,0,0"/>
-                    <Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" MinWidth="110" Height="34" Margin="8,0,0,0" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click" />
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{Binding FirstError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextTrimming="CharacterEllipsis"
                                    Visibility="{Binding FirstError, Converter={StaticResource Vis}}"/>

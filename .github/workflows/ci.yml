@@ -21,6 +21,9 @@ jobs:
       - name: Tests
         run: dotnet test tests/PowerExec.Core.Tests -c Release
 
+      - name: Tests (Oberflächenlogik)
+        run: dotnet test tests/PowerExec.UI.Core.Tests -c Release
+
       - name: Veröffentlichen (portabel)
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64

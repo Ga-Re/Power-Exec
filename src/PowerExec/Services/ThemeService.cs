@@ -66,6 +66,7 @@ public static class ThemeService
         if (merged.Count > 0) merged[0] = dict;
         else merged.Insert(0, dict);
         PowerExec.Views.WindowHelper.RefreshOpenWindows();
+        Infrastructure.FluentTheme.Refresh();
         Listen();
     }
 

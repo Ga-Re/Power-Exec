@@ -13,6 +13,7 @@ public partial class CredentialWindow : Window
     private CredentialWindow(string target, bool remote)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         Subtitle.Text = remote ? $"{target} · Remote-Verbindung" : target;
         if (remote)

@@ -8,6 +8,7 @@ public partial class ScheduleWindow : Window
     public ScheduleWindow(ScheduleViewModel vm)
     {
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         DataContext = vm;
         ViewModel = vm;

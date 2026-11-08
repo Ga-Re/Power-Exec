@@ -96,3 +96,21 @@ public sealed class AllEqualConverter : IMultiValueConverter
 
     public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>true → Scrollbalken bei Bedarf (Auto), false → ausgeblendet (Scrollen bleibt möglich).</summary>
+public sealed class ScrollBarAutoConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is true ? System.Windows.Controls.ScrollBarVisibility.Auto : System.Windows.Controls.ScrollBarVisibility.Hidden;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
+
+/// <summary>Zahl → linker Rand (<c>Thickness(Zahl, 0, 0, 0)</c>), z. B. für eingerückte Untergruppen.</summary>
+public sealed class LeftMarginConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        new Thickness(value is double d ? d : 0, 0, 0, 0);
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+}
