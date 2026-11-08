@@ -73,7 +73,7 @@ public interface IDialogs
     IconRef? PickIcon(IconRef current, string heading);
 
     /// <summary>Neue Gruppe (Name, optional Ordner und Symbol); null = abgebrochen.</summary>
-    NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder);
+    NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder, string? initialFolder = null);
 
     /// <summary>Vorlagen aus dem Werkzeug-Katalog wählen; null = abgebrochen.</summary>
     IReadOnlyList<CatalogTemplate>? PickCatalogTemplates();
@@ -111,4 +111,10 @@ public interface IThemeInfo
 {
     bool IsHighContrast { get; }
     bool IsDark { get; }
+
+    /// <summary>Windows-Einstellung „Transparenzeffekte“ (aus: kein Glas-Weichzeichner).</summary>
+    bool TransparencyEffects => true;
+
+    /// <summary>Windows-Build (für Varianten, die erst ab Windows 11 laufen).</summary>
+    int OsBuild => Environment.OSVersion.Version.Build;
 }

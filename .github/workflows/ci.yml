@@ -54,6 +54,12 @@ jobs:
             Get-Content $perf
             Get-Content $perf | Add-Content $env:GITHUB_STEP_SUMMARY
           } else { Write-Host 'Keine Leistungsmessung vorhanden.' }
+          $exe = Get-Item out\PowerExec.exe -ErrorAction SilentlyContinue
+          if ($exe) {
+            $line = "PowerExec.exe (portabel): $($exe.Length.ToString('N0')) Bytes"
+            Write-Host "::notice title=EXE-Größe::$line"
+            "`n$line`n" | Add-Content $env:GITHUB_STEP_SUMMARY
+          }
           $bg = Join-Path $env:RUNNER_TEMP 'selftest-backdrop.md'
           if (Test-Path $bg) {
             Get-Content $bg

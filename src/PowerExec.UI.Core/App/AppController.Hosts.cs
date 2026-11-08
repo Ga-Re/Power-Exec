@@ -116,7 +116,6 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
     DateTime? ISettingsWindowHost.LastUpdateCheck => Updates.LastCheck;
     string ISettingsWindowHost.CurrentVersionText => UpdateService.CurrentVersionText;
     bool ISettingsWindowHost.IsInstalledViaSetup => UpdateService.IsInstalledViaSetup;
-    bool ISettingsWindowHost.IsMicaSupported => Ui.IsMicaSupported;
 
     IReadOnlyList<KeyValuePair<int, string>> ISettingsWindowHost.Monitors => Ui.Monitors;
 

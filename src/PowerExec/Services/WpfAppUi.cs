@@ -117,7 +117,6 @@ public sealed class WpfAppUi : IAppUi
     public IReadOnlyList<KeyValuePair<int, string>> Monitors =>
         ScreenService.GetMonitors().Select(m => new KeyValuePair<int, string>(m.Index, m.DisplayName)).ToList();
 
-    public bool IsMicaSupported => WindowHelper.IsMicaSupported;
 
     public void Shutdown() => Application.Current.Shutdown();
 

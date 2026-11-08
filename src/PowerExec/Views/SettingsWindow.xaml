@@ -17,6 +17,35 @@
         <Style x:Key="RowDesc" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,2,0,0"/>
         </Style>
+        <!-- Farbkachel wie in den Windows-Einstellungen: Quadrat, ausgewählt mit Rahmen und Häkchen -->
+        <DataTemplate x:Key="ColorTile">
+            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,6,6" Cursor="Hand"
+                    AutomationProperties.Name="{Binding ToolTip}" FocusVisualStyle="{StaticResource FocusVisual}">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Width="46" Height="46">
+                            <Border x:Name="Swatch" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
+                                    BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"/>
+                            <Border x:Name="Ring" CornerRadius="4" BorderThickness="2" BorderBrush="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
+                            <Border x:Name="Check" Width="18" Height="18" CornerRadius="0,4,0,4" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Background="{DynamicResource Text.Primary}" Visibility="Collapsed">
+                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="{DynamicResource Bg.Window}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter TargetName="Ring" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Swatch" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </DataTemplate>
         <Style x:Key="RowCombo" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="Width" Value="260"/>
             <Setter Property="DisplayMemberPath" Value="Value"/>
@@ -430,143 +459,78 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Navigation (wie PowerToys: Symbole, Kategorien) -->
-        <DockPanel Margin="10,12,6,12">
-            <TextBlock DockPanel.Dock="Bottom" Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="14,8,0,0"/>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel>
-                    <StackPanel.Resources>
-                        <!-- Überschrift eines Bereichs: Klick klappt ihn ein und aus -->
-                        <Style x:Key="NavSegment" TargetType="Button">
-                            <Setter Property="Foreground" Value="{DynamicResource Text.Tertiary}"/>
-                            <Setter Property="FontSize" Value="12"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                            <Setter Property="Cursor" Value="Hand"/>
-                            <Setter Property="Margin" Value="0,12,0,2"/>
-                            <Setter Property="ToolTip" Value="Ein- oder ausklappen"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="14,5,0,5">
-                                            <ContentPresenter/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/>
-                                                <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </StackPanel.Resources>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=general}">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Allgemein"/></StackPanel>
-                    </RadioButton>
-                    <Button Style="{StaticResource NavSegment}" Command="{Binding ToggleNavCommand}" CommandParameter="content">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" FontSize="10" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                        <Setter Property="Text" Value="&#xE70D;"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding NavContent}" Value="False"><Setter Property="Text" Value="&#xE76C;"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="Inhalte"/>
-                        </DockPanel>
-                    </Button>
-                    <StackPanel Visibility="{Binding NavContent, Converter={StaticResource Vis}}">
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=groups}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Gruppen"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=custom}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE71B;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Eigene Einträge"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=tags}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Schlagworte"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=workspaces}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Arbeitsbereiche"/></StackPanel>
-                        </RadioButton>
-                    </StackPanel>
-                    <Button Style="{StaticResource NavSegment}" Command="{Binding ToggleNavCommand}" CommandParameter="panel">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" FontSize="10" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                        <Setter Property="Text" Value="&#xE70D;"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding NavPanel}" Value="False"><Setter Property="Text" Value="&#xE76C;"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="Panel"/>
-                        </DockPanel>
-                    </Button>
-                    <StackPanel Visibility="{Binding NavPanel, Converter={StaticResource Vis}}">
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=look}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Darstellung"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=behavior}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE823;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Verhalten"/></StackPanel>
-                        </RadioButton>
-                    </StackPanel>
-                    <Button Style="{StaticResource NavSegment}" Command="{Binding ToggleNavCommand}" CommandParameter="exec">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" FontSize="10" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                        <Setter Property="Text" Value="&#xE70D;"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding NavExec}" Value="False"><Setter Property="Text" Value="&#xE76C;"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="Ausführung"/>
-                        </DockPanel>
-                    </Button>
-                    <StackPanel Visibility="{Binding NavExec, Converter={StaticResource Vis}}">
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=exec}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE756;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="PowerShell"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=remote}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE968;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Remote"/></StackPanel>
-                        </RadioButton>
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=machines}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Rechnergruppen"/></StackPanel>
-                        </RadioButton>
-                    </StackPanel>
-                    <Button Style="{StaticResource NavSegment}" Command="{Binding ToggleNavCommand}" CommandParameter="help">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" FontSize="10" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
-                                        <Setter Property="Text" Value="&#xE70D;"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding NavHelp}" Value="False"><Setter Property="Text" Value="&#xE76C;"/></DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="Hilfe"/>
-                        </DockPanel>
-                    </Button>
-                    <StackPanel Visibility="{Binding NavHelp, Converter={StaticResource Vis}}">
-                        <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=diag}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE9D9;" Style="{StaticResource Icon}" FontSize="16" Margin="0,0,12,0"/><TextBlock Text="Diagnose"/></StackPanel>
-                        </RadioButton>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </DockPanel>
-
-        <DockPanel Grid.Column="1">
+        <!--
+            Navigation (WPF UI): einklappbarer Rand (☰), einklappbare Oberkategorien, Zurück-Schaltfläche über den Verlauf
+            der Abschnitte. Die Leiste
+            navigiert zu leeren Seiten (SettingsSectionPage); die Abschnitte liegen im Inhaltsbereich (ContentOverlay).
+            Abschnitt ↔ Auswahl gleicht SettingsWindow.xaml.cs ab.
+        -->
+        <ui:NavigationView x:Name="Nav" Grid.ColumnSpan="2" PaneDisplayMode="Left" IsBackButtonVisible="Visible" IsPaneToggleVisible="True"
+                           OpenPaneLength="250" PaneTitle="Einstellungen" HeaderVisibility="Collapsed" FrameMargin="0">
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem Content="Allgemein" TargetPageTag="general" TargetPageType="{x:Type v:SettingsSectionPage}">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <!-- Inhalte: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Inhalte" IsExpanded="True" AutomationProperties.Name="Inhalte">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Gruppen" TargetPageTag="groups" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8B7;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Eigene Einträge" TargetPageTag="custom" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Schlagworte" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Arbeitsbereiche" TargetPageTag="workspaces" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
+                </ui:NavigationViewItem>
+                <!-- Panel: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Panel" IsExpanded="True" AutomationProperties.Name="Panel">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE737;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Darstellung" TargetPageTag="look" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Verhalten" TargetPageTag="behavior" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE823;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
+                </ui:NavigationViewItem>
+                <!-- Ausführung: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Ausführung" IsExpanded="True" AutomationProperties.Name="Ausführung">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE768;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="PowerShell" TargetPageTag="exec" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Remote" TargetPageTag="remote" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE968;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Rechnergruppen" TargetPageTag="machines" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE7F4;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
+                </ui:NavigationViewItem>
+                <!-- Hilfe: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
+                <ui:NavigationViewItem Content="Hilfe" IsExpanded="True" AutomationProperties.Name="Hilfe">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE897;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Diagnose" TargetPageTag="diag" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE9D9;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.MenuItems>
+            <ui:NavigationView.PaneFooter>
+                <TextBlock Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="16,8,0,12"/>
+            </ui:NavigationView.PaneFooter>
+            <ui:NavigationView.ContentOverlay>
+        <DockPanel>
         <!-- Suche (wie PowerToys oben in der Mitte) -->
         <Grid DockPanel.Dock="Top" Margin="28,12,28,4" MaxWidth="520" HorizontalAlignment="Stretch">
             <TextBox x:Name="SettingsSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0" Tag="Nach Einstellungen suchen">
@@ -1349,11 +1313,11 @@
                     <TextBlock Text="Alles rund um das Aussehen: Design, Einträge, Panel und Hover-Zone." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Allgemein" Style="{StaticResource SettingsSection}"/>
-                    <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Deckkraft, Acrylic und Akzent -->
+                    <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Deckkraft, Milchglas und Akzent -->
                     <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="16,12" Margin="0,0,0,4">
                         <StackPanel>
                             <TextBlock Text="Designvorlagen" FontWeight="SemiBold"/>
-                            <TextBlock Text="Setzt Design, Panelfarbe, Deckkraft, Acrylic, Akzentfarbe und Fensterhintergrund auf einmal – einzeln anpassbar." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                            <TextBlock Text="Setzt Design, Panelfarbe, Deckkraft, Milchglas, Akzentfarbe und Fensterhintergrund auf einmal – einzeln anpassbar." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
                             <ItemsControl ItemsSource="{Binding DesignPresets}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -1403,9 +1367,6 @@
                                     Description="Knöpfe, Auswahl und Hover-Zone nutzen die Akzentfarbe aus den Windows-Einstellungen (Personalisierung › Farben) – passend aufgehellt bzw. abgedunkelt.">
                         <ui:ToggleSwitch IsChecked="{Binding UseWindowsAccent}" />
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE81E;" Header="Mica in Fenstern" Description="{Binding MicaDescription}">
-                        <ui:ToggleSwitch IsChecked="{Binding UseMica}" IsEnabled="{Binding IsMicaSupported}" />
-                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8D3;" Header="Schrift- und Elementgröße" Description="Vergrößert Schrift und Bedienelemente im Panel und in allen Fenstern (zusätzlich zur Windows-Skalierung).">
                             <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="80" Maximum="150" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding UiScalePercent}" VerticalAlignment="Center"
@@ -1415,7 +1376,7 @@
                     </c:SettingsCard>
                     <Border Margin="0,0,0,4" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1"
                             Visibility="{Binding IsHighContrast, Converter={StaticResource Vis}}">
-                        <TextBlock Text="Kontrastdesign von Windows ist aktiv: Panelfarbe, Deckkraft, Acrylic und Akzentfarbe werden ignoriert, damit alles gut lesbar bleibt." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Info.Text}"/>
+                        <TextBlock Text="Kontrastdesign von Windows ist aktiv: Panelfarbe, Deckkraft, Milchglas und Akzentfarbe werden ignoriert, damit alles gut lesbar bleibt." TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Info.Text}"/>
                     </Border>
                     <c:SettingsCard Icon="&#xE916;" Header="Animation" Description="Wie das Panel aus- und einfährt.">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
@@ -1432,74 +1393,74 @@
                     </c:SettingsCard>
 
                     <TextBlock Text="Panel" Style="{StaticResource SettingsSection}"/>
+                    <!-- Panelfarbe wie die Akzentfarbe in den Windows-Einstellungen: Auswahl rechts, darunter Farbkacheln -->
                     <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,4">
                         <StackPanel>
                             <DockPanel>
-                                <Border DockPanel.Dock="Right" Width="150" Height="40" CornerRadius="6" Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
+                                <ComboBox DockPanel.Dock="Right" Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
+                                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Panelfarbe"/>
+                                <Border DockPanel.Dock="Right" Width="40" Height="32" CornerRadius="4" Margin="0,0,12,0" VerticalAlignment="Center"
+                                        Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                         BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
+                                <TextBlock DockPanel.Dock="Left" Text="&#xE790;" FontFamily="{StaticResource IconFont}" FontSize="18" VerticalAlignment="Center" Margin="0,0,16,0"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
                                     <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
                                 </StackPanel>
                             </DockPanel>
-                            <ItemsControl ItemsSource="{Binding ColorPresets}" Focusable="False" Margin="0,12,0,0">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
-                                                AutomationProperties.Name="{Binding Name}" FocusVisualStyle="{StaticResource FocusVisual}">
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <StackPanel Width="76">
-                                                        <Border x:Name="Ring" Width="40" Height="40" CornerRadius="20" BorderThickness="2" BorderBrush="Transparent" Padding="3">
-                                                            <Border CornerRadius="15" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
-                                                                <TextBlock Text="A" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                           Foreground="{DynamicResource Text.Primary}" x:Name="DesignMark" Visibility="Collapsed"/>
-                                                            </Border>
-                                                        </Border>
-                                                        <TextBlock Text="{Binding Name}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"
-                                                                   Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
-                                                    </StackPanel>
-                                                    <ControlTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Hex}" Value="">
-                                                            <Setter TargetName="DesignMark" Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Ring" Property="Opacity" Value="0.85"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Button.Template>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding PickColorCommand}" ToolTip="Eigene Farbe im Farbwähler aussuchen">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Width="18" Height="18" CornerRadius="9" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
-                                                Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"/>
-                                        <TextBlock Text="Eigene Farbe …"/>
-                                    </StackPanel>
-                                </ui:Button>
-                                <TextBlock Text="{Binding CustomColor}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Foreground="{DynamicResource Text.Secondary}"/>
-                                <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource Status.Error}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           Visibility="{Binding ColorError, Converter={StaticResource Vis}}"/>
+                            <StackPanel Margin="34,14,0,0" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <StackPanel Visibility="{Binding HasRecentColors, Converter={StaticResource Vis}}">
+                                    <TextBlock Text="Zuletzt verwendete Farben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                    <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <TextBlock Text="Panelfarben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding PanelColorChoices}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Text="Windows-Farben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding WindowsColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                </ItemsControl>
                             </StackPanel>
+                            <Border Margin="-16,12,-16,-12" Padding="50,10,16,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}"
+                                    Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <DockPanel>
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Farben anzeigen" Command="{Binding PickColorCommand}"
+                                               ToolTip="Eigene Farbe im Farbwähler aussuchen"/>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Benutzerdefinierte Farben" Style="{StaticResource RowTitle}"/>
+                                        <TextBlock Style="{StaticResource RowDesc}">
+                                            <Run Text="Aktuell:"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
-                    <c:SettingsCard Icon="&#xE7B3;" Header="Hintergrund hinter dem Panel" Description="{Binding BackdropDescription}">
-                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Backdrops}" DisplayMemberPath="Value" SelectedValuePath="Key"
-                                  SelectedValue="{Binding Backdrop}" AutomationProperties.Name="Hintergrund hinter dem Panel"/>
+                    <c:SettingsCard Icon="&#xE790;" Header="Hintergrund" Description="{Binding BackdropDescription}">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}"
+                                  AutomationProperties.Name="Hintergrund"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8B3;" Header="Blur-Stärke" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
+                                    Description="Wie stark der Desktop hinter dem Panel weichgezeichnet wird.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                    Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="Blur-Stärke"/>
+                            <TextBlock Text="{Binding GlassBlur}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE790;" Header="Sättigung" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
+                                    Description="Farbkraft des Desktops hinter dem Glas (100 % = unverändert).">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True"
+                                    Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="Sättigung"/>
+                            <TextBlock Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE7B3;" Header="Milchglas" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}"
-                                    Description="Heller Schleier über dem Weichzeichner – wirkt stärker, ohne den Radius zu ändern (den legt Windows fest).">
+                                    Description="{Binding FrostDescription}">
                         <StackPanel Orientation="Horizontal">
                             <Slider Width="180" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
                                     Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="Milchglas"/>
@@ -1525,7 +1486,7 @@
                                 <TextBlock Text="{Binding DockCount}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                             </StackPanel>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab vier Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
+                    <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab zwei Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
                         <ui:ToggleSwitch IsChecked="{Binding ShowJumpRail}" AutomationProperties.Name="Sprungleiste" />
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">
@@ -1718,6 +1679,8 @@
             </Grid>
         </ScrollViewer>
         </DockPanel>
+            </ui:NavigationView.ContentOverlay>
+        </ui:NavigationView>
 
         <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
             <DockPanel>

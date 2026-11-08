@@ -54,13 +54,6 @@ public static class ThemeService
         }
         foreach (var (key, brush) in overrides) dict[key] = brush;
         Overrides = overrides;
-        // Getönter Hintergrund über Mica (siehe WindowHelper): Fensterfarbe zu 60 % deckend
-        if (dict["Bg.Window"] is SolidColorBrush win)
-        {
-            var tint = new SolidColorBrush(Color.FromArgb(0x99, win.Color.R, win.Color.G, win.Color.B));
-            tint.Freeze();
-            dict["Bg.WindowMica"] = tint;
-        }
 
         var merged = Application.Current.Resources.MergedDictionaries;
         if (merged.Count > 0) merged[0] = dict;
@@ -111,6 +104,20 @@ public static class ThemeService
         catch
         {
             return null;
+        }
+    }
+
+    /// <summary>Windows-Einstellung „Transparenzeffekte“ (HKCU …\Themes\Personalize, EnableTransparency); fehlt sie, gilt „an“.</summary>
+    public static bool TransparencyEffects()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            return key?.GetValue("EnableTransparency") is not int v || v != 0;
+        }
+        catch
+        {
+            return true;
         }
     }
 

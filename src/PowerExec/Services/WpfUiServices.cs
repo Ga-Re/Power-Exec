@@ -97,8 +97,8 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
 
     public IconRef? PickIcon(IconRef current, string heading) => IconPickerWindow.Pick(current, heading);
 
-    public NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder) =>
-        NewGroupWindow.Ask(heading, initialName, validateName, validateFolder);
+    public NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder, string? initialFolder = null) =>
+        NewGroupWindow.Ask(heading, initialName, validateName, validateFolder, initialFolder);
 
     public IReadOnlyList<CatalogTemplate>? PickCatalogTemplates() => CatalogWindow.Pick();
 
@@ -118,4 +118,5 @@ public sealed class WpfThemeInfo : IThemeInfo
 {
     public bool IsHighContrast => ThemeService.IsHighContrast;
     public bool IsDark => ThemeService.IsDark;
+    public bool TransparencyEffects => ThemeService.TransparencyEffects();
 }

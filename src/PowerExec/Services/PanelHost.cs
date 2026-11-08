@@ -56,7 +56,36 @@ public sealed class PanelHost : IPanelView
     public object Owner => Window;
 
     /// <summary>Über die Hover-Zone oder das Mini-Dock auf diesem Monitor ausfahren.</summary>
-    public void ShowFromTrigger(MonitorInfo monitor) => Window.ShowPanel(monitor, viaHotkey: false);
+    public void ShowFromTrigger(MonitorInfo monitor)
+    {
+        var wasOpen = Window.IsOpen && !Window.IsHiding;
+        Window.ShowPanel(monitor, viaHotkey: false);
+        if (!wasOpen) _shownByTrigger = DateTime.UtcNow;
+        KeepTriggersClickable();
+    }
+
+    private DateTime _shownByTrigger;
+
+    /// <summary>
+    /// Klick auf die Hover-Zone eines angehefteten Panels: ein- bzw. ausfahren. Hat das Darüberfahren das Panel gerade
+    /// erst ausgefahren, bleibt es offen – der Klick gehört dann noch zum Öffnen.
+    /// </summary>
+    public void ToggleFromTrigger(MonitorInfo monitor)
+    {
+        if (Window.IsOpen && !Window.IsHiding)
+        {
+            if (DateTime.UtcNow - _shownByTrigger < TimeSpan.FromMilliseconds(600)) return;
+            Window.HidePanel();
+        }
+        else ShowFromTrigger(monitor);
+    }
+
+    /// <summary>Angeheftet: Hover-Zonen über dem Panel halten, damit ein Klick darauf es wieder einfährt.</summary>
+    private void KeepTriggersClickable()
+    {
+        if (!Config.Pinned) return;
+        foreach (var t in Triggers) t.BringAboveWindows();
+    }
 
     public void ShowViaHotkey()
     {
@@ -64,9 +93,20 @@ public sealed class PanelHost : IPanelView
             ? ScreenService.MonitorAtCursor()
             : ScreenService.TriggerMonitors(Config)[0];
         Window.ShowPanel(monitor, viaHotkey: true);
+        KeepTriggersClickable();
     }
 
     public void Hide() => Window.HidePanel();
+
+    public PanelOpenState? OpenState =>
+        Window.IsOpen && !Window.IsHiding && Window.CurrentMonitor is { } m ? new PanelOpenState(m.Index, Window.OpenedViaHotkey) : null;
+
+    public void RestoreOpenState(PanelOpenState state)
+    {
+        var monitor = ScreenService.GetMonitors().FirstOrDefault(m => m.Index == state.MonitorIndex) ?? ScreenService.TriggerMonitors(Config)[0];
+        Window.ShowInPlace(monitor, state.ViaHotkey);
+        KeepTriggersClickable();
+    }
 
     public void HideAfterAction(bool force) => Window.HideAfterAction(force);
 

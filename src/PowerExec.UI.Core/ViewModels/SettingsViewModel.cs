@@ -581,7 +581,7 @@ public sealed class SettingsViewModel : ObservableObject
         AddCategoryCommand = new RelayCommand(AddCategory, () => !string.IsNullOrWhiteSpace(NewCategory));
 
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
-        Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors);
+        Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors, _s.RecentColors);
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
@@ -670,36 +670,6 @@ public sealed class SettingsViewModel : ObservableObject
         new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
     };
 
-    // ---- Navigation: einklappbare Bereiche --------------------------------------
-
-    private bool _navContent = true, _navPanel = true, _navExec = true, _navHelp = true;
-    public bool NavContent { get => _navContent; set => Set(ref _navContent, value); }
-    public bool NavPanel { get => _navPanel; set => Set(ref _navPanel, value); }
-    public bool NavExec { get => _navExec; set => Set(ref _navExec, value); }
-    public bool NavHelp { get => _navHelp; set => Set(ref _navHelp, value); }
-    public ICommand ToggleNavCommand => new RelayCommand(p =>
-    {
-        switch (p?.ToString())
-        {
-            case "content": NavContent = !NavContent; break;
-            case "panel": NavPanel = !NavPanel; break;
-            case "exec": NavExec = !NavExec; break;
-            case "help": NavHelp = !NavHelp; break;
-        }
-    });
-
-    /// <summary>Bereich der gewählten Seite aufklappen (z. B. nach Suche).</summary>
-    private void NavExpandFor(string section)
-    {
-        switch (Pages.FirstOrDefault(x => x.Section == section).Segment)
-        {
-            case "content": NavContent = true; break;
-            case "panel": NavPanel = true; break;
-            case "exec": NavExec = true; break;
-            case "help": NavHelp = true; break;
-        }
-    }
-
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -734,7 +704,6 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
-            NavExpandFor(value);
         }
     }
 
@@ -765,20 +734,10 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<ThemeMode, string>(ThemeMode.Light, "Hell")
     };
 
-    // ---- Darstellung: Akzent, Mica, Größe, Vorlagen ---------------------------------
+    // ---- Darstellung: Akzent, Größe, Vorlagen ---------------------------------------
 
     public bool UseWindowsAccent { get => _s.UseWindowsAccent; set { _s.UseWindowsAccent = value; OnPropertyChanged(); RaisePresets(); } }
 
-    /// <summary>Mica als Hintergrund von Einstellungen und Dialogen (Windows 11 22H2+).</summary>
-    public bool UseMica
-    {
-        get => _s.WindowBackdrop == WindowBackdrop.Mica;
-        set { _s.WindowBackdrop = value ? WindowBackdrop.Mica : WindowBackdrop.Solid; OnPropertyChanged(); RaisePresets(); }
-    }
-    public bool IsMicaSupported => _app.IsMicaSupported;
-    public string MicaDescription => IsMicaSupported
-        ? "Einstellungen und Dialoge nehmen die Desktopfarbe dezent auf (wie der Explorer). Gilt für neu geöffnete Fenster."
-        : "Benötigt Windows 11 (22H2 oder neuer). Für das Panel gibt es Acrylic unter „Panel“.";
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
@@ -802,10 +761,9 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Theme = p.Theme;
         UseWindowsAccent = p.WindowsAccent;
-        UseMica = p.Backdrop == WindowBackdrop.Mica;
         Panel.PanelColor = p.PanelColor;
         Panel.PanelOpacity = p.Opacity;
-        Panel.Acrylic = p.Acrylic;
+        if (p.Frosted) Panel.Frost = Appearance.FrostedPreset;
         RaisePresets();
     }
 
@@ -1545,9 +1503,13 @@ public sealed class SettingsViewModel : ObservableObject
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
         _s.EditorSizes = new Dictionary<string, string>(_app.Settings.EditorSizes);
-        // Panel: Formular, aber „angeheftet“ aus dem laufenden Zustand übernehmen
+        // Panel: Formular, aber „angeheftet“ und eine am Panel gezogene Größe aus dem laufenden Zustand übernehmen
         var panel = Panel.ToConfig();
-        if (_app.Settings.Panels.FirstOrDefault() is { } live) panel.Pinned = live.Pinned;
+        if (_app.Settings.Panels.FirstOrDefault() is { } live)
+        {
+            panel.Pinned = live.Pinned;
+            (panel.PanelWidth, panel.PanelHeightPercent) = Panel.EffectiveSize(live);
+        }
         _s.Panels = new List<PanelConfig> { panel };
         EntryList.ApplyTo(_s);
         _s.MachineGroups = MachineGroups.Select(g => g.ToGroup()).Where(g => g.Name.Length > 0)

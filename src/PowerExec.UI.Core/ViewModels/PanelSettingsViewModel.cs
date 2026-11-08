@@ -14,15 +14,30 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     private readonly ISettingsHost _app;
 
-    public PanelSettingsViewModel(ISettingsHost app, PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors)
+    /// <param name="recentColors">Zuletzt verwendete Panelfarben (wird beim Wählen einer Farbe ergänzt).</param>
+    public PanelSettingsViewModel(ISettingsHost app, PanelConfig config, IReadOnlyList<KeyValuePair<int, string>> monitors,
+        List<string>? recentColors = null)
     {
         _app = app;
+        _recentColors = recentColors ?? new List<string>();
         _c = config.Clone();
+        _startSize = (config.PanelWidth, config.PanelHeightPercent);
         Monitors = monitors;
         ClearHotkeyCommand = new RelayCommand(() => Hotkey = string.Empty);
     }
 
     public string Id => _c.Id;
+
+    /// <summary>Größe beim Öffnen des Formulars (um eine im Panel gezogene Größe nicht zu überschreiben).</summary>
+    private readonly (int Width, int HeightPercent) _startSize;
+
+    /// <summary>
+    /// Größe, die übernommen wird: im Formular geändert → Formular; sonst die aktuelle Größe des Panels
+    /// (am Rand gezogen, während die Einstellungen offen waren).
+    /// </summary>
+    public (int Width, int HeightPercent) EffectiveSize(PanelConfig live) =>
+        (_c.PanelWidth != _startSize.Width ? _c.PanelWidth : live.PanelWidth,
+         _c.PanelHeightPercent != _startSize.HeightPercent ? _c.PanelHeightPercent : live.PanelHeightPercent);
 
     public string Name
     {
@@ -130,6 +145,52 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public IReadOnlyList<ColorPresetViewModel> ColorPresets =>
         _presets ??= PanelColors.Presets.Select(p => new ColorPresetViewModel(this, p)).ToList();
 
+    // Wie die Akzentfarbe in den Windows-Einstellungen: Auswahl „Wie das Design“ / „Manuell“, darunter zuletzt
+    // verwendete Farben, Panelfarben, Windows-Farben und „Benutzerdefinierte Farben“.
+
+    private readonly List<string> _recentColors;
+    private IReadOnlyList<ColorPresetViewModel>? _panelColors, _windowsColors, _recent;
+
+    public static IReadOnlyList<KeyValuePair<string, string>> ColorModes { get; } = new[]
+    {
+        new KeyValuePair<string, string>("design", "Wie das Design"),
+        new KeyValuePair<string, string>("manual", "Manuell")
+    };
+
+    public IReadOnlyList<KeyValuePair<string, string>> ColorModeList => ColorModes;
+
+    /// <summary>„design“ (Farbe des hellen bzw. dunklen Designs) oder „manual“ (eigene Farbe).</summary>
+    public string ColorMode
+    {
+        get => _manualMode || _c.PanelColor.Length > 0 ? "manual" : "design";
+        set
+        {
+            _manualMode = value == "manual";
+            if (!_manualMode) PanelColor = string.Empty;
+            else if (_c.PanelColor.Length == 0) PanelColor = _recentColors.FirstOrDefault() ?? "#1E1E1E";
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(ShowManualColors));
+        }
+    }
+
+    private bool _manualMode;
+
+    public bool ShowManualColors => ColorMode == "manual";
+
+    /// <summary>Zuletzt verwendete Farben (neueste zuerst).</summary>
+    public IReadOnlyList<ColorPresetViewModel> RecentColors =>
+        _recent ??= _recentColors.Select(h => new ColorPresetViewModel(this, new ColorPreset(h, h))).ToList();
+
+    public bool HasRecentColors => _recentColors.Count > 0;
+
+    /// <summary>Ruhige Panelfarben (dunkel und hell).</summary>
+    public IReadOnlyList<ColorPresetViewModel> PanelColorChoices =>
+        _panelColors ??= PanelColors.Presets.Where(p => p.Hex.Length > 0).Select(p => new ColorPresetViewModel(this, p, remember: true)).ToList();
+
+    /// <summary>Die Farben aus den Windows-Einstellungen.</summary>
+    public IReadOnlyList<ColorPresetViewModel> WindowsColors =>
+        _windowsColors ??= PanelColors.WindowsPalette.Select(h => new ColorPresetViewModel(this, new ColorPreset(h, h), remember: true)).ToList();
+
     /// <summary>#RRGGBB oder leer (= Farbe des Designs).</summary>
     public string PanelColor
     {
@@ -146,15 +207,38 @@ public sealed class PanelSettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(ColorError));
             OnPropertyChanged(nameof(PreviewColor));
             OnPropertyChanged(nameof(PreviewText));
-            foreach (var p in ColorPresets) p.Refresh();
+            OnPropertyChanged(nameof(ColorMode));
+            OnPropertyChanged(nameof(ShowManualColors));
+            foreach (var p in ColorPresets.Concat(PanelColorChoices).Concat(WindowsColors).Concat(RecentColors)) p.Refresh();
         }
+    }
+
+    /// <summary>Farbe aus einer Kachel wählen; aus den Paletten gewählte Farben kommen unter „Zuletzt verwendet“.</summary>
+    internal void SelectColor(string hex, bool remember)
+    {
+        PanelColor = hex;
+        if (remember && hex.Length > 0) RememberColor(_c.PanelColor);
+    }
+
+    /// <summary>Farbe vorn in „Zuletzt verwendet“ übernehmen.</summary>
+    private void RememberColor(string hex)
+    {
+        var updated = PanelColors.AddRecent(_recentColors, hex);
+        if (updated.SequenceEqual(_recentColors, StringComparer.OrdinalIgnoreCase)) return;
+        _recentColors.Clear();
+        _recentColors.AddRange(updated);
+        _recent = null;
+        OnPropertyChanged(nameof(RecentColors));
+        OnPropertyChanged(nameof(HasRecentColors));
     }
 
     /// <summary>Eigene Panelfarbe im Farbwähler aussuchen.</summary>
     public System.Windows.Input.ICommand PickColorCommand => _pickColor ??= new RelayCommand(() =>
     {
         var picked = _app.Dialogs.PickColor("Panelfarbe", _c.PanelColor, _app.SettingsDialogOwner);
-        if (picked != null) PanelColor = picked;
+        if (picked == null) return;
+        PanelColor = picked;
+        RememberColor(_c.PanelColor); // benutzerdefinierte Farben landen unter „Zuletzt verwendet“
     });
     private System.Windows.Input.ICommand? _pickColor;
 
@@ -179,72 +263,72 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
         : "Farbe des Designs";
 
-    public bool Acrylic
-    {
-        get => _c.Acrylic;
-        set { _c.Acrylic = value; _c.Backdrop = value ? PanelBackdrop.Acrylic : PanelBackdrop.Clear; RaiseBackdrop(); }
-    }
-
-    /// <summary>Hintergrund hinter dem Panel (Klarglas, Aero-Blur, Acrylic, Mica).</summary>
+    /// <summary>Hintergrund hinter dem Panel: Klarglas (WPF) oder Glas mit eigenem Weichzeichner (Windows 11).</summary>
     public PanelBackdrop Backdrop
     {
         get => _c.EffectiveBackdropSetting;
-        set
-        {
-            _c.Backdrop = value;
-            _c.Acrylic = value != PanelBackdrop.Clear;
-            // Bei voller Deckkraft wäre vom Weichzeichner nichts zu sehen
-            if (value is PanelBackdrop.Aero or PanelBackdrop.Acrylic && _c.PanelOpacity >= 95) PanelOpacity = 70;
-            RaiseBackdrop();
-        }
+        set { _c.Backdrop = value; RaiseBackdrop(); }
     }
 
-    /// <summary>Hinweis zur Deckkraft – mit Weichzeichner: bei 100 % ist er nicht zu sehen.</summary>
-    public string OpacityDescription =>
-        _c.EffectiveBackdropSetting is PanelBackdrop.Aero or PanelBackdrop.Acrylic
-            ? _c.PanelOpacity >= 95
-                ? "Bei voller Deckkraft ist vom Weichzeichner nichts zu sehen – etwa 50–80 % zeigen ihn deutlich."
-                : "Je geringer, desto mehr vom weichgezeichneten Hintergrund scheint durch. Schrift bleibt voll deckend."
-            : "Unter 100 % scheint der Desktop durch; Schrift bleibt voll deckend.";
-
-    public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops { get; } = new[]
+    public static IReadOnlyList<KeyValuePair<PanelBackdrop, string>> BackdropChoices { get; } = new[]
     {
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, "Klarglas (nur Deckkraft)"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Aero, "Aero-Blur"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Acrylic, "Acrylic (Windows 11)"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Mica, "Mica (Windows 11)")
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, PanelBackdrops.Label(PanelBackdrop.Clear)),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Glass, PanelBackdrops.Label(PanelBackdrop.Glass))
     };
 
-    /// <summary>Was die Variante macht – und was auf diesem PC tatsächlich läuft.</summary>
+    public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops => BackdropChoices;
+
+    /// <summary>Variante, die tatsächlich läuft (Rückfall auf Klarglas: Windows 10, Kontrastdesign, Transparenzeffekte aus).</summary>
+    private PanelBackdrop EffectiveBackdrop => PanelBackdrops.Effective(_c.EffectiveBackdropSetting, _app.Theme.OsBuild,
+        _app.Theme.IsHighContrast, _app.Theme.TransparencyEffects);
+
+    /// <summary>Was die gewählte Variante macht – und warum gegebenenfalls Klarglas läuft.</summary>
     public string BackdropDescription
     {
         get
         {
-            var wanted = _c.EffectiveBackdropSetting;
-            var text = wanted switch
-            {
-                PanelBackdrop.Aero => "Klassischer Weichzeichner ohne Rauschen – der Desktop dahinter bleibt eher erkennbar.",
-                PanelBackdrop.Acrylic => "Acrylic wie Startmenü und Kontextmenüs: starker Weichzeichner, leichtes Rauschen, Ecken rundet Windows.",
-                PanelBackdrop.Mica => "Nimmt nur die Farbstimmung des Hintergrundbilds auf, kein Durchblick – ruhig und gut lesbar.",
-                _ => "Kein Weichzeichner; unter 100 % Deckkraft scheint der Desktop leicht durch."
-            };
-            var effective = PanelBackdrops.Effective(wanted, Environment.OSVersion.Version.Build, _app.Theme.IsHighContrast);
-            if (effective != wanted)
-                text += effective == PanelBackdrop.Clear
-                    ? " Im Kontrastdesign ist das Panel deckend."
-                    : $" Auf diesem PC (vor Windows 11 22H2) läuft stattdessen {PanelBackdrops.Label(effective)}.";
-            return text;
+            if (_c.EffectiveBackdropSetting != PanelBackdrop.Glass)
+                return "Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.";
+            if (EffectiveBackdrop == PanelBackdrop.Glass)
+                return "Windows zeichnet den Desktop hinter dem Panel weich, das Panel tönt ihn mit seiner Farbe. Nur Windows 11.";
+            if (_app.Theme.IsHighContrast) return "Im Kontrastdesign läuft Klarglas (deckend).";
+            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return "Erst ab Windows 11 – hier läuft Klarglas.";
+            return "Die Windows-Transparenzeffekte sind aus – es läuft Klarglas.";
         }
     }
 
-    public bool ShowFrost => PanelBackdrops.SupportsFrost(PanelBackdrops.Effective(_c.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, false));
+    /// <summary>Regler des Weichzeichners (nur wenn Glas gewählt ist und läuft).</summary>
+    public bool ShowGlass => EffectiveBackdrop == PanelBackdrop.Glass;
 
-    /// <summary>Milchglas 0–60 %.</summary>
+    /// <summary>Blur-Stärke 0–100.</summary>
+    public int GlassBlur { get => _c.GlassBlur; set { _c.GlassBlur = Math.Clamp(value, 0, 100); OnPropertyChanged(); } }
+
+    /// <summary>Sättigung 0–200 % (100 = unverändert).</summary>
+    public int GlassSaturation { get => _c.GlassSaturation; set { _c.GlassSaturation = Math.Clamp(value, 0, 200); OnPropertyChanged(); } }
+
+
+    /// <summary>Hinweis zur Deckkraft.</summary>
+    public string OpacityDescription => EffectiveBackdrop == PanelBackdrop.Glass
+        ? "Stärke der Tönung mit der Panelfarbe über dem weichgezeichneten Desktop. Schrift bleibt voll deckend."
+        : "Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.";
+
+    /// <summary>Was das Milchglas macht – und warum es im Kontrastdesign fehlt.</summary>
+    public string FrostDescription => _app.Theme.IsHighContrast
+        ? "Im Kontrastdesign ist das Panel deckend, Milchglas entfällt."
+        : EffectiveBackdrop == PanelBackdrop.Glass
+            ? "Helligkeitsschicht über dem Weichzeichner (dunkle Panels abgedunkelt, helle aufgehellt) – Schrift bleibt gut lesbar."
+            : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) – "
+              + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
+
+    public bool ShowFrost => PanelBackdrops.SupportsFrost(EffectiveBackdrop);
+
+    /// <summary>Milchglas 0–60 (0 = aus).</summary>
     public int Frost { get => _c.Frost; set { _c.Frost = Math.Clamp(value, 0, 60); OnPropertyChanged(); } }
 
     private void RaiseBackdrop()
     {
-        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Backdrop), nameof(BackdropDescription), nameof(ShowGlass), nameof(FrostDescription), nameof(ShowFrost),
+                     nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
     }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
@@ -274,20 +358,21 @@ public sealed class ColorPresetViewModel : ObservableObject
 {
     private readonly PanelSettingsViewModel _owner;
 
-    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset)
+    /// <param name="remember">Beim Wählen unter „Zuletzt verwendet“ aufnehmen (Paletten, nicht die Zuletzt-Liste selbst).</param>
+    public ColorPresetViewModel(PanelSettingsViewModel owner, ColorPreset preset, bool remember = false)
     {
         _owner = owner;
         Name = preset.Name;
         Hex = preset.Hex;
         SwatchColor = ArgbColor.FromHex(preset.Hex);
-        SelectCommand = new RelayCommand(() => _owner.PanelColor = Hex);
+        SelectCommand = new RelayCommand(() => _owner.SelectColor(Hex, remember));
     }
 
     public string Name { get; }
     public string Hex { get; }
     /// <summary>Farbpunkt; null = Farbe des Designs (die Oberfläche zeigt dann die Panelfarbe des Designs).</summary>
     public ArgbColor? SwatchColor { get; }
-    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : $"{Name} ({Hex})";
+    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : Name == Hex ? Hex : $"{Name} ({Hex})";
     public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
     public ICommand SelectCommand { get; }
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));

@@ -112,8 +112,6 @@ public sealed class AppSettings
     /// <summary>Akzentfarbe von Windows übernehmen (statt der festen Akzentfarbe des Designs).</summary>
     public bool UseWindowsAccent { get; set; }
 
-    /// <summary>Hintergrund von Einstellungen und Dialogen: deckend oder Mica (Windows 11).</summary>
-    public WindowBackdrop WindowBackdrop { get; set; } = WindowBackdrop.Solid;
 
     /// <summary>Parameter-Formular direkt im aufgeklappten Eintrag statt nur im Ausführen-Dialog.</summary>
     public bool InlineParameters { get; set; } = true;
@@ -166,6 +164,9 @@ public sealed class AppSettings
 
     /// <summary>Zuletzt verwendete Größe des Eintragsdialogs je Art („Url“ → „900x700“).</summary>
     public Dictionary<string, string> EditorSizes { get; set; } = new();
+
+    /// <summary>Zuletzt gewählte Panelfarben (#RRGGBB, neueste zuerst, höchstens <see cref="PanelColors.RecentCount"/>).</summary>
+    public List<string> RecentColors { get; set; } = new();
 
     // Panel-Zustand
     public List<string> Favorites { get; set; } = new();

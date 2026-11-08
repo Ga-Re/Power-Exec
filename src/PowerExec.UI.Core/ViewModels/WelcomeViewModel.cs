@@ -19,12 +19,14 @@ public sealed class WelcomeViewModel : ObservableObject
     private ScreenEdge _edge;
     private bool _startWithWindows;
     private bool _useWindowsAccent;
+    private string _hotkey;
 
     public WelcomeViewModel(IWelcomeHost app)
     {
         _app = app;
         var panel = app.Settings.Panels.FirstOrDefault();
         _edge = panel?.Edge ?? ScreenEdge.Right;
+        _hotkey = panel is { Hotkey.Length: > 0 } ? panel.Hotkey : PanelConfig.DefaultHotkey;
         _startWithWindows = app.Settings.StartWithWindows;
         _useWindowsAccent = app.Settings.UseWindowsAccent;
         _createSample = app.Settings.Folders.Count == 0;
@@ -33,6 +35,7 @@ public sealed class WelcomeViewModel : ObservableObject
         SkipCommand = new RelayCommand(Skip);
         ChooseFolderCommand = new RelayCommand(ChooseFolder);
         SetEdgeCommand = new RelayCommand(p => { if (Enum.TryParse<ScreenEdge>(p?.ToString(), out var e)) Edge = e; });
+        ResetHotkeyCommand = new RelayCommand(() => Hotkey = PanelConfig.DefaultHotkey);
     }
 
     /// <summary>Schritt 0–3.</summary>
@@ -80,7 +83,17 @@ public sealed class WelcomeViewModel : ObservableObject
     };
 
     // Schritt 3: Tastenkürzel und Start
-    public string HotkeyText => _app.Settings.Panels.FirstOrDefault() is { Hotkey.Length: > 0 } p ? DisplayText.Hotkey(p.Hotkey) : "keins (in den Einstellungen festlegen)";
+    /// <summary>Tastenkürzel des ersten Panels (Vorgabe Strg+Alt+Leertaste); leer = keins.</summary>
+    public string Hotkey
+    {
+        get => _hotkey;
+        set { if (Set(ref _hotkey, value ?? string.Empty)) OnPropertyChanged(nameof(HotkeyText)); }
+    }
+
+    public string HotkeyText => _hotkey.Length > 0 ? DisplayText.Hotkey(_hotkey) : "keins – Panel nur über die Hover-Zone";
+
+    /// <summary>Zurück auf Strg+Alt+Leertaste.</summary>
+    public ICommand ResetHotkeyCommand { get; }
     public bool StartWithWindows { get => _startWithWindows; set => Set(ref _startWithWindows, value); }
     public bool UseWindowsAccent { get => _useWindowsAccent; set => Set(ref _useWindowsAccent, value); }
 
@@ -117,7 +130,9 @@ public sealed class WelcomeViewModel : ObservableObject
         s.WelcomeDone = true;
         s.StartWithWindows = _startWithWindows;
         s.UseWindowsAccent = _useWindowsAccent;
+        if (s.Panels.Count == 0) s.Panels.Add(new PanelConfig());
         foreach (var p in s.Panels) p.Edge = _edge;
+        s.Panels[0].Hotkey = _hotkey;
         var folder = _folder;
         if (folder == null && _createSample) folder = CreateSampleFolder();
         if (folder != null && !s.Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))

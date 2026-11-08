@@ -277,6 +277,24 @@ public class WelcomeViewModelTests
     }
 
     [Fact]
+    public void HotkeyDefaultsToCtrlAltSpaceAndIsAppliedOnFinish()
+    {
+        var host = new FakeWelcomeHost();
+        var vm = new WelcomeViewModel(host);
+        Assert.Equal("Ctrl+Alt+Space", vm.Hotkey);
+        Assert.Equal("Strg+Alt+Leertaste", vm.HotkeyText);
+
+        vm.Hotkey = "Ctrl+Shift+P";
+        vm.Finish();
+        Assert.Equal("Ctrl+Shift+P", Assert.Single(host.Applied).Panels[0].Hotkey);
+
+        vm.Hotkey = string.Empty;
+        Assert.Contains("keins", vm.HotkeyText);
+        vm.ResetHotkeyCommand.Execute(null);
+        Assert.Equal("Ctrl+Alt+Space", vm.Hotkey);
+    }
+
+    [Fact]
     public void SkipOnlyMarksWelcomeAsDone()
     {
         var host = new FakeWelcomeHost();

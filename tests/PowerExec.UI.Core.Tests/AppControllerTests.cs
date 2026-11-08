@@ -1,4 +1,5 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -62,7 +63,6 @@ internal sealed class FakeAppUi : IAppUi
     public RunCredential? AskCredential(object? owner, string target, bool remote) => null;
     public Task<bool> PasteIntoPreviousAsync() => Task.FromResult(true);
     public IReadOnlyList<KeyValuePair<int, string>> Monitors { get; } = new[] { new KeyValuePair<int, string>(0, "Monitor 1") };
-    public bool IsMicaSupported => false;
     public bool ShutDown { get; private set; }
     public void Shutdown() => ShutDown = true;
     public void Dispose() { }
@@ -84,6 +84,16 @@ internal sealed class FakePanelView(AppPanel panel) : IPanelView
     public void SetBusy(bool busy) => Busy = busy;
     public void ApplyFullscreen(FullscreenProbe? probe) { }
     public void Dispose() => Disposed = true;
+
+    public PanelOpenState? OpenState => IsOpen ? new PanelOpenState(1, OpenedViaHotkey) : null;
+    public PanelOpenState? Restored { get; private set; }
+
+    public void RestoreOpenState(PanelOpenState state)
+    {
+        Restored = state;
+        IsOpen = true;
+        OpenedViaHotkey = state.ViaHotkey;
+    }
 }
 
 internal sealed class FakeWindow(object? viewModel) : ISettingsWindow
@@ -188,6 +198,59 @@ public sealed class AppControllerTests : IDisposable
         Assert.Single(app.Hosts);
         Assert.NotSame(first, app.Hosts[0].View);
         Assert.Contains("Haupt", error);
+    }
+
+    [Fact]
+    public void OpenPanelStaysOpenAfterRecreate()
+    {
+        var app = Create(new PanelConfig { Name = "A", Hotkey = "Ctrl+Alt+A" }, new PanelConfig { Name = "B", Hotkey = "Ctrl+Alt+B" });
+        app.ShowPanelFromHotkey(app.Hosts[1]);
+
+        app.Recreate();
+
+        var a = (FakePanelView)app.Hosts[0].View;
+        var b = (FakePanelView)app.Hosts[1].View;
+        Assert.False(a.IsOpen);
+        Assert.Null(a.Restored);
+        Assert.True(b.IsOpen);
+        Assert.Equal(new PanelOpenState(1, true), b.Restored);
+
+        // Alte Fenster schließen erst etwas später (die neuen liegen schon darüber) – kein Aufblitzen
+        var oldViews = app.FakeUi.Panels.Take(2).ToList();
+        Assert.All(oldViews, v => Assert.False(v.Disposed));
+        var timer = app.FakeUi.FakeDispatcher.Timers.Last(t => t.IsRunning);
+        timer.Tick();
+        Assert.All(oldViews, v => Assert.True(v.Disposed));
+    }
+
+    [Fact]
+    public void DroppedFolderAsGroupOpensNewGroupDialogWithChosenOptions()
+    {
+        var app = Create();
+        var folder = Path.Combine(_dir, "Werkzeuge");
+        Directory.CreateDirectory(folder);
+        app.FakeUi.FakeDialogs.ChoiceAnswer = (0, false); // als Gruppe
+        app.FakeUi.FakeDialogs.NewGroupAnswer = new NewGroupSpec("Werkzeuge", IconRef.None, folder, "#3B82F6", ItemLayout.Grid);
+
+        app.AddDropped(new[] { new DroppedTarget(CustomEntryKind.Folder, folder, "Werkzeuge") }, group: null);
+
+        Assert.Contains("AskNewGroup Ordner als Gruppe hinzufügen", app.FakeUi.FakeDialogs.Asked);
+        Assert.Contains(app.Settings.Folders, f => f.Path == folder);
+        Assert.Equal(ItemLayout.Grid, GroupManager.LayoutOf(app.Settings, "Werkzeuge"));
+    }
+
+    [Fact]
+    public void DroppedFolderDialogCancelledAddsNothing()
+    {
+        var app = Create();
+        var folder = Path.Combine(_dir, "Abbruch");
+        Directory.CreateDirectory(folder);
+        app.FakeUi.FakeDialogs.ChoiceAnswer = (0, false);
+        app.FakeUi.FakeDialogs.NewGroupAnswer = null;
+
+        app.AddDropped(new[] { new DroppedTarget(CustomEntryKind.Folder, folder, "Abbruch") }, group: null);
+
+        Assert.DoesNotContain(app.Settings.Folders, f => f.Path == folder);
     }
 
     [Fact]

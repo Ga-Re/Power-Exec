@@ -3,43 +3,70 @@ namespace PowerExec.Core.Config;
 /// <summary>Hintergrund hinter dem Panel.</summary>
 public enum PanelBackdrop
 {
-    /// <summary>Kein Weichzeichner, nur die Deckkraft.</summary>
+    /// <summary>Klarglas: Deckkraft der Panelfarbe, dazu Milchglas (Helligkeitsschicht und Tönung).</summary>
     Clear,
-    /// <summary>Klassischer Weichzeichner ohne Rauschen.</summary>
+    /// <summary>Bis 0.20: Aero-Blur hinter einem Systemfenster – wird beim Einlesen zu <see cref="Clear"/>.</summary>
     Aero,
-    /// <summary>System-Acrylic von Windows 11 (wie Startmenü und Kontextmenüs).</summary>
+    /// <summary>Bis 0.20: System-Acrylic von Windows 11 – wird beim Einlesen zu <see cref="Clear"/>.</summary>
     Acrylic,
-    /// <summary>Farbstimmung des Hintergrundbilds, kein Durchblick (Windows 11).</summary>
-    Mica
+    /// <summary>Bis 0.20: Mica von Windows 11 – wird beim Einlesen zu <see cref="Clear"/>.</summary>
+    Mica,
+    /// <summary>
+    /// Glas (eigener Weichzeichner, Windows 11): Hintergrund hinter dem Panel über die Windows-Composition im Panelfenster
+    /// selbst weichgezeichnet (Weichzeichner, Sättigung, Helligkeit), darüber die Panelfarbe.
+    /// </summary>
+    Glass
 }
 
-/// <summary>Welche Variante tatsächlich läuft – abhängig von Windows-Version und Kontrastdesign.</summary>
+/// <summary>Welche Variante tatsächlich läuft und wie das Milchglas aussieht.</summary>
 public static class PanelBackdrops
 {
-    /// <summary>Ab Windows 11 22H2 (Build 22621) setzt Windows Acrylic und Mica als Fensterhintergrund selbst.</summary>
-    public const int SystemBackdropBuild = 22621;
-
     /// <summary>Ab Windows 11 (Build 22000) rundet Windows Fensterecken selbst.</summary>
     public const int RoundedCornersBuild = 22000;
 
-    public static PanelBackdrop Effective(PanelBackdrop wanted, int osBuild, bool highContrast)
+    /// <summary>Eigener Weichzeichner (Composition mit Hintergrund des Hosts) ab Windows 11.</summary>
+    public const int GlassBuild = 22000;
+
+    /// <summary>
+    /// Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr: Windows zeichnete sie hinter einem eigenen
+    /// Systemfenster, das beim Ein- und Ausfahren sichtbar ruckelte.
+    /// </summary>
+    public static bool IsRetired(PanelBackdrop b) => b is PanelBackdrop.Aero or PanelBackdrop.Acrylic or PanelBackdrop.Mica;
+
+    /// <summary>
+    /// Tatsächlich laufende Variante. Glas fällt auf Klarglas (mit Milchglas) zurück: unter Windows 10, im Kontrastdesign
+    /// und wenn die Transparenzeffekte von Windows ausgeschaltet sind.
+    /// </summary>
+    public static PanelBackdrop Effective(PanelBackdrop wanted, int osBuild, bool highContrast, bool transparencyEffects = true)
     {
-        if (highContrast) return PanelBackdrop.Clear;
-        if (wanted is PanelBackdrop.Acrylic or PanelBackdrop.Mica && osBuild < SystemBackdropBuild) return PanelBackdrop.Aero;
+        if (highContrast || IsRetired(wanted)) return PanelBackdrop.Clear;
+        if (wanted == PanelBackdrop.Glass && (osBuild < GlassBuild || !transparencyEffects)) return PanelBackdrop.Clear;
         return wanted;
     }
 
-    /// <summary>Weichzeichner-Varianten brauchen ein Fenster ohne Transparenz-Schicht (Windows zeichnet dahinter).</summary>
+    /// <summary>Glas braucht ein Fenster ohne Transparenz-Schicht (Windows zeichnet die Composition dahinter).</summary>
     public static bool NeedsSystemWindow(PanelBackdrop effective) => effective != PanelBackdrop.Clear;
 
-    /// <summary>Milchglas ist nur sinnvoll, wenn weichgezeichnet wird.</summary>
-    public static bool SupportsFrost(PanelBackdrop effective) => effective is PanelBackdrop.Aero or PanelBackdrop.Acrylic;
+    /// <summary>Milchglas (Helligkeitsschicht) gibt es auf Klarglas und auf Glas.</summary>
+    public static bool SupportsFrost(PanelBackdrop effective) => effective is PanelBackdrop.Clear or PanelBackdrop.Glass;
 
-    public static string Label(PanelBackdrop b) => b switch
+    /// <summary>Weichzeichner-Radius (Standardabweichung in Pixeln) zum Regler 0–100.</summary>
+    public static float GlassBlurRadius(int blur) => Math.Clamp(blur, 0, 100) * 0.5f;
+
+    /// <summary>Sättigung als Faktor (1 = unverändert) zum Regler 0–200 %.</summary>
+    public static float GlassSaturation(int percent) => Math.Clamp(percent, 0, 200) / 100f;
+
+
+    /// <summary>
+    /// Deckkraft der Helligkeitsschicht unter der Panelfarbe: dunkle Fläche Schwarz 40–60 %, helle Fläche Weiß 50–70 %;
+    /// der Milchglas-Regler (0–60) wählt den Wert in diesem Bereich, 0 = aus.
+    /// </summary>
+    public static double FrostBrightness(int frost, bool darkSurface)
     {
-        PanelBackdrop.Aero => "Aero-Blur",
-        PanelBackdrop.Acrylic => "Acrylic",
-        PanelBackdrop.Mica => "Mica",
-        _ => "Klarglas"
-    };
+        if (frost <= 0) return 0;
+        var t = Math.Clamp(frost, 0, 60) / 60.0;
+        return (darkSurface ? 0.40 : 0.50) + 0.20 * t;
+    }
+
+    public static string Label(PanelBackdrop b) => b == PanelBackdrop.Glass ? "Glas (eigener Weichzeichner)" : "Klarglas";
 }

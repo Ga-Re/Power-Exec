@@ -88,23 +88,63 @@ public class MoveTopLevelTests
 public class PanelBackdropTests
 {
     [Fact]
-    public void OldAcrylicSwitchBecomesBackdrop()
+    public void RetiredBackdropsBecomeClearGlass()
     {
-        var p = new PanelConfig { Acrylic = true };
-        p.Normalize();
-        Assert.Equal(PanelBackdrop.Acrylic, p.Backdrop);
-        var q = new PanelConfig { Backdrop = PanelBackdrop.Clear, Acrylic = true };
-        q.Normalize();
-        Assert.False(q.Acrylic);
+        foreach (var old in new[] { PanelBackdrop.Aero, PanelBackdrop.Acrylic, PanelBackdrop.Mica })
+        {
+            var p = new PanelConfig { Backdrop = old, Acrylic = true };
+            p.Normalize();
+            Assert.Equal(PanelBackdrop.Clear, p.Backdrop);
+            Assert.False(p.Acrylic);
+        }
+        var legacy = new PanelConfig { Acrylic = true };
+        legacy.Normalize();
+        Assert.Equal(PanelBackdrop.Clear, legacy.Backdrop);
     }
 
     [Fact]
-    public void FallbacksByWindowsVersion()
+    public void EffectiveIsClearGlassEverywhere()
     {
-        Assert.Equal(PanelBackdrop.Acrylic, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 22631, false));
-        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 19045, false));
-        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Mica, 22000, false));
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 22631, false));
         Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Mica, 26100, true));
-        Assert.False(PanelBackdrops.SupportsFrost(PanelBackdrop.Mica));
+        Assert.False(PanelBackdrops.NeedsSystemWindow(PanelBackdrop.Clear));
+        Assert.True(PanelBackdrops.SupportsFrost(PanelBackdrop.Clear));
+    }
+
+    [Fact]
+    public void GlassFallsBackToClearGlass()
+    {
+        Assert.Equal(PanelBackdrop.Glass, PanelBackdrops.Effective(PanelBackdrop.Glass, 22631, false, transparencyEffects: true));
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 19045, false));                         // Windows 10
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, true));                          // Kontrastdesign
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, false, transparencyEffects: false)); // Transparenzeffekte aus
+        Assert.True(PanelBackdrops.NeedsSystemWindow(PanelBackdrop.Glass));
+        var p = new PanelConfig { Backdrop = PanelBackdrop.Glass, GlassBlur = 500, GlassSaturation = -3 };
+        p.Normalize();
+        Assert.Equal(PanelBackdrop.Glass, p.Backdrop);
+        Assert.Equal((100, 0), (p.GlassBlur, p.GlassSaturation));
+        Assert.Equal(p.GlassBlur, p.Clone().GlassBlur);
+    }
+
+    [Fact]
+    public void FrostBrightnessStaysInItsRange()
+    {
+        Assert.Equal(0, PanelBackdrops.FrostBrightness(0, darkSurface: true));
+        Assert.Equal(0.40, PanelBackdrops.FrostBrightness(1, darkSurface: true), 2);
+        Assert.Equal(0.60, PanelBackdrops.FrostBrightness(60, darkSurface: true), 3);
+        Assert.Equal(0.50, PanelBackdrops.FrostBrightness(1, darkSurface: false), 2);
+        Assert.Equal(0.70, PanelBackdrops.FrostBrightness(99, darkSurface: false), 3);
+    }
+
+    [Fact]
+    public void RecentColorsStayShortAndUnique()
+    {
+        var recent = new List<string> { "#111111", "#222222", "#333333", "#444444", "#555555" };
+        var updated = PanelColors.AddRecent(recent, "#333333");
+        Assert.Equal(new[] { "#333333", "#111111", "#222222", "#444444", "#555555" }, updated);
+        updated = PanelColors.AddRecent(updated, "#abcdef");
+        Assert.Equal(PanelColors.RecentCount, updated.Count);
+        Assert.Equal("#ABCDEF", updated[0]);
+        Assert.Equal(new[] { "#ABCDEF" }, PanelColors.NormalizeRecent(new[] { "kaputt", "#abcdef", "#ABCDEF" }));
     }
 }

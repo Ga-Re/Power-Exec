@@ -77,7 +77,6 @@ internal sealed class FakeEntryHost : ISettingsWindowHost
     public bool IsInstalledViaSetup => false;
     public void ShowWelcome() => Calls.Add("ShowWelcome");
     public IReadOnlyList<KeyValuePair<int, string>> Monitors { get; } = new[] { new KeyValuePair<int, string>(0, "Monitor 1 (Hauptmonitor)") };
-    public bool IsMicaSupported => true;
     public void ShowProfilesDialog(ProfilesViewModel vm, object? owner) => Calls.Add("ShowProfilesDialog " + vm.Item.FullPath);
 }
 

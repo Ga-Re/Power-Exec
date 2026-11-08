@@ -1,9 +1,11 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
@@ -35,7 +37,8 @@ public partial class PanelWindow : Window
         _host = host;
         InitializeComponent();
         // Weichzeichner-Varianten: Fenster ohne Transparenz-Schicht, Windows zeichnet dahinter und rundet die Ecken
-        _backdrop = PanelBackdrops.Effective(host.Config.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+        _backdrop = PanelBackdrops.Effective(host.Config.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast,
+            ThemeService.TransparencyEffects());
         _systemWindow = PanelBackdrops.NeedsSystemWindow(_backdrop);
         if (_systemWindow)
         {
@@ -51,6 +54,7 @@ public partial class PanelWindow : Window
             ClearValue(HeightProperty);
         }
         DataContext = host.ViewModel;
+        DetachPeekCard();
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
         AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
         host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
@@ -61,19 +65,35 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
+        Interop.PanelWindowNative.DisableTransitions(_hwnd);
         if (_systemWindow) Interop.NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
         if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
         {
-            if (src.CompositionTarget != null) src.CompositionTarget.BackgroundColor = Colors.Transparent;
+            if (src.CompositionTarget != null)
+            {
+                src.CompositionTarget.BackgroundColor = Colors.Transparent;
+            }
             src.AddHook(SystemWindowHook);
         }
         ApplyBackdrop();
+        if (GlassActive)
+        {
+            HostContentInChildWindow();
+            ApplyFrost(Cfg.Frost); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
+        }
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
 
         Deactivated += (_, _) => OnDeactivated();
-        PreviewKeyDown += (_, e) =>
+        PreviewKeyDown += OnPanelPreviewKeyDown;
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(() => { if (IsOpen) Place(); });
+    }
+
+    /// <summary>Tastenkürzel des Panels (am Fenster bzw. bei Glas am Inhalt im Kindfenster).</summary>
+    private void OnPanelPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Handled) return;
         {
             if (HandleShortcut(e)) e.Handled = true;
             else if (e.Key == Key.Escape)
@@ -100,8 +120,7 @@ public partial class PanelWindow : Window
                 e.Handled = true;
                 Vm.AddFromClipboardCommand.Execute(null);
             }
-        };
-        DpiChanged += (_, _) => Dispatcher.BeginInvoke(() => { if (IsOpen) Place(); });
+        }
     }
 
     private TimeSpan AnimationDuration => _app.Settings.Animation switch
@@ -134,11 +153,28 @@ public partial class PanelWindow : Window
             Reveal = 0;
         }
         Place();
-        if (!IsVisible) Show();
+        var wasVisible = IsVisible;
+        if (!wasVisible) Show();
+        EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
-        if (_systemWindow) Interop.Acrylic.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
+        if (!wasVisible && _contentHost is { IsDisposed: false })
+        {
+            // Glas: das Kindfenster erst fertig zeichnen lassen – sonst fällt das Zeichnen in den schnellen Anfang des Ausfahrens
+            PanelBorder.UpdateLayout();
+            Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        }
+        if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
         _poll.Start();
+        if (!wasVisible && _contentHost is { IsDisposed: false } && !_skipNextAnimation)
+        {
+            // Glas: Fokus, Aktivierung und erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach.
+            // Sonst fallen diese Arbeiten in die ersten (schnellsten) Bilder des Ausfahrens, und es ruckelt.
+            Vm.OnShown();
+            if (viaHotkey) FocusSearch();
+            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => { if (IsOpen && !_hiding) Animate(show: true); });
+            return;
+        }
         Animate(show: true);
         Vm.OnShown();
         if (viaHotkey) FocusSearch();
@@ -153,12 +189,72 @@ public partial class PanelWindow : Window
         SearchBox.SelectAll();
     }
 
+    // ---- Vorschau im eigenen Fenster ----------------------------------------------------------
+
+    private PeekWindow? _peekWindow;
+
+    /// <summary>Vorschau-Karte aus dem Panel lösen: sie erscheint in einem eigenen Fenster neben dem Panel.</summary>
+    private void DetachPeekCard()
+    {
+        if (PeekCard.Parent is Panel parent) parent.Children.Remove(PeekCard);
+        PeekCard.Margin = new Thickness(12);
+        PeekCloseButton.Command = Vm.ClosePeekCommand;
+        Vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(ViewModels.PanelViewModel.ShowPeek) or nameof(ViewModels.PanelViewModel.Peek)) UpdatePeekWindow();
+        };
+    }
+
+    /// <summary>
+    /// Vorschaufenster zeigen, ausblenden und mit dem aktuellen Eintrag füllen. Der Datenkontext wird direkt gesetzt:
+    /// eine Bindung der Karte an „Peek“ zieht nach dem Umzug ins eigene Fenster nicht zuverlässig nach.
+    /// </summary>
+    private void UpdatePeekWindow()
+    {
+        PeekCard.DataContext = Vm.Peek;
+        if (Vm.ShowPeek && IsOpen && !_hiding && _monitor != null)
+        {
+            _peekWindow ??= new PeekWindow(PeekCard, Resources, this) { DataContext = Vm };
+            _peekWindow.PlaceBeside(_rect, _monitor.WorkArea, _monitor.Scale, Cfg.Edge);
+            if (!_peekWindow.IsVisible) _peekWindow.Show();
+            ScreenService.Place(new WindowInteropHelper(_peekWindow).Handle, _peekWindow.PixelRect);
+        }
+        else _peekWindow?.Hide();
+    }
+
+    /// <summary>Für den Selbsttest: ist das Vorschaufenster sichtbar?</summary>
+    internal bool PeekWindowVisible => _peekWindow?.IsVisible == true;
+
     /// <summary>Fenster endgültig schließen (Panel entfernt oder Einstellungen neu angewendet).</summary>
     public void CloseForGood()
     {
         _poll.Stop();
         IsOpen = false;
+        _peekWindow?.Close();
+        _peekWindow = null;
+        DisposeGlass();
+        DisposeContentHost();
         Close();
+    }
+
+    /// <summary>Fährt gerade ein.</summary>
+    internal bool IsHiding => _hiding;
+
+    /// <summary>Monitor, auf dem das Panel zuletzt gezeigt wurde.</summary>
+    internal MonitorInfo? CurrentMonitor => _monitor;
+
+    private bool _skipNextAnimation;
+
+    /// <summary>
+    /// Nach dem Neuaufbau (geänderte Einstellungen) sofort wieder zeigen: ohne Gleiten und ohne Fokus – die Einstellungen
+    /// bleiben vorn, das Panel zeigt gleich die Wirkung.
+    /// </summary>
+    public void ShowInPlace(MonitorInfo monitor, bool openedViaHotkey)
+    {
+        _skipNextAnimation = true;
+        ShowPanel(monitor, viaHotkey: false);
+        _skipNextAnimation = false;
+        OpenedViaHotkey = openedViaHotkey;
     }
 
     public void HidePanel()
@@ -177,7 +273,7 @@ public partial class PanelWindow : Window
     }
 
     private static readonly string[] AppearanceKeys =
-        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
+        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Subtle", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
 
     /// <summary>
     /// Panelfarbe und Deckkraft anwenden. Bei einer hellen Farbe im dunklen Design (oder umgekehrt)
@@ -194,7 +290,7 @@ public partial class PanelWindow : Window
         foreach (var d in Resources.MergedDictionaries.Where(IsOwnPalette).ToList()) Resources.MergedDictionaries.Remove(d);
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
-        // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
+        // Deckkraft wie am Regler eingestellt (auch bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
 
@@ -218,8 +314,8 @@ public partial class PanelWindow : Window
             }
             var d = PanelColors.Derive(rgb);
             Resources["Bg.Panel"] = Solid(rgb, opacity);
-            Resources["Bg.Hover"] = Solid(d.Hover, Math.Max(opacity, 0.85));
-            Resources["Bg.Selected"] = Solid(d.Selected, Math.Max(opacity, 0.9));
+            Resources["Bg.Hover"] = Solid(d.Hover, HoverAlpha(opacity));
+            Resources["Bg.Selected"] = Solid(d.Selected, SelectedAlpha(opacity));
             Resources["Bg.Chip"] = Solid(d.Selected, 1);
             Resources["Bg.Input"] = Solid(d.Input, 1);
             Resources["Border.Panel"] = Solid(d.Border, 1);
@@ -229,51 +325,226 @@ public partial class PanelWindow : Window
         {
             var c = themeBrush.Color;
             Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
+            // Glas: auch Auswahl und Hover lassen den Weichzeichner durchscheinen
+            if (_backdrop == PanelBackdrop.Glass)
+            {
+                if (Application.Current.Resources["Bg.Hover"] is SolidColorBrush h)
+                    Resources["Bg.Hover"] = Solid(new Rgb(h.Color.R, h.Color.G, h.Color.B), HoverAlpha(opacity));
+                if (Application.Current.Resources["Bg.Selected"] is SolidColorBrush sel)
+                    Resources["Bg.Selected"] = Solid(new Rgb(sel.Color.R, sel.Color.G, sel.Color.B), SelectedAlpha(opacity));
+            }
         }
+        // Glas: auch Flächen in den Details (Parameter) lassen den Weichzeichner durchscheinen
+        if (_backdrop == PanelBackdrop.Glass && !ThemeService.IsHighContrast && TryFindResource("Bg.Subtle") is SolidColorBrush subtle)
+            Resources["Bg.Subtle"] = Solid(new Rgb(subtle.Color.R, subtle.Color.G, subtle.Color.B), HoverAlpha(opacity));
         // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
         Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
-        // Milchglas: heller Schleier (dunkle Panels halb so stark), nur über einem Weichzeichner
-        var frost = PanelBackdrops.SupportsFrost(_backdrop) ? s.Frost / 100.0 : 0;
-        if (!Vm.IsDarkSurface) FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost) : null;
-        else FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost * 0.5) : null;
+        ApplyFrost(s.Frost);
     }
 
-    // ---- Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica ---------------------------------
+    /// <summary>
+    /// Deckkraft von Hover- und Auswahlflächen: bei Klarglas fast deckend (Lesbarkeit über unruhigem Desktop), bei Glas
+    /// etwas über der Panel-Deckkraft – der Weichzeichner scheint auch durch ausgeklappte Einträge.
+    /// </summary>
+    private double HoverAlpha(double opacity) => _backdrop == PanelBackdrop.Glass ? Math.Min(1, opacity + 0.15) : Math.Max(opacity, 0.85);
+
+    private double SelectedAlpha(double opacity) => _backdrop == PanelBackdrop.Glass ? Math.Min(1, opacity + 0.25) : Math.Max(opacity, 0.9);
+
+    /// <summary>
+    /// Fast unsichtbare Grundfläche (Deckkraft 1/255) für Glas: Windows lässt Klicks und Ablegen in einem durchsichtigen
+    /// Kindfenster dort durchfallen, wo die Deckkraft 0 ist – leere Flächen und Gruppenköpfe ohne Farbe wären taub.
+    /// </summary>
+    private static readonly SolidColorBrush HitSurface = CreateHitSurface();
+
+    private static SolidColorBrush CreateHitSurface()
+    {
+        var b = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
+        b.Freeze();
+        return b;
+    }
+
+    // ---- Hintergrund: Klarglas mit Milchglas ------------------------------------------------
 
     private readonly PanelBackdrop _backdrop;
     private readonly bool _systemWindow;
 
-    /// <summary>Tatsächlich laufende Variante (nach Rückfall für Windows 10 bzw. Kontrastdesign).</summary>
+    /// <summary>Tatsächlich laufende Variante (nach Rückfall für Kontrastdesign bzw. alte Einstellungen).</summary>
     internal PanelBackdrop EffectiveBackdrop => _backdrop;
 
+    /// <summary>
+    /// Klarglas zeichnet WPF selbst (transparentes Fenster, Milchglas in <see cref="ApplyFrost"/>). Glas läuft in einem
+    /// Fenster ohne Transparenz-Schicht: dahinter hängt der eigene Weichzeichner (<see cref="Interop.GlassBackdrop"/>).
+    /// Scheitert er, bleibt das Fenster durchsichtig und das Milchglas von WPF übernimmt (wie Klarglas).
+    /// </summary>
     private void ApplyBackdrop()
     {
-        if (_hwnd == IntPtr.Zero) return;
-        if (!_systemWindow)
+        if (_hwnd == IntPtr.Zero || !_systemWindow) return;
+        Interop.PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+        EnsureTransparentBackground();
+        if (_backdrop != PanelBackdrop.Glass || GlassError != null || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        try
         {
-            Interop.Acrylic.Apply(_hwnd, false);
-            return;
+            _glass ??= new GlassBackdrop(_hwnd);
+            UpdateGlass();
         }
-        Interop.Acrylic.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
-        switch (_backdrop)
+        catch (Exception ex)
         {
-            case PanelBackdrop.Acrylic:
-                Interop.Acrylic.Apply(_hwnd, false);
-                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: true);
-                break;
-            case PanelBackdrop.Mica:
-                Interop.Acrylic.Apply(_hwnd, false);
-                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: false);
-                break;
-            default: // Aero-Blur: klassischer Weichzeichner
-                if (Environment.OSVersion.Version.Build >= PanelBackdrops.SystemBackdropBuild) Interop.Acrylic.SetSystemBackdrop(_hwnd, null);
-                Interop.Acrylic.Apply(_hwnd, true, acrylic: false);
-                break;
+            // Für Bericht und Fehlersuche: Typ, Meldung und die Stelle, an der es scheiterte
+            var frame = new System.Diagnostics.StackTrace(ex).GetFrames().FirstOrDefault(f => f.GetMethod()?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true)
+                        ?? new System.Diagnostics.StackTrace(ex).GetFrame(0);
+            GlassError = $"{ex.GetType().Name}: {ex.Message} (in {frame?.GetMethod()?.DeclaringType?.Name}.{frame?.GetMethod()?.Name})";
+            AppLog.Error("Glas-Weichzeichner nicht verfügbar, Rückfall auf Milchglas", ex);
+            DisposeGlass();
         }
     }
 
     /// <summary>
-    /// Windows zeigt Acrylic und Mica nur für „aktive“ Fenster, sonst eine schlichte Ersatzfarbe. Das Panel wird oft
+    /// Werte des Weichzeichners nachziehen: Blur, Sättigung, Helligkeitsschicht (dunkle Fläche Schwarz, helle Weiß) und
+    /// Tönung mit der Panelfarbe samt Deckkraft (eigene Farbe bzw. Farbe des hellen oder dunklen Designs).
+    /// </summary>
+    private void UpdateGlass()
+    {
+        if (_glass is not GlassBackdrop glass || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        var s = Cfg;
+        var dark = Vm.IsDarkSurface;
+        var shade = dark ? 0f : 1f;
+        var panel = GlassTint;
+        glass.Update(PanelBackdrops.GlassBlurRadius(s.GlassBlur), PanelBackdrops.GlassSaturation(s.GlassSaturation),
+            new System.Numerics.Vector4(shade, shade, shade, (float)PanelBackdrops.FrostBrightness(s.Frost, dark)),
+            new System.Numerics.Vector4(panel.R / 255f, panel.G / 255f, panel.B / 255f, panel.A / 255f));
+    }
+
+    /// <summary>Für den Selbsttest: Tönung des Weichzeichners (Panelfarbe samt Deckkraft).</summary>
+    internal Color GlassTint => TryFindResource("Bg.Panel") is SolidColorBrush b
+        ? Color.FromArgb((byte)Math.Round(b.Color.A * Math.Clamp(b.Opacity, 0, 1)), b.Color.R, b.Color.G, b.Color.B)
+        : Colors.Transparent;
+
+    /// <summary>Fenster ohne Transparenz-Schicht: Hintergrund der WPF-Zeichenfläche durchsichtig (entsteht erst beim Anzeigen).</summary>
+    private void EnsureTransparentBackground()
+    {
+        if (!_systemWindow || _hwnd == IntPtr.Zero) return;
+        if (HwndSource.FromHwnd(_hwnd)?.CompositionTarget is { } target) target.BackgroundColor = Colors.Transparent;
+    }
+
+    // ---- Glas: Inhalt im Kindfenster ----------------------------------------------------------
+    //
+    // Windows setzt die Ebenen eines Fensters so zusammen (DirectComposition): 1. was direkt ins Fenster gezeichnet wird
+    // (GDI oder DirectX – also WPF), 2. Composition-Baum (nicht „topmost“), 3. Kindfenster, 4. Composition-Baum (topmost).
+    // Der Weichzeichner (2) läge über dem WPF-Inhalt (1). Deshalb zieht der Inhalt bei Glas in ein durchsichtiges
+    // Kindfenster (3) um – ab Windows 8 dürfen Kindfenster Transparenz pro Pixel haben. Es bleibt ein einziges Fenster:
+    // Gleiten, Zuschnitt und runde Ecken gelten für Weichzeichner und Inhalt gemeinsam.
+
+    private HwndSource? _contentHost;
+
+    /// <summary>Für den Selbsttest: liegt der Inhalt im durchsichtigen Kindfenster über dem Weichzeichner?</summary>
+    internal bool ContentInChildWindow => _contentHost is { IsDisposed: false, RootVisual: not null };
+
+    private void HostContentInChildWindow()
+    {
+        if (_contentHost != null || Content is not FrameworkElement root) return;
+        NativeMethods.GetClientRect(_hwnd, out var rc);
+        const int WS_CHILD = 0x40000000, WS_VISIBLE = 0x10000000, WS_CLIPSIBLINGS = 0x04000000;
+        var parameters = new HwndSourceParameters("PowerExecPanelInhalt")
+        {
+            ParentWindow = _hwnd,
+            WindowStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+            PositionX = 0,
+            PositionY = 0,
+            Width = Math.Max(1, rc.Right - rc.Left),
+            Height = Math.Max(1, rc.Bottom - rc.Top),
+            UsesPerPixelTransparency = true
+        };
+        // Vom Fenster geerbte Werte (Datenkontext, Ressourcen, Schrift) gehen beim Umzug verloren – mitnehmen
+        Content = null;
+        root.DataContext = DataContext;
+        if (root.Resources.Count == 0 && root.Resources.MergedDictionaries.Count == 0) root.Resources = Resources;
+        else root.Resources.MergedDictionaries.Insert(0, Resources);
+        root.SetBinding(TextElement.FontFamilyProperty, new System.Windows.Data.Binding(nameof(FontFamily)) { Source = this });
+        root.SetBinding(TextElement.FontSizeProperty, new System.Windows.Data.Binding(nameof(FontSize)) { Source = this });
+        root.SetBinding(TextElement.ForegroundProperty, new System.Windows.Data.Binding(nameof(Foreground)) { Source = this });
+        root.PreviewKeyDown += OnPanelPreviewKeyDown;
+        root.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
+
+        _contentHost = new HwndSource(parameters) { SizeToContent = SizeToContent.Manual, RootVisual = root };
+        if (_contentHost.CompositionTarget != null) _contentHost.CompositionTarget.BackgroundColor = Colors.Transparent;
+        if (HwndSource.FromHwnd(_hwnd) is { } src) src.AddHook(ChildHostHook);
+    }
+
+    /// <summary>Kindfenster immer so groß wie der Fensterinhalt.</summary>
+    private IntPtr ChildHostHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_SIZE = 0x0005;
+        if (msg == WM_SIZE && _contentHost is { IsDisposed: false } host)
+        {
+            var w = (int)((long)lParam & 0xFFFF);
+            var h = (int)(((long)lParam >> 16) & 0xFFFF);
+            const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
+            NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, Math.Max(1, w), Math.Max(1, h), SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+        return IntPtr.Zero;
+    }
+
+    private void DisposeContentHost()
+    {
+        if (_contentHost == null) return;
+        _contentHost.RootVisual = null;
+        _contentHost.Dispose();
+        _contentHost = null;
+    }
+
+    /// <summary>Eigener Weichzeichner (nur bei Glas unter Windows 11; als IDisposable, damit ältere Windows den Typ nie anfassen).</summary>
+    private IDisposable? _glass;
+
+    private void DisposeGlass()
+    {
+        _glass?.Dispose();
+        _glass = null;
+    }
+
+    /// <summary>Für den Selbsttest: läuft der eigene Weichzeichner?</summary>
+    internal bool GlassActive => _glass != null;
+
+    /// <summary>Für den Selbsttest: Fehler beim Aufbau des Weichzeichners (null = keiner).</summary>
+    internal string? GlassError { get; private set; }
+
+    /// <summary>
+    /// Milchglas: von unten Helligkeitsschicht (dunkle Fläche Schwarz, helle Weiß; Stärke vom Milchglas-Regler),
+    /// darüber die Panelfarbe als Tönung (mit der eingestellten Deckkraft). Ohne Milchglas
+    /// (Regler 0, Kontrastdesign) trägt der Panelrahmen die Panelfarbe wie bisher.
+    /// </summary>
+    private void ApplyFrost(int frost)
+    {
+        if (GlassActive)
+        {
+            // Glas: Helligkeitsschicht und Tönung liegen im Weichzeichner
+            PanelBorder.Background = HitSurface;
+            FrostBrightness.Background = null;
+            FrostTint.Background = null;
+            FrostLayer.Visibility = Visibility.Collapsed;
+            UpdateGlass();
+            return;
+        }
+        var alpha = ThemeService.IsHighContrast || !PanelBackdrops.SupportsFrost(_backdrop)
+            ? 0 : PanelBackdrops.FrostBrightness(frost, Vm.IsDarkSurface);
+        if (alpha <= 0)
+        {
+            PanelBorder.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+            FrostBrightness.Background = null;
+            FrostTint.ClearValue(Border.BackgroundProperty);
+            FrostLayer.Visibility = Visibility.Collapsed;
+            return;
+        }
+        PanelBorder.Background = Brushes.Transparent;
+        FrostBrightness.Background = Solid(Vm.IsDarkSurface ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), alpha);
+        FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+        FrostLayer.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Für den Selbsttest: Deckkraft der Helligkeitsschicht (0 = kein Milchglas).</summary>
+    internal double FrostBrightnessAlpha => FrostLayer.Visibility == Visibility.Visible && FrostBrightness.Background is SolidColorBrush b ? b.Color.A / 255.0 : 0;
+
+    /// <summary>
+    /// Windows zeigt Hintergründe eines Systemfensters nur für „aktive“ Fenster, sonst eine schlichte Ersatzfarbe. Das Panel wird oft
     /// ohne Fokus gezeigt (Hover-Zone) – es soll trotzdem wie aktiv aussehen.
     /// </summary>
     private IntPtr SystemWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -282,7 +553,7 @@ public partial class PanelWindow : Window
         if (msg == WM_NCACTIVATE && wParam == IntPtr.Zero)
         {
             handled = true;
-            return Interop.Acrylic.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
+            return Interop.PanelWindowNative.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
         }
         // Beim Gleiten liegt das Fenster kurz auf dem Nachbarmonitor (dort weggeschnitten). Hat der eine andere
         // Skalierung, meldet Windows einen DPI-Wechsel – WPF würde Fenster und Inhalt mitten im Gleiten umskalieren.
@@ -453,8 +724,8 @@ public partial class PanelWindow : Window
         var r = PanelSlide.At(_rect, _hidden, Reveal);
         var visible = _clipSlide ? PanelSlide.Visible(r, _monitor.WorkArea) : new System.Drawing.Rectangle(0, 0, r.Width, r.Height);
         bool full = visible.Size == r.Size;
-        // Aero-Blur zeichnet Windows nur mit Fensterbereich; die anderen brauchen einen nur, solange zugeschnitten wird
-        System.Drawing.Rectangle? region = KeepsRegion || !full ? visible : null;
+        // Fensterbereich nur, solange zugeschnitten wird (Taskleiste oder Nachbarmonitor an der Kante)
+        System.Drawing.Rectangle? region = !full ? visible : null;
 
         // Wird der sichtbare Teil kleiner, zuerst zuschneiden, dann verschieben (sonst umgekehrt) –
         // so ragt das Panel auch für ein einzelnes Bild nicht über die Taskleiste oder auf den Nachbarmonitor.
@@ -473,13 +744,10 @@ public partial class PanelWindow : Window
         if (_regionApplied && Nullable.Equals(region, _region)) return; // unverändert: kein Fensterbereich pro Bild
         _region = region;
         _regionApplied = true;
-        if (region is not { } v) { Interop.Acrylic.ClearRegion(_hwnd); return; }
+        if (region is not { } v) { Interop.PanelWindowNative.ClearRegion(_hwnd); return; }
         var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
-        Interop.Acrylic.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
+        Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
-
-    /// <summary>Aero-Blur braucht dauerhaft einen Fensterbereich (ohne verschwindet der Weichzeichner nach dem Einfahren).</summary>
-    private bool KeepsRegion => _backdrop == PanelBackdrop.Aero;
 
     /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;
@@ -509,7 +777,7 @@ public partial class PanelWindow : Window
 
     private void Animate(bool show)
     {
-        var duration = AnimationDuration;
+        var duration = _skipNextAnimation ? TimeSpan.Zero : AnimationDuration;
         if (_systemWindow)
         {
             AnimateReveal(show, duration);
@@ -552,6 +820,7 @@ public partial class PanelWindow : Window
     {
         _hiding = false;
         IsOpen = false;
+        _peekWindow?.Hide();
         OpenedViaHotkey = false;
         Hide();
         Vm.ResetForNextOpen();
@@ -565,7 +834,8 @@ public partial class PanelWindow : Window
         // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
         if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
 
-        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2));
+        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2))
+                      || (_peekWindow is { IsVisible: true } peek && ScreenService.CursorInside(peek.PixelRect, 2));
         if (inside)
         {
             _outsideSince = null;

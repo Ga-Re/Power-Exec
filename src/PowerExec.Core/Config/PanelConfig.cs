@@ -28,17 +28,24 @@ public sealed class PanelConfig
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
     public string PanelColor { get; set; } = string.Empty;
     public int PanelOpacity { get; set; } = 100;
-    /// <summary>Bis 0.19: Acrylic an/aus – wird zu <see cref="Backdrop"/> (und bleibt dazu passend gesetzt).</summary>
+    /// <summary>Bis 0.19: Acrylic an/aus. Wird nur noch eingelesen und beim Normalisieren zurückgesetzt.</summary>
     public bool Acrylic { get; set; }
 
-    /// <summary>Hintergrund hinter dem Panel: Klarglas, Aero-Blur, Acrylic oder Mica (null = aus <see cref="Acrylic"/> übernehmen).</summary>
+    /// <summary>Hintergrund hinter dem Panel; alte Varianten (Aero-Blur, Acrylic, Mica) werden zu Klarglas.</summary>
     public PanelBackdrop? Backdrop { get; set; }
 
-    /// <summary>Milchglas: heller bzw. dunkler Schleier über dem Weichzeichner, 0–60 %.</summary>
+    /// <summary>Milchglas: Helligkeitsschicht unter der Panelfarbe (dunkel Schwarz, hell Weiß), 0–60 (0 = aus).</summary>
     public int Frost { get; set; } = 15;
 
+    /// <summary>Glas: Stärke des Weichzeichners, 0–100 (siehe <see cref="PanelBackdrops.GlassBlurRadius"/>).</summary>
+    public int GlassBlur { get; set; } = 60;
+
+    /// <summary>Glas: Sättigung des Hintergrunds in Prozent, 0–200 (100 = unverändert).</summary>
+    public int GlassSaturation { get; set; } = 125;
+
+
     [System.Text.Json.Serialization.JsonIgnore]
-    public PanelBackdrop EffectiveBackdropSetting => Backdrop ?? (Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear);
+    public PanelBackdrop EffectiveBackdropSetting => Backdrop is { } b && !PanelBackdrops.IsRetired(b) ? b : PanelBackdrop.Clear;
 
     /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
     public bool ShowDock { get; set; }
@@ -55,6 +62,9 @@ public sealed class PanelConfig
     /// <summary>Tastenkürzel öffnet ein Suchfenster in der Bildschirmmitte (Spotlight) statt des Panels am Rand.</summary>
     public bool HotkeyOpensSpotlight { get; set; }
     public string Hotkey { get; set; } = string.Empty;
+
+    /// <summary>Vorgabe für das erste Panel (Ersteinrichtung): Strg+Alt+Leertaste.</summary>
+    public const string DefaultHotkey = "Ctrl+Alt+Space";
     public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
     public bool Pinned { get; set; }
 
@@ -88,7 +98,7 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, GlassBlur = GlassBlur, GlassSaturation = GlassSaturation, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
         ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
@@ -117,9 +127,12 @@ public sealed class PanelConfig
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
         PanelOpacity = Math.Clamp(PanelOpacity, 20, 100);
-        Backdrop ??= Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear;
-        Acrylic = Backdrop != PanelBackdrop.Clear;
+        // Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr (ruckelten beim Gleiten): Klarglas mit Milchglas
+        Backdrop = EffectiveBackdropSetting;
+        Acrylic = false;
         Frost = Math.Clamp(Frost, 0, 60);
+        GlassBlur = Math.Clamp(GlassBlur, 0, 100);
+        GlassSaturation = Math.Clamp(GlassSaturation, 0, 200);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);
         HotZoneLength = Math.Clamp(HotZoneLength, 40, 4000);

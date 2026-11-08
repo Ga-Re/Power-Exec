@@ -109,6 +109,34 @@ public class PanelSettingsViewModelTests
     }
 
     [Fact]
+    public void PanelColorWorksLikeWindowsAccentPicker()
+    {
+        var host = new FakeEntryHost { FakeDialogs = { ColorAnswer = "#123456" } };
+        var recent = new List<string>();
+        var vm = new PanelSettingsViewModel(host, new PanelConfig(), Array.Empty<KeyValuePair<int, string>>(), recent);
+
+        Assert.Equal("design", vm.ColorMode);
+        Assert.False(vm.ShowManualColors);
+        Assert.Equal(48, vm.WindowsColors.Count);
+
+        vm.ColorMode = "manual";
+        Assert.True(vm.ShowManualColors);
+        Assert.NotEqual(string.Empty, vm.PanelColor);
+
+        vm.WindowsColors[0].SelectCommand.Execute(null);
+        Assert.Equal("#FFB900", vm.PanelColor);
+        Assert.True(vm.WindowsColors[0].IsSelected);
+        Assert.Equal(new[] { "#FFB900" }, recent);
+
+        vm.PickColorCommand.Execute(null); // „Farben anzeigen“ → benutzerdefinierte Farbe
+        Assert.Equal(new[] { "#123456", "#FFB900" }, recent);
+        Assert.Equal("#123456", vm.RecentColors[0].Hex);
+
+        vm.ColorMode = "design";
+        Assert.Equal(string.Empty, vm.PanelColor);
+    }
+
+    [Fact]
     public void ColorPickerAndHotkeyText()
     {
         var host = new FakeEntryHost { FakeDialogs = { ColorAnswer = "#FFFFFF" } };

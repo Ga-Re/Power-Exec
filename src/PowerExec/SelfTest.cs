@@ -118,7 +118,7 @@ public sealed partial class SelfTestController : AppController
                     }
                 }
             });
-            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", Acrylic = true, PanelOpacity = 90 });
+            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", PanelOpacity = 90, Frost = 30 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 14;
@@ -231,9 +231,21 @@ public sealed partial class SelfTestController : AppController
                     if (!vm.TogglePeek() || vm.Peek == null) Fail("Vorschau: öffnet nicht");
                     else if (!vm.Peek.HasCode) Fail("Vorschau: kein Code für ein PowerShell-Script");
                     await Settle();
-                    if (host.Window.Content is FrameworkElement peekRoot) Screenshot(peekRoot, "panel-vorschau");
+                    if (!host.Window.PeekWindowVisible) Fail("Vorschau: eigenes Fenster neben dem Panel erscheint nicht");
+                    if (!ReferenceEquals(host.Window.PeekCard.DataContext, vm.Peek)) Fail("Vorschau: Fenster zeigt nicht den ausgewählten Eintrag (leer)");
+                    // Anderer Eintrag angeklickt: Vorschau folgt
+                    if (vm.VisibleItems.FirstOrDefault(i => !ReferenceEquals(i, psItem) && !i.IsSingleClick) is { } other)
+                    {
+                        vm.Select(other);
+                        await Settle();
+                        if (vm.Peek?.Item != other || !ReferenceEquals(host.Window.PeekCard.DataContext, vm.Peek))
+                            Fail("Vorschau: folgt dem angeklickten Eintrag nicht");
+                    }
+                    Screenshot(host.Window.PeekCard, "panel-vorschau");
                     vm.TogglePeek();
+                    await Settle();
                     if (vm.ShowPeek) Fail("Vorschau: zweite Leertaste schließt nicht");
+                    if (host.Window.PeekWindowVisible) Fail("Vorschau: Fenster bleibt nach dem Schließen sichtbar");
                 }
 
                 // Strg+K: Gruppe suchen und anspringen
@@ -351,35 +363,59 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
             }
 
-            Step("Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica");
+            Step("Hintergrund: Klarglas, Milchglas und Glas");
             {
                 // Messung für den CI-Bericht: Fenster so groß wie das Panel? Ist hinter dem Panel weichgezeichnet?
                 // Dafür liegt ein Streifenmuster hinter dem Panel; ohne Weichzeichner bleibt der Kontrast benachbarter Pixel hoch.
                 var cfg = Settings.Panels[0];
                 var (beforeBackdrop, beforeOpacity, beforeFrost, beforeWidth) = (cfg.Backdrop, cfg.PanelOpacity, cfg.Frost, cfg.PanelWidth);
+                var transparency = ThemeService.TransparencyEffects();
                 var report = new System.Text.StringBuilder();
                 report.AppendLine("### Hintergrund hinter dem Panel");
                 report.AppendLine();
-                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(SystemParameters.IsGlassEnabled ? "an" : "aus")} · Deckkraft 40 %, Milchglas 0 %, Breite 560");
+                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(transparency ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
                 report.AppendLine();
-                report.AppendLine("| Gewählt | Läuft als | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s |");
-                report.AppendLine("|---|---|---|---|---:|---:|");
+                report.AppendLine("| Variante | Läuft als | Weichzeichner | Helligkeitsschicht (WPF) | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s | Gleiten: Bilder · längstes Bild |");
+                report.AppendLine("|---|---|---|---:|---|---|---:|---:|---|");
                 cfg.PanelOpacity = 40;
-                cfg.Frost = 0;
                 cfg.PanelWidth = 560;
-                foreach (var b in new[] { PanelBackdrop.Clear, PanelBackdrop.Aero, PanelBackdrop.Mica, PanelBackdrop.Acrylic })
+                // Klarglas ohne und mit Milchglas; alte Varianten (Acrylic) laufen als Klarglas; Glas mit eigenem Weichzeichner
+                foreach (var (b, frost, name) in new[] { (PanelBackdrop.Clear, 0, "klarglas"), (PanelBackdrop.Clear, 30, "milchglas"),
+                             (PanelBackdrop.Acrylic, 60, "alt-acrylic"), (PanelBackdrop.Glass, 30, "glas") })
                 {
                     cfg.Backdrop = b;
+                    cfg.Frost = frost;
                     CreateHosts();
                     var host = WpfHost(0);
-                    var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+                    var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast, transparency);
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
+                    if (expected == PanelBackdrop.Glass && !host.Window.GlassActive)
+                        Fail($"Glas: Weichzeichner läuft nicht ({host.Window.GlassError ?? "ohne Fehlermeldung"})");
+                    if (host.Window.GlassActive)
+                    {
+                        // Tönung muss der Panelfarbe folgen (samt Deckkraft)
+                        var tint = host.Window.GlassTint;
+                        var panelBrush = host.Window.TryFindResource("Bg.Panel") as System.Windows.Media.SolidColorBrush;
+                        if (panelBrush == null || tint.R != panelBrush.Color.R || tint.G != panelBrush.Color.G || tint.B != panelBrush.Color.B)
+                            Fail($"Glas: Tönung {tint} folgt nicht der Panelfarbe {panelBrush?.Color}");
+                        if (Math.Abs(tint.A - 255 * 0.4) > 3) Fail($"Glas: Tönung mit Deckkraft {tint.A / 2.55:0} % statt 40 %");
+                    }
+                    // Glas: die Helligkeitsschicht liegt im Weichzeichner, nicht in WPF
+                    var wantAlpha = ThemeService.IsHighContrast || host.Window.GlassActive ? 0 : PanelBackdrops.FrostBrightness(frost, host.ViewModel.IsDarkSurface);
+                    if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)
+                        Fail($"Milchglas {frost}: Helligkeitsschicht {host.Window.FrostBrightnessAlpha:P0} statt {wantAlpha:P0}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
                     var monitor = ScreenService.TriggerMonitors(host.Config)[0];
                     var rect = ScreenService.PanelRect(monitor, host.Config);
                     var stripes = StripeWindow(rect);
                     stripes.Show();
                     await Settle();
+                    // Gleiten messen: Abstände zwischen gezeichneten Bildern während des Einfahrens
+                    var frames = new List<double>();
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    var last = 0.0;
+                    EventHandler onFrame = (_, _) => { var t = clock.Elapsed.TotalMilliseconds; frames.Add(t - last); last = t; };
+                    System.Windows.Media.CompositionTarget.Rendering += onFrame;
                     host.Window.ShowPanel(monitor, viaHotkey: true);
                     var hwnd = new System.Windows.Interop.WindowInteropHelper(host.Window).Handle;
                     if (PanelBackdrops.NeedsSystemWindow(expected) && Settings.Animation != AnimationMode.Off)
@@ -391,6 +427,8 @@ public sealed partial class SelfTestController : AppController
                             Fail($"Hintergrund {b}: Fenster ändert beim Einfahren die Größe ({mid.Right - mid.Left}×{mid.Bottom - mid.Top} statt {rect.Width}×{rect.Height})");
                     }
                     await Settle();
+                    System.Windows.Media.CompositionTarget.Rendering -= onFrame;
+                    var slide = frames.Count > 1 ? $"{frames.Count} · {frames.Skip(1).Max():0} ms" : "–";
                     await Task.Delay(400);
                     Interop.NativeMethods.GetWindowRect(hwnd, out var wr);
                     var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(host.Window);
@@ -399,10 +437,36 @@ public sealed partial class SelfTestController : AppController
                     var c1 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                     await Task.Delay(1500);
                     var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
-                    report.AppendLine($"| {b} | {expected} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} |");
+                    var glassState = host.Window.GlassActive ? "aktiv" : host.Window.GlassError is { } ge ? "Fehler: " + ge.Replace("|", "/") : "–";
+                    report.AppendLine($"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
                     if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
                         Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
-                    if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + b.ToString().ToLowerInvariant());
+                    if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + name);
+                    // Bildschirmaufnahme: zeigt auch, was Windows hinter dem WPF-Inhalt zeichnet (Weichzeichner)
+                    ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-" + name);
+                    if (host.Window.GlassActive)
+                    {
+                        // Inhalt muss über dem Weichzeichner liegen: im durchsichtigen Kindfenster (Ebene über dem Composition-Baum)
+                        if (!host.Window.ContentInChildWindow)
+                            Fail("Glas: Panelinhalt liegt nicht im Kindfenster über dem Weichzeichner");
+                        if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
+                            Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
+                        // Leere Flächen müssen Klicks und Ablegen annehmen (Deckkraft 0 fiele im Kindfenster durch)
+                        if (host.Window.PanelBorder.Background is not System.Windows.Media.SolidColorBrush { Color.A: > 0 })
+                            Fail("Glas: Panelfläche ohne Deckkraft – Klicks auf leere Flächen fielen durch");
+                        // Bindungen an die Panel-Wurzel (früher ans Fenster) müssen auch im Kindfenster greifen
+                        if (host.Window.PeekCard.IsVisible != host.ViewModel.ShowPeek)
+                            Fail("Glas: Vorschau-Karte sichtbar, obwohl keine Vorschau offen ist (Bindung an die Panel-Wurzel greift nicht)");
+                        // Inaktiv: ein anderes Fenster bekommt den Fokus, der Weichzeichner muss bleiben (angeheftet, damit es nicht einfährt)
+                        var pinned = host.Config.Pinned;
+                        host.Config.Pinned = true;
+                        stripes.Activate();
+                        await Settle();
+                        host.Config.Pinned = pinned;
+                        var c3 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
+                        ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-glas-inaktiv");
+                        report.AppendLine($"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
+                    }
                     host.Window.HidePanel();
                     stripes.Close();
                     await Settle();
@@ -413,6 +477,29 @@ public sealed partial class SelfTestController : AppController
                 File.WriteAllText(Path.Combine(reportDir, "selftest-backdrop.md"), report.ToString(), new System.Text.UTF8Encoding(false));
                 (cfg.Backdrop, cfg.PanelOpacity, cfg.Frost, cfg.PanelWidth) = (beforeBackdrop, beforeOpacity, beforeFrost, beforeWidth);
                 CreateHosts();
+            }
+
+            Step("Angeheftet: Klick auf die Hover-Zone fährt ein und aus");
+            {
+                var host = WpfHost(0);
+                var pinned = host.Config.Pinned;
+                host.Config.Pinned = true;
+                var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                host.ToggleFromTrigger(monitor); // direkt nach dem Ausfahren: gehört noch zum Öffnen
+                await Settle();
+                if (!host.Window.IsOpen || host.Window.IsHiding) Fail("Angeheftet: Klick direkt nach dem Ausfahren hat das Panel wieder eingefahren");
+                await Task.Delay(700);
+                host.ToggleFromTrigger(monitor);
+                await Settle();
+                if (host.Window.IsOpen) Fail("Angeheftet: Klick auf die Hover-Zone fährt das Panel nicht ein");
+                host.ToggleFromTrigger(monitor);
+                await Settle();
+                if (!host.Window.IsOpen) Fail("Angeheftet: Klick auf die Hover-Zone fährt das Panel nicht aus");
+                host.Config.Pinned = pinned;
+                host.Window.HidePanel();
+                await Settle();
             }
 
             Step("Darstellung: Windows-Akzentfarbe und Größe");
@@ -901,7 +988,48 @@ public sealed partial class SelfTestController : AppController
                 Step("Einstellungen " + section);
                 await Settle();
                 if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
+                if (settingsWindow.NavigationSectionForTest != section)
+                    Fail($"Navigation: Abschnitt „{section}“ ist in der Leiste nicht ausgewählt ({settingsWindow.NavigationSectionForTest ?? "nichts"})");
                 await Settle();
+            }
+
+            Step("Einstellungen: Zurück und einklappbarer Rand");
+            {
+                var nav = settingsWindow.NavigationForTest;
+                settingsVm.Section = "look";
+                await Settle();
+                settingsVm.Section = "behavior";
+                await Settle();
+                if (!nav.CanGoBack) Fail("Navigation: Zurück ist nach zwei Abschnitten nicht möglich");
+                nav.GoBack();
+                await Settle();
+                if (settingsVm.Section != "look") Fail($"Navigation: Zurück führt zu „{settingsVm.Section}“ statt „look“");
+                nav.IsPaneOpen = false;
+                await Settle();
+                if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
+                nav.IsPaneOpen = true;
+                await Settle();
+                // Oberkategorien (Inhalte, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
+                var categories = nav.MenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Where(i => i.MenuItems.Count > 0).ToList();
+                if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
+                if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
+                {
+                    exec.IsExpanded = false;
+                    await Settle();
+                    if (settingsWindow.Content is FrameworkElement navRoot) Screenshot(navRoot, "settings-navigation-kategorie-zu");
+                    exec.IsExpanded = true;
+                    await Settle();
+                    settingsVm.Section = "remote";
+                    await Settle();
+                    if (settingsWindow.NavigationSectionForTest != "remote") Fail("Navigation: Unterpunkt einer Oberkategorie lässt sich nicht auswählen");
+                }
+                settingsVm.Section = "custom";
+                await Settle();
+                // Auswahlspalte der eigenen Einträge: Kästchen ohne Beschriftung ohne Innenabstand (sonst halb verdeckt)
+                var listChecks = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.CheckBox>()
+                    .Where(c => c.IsVisible && c.Content == null).ToList();
+                if (listChecks.Count == 0) Fail("Eigene Einträge: kein Auswahl-Kästchen gefunden");
+                else if (listChecks.Any(c => c.Padding.Left > 0)) Fail("Eigene Einträge: Auswahl-Kästchen hat Innenabstand und wird abgeschnitten");
             }
 
             Step("Fluent-Bedienelemente (WPF UI) im Einstellungsfenster");
@@ -933,7 +1061,6 @@ public sealed partial class SelfTestController : AppController
                 ThemeService.Apply(Settings);
                 await Settle();
                 static bool IsLightBrush(object? b) => b is System.Windows.Media.SolidColorBrush sb && PanelColors.IsLight(new Rgb(sb.Color.R, sb.Color.G, sb.Color.B));
-                if (!IsLightBrush(Application.Current.Resources[Views.WindowHelper.MicaTintKey])) Fail("Design: Mica-Tönung bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.Background is System.Windows.Media.SolidColorBrush { Color.A: 255 } && !IsLightBrush(settingsWindow.Background))
                     Fail("Design: Einstellungsfenster bleibt nach dem Wechsel auf Hell dunkel");
                 if (settingsWindow.TryFindResource("TextFillColorPrimaryBrush") is not System.Windows.Media.SolidColorBrush fluentText || IsLightBrush(fluentText))
@@ -1138,6 +1265,24 @@ public sealed partial class SelfTestController : AppController
             Background = System.Windows.Media.Brushes.White, Content = new System.Windows.Controls.Border { Background = brush },
             Left = px.Left / scale - 40, Top = px.Top / scale - 40, Width = px.Width / scale + 80, Height = px.Height / scale + 80, Title = "Streifen"
         };
+    }
+
+    /// <summary>Bildschirmbereich als PNG speichern (mit allem, was Windows dort zusammensetzt).</summary>
+    private void ScreenCapture(int x, int y, int width, int height, string name)
+    {
+        if (_progressFile == null || width < 1 || height < 1) return;
+        try
+        {
+            var dir = Path.Combine(Path.GetDirectoryName(_progressFile)!, "screens");
+            Directory.CreateDirectory(dir);
+            using var bmp = new System.Drawing.Bitmap(width, height);
+            using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(x, y, 0, 0, bmp.Size);
+            bmp.Save(Path.Combine(dir, name + ".png"), System.Drawing.Imaging.ImageFormat.Png);
+        }
+        catch (Exception ex)
+        {
+            Step("Bildschirmaufnahme fehlgeschlagen: " + ex.Message);
+        }
     }
 
     /// <summary>Mittlerer Helligkeitsunterschied benachbarter Pixel (120×40 px ab x, y auf dem Bildschirm).</summary>

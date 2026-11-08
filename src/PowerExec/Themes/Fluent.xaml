@@ -77,6 +77,19 @@
     </Style>
 
     <!--
+        Kontrollkästchen ohne Beschriftung (z. B. Auswahlspalte in Listen): ohne den Innenabstand von WPF UI
+        (11 px links), sonst ist das Kästchen in schmalen Spalten nur halb zu sehen.
+    -->
+    <Style TargetType="CheckBox" BasedOn="{StaticResource DefaultCheckBoxStyle}">
+        <Style.Triggers>
+            <Trigger Property="Content" Value="{x:Null}">
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="MinWidth" Value="0"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
         Menüeintrag mit optionaler Trennlinie darüber (Tag="Separator"), für Menüs aus ItemsSource (z. B. Gruppenfarben:
         Farben, dann „Eigene Farbe …“). Die Fluent-Menüeinträge von WPF UI kennen das nicht; gleiche Maße und Farben.
     -->
@@ -96,6 +109,9 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                <!-- Aktive Auswahl (Darstellung, Farbe …): Häkchen in Akzentfarbe -->
+                                <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                           Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed"/>
                                 <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"
                                                   TextElement.Foreground="{TemplateBinding Foreground}"/>
                             </Grid>
@@ -107,6 +123,10 @@
                         </Trigger>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}"/>

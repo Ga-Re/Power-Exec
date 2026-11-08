@@ -9,6 +9,10 @@
 ; SourceDir ist eine Ordner-Veröffentlichung (self-contained, ReadyToRun): Power-Exec startet daraus
 ; ohne Entpacken in einen Temp-Ordner – schneller und ohne Ärger mit Virenscannern.
 
+#if VER < EncodeVer(6, 6, 0)
+  #error Inno Setup 6.6 oder neuer erforderlich (WizardStyle=modern dynamic: hell/dunkel wie Windows)
+#endif
+
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
 #endif
@@ -57,7 +61,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 Compression=lzma2/max
 SolidCompression=yes
-WizardStyle=modern
+; Hell oder dunkel wie Windows (Inno Setup 6.6 oder neuer, siehe Prüfung oben)
+WizardStyle=modern dynamic
 ShowLanguageDialog=no
 
 [Languages]

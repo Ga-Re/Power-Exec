@@ -157,7 +157,7 @@ public partial class AppController : IDisposable
     }
 
     /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
-    private static string AppearanceKey(AppSettings s) => $"{s.Theme}|{s.UseWindowsAccent}|{s.WindowBackdrop}|{s.UiScalePercent}";
+    private static string AppearanceKey(AppSettings s) => $"{s.Theme}|{s.UseWindowsAccent}|{s.UiScalePercent}";
 
     /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
     private void OnSystemThemeChanged()
@@ -185,9 +185,14 @@ public partial class AppController : IDisposable
     /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
     protected string? CreateHosts()
     {
-        DisposePanels();
+        // Offene Panels bleiben nach dem Neuaufbau offen – man soll sehen, was die geänderte Einstellung bewirkt.
+        // Die alten Fenster schließen erst, wenn die neuen stehen: so verschwindet das Panel nicht kurz.
+        var wasOpen = _hosts.Select(h => h.View.OpenState).ToList();
+        var selected = _hosts.Select(h => h.ViewModel.SelectedKey).ToList();
+        var old = _hosts.ToList();
+        _hosts.Clear();
         Ui.Hotkeys.UnregisterAll();
-        if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig());
+        if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig { Hotkey = PanelConfig.DefaultHotkey });
         var errors = new List<string>();
         int id = 0x5045; // "PE"
         foreach (var config in Settings.Panels)
@@ -199,18 +204,35 @@ public partial class AppController : IDisposable
             var err = Ui.Hotkeys.Register(host.HotkeyId, config.Hotkey);
             if (err != null) errors.Add($"{config.Name}: {err}");
         }
+        for (var i = 0; i < Math.Min(selected.Count, _hosts.Count); i++) _hosts[i].ViewModel.PreselectKey(selected[i]);
         foreach (var h in _hosts) h.ViewModel.Rebuild();
+        var restored = false;
+        for (var i = 0; i < Math.Min(wasOpen.Count, _hosts.Count); i++)
+            if (wasOpen[i] is { } state) { _hosts[i].View.RestoreOpenState(state); restored = true; }
+        if (!restored) DisposePanels(old);
+        else
+        {
+            // Die alten Fenster bleiben kurz darunter liegen, bis die neuen gezeichnet sind – sonst blitzt das Panel auf
+            IUiTimer? later = null;
+            later = Ui.Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(250), () => { later!.Stop(); DisposePanels(old); });
+            later.Start();
+        }
         return errors.Count == 0 ? null : string.Join("\n", errors);
     }
 
     protected void DisposePanels()
     {
-        foreach (var h in _hosts)
+        DisposePanels(_hosts);
+        _hosts.Clear();
+    }
+
+    private static void DisposePanels(IEnumerable<AppPanel> panels)
+    {
+        foreach (var h in panels)
         {
             h.View.Dispose();
             h.ViewModel.Detach();
         }
-        _hosts.Clear();
     }
 
     public void RebuildPanels()
@@ -607,7 +629,10 @@ public partial class AppController : IDisposable
         return choice;
     }
 
-    /// <summary>Gezogenen Ordner als smarte Gruppe anlegen (in der Gruppe, auf die er gezogen wurde).</summary>
+    /// <summary>
+    /// Gezogenen Ordner als smarte Gruppe anlegen (in der Gruppe, auf die er gezogen wurde): über den Dialog
+    /// „Neue Gruppe“ mit vorausgefülltem Ordner und Namen – so lassen sich gleich Farbe, Symbol und Darstellung wählen.
+    /// </summary>
     private void AddFolderAsGroup(string folderPath, string? parent)
     {
         if (NewGroup.FolderError(Settings.Folders, folderPath) is { } error)
@@ -615,10 +640,15 @@ public partial class AppController : IDisposable
             Ui.Notify("Ordner schon vorhanden", error, warning: true);
             return;
         }
-        RememberForUndo("Ordner als Gruppe hinzugefügt");
+        parent = string.IsNullOrEmpty(parent) ? null : parent;
         var name = NewGroup.NameFromFolder(folderPath);
         for (int i = 2; GroupManager.Exists(Settings, parent == null ? name : parent + GroupManager.Separator + name); i++) name = $"{NewGroup.NameFromFolder(folderPath)} {i}";
-        var path = NewGroup.Create(Settings, new NewGroupSpec(name, IconRef.None, folderPath, string.Empty, null), string.IsNullOrEmpty(parent) ? null : parent);
+        var heading = parent == null ? "Ordner als Gruppe hinzufügen" : $"Ordner als Untergruppe in „{GroupManager.LeafOf(parent)}“";
+        var spec = WithDialog(() => Dialogs.AskNewGroup(heading, name, n => GroupNameError(n, parent),
+            f => NewGroup.FolderError(Settings.Folders, f), folderPath));
+        if (spec == null) return;
+        RememberForUndo("Ordner als Gruppe hinzugefügt");
+        var path = NewGroup.Create(Settings, spec, parent);
         SaveSettings();
         Repository.UpdateSettings(Settings);
         CommitUserChange();
