@@ -16,16 +16,21 @@ namespace PowerExec.Infrastructure;
 /// anderen aufzutauchen. Ist die Oberkategorie des ausgewählten Punkts zugeklappt, steht er an der Oberkategorie.</item>
 /// </list>
 /// Die Vorlagen von WPF UI bleiben unverändert: die eigenen Balken der Einträge werden nur unsichtbar gemacht.
-/// Mit ausgeschalteten Animationen in Windows springt alles ohne Bewegung.
+/// Mit ausgeschalteten Animationen (Einstellungen von Power-Exec) springt alles ohne Bewegung.
 /// </summary>
 public static class NavigationMotion
 {
     private static readonly Duration ExpandDuration = new(TimeSpan.FromMilliseconds(220));
     private static readonly Duration MoveDuration = new(TimeSpan.FromMilliseconds(260));
 
-    private static bool Animate => SystemParameters.ClientAreaAnimation;
+    /// <summary>Animationen nach der Einstellung von Power-Exec (Einstellungen › Verhalten › Animation).</summary>
+    private static bool Animate => Views.WindowHelper.Settings?.Invoke() is not { } s || s.Animation != Core.Config.AnimationMode.Off;
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<NavigationView, IndicatorAdorner> Indicators = new();
+
+    /// <summary>Für den Selbsttest: aktuelle Höhe der Unterpunkte (0 = nicht zu sehen).</summary>
+    internal static double ChildrenHeightForTest(NavigationViewItem item) =>
+        item.Template?.FindName("MenuItemsPresenter", item) is FrameworkElement p && p.IsVisible ? p.ActualHeight : 0;
 
     /// <summary>Für den Selbsttest: wo der Balken hin soll (null = nirgends) und wo er gerade steht (oben).</summary>
     internal static (Rect? Target, double Top)? IndicatorForTest(NavigationView nav) =>
@@ -77,28 +82,32 @@ public static class NavigationMotion
             ?.AddValueChanged(item, (_, _) => AnimateExpand(item));
     }
 
+    /// <summary>
+    /// Unterpunkte weich auf- bzw. zuklappen: die Höhe wächst von 0 auf die volle Höhe (bzw. schrumpft auf 0). Während
+    /// der Bewegung bleibt die Liste lokal sichtbar (der Trigger von WPF UI blendet sonst sofort aus).
+    /// </summary>
     private static void AnimateExpand(NavigationViewItem item)
     {
-        if (!Animate || item.Template?.FindName("MenuItemsPresenter", item) is not FrameworkElement presenter) return;
-        var scale = presenter.LayoutTransform as ScaleTransform;
-        if (scale == null || scale.IsFrozen) presenter.LayoutTransform = scale = new ScaleTransform(1, 1);
+        if (!Animate || !item.IsLoaded || item.Template?.FindName("MenuItemsPresenter", item) is not FrameworkElement presenter) return;
         var expand = item.IsExpanded;
-        // Beim Zuklappen sichtbar halten, bis die Bewegung fertig ist (der Trigger von WPF UI blendet sofort aus)
-        if (!expand) presenter.SetValue(UIElement.VisibilityProperty, Visibility.Visible);
-        var from = scale.ScaleY;
-        if (expand && from >= 1) from = 0;
-        var animation = new DoubleAnimation(from, expand ? 1 : 0, ExpandDuration)
+        var current = presenter.IsVisible ? presenter.ActualHeight : 0;
+        presenter.SetValue(UIElement.VisibilityProperty, Visibility.Visible);
+        presenter.ClipToBounds = true;
+        presenter.BeginAnimation(FrameworkElement.HeightProperty, null);
+        presenter.Measure(new Size(presenter.ActualWidth > 0 ? presenter.ActualWidth : item.ActualWidth, double.PositiveInfinity));
+        var full = presenter.DesiredSize.Height;
+        if (full <= 0) { presenter.ClearValue(UIElement.VisibilityProperty); return; }
+        var animation = new DoubleAnimation(expand ? Math.Min(current, full) : current, expand ? full : 0, ExpandDuration)
         {
             EasingFunction = new CubicEase { EasingMode = expand ? EasingMode.EaseOut : EasingMode.EaseIn }
         };
         animation.Completed += (_, _) =>
         {
-            if (item.IsExpanded != expand) return; // inzwischen wieder umgeschaltet
-            scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
-            scale.ScaleY = 1;
+            if (item.IsExpanded != expand) return; // inzwischen wieder umgeschaltet: die neue Bewegung räumt auf
+            presenter.BeginAnimation(FrameworkElement.HeightProperty, null); // zurück auf automatische Höhe
             presenter.ClearValue(UIElement.VisibilityProperty);
         };
-        scale.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        presenter.BeginAnimation(FrameworkElement.HeightProperty, animation);
     }
 
     /// <summary>

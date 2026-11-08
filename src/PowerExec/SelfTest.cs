@@ -1032,6 +1032,25 @@ public sealed partial class SelfTestController : AppController
                 if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
+                    // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg
+                    var fullHeight = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    exec.IsExpanded = false;
+                    await Task.Delay(70);
+                    var midClose = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    await Settle();
+                    var closed = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    exec.IsExpanded = true;
+                    await Task.Delay(70);
+                    var midOpen = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    await Settle();
+                    var reopened = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    Step($"Navigation: Unterpunkte {fullHeight:0} → zu {midClose:0} … {closed:0} → auf {midOpen:0} … {reopened:0} px");
+                    if (Settings.Animation != AnimationMode.Off)
+                    {
+                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px nach 70 ms)");
+                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px nach 70 ms)");
+                    }
+                    if (closed > 0.5 || Math.Abs(reopened - fullHeight) > 1) Fail($"Navigation: nach dem Klappen {closed:0} bzw. {reopened:0} statt 0 bzw. {fullHeight:0} px");
                     exec.IsExpanded = false;
                     await Settle();
                     if (settingsWindow.Content is FrameworkElement navRoot) Screenshot(navRoot, "settings-navigation-kategorie-zu");
