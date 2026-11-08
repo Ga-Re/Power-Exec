@@ -1022,6 +1022,22 @@ public sealed partial class SelfTestController : AppController
                     settingsVm.Section = "remote";
                     await Settle();
                     if (settingsWindow.NavigationSectionForTest != "remote") Fail("Navigation: Unterpunkt einer Oberkategorie lässt sich nicht auswählen");
+                    // Gleitender Auswahlbalken: steht am ausgewählten Punkt, bei zugeklappter Oberkategorie an ihr
+                    await Task.Delay(400);
+                    var bar = Infrastructure.NavigationMotion.IndicatorForTest(nav);
+                    if (bar is not { Target: { } atItem } || Math.Abs(bar.Value.Top - atItem.Top) > 1)
+                        Fail($"Navigation: Auswahlbalken steht nicht am ausgewählten Punkt ({bar?.Top:0} statt {bar?.Target?.Top:0})");
+                    else
+                    {
+                        exec.IsExpanded = false;
+                        await Settle();
+                        await Task.Delay(400);
+                        var collapsed = Infrastructure.NavigationMotion.IndicatorForTest(nav);
+                        if (collapsed is not { Target: { } atParent } || atParent.Top >= atItem.Top)
+                            Fail("Navigation: bei zugeklappter Oberkategorie steht der Auswahlbalken nicht an ihr");
+                        exec.IsExpanded = true;
+                        await Settle();
+                    }
                 }
                 settingsVm.Section = "custom";
                 await Settle();
