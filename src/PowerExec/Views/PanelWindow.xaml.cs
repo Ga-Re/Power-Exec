@@ -66,7 +66,13 @@ public partial class PanelWindow : Window
         if (_systemWindow) Interop.NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
         if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
         {
-            if (src.CompositionTarget != null) src.CompositionTarget.BackgroundColor = Colors.Transparent;
+            if (src.CompositionTarget != null)
+            {
+                src.CompositionTarget.BackgroundColor = Colors.Transparent;
+                // Glas: WPF zeichnet per Grafikkarte auf eine DirectX-Fläche, die Windows unter den Weichzeichner legt –
+                // der Inhalt wäre unsichtbar. Software-Darstellung landet im Fensterinhalt, und der liegt darüber.
+                if (_backdrop == PanelBackdrop.Glass) src.CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
+            }
             src.AddHook(SystemWindowHook);
         }
         ApplyBackdrop();
@@ -259,13 +265,8 @@ public partial class PanelWindow : Window
         if (_backdrop != PanelBackdrop.Glass || GlassError != null || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
         try
         {
-            var glass = _glass as GlassBackdrop ?? new GlassBackdrop(_hwnd);
-            _glass = glass;
-            var s = Cfg;
-            var dark = Vm.IsDarkSurface;
-            var shade = dark ? 0f : 1f; // dunkle Fläche: Schwarz, helle: Weiß
-            glass.Update(PanelBackdrops.GlassBlurRadius(s.GlassBlur), PanelBackdrops.GlassSaturation(s.GlassSaturation),
-                new System.Numerics.Vector4(shade, shade, shade, (float)PanelBackdrops.FrostBrightness(s.Frost, dark)));
+            _glass ??= new GlassBackdrop(_hwnd);
+            UpdateGlass();
         }
         catch (Exception ex)
         {
@@ -277,6 +278,27 @@ public partial class PanelWindow : Window
             DisposeGlass();
         }
     }
+
+    /// <summary>
+    /// Werte des Weichzeichners nachziehen: Blur, Sättigung, Helligkeitsschicht (dunkle Fläche Schwarz, helle Weiß) und
+    /// Tönung mit der Panelfarbe samt Deckkraft (eigene Farbe bzw. Farbe des hellen oder dunklen Designs).
+    /// </summary>
+    private void UpdateGlass()
+    {
+        if (_glass is not GlassBackdrop glass || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        var s = Cfg;
+        var dark = Vm.IsDarkSurface;
+        var shade = dark ? 0f : 1f;
+        var panel = GlassTint;
+        glass.Update(PanelBackdrops.GlassBlurRadius(s.GlassBlur), PanelBackdrops.GlassSaturation(s.GlassSaturation),
+            new System.Numerics.Vector4(shade, shade, shade, (float)PanelBackdrops.FrostBrightness(s.Frost, dark)),
+            new System.Numerics.Vector4(panel.R / 255f, panel.G / 255f, panel.B / 255f, panel.A / 255f));
+    }
+
+    /// <summary>Für den Selbsttest: Tönung des Weichzeichners (Panelfarbe samt Deckkraft).</summary>
+    internal Color GlassTint => TryFindResource("Bg.Panel") is SolidColorBrush b
+        ? Color.FromArgb((byte)Math.Round(b.Color.A * Math.Clamp(b.Opacity, 0, 1)), b.Color.R, b.Color.G, b.Color.B)
+        : Colors.Transparent;
 
     /// <summary>Eigener Weichzeichner (nur bei Glas unter Windows 11; als IDisposable, damit ältere Windows den Typ nie anfassen).</summary>
     private IDisposable? _glass;
@@ -324,13 +346,14 @@ public partial class PanelWindow : Window
     {
         if (GlassActive)
         {
-            // Glas: Helligkeitsschicht liegt im Weichzeichner, WPF legt Tönung und Körnung darüber
+            // Glas: Helligkeitsschicht und Tönung liegen im Weichzeichner, WPF legt nur die Körnung darüber
             PanelBorder.Background = Brushes.Transparent;
             FrostBrightness.Background = null;
-            FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+            FrostTint.Background = null;
             FrostNoise.Background = NoiseBrush.Value;
             FrostNoise.Opacity = PanelBackdrops.GlassNoise(Cfg.GlassNoise);
             FrostLayer.Visibility = Visibility.Visible;
+            UpdateGlass();
             return;
         }
         var alpha = ThemeService.IsHighContrast || !PanelBackdrops.SupportsFrost(_backdrop)

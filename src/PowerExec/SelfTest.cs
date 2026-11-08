@@ -379,6 +379,18 @@ public sealed partial class SelfTestController : AppController
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
                     if (expected == PanelBackdrop.Glass && !host.Window.GlassActive)
                         Fail($"Glas: Weichzeichner läuft nicht ({host.Window.GlassError ?? "ohne Fehlermeldung"})");
+                    if (host.Window.GlassActive)
+                    {
+                        // Inhalt muss über dem Weichzeichner liegen (Software-Darstellung) und die Tönung der Panelfarbe folgen
+                        var glassSrc = System.Windows.Interop.HwndSource.FromVisual(host.Window) as System.Windows.Interop.HwndSource;
+                        if (glassSrc?.CompositionTarget?.RenderMode != System.Windows.Interop.RenderMode.SoftwareOnly)
+                            Fail("Glas: Panelinhalt wird nicht über dem Weichzeichner gezeichnet (keine Software-Darstellung)");
+                        var tint = host.Window.GlassTint;
+                        var panelBrush = host.Window.TryFindResource("Bg.Panel") as System.Windows.Media.SolidColorBrush;
+                        if (panelBrush == null || tint.R != panelBrush.Color.R || tint.G != panelBrush.Color.G || tint.B != panelBrush.Color.B)
+                            Fail($"Glas: Tönung {tint} folgt nicht der Panelfarbe {panelBrush?.Color}");
+                        if (Math.Abs(tint.A - 255 * 0.4) > 3) Fail($"Glas: Tönung mit Deckkraft {tint.A / 2.55:0} % statt 40 %");
+                    }
                     // Glas: die Helligkeitsschicht liegt im Weichzeichner, nicht in WPF
                     var wantAlpha = ThemeService.IsHighContrast || host.Window.GlassActive ? 0 : PanelBackdrops.FrostBrightness(frost, host.ViewModel.IsDarkSurface);
                     if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)

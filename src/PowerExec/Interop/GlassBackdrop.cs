@@ -8,9 +8,9 @@ namespace PowerExec.Interop;
 
 /// <summary>
 /// Glas (eigener Weichzeichner): Windows-Composition direkt im Panelfenster. Hinter dem WPF-Inhalt liegt ein
-/// SpriteVisual mit der Effektkette Hintergrund des Hosts → Gaußscher Weichzeichner → Sättigung → Helligkeitsschicht.
+/// SpriteVisual mit der Effektkette Hintergrund des Hosts → Gaußscher Weichzeichner → Sättigung → Helligkeitsschicht → Tönung.
 /// Es gibt kein zweites Fenster: der Effekt gehört zum Panelfenster, gleitet mit und wird vom Fensterbereich beschnitten.
-/// Panelfarbe (Tönung) und Körnung zeichnet WPF darüber.
+/// Die Körnung zeichnet WPF darüber.
 /// </summary>
 [SupportedOSPlatform("windows10.0.22000.0")]
 internal sealed class GlassBackdrop : IDisposable
@@ -64,7 +64,7 @@ internal sealed class GlassBackdrop : IDisposable
 
     private readonly DesktopWindowTarget _target;
     private readonly SpriteVisual _visual;
-    private (float Blur, float Saturation, Vector4 Luminosity)? _applied;
+    private (float Blur, float Saturation, Vector4 Luminosity, Vector4 Tint)? _applied;
 
     /// <summary>Hängt den Effekt hinter den Inhalt des Fensters (isTopmost: false).</summary>
     public GlassBackdrop(IntPtr hwnd)
@@ -93,17 +93,18 @@ internal sealed class GlassBackdrop : IDisposable
 
     /// <summary>
     /// Effekt mit neuen Werten aufbauen (nur bei Änderung): Radius des Weichzeichners (Standardabweichung in Pixeln),
-    /// Sättigung (1 = unverändert) und Helligkeitsschicht (RGBA 0–1, A = Deckkraft).
+    /// Sättigung (1 = unverändert), Helligkeitsschicht und Tönung mit der Panelfarbe (je RGBA 0–1, A = Deckkraft).
     /// </summary>
-    public void Update(float blur, float saturation, Vector4 luminosity)
+    public void Update(float blur, float saturation, Vector4 luminosity, Vector4 tint)
     {
-        if (_applied is { } a && a.Blur == blur && a.Saturation == saturation && a.Luminosity == luminosity) return;
+        if (_applied is { } a && a.Blur == blur && a.Saturation == saturation && a.Luminosity == luminosity && a.Tint == tint) return;
         var compositor = Compositor;
 
         GlassEffectSource chain = new GlassSourceParameter("Backdrop");
         if (blur > 0) chain = new GaussianBlurGlassEffect(chain, blur);
         GlassEffect effect = new SaturationGlassEffect(chain, saturation);
         if (luminosity.W > 0) effect = new CompositeGlassEffect(effect, new FloodGlassEffect(luminosity.X, luminosity.Y, luminosity.Z, luminosity.W));
+        if (tint.W > 0) effect = new CompositeGlassEffect(effect, new FloodGlassEffect(tint.X, tint.Y, tint.Z, tint.W));
 
         // Die Effektbeschreibung geht direkt an ICompositor::CreateEffectFactory (Platz 11 der Methodentabelle laut
         // Windows-Projektion) – das WinRT-Marshalling von .NET kann eigene COM-Objekte nicht umwickeln.
@@ -135,7 +136,7 @@ internal sealed class GlassBackdrop : IDisposable
         var old = _visual.Brush;
         _visual.Brush = brush;
         old?.Dispose();
-        _applied = (blur, saturation, luminosity);
+        _applied = (blur, saturation, luminosity, tint);
     }
 
     public void Dispose()
