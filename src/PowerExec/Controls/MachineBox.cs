@@ -61,7 +61,8 @@ public sealed class MachineBox : Control
         border.SetResourceReference(Border.BorderBrushProperty, "Border.Control");
         _popup = new Popup { Child = border, PlacementTarget = _input, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
 
-        _button = new Button { Content = "Gruppe einfügen ▾", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Rechnergruppe einfügen (wird beim Start aufgelöst)" };
+        // Fluent-Schaltfläche: „Btn.Standard“ ist in allen Fenstern ein Stil für Wpf.Ui.Controls.Button
+        _button = new Wpf.Ui.Controls.Button { Content = "Gruppe einfügen ▾", Margin = new Thickness(6, 0, 0, 0), ToolTip = "Rechnergruppe einfügen (wird beim Start aufgelöst)" };
         _button.SetResourceReference(StyleProperty, "Btn.Standard");
         _button.Click += (_, _) => OpenGroupMenu();
 

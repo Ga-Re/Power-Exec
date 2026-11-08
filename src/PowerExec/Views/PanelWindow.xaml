@@ -97,7 +97,7 @@
             <MenuItem Header="Farbe" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}" ItemsSource="{Binding ColorChoices}">
                 <MenuItem.Icon><TextBlock Text="&#xE790;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
-                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource Menu.ItemWithRule}">
                         <Setter Property="Command" Value="{Binding Command}"/>
                         <Setter Property="CommandParameter" Value="{Binding Hex}"/>
                         <Setter Property="IsChecked" Value="{Binding IsCurrent, Mode=OneWay}"/>
