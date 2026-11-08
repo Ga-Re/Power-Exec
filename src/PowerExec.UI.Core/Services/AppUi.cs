@@ -114,6 +114,12 @@ public interface IPanelView : IDisposable
 
     /// <summary>Nach dem Neuaufbau wieder zeigen wie vorher – ohne Gleiten und ohne den Fokus zu nehmen.</summary>
     void RestoreOpenState(PanelOpenState state) { }
+
+    /// <summary>
+    /// Geänderte Panel-Einstellungen auf das bestehende Fenster anwenden (Farbe, Größe, Lage, Hover-Zone …), ohne es neu
+    /// zu erzeugen – das Panel bleibt sichtbar und flackert nicht. <see cref="AppPanel.Config"/> ist bereits ersetzt.
+    /// </summary>
+    void ApplyConfig(PanelConfig previous) { }
 }
 
 /// <summary>Zustand eines offenen Panels: Monitor (Nummer) und ob es per Tastenkürzel geöffnet wurde.</summary>
@@ -164,8 +170,11 @@ public sealed class AppPanel : IPanelContext
         HotkeyId = hotkeyId;
     }
 
-    public PanelConfig Config { get; }
+    public PanelConfig Config { get; private set; }
     public int HotkeyId { get; }
+
+    /// <summary>Geänderte Einstellungen übernehmen (gleiches Panel, gleiches Fenster).</summary>
+    internal void ReplaceConfig(PanelConfig config) => Config = config;
     public PanelViewModel ViewModel { get; internal set; } = null!;
     public IPanelView View { get; internal set; } = null!;
 }

@@ -237,6 +237,20 @@ public partial class PanelWindow : Window
         Close();
     }
 
+    /// <summary>
+    /// Einstellungen wurden ersetzt (gleiche Fensterart): Aussehen, Weichzeichner und Lage neu anwenden – das Panel bleibt
+    /// dabei sichtbar. Liegt der bisherige Monitor nicht mehr in der Auswahl, wechselt es auf den ersten passenden.
+    /// </summary>
+    public void ApplyConfigChange()
+    {
+        ApplyAppearance(); // samt Hintergrund, Milchglas und Weichzeichner
+        if (!IsOpen || _hiding || _monitor == null) return;
+        var monitors = ScreenService.TriggerMonitors(Cfg);
+        if (!monitors.Any(m => m.Index == _monitor.Index) && monitors.Count > 0) _monitor = monitors[0];
+        Place();
+        UpdatePeekWindow();
+    }
+
     /// <summary>Fährt gerade ein.</summary>
     internal bool IsHiding => _hiding;
 

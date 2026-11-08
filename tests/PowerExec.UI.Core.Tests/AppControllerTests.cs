@@ -87,6 +87,8 @@ internal sealed class FakePanelView(AppPanel panel) : IPanelView
 
     public PanelOpenState? OpenState => IsOpen ? new PanelOpenState(1, OpenedViaHotkey) : null;
     public PanelOpenState? Restored { get; private set; }
+    public List<PanelConfig> ConfigApplied { get; } = new();
+    public void ApplyConfig(PanelConfig previous) => ConfigApplied.Add(previous);
 
     public void RestoreOpenState(PanelOpenState state)
     {
@@ -251,6 +253,43 @@ public sealed class AppControllerTests : IDisposable
         app.AddDropped(new[] { new DroppedTarget(CustomEntryKind.Folder, folder, "Abbruch") }, group: null);
 
         Assert.DoesNotContain(app.Settings.Folders, f => f.Path == folder);
+    }
+
+    [Fact]
+    public void PanelSettingsAreAppliedToTheExistingWindow()
+    {
+        var app = Create();
+        var view = app.FakeUi.Panels[0];
+        app.ShowPanelFromHotkey(app.Hosts[0]);
+
+        var updated = SettingsStore.Clone(app.Settings);
+        updated.Panels[0].PanelColor = "#14213D";
+        updated.Panels[0].PanelWidth = 640;
+        updated.Panels[0].Hotkey = "Ctrl+Alt+P";
+        app.ApplySettings(updated);
+
+        // Gleiches Fenster, neue Werte – kein Neuaufbau, kein Flackern
+        Assert.Same(view, app.Hosts[0].View);
+        Assert.False(view.Disposed);
+        Assert.True(view.IsOpen);
+        Assert.Single(view.ConfigApplied);
+        Assert.Equal("#14213D", app.Hosts[0].Config.PanelColor);
+        Assert.Equal(640, app.Hosts[0].Config.PanelWidth);
+        Assert.Contains("Ctrl+Alt+P", app.FakeUi.FakeHotkeys.Registered.Values);
+    }
+
+    [Fact]
+    public void SwitchingToGlassNeedsANewWindow()
+    {
+        var app = Create();
+        var view = app.FakeUi.Panels[0];
+
+        var updated = SettingsStore.Clone(app.Settings);
+        updated.Panels[0].Backdrop = PanelBackdrop.Glass;
+        app.ApplySettings(updated);
+
+        Assert.NotSame(view, app.Hosts[0].View);
+        Assert.Empty(view.ConfigApplied);
     }
 
     [Fact]
