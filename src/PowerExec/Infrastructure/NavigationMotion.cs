@@ -90,22 +90,22 @@ public static class NavigationMotion
     {
         if (!Animate || !item.IsLoaded || item.Template?.FindName("MenuItemsPresenter", item) is not FrameworkElement presenter) return;
         var expand = item.IsExpanded;
-        var current = presenter.IsVisible ? presenter.ActualHeight : 0;
-        presenter.SetValue(UIElement.VisibilityProperty, Visibility.Visible);
+        var current = presenter.IsVisible ? presenter.ActualHeight : 0; // unterwegs umgeschaltet: von hier weiter
+        // Sichtbarkeit über eine Animation festhalten: Animationen gehen in WPF vor Vorlagen-Triggern (ein lokaler Wert
+        // reichte nicht – WPF UI blendete die Unterpunkte beim Zuklappen sofort aus)
+        var keep = new ObjectAnimationUsingKeyFrames { Duration = ExpandDuration, FillBehavior = FillBehavior.Stop };
+        keep.KeyFrames.Add(new DiscreteObjectKeyFrame(Visibility.Visible, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        presenter.BeginAnimation(UIElement.VisibilityProperty, keep);
         presenter.ClipToBounds = true;
         presenter.BeginAnimation(FrameworkElement.HeightProperty, null);
         presenter.Measure(new Size(presenter.ActualWidth > 0 ? presenter.ActualWidth : item.ActualWidth, double.PositiveInfinity));
         var full = presenter.DesiredSize.Height;
-        if (full <= 0) { presenter.ClearValue(UIElement.VisibilityProperty); return; }
-        var animation = new DoubleAnimation(expand ? Math.Min(current, full) : current, expand ? full : 0, ExpandDuration)
+        if (full <= 0) { presenter.BeginAnimation(UIElement.VisibilityProperty, null); return; }
+        var from = expand ? Math.Min(current, full) : (current > 0 ? Math.Min(current, full) : full);
+        var animation = new DoubleAnimation(from, expand ? full : 0, ExpandDuration)
         {
-            EasingFunction = new CubicEase { EasingMode = expand ? EasingMode.EaseOut : EasingMode.EaseIn }
-        };
-        animation.Completed += (_, _) =>
-        {
-            if (item.IsExpanded != expand) return; // inzwischen wieder umgeschaltet: die neue Bewegung räumt auf
-            presenter.BeginAnimation(FrameworkElement.HeightProperty, null); // zurück auf automatische Höhe
-            presenter.ClearValue(UIElement.VisibilityProperty);
+            EasingFunction = new CubicEase { EasingMode = expand ? EasingMode.EaseOut : EasingMode.EaseIn },
+            FillBehavior = FillBehavior.Stop // danach wieder automatische Höhe (bzw. ausgeblendet durch WPF UI)
         };
         presenter.BeginAnimation(FrameworkElement.HeightProperty, animation);
     }
