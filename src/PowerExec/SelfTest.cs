@@ -381,10 +381,7 @@ public sealed partial class SelfTestController : AppController
                         Fail($"Glas: Weichzeichner läuft nicht ({host.Window.GlassError ?? "ohne Fehlermeldung"})");
                     if (host.Window.GlassActive)
                     {
-                        // Inhalt muss über dem Weichzeichner liegen (Software-Darstellung) und die Tönung der Panelfarbe folgen
-                        var glassSrc = System.Windows.Interop.HwndSource.FromVisual(host.Window) as System.Windows.Interop.HwndSource;
-                        if (glassSrc?.CompositionTarget?.RenderMode != System.Windows.Interop.RenderMode.SoftwareOnly)
-                            Fail("Glas: Panelinhalt wird nicht über dem Weichzeichner gezeichnet (keine Software-Darstellung)");
+                        // Tönung muss der Panelfarbe folgen (samt Deckkraft)
                         var tint = host.Window.GlassTint;
                         var panelBrush = host.Window.TryFindResource("Bg.Panel") as System.Windows.Media.SolidColorBrush;
                         if (panelBrush == null || tint.R != panelBrush.Color.R || tint.G != panelBrush.Color.G || tint.B != panelBrush.Color.B)
@@ -437,6 +434,9 @@ public sealed partial class SelfTestController : AppController
                     ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-" + name);
                     if (host.Window.GlassActive)
                     {
+                        // Inhalt muss über dem Weichzeichner liegen: Software-Darstellung, sobald das Panel gezeigt wird
+                        if (host.Window.WindowRenderMode != System.Windows.Interop.RenderMode.SoftwareOnly)
+                            Fail($"Glas: Panelinhalt wird nicht über dem Weichzeichner gezeichnet (Darstellung {host.Window.WindowRenderMode?.ToString() ?? "ohne Zeichenfläche"} statt Software)");
                         // Inaktiv: ein anderes Fenster bekommt den Fokus, der Weichzeichner muss bleiben (angeheftet, damit es nicht einfährt)
                         var pinned = host.Config.Pinned;
                         host.Config.Pinned = true;

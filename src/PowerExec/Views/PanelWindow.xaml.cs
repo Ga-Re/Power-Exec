@@ -69,9 +69,6 @@ public partial class PanelWindow : Window
             if (src.CompositionTarget != null)
             {
                 src.CompositionTarget.BackgroundColor = Colors.Transparent;
-                // Glas: WPF zeichnet per Grafikkarte auf eine DirectX-Fläche, die Windows unter den Weichzeichner legt –
-                // der Inhalt wäre unsichtbar. Software-Darstellung landet im Fensterinhalt, und der liegt darüber.
-                if (_backdrop == PanelBackdrop.Glass) src.CompositionTarget.RenderMode = RenderMode.SoftwareOnly;
             }
             src.AddHook(SystemWindowHook);
         }
@@ -144,6 +141,7 @@ public partial class PanelWindow : Window
         }
         Place();
         if (!IsVisible) Show();
+        EnsureSoftwareRendering(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
         if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
@@ -262,6 +260,7 @@ public partial class PanelWindow : Window
     {
         if (_hwnd == IntPtr.Zero || !_systemWindow) return;
         Interop.PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+        EnsureSoftwareRendering();
         if (_backdrop != PanelBackdrop.Glass || GlassError != null || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
         try
         {
@@ -299,6 +298,22 @@ public partial class PanelWindow : Window
     internal Color GlassTint => TryFindResource("Bg.Panel") is SolidColorBrush b
         ? Color.FromArgb((byte)Math.Round(b.Color.A * Math.Clamp(b.Opacity, 0, 1)), b.Color.R, b.Color.G, b.Color.B)
         : Colors.Transparent;
+
+    /// <summary>
+    /// Glas: WPF zeichnet per Grafikkarte auf eine DirectX-Fläche, die Windows unter den Weichzeichner legt – der Inhalt
+    /// wäre unsichtbar. Software-Darstellung landet im Fensterinhalt, und der liegt darüber. Bei jedem Anwenden und
+    /// Zeigen erneut gesetzt, falls WPF die Darstellung beim Anzeigen zurücksetzt.
+    /// </summary>
+    private void EnsureSoftwareRendering()
+    {
+        if (_backdrop != PanelBackdrop.Glass || _hwnd == IntPtr.Zero) return;
+        if (HwndSource.FromHwnd(_hwnd)?.CompositionTarget is not { } target) return;
+        target.BackgroundColor = Colors.Transparent;
+        if (target.RenderMode != RenderMode.SoftwareOnly) target.RenderMode = RenderMode.SoftwareOnly;
+    }
+
+    /// <summary>Für den Selbsttest: Darstellungsart des Panelfensters.</summary>
+    internal RenderMode? WindowRenderMode => _hwnd == IntPtr.Zero ? null : HwndSource.FromHwnd(_hwnd)?.CompositionTarget?.RenderMode;
 
     /// <summary>Eigener Weichzeichner (nur bei Glas unter Windows 11; als IDisposable, damit ältere Windows den Typ nie anfassen).</summary>
     private IDisposable? _glass;
