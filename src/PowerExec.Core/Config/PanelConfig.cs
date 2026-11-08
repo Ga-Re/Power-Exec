@@ -64,6 +64,9 @@ public sealed class PanelConfig
     /// <summary>Tastenkürzel öffnet ein Suchfenster in der Bildschirmmitte (Spotlight) statt des Panels am Rand.</summary>
     public bool HotkeyOpensSpotlight { get; set; }
     public string Hotkey { get; set; } = string.Empty;
+
+    /// <summary>Vorgabe für das erste Panel (Ersteinrichtung): Strg+Alt+Leertaste.</summary>
+    public const string DefaultHotkey = "Ctrl+Alt+Space";
     public TypeFilter DefaultFilter { get; set; } = TypeFilter.All;
     public bool Pinned { get; set; }
 

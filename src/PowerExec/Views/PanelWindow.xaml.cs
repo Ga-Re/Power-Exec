@@ -151,9 +151,16 @@ public partial class PanelWindow : Window
             Reveal = 0;
         }
         Place();
-        if (!IsVisible) Show();
+        var wasVisible = IsVisible;
+        if (!wasVisible) Show();
         EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
+        if (!wasVisible && _contentHost is { IsDisposed: false })
+        {
+            // Glas: das Kindfenster erst fertig zeichnen lassen – sonst fällt das Zeichnen in den schnellen Anfang des Ausfahrens
+            PanelBorder.UpdateLayout();
+            Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        }
         if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
         _poll.Start();
@@ -183,6 +190,23 @@ public partial class PanelWindow : Window
 
     /// <summary>Fährt gerade ein.</summary>
     internal bool IsHiding => _hiding;
+
+    /// <summary>Monitor, auf dem das Panel zuletzt gezeigt wurde.</summary>
+    internal MonitorInfo? CurrentMonitor => _monitor;
+
+    private bool _skipNextAnimation;
+
+    /// <summary>
+    /// Nach dem Neuaufbau (geänderte Einstellungen) sofort wieder zeigen: ohne Gleiten und ohne Fokus – die Einstellungen
+    /// bleiben vorn, das Panel zeigt gleich die Wirkung.
+    /// </summary>
+    public void ShowInPlace(MonitorInfo monitor, bool openedViaHotkey)
+    {
+        _skipNextAnimation = true;
+        ShowPanel(monitor, viaHotkey: false);
+        _skipNextAnimation = false;
+        OpenedViaHotkey = openedViaHotkey;
+    }
 
     public void HidePanel()
     {
@@ -241,8 +265,8 @@ public partial class PanelWindow : Window
             }
             var d = PanelColors.Derive(rgb);
             Resources["Bg.Panel"] = Solid(rgb, opacity);
-            Resources["Bg.Hover"] = Solid(d.Hover, Math.Max(opacity, 0.85));
-            Resources["Bg.Selected"] = Solid(d.Selected, Math.Max(opacity, 0.9));
+            Resources["Bg.Hover"] = Solid(d.Hover, HoverAlpha(opacity));
+            Resources["Bg.Selected"] = Solid(d.Selected, SelectedAlpha(opacity));
             Resources["Bg.Chip"] = Solid(d.Selected, 1);
             Resources["Bg.Input"] = Solid(d.Input, 1);
             Resources["Border.Panel"] = Solid(d.Border, 1);
@@ -252,10 +276,39 @@ public partial class PanelWindow : Window
         {
             var c = themeBrush.Color;
             Resources["Bg.Panel"] = Solid(new Rgb(c.R, c.G, c.B), opacity);
+            // Glas: auch Auswahl und Hover lassen den Weichzeichner durchscheinen
+            if (_backdrop == PanelBackdrop.Glass)
+            {
+                if (Application.Current.Resources["Bg.Hover"] is SolidColorBrush h)
+                    Resources["Bg.Hover"] = Solid(new Rgb(h.Color.R, h.Color.G, h.Color.B), HoverAlpha(opacity));
+                if (Application.Current.Resources["Bg.Selected"] is SolidColorBrush sel)
+                    Resources["Bg.Selected"] = Solid(new Rgb(sel.Color.R, sel.Color.G, sel.Color.B), SelectedAlpha(opacity));
+            }
         }
         // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
         Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
         ApplyFrost(s.Frost);
+    }
+
+    /// <summary>
+    /// Deckkraft von Hover- und Auswahlflächen: bei Klarglas fast deckend (Lesbarkeit über unruhigem Desktop), bei Glas
+    /// etwas über der Panel-Deckkraft – der Weichzeichner scheint auch durch ausgeklappte Einträge.
+    /// </summary>
+    private double HoverAlpha(double opacity) => _backdrop == PanelBackdrop.Glass ? Math.Min(1, opacity + 0.15) : Math.Max(opacity, 0.85);
+
+    private double SelectedAlpha(double opacity) => _backdrop == PanelBackdrop.Glass ? Math.Min(1, opacity + 0.25) : Math.Max(opacity, 0.9);
+
+    /// <summary>
+    /// Fast unsichtbare Grundfläche (Deckkraft 1/255) für Glas: Windows lässt Klicks und Ablegen in einem durchsichtigen
+    /// Kindfenster dort durchfallen, wo die Deckkraft 0 ist – leere Flächen und Gruppenköpfe ohne Farbe wären taub.
+    /// </summary>
+    private static readonly SolidColorBrush HitSurface = CreateHitSurface();
+
+    private static SolidColorBrush CreateHitSurface()
+    {
+        var b = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
+        b.Freeze();
+        return b;
     }
 
     // ---- Hintergrund: Klarglas mit Milchglas ------------------------------------------------
@@ -434,7 +487,7 @@ public partial class PanelWindow : Window
         if (GlassActive)
         {
             // Glas: Helligkeitsschicht und Tönung liegen im Weichzeichner, WPF legt nur die Körnung darüber
-            PanelBorder.Background = Brushes.Transparent;
+            PanelBorder.Background = HitSurface;
             FrostBrightness.Background = null;
             FrostTint.Background = null;
             FrostNoise.Background = NoiseBrush.Value;
@@ -701,7 +754,7 @@ public partial class PanelWindow : Window
 
     private void Animate(bool show)
     {
-        var duration = AnimationDuration;
+        var duration = _skipNextAnimation ? TimeSpan.Zero : AnimationDuration;
         if (_systemWindow)
         {
             AnimateReveal(show, duration);

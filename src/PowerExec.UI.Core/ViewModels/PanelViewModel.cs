@@ -467,8 +467,8 @@ public sealed class PanelViewModel : ObservableObject
     public string? StickyTopKey => _stickyGroup == null ? null
         : Groups.FirstOrDefault(g => g.SelfAndDescendants.Contains(_stickyGroup))?.Key;
 
-    /// <summary>Sprungleiste rechts: ab 4 Gruppen auf oberster Ebene, nicht während der Suche.</summary>
-    public bool ShowJumpRail => _host.Config.ShowJumpRail && Groups.Count >= 4 && !IsSearching;
+    /// <summary>Sprungleiste rechts: ab 2 Gruppen auf oberster Ebene (bei einer gäbe es kein Ziel), nicht während der Suche.</summary>
+    public bool ShowJumpRail => _host.Config.ShowJumpRail && Groups.Count >= 2 && !IsSearching;
 
     /// <summary>Scrollbalken der Liste anzeigen (ausgeblendet scrollt das Mausrad weiter).</summary>
     /// <summary>Scrollbalken der Liste anzeigen (sonst nur per Mausrad/Tastatur scrollen).</summary>

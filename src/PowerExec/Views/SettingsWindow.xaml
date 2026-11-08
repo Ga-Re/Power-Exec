@@ -1463,7 +1463,7 @@
                                 <TextBlock Text="{Binding DockCount}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                             </StackPanel>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab vier Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
+                    <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab zwei Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
                         <ui:ToggleSwitch IsChecked="{Binding ShowJumpRail}" AutomationProperties.Name="Sprungleiste" />
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE7C4;" Header="Scrollbalken" Description="Ausgeblendet lässt sich die Liste weiter mit dem Mausrad, den Pfeiltasten oder der Sprungleiste bewegen.">

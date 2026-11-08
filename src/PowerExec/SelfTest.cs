@@ -442,6 +442,9 @@ public sealed partial class SelfTestController : AppController
                             Fail("Glas: Panelinhalt liegt nicht im Kindfenster über dem Weichzeichner");
                         if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
                             Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
+                        // Leere Flächen müssen Klicks und Ablegen annehmen (Deckkraft 0 fiele im Kindfenster durch)
+                        if (host.Window.PanelBorder.Background is not System.Windows.Media.SolidColorBrush { Color.A: > 0 })
+                            Fail("Glas: Panelfläche ohne Deckkraft – Klicks auf leere Flächen fielen durch");
                         // Bindungen an die Panel-Wurzel (früher ans Fenster) müssen auch im Kindfenster greifen
                         if (host.Window.PeekCard.IsVisible != host.ViewModel.ShowPeek)
                             Fail("Glas: Vorschau-Karte sichtbar, obwohl keine Vorschau offen ist (Bindung an die Panel-Wurzel greift nicht)");

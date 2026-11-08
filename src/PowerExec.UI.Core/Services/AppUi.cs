@@ -110,7 +110,16 @@ public interface IPanelView : IDisposable
 
     /// <summary>Hover-Zonen und Docks bei Vollbild-Programmen ausblenden; null = Erkennung ausgeschaltet.</summary>
     void ApplyFullscreen(FullscreenProbe? probe);
+
+    /// <summary>Offen (Monitor, per Tastenkürzel)? null = eingefahren. Für den Neuaufbau nach geänderten Einstellungen.</summary>
+    PanelOpenState? OpenState => null;
+
+    /// <summary>Nach dem Neuaufbau wieder zeigen wie vorher – ohne Gleiten und ohne den Fokus zu nehmen.</summary>
+    void RestoreOpenState(PanelOpenState state) { }
 }
+
+/// <summary>Zustand eines offenen Panels: Monitor (Nummer) und ob es per Tastenkürzel geöffnet wurde.</summary>
+public sealed record PanelOpenState(int MonitorIndex, bool ViaHotkey);
 
 /// <summary>Ein Fenster der Oberfläche aus Sicht des Kerns.</summary>
 public interface IAppWindow

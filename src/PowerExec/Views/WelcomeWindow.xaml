@@ -157,11 +157,16 @@
                     <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
                                Text="Mit dem Tastenkürzel öffnet sich das Panel überall, der Cursor steht im Suchfeld. Tippen, Enter – fertig."/>
                     <Border Padding="14,10" CornerRadius="6" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" HorizontalAlignment="Left">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Tastenkürzel:" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                            <Border Padding="8,2" CornerRadius="4" BorderThickness="1,1,1,2" BorderBrush="{DynamicResource Border.Control}" Background="{DynamicResource Bg.Input}">
-                                <TextBlock Text="{Binding HotkeyText}" FontFamily="Cascadia Mono, Consolas"/>
-                            </Border>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Tastenkürzel:" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBox x:Name="HotkeyBox" Width="220" IsReadOnly="True" Text="{Binding HotkeyText, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas"
+                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown" AutomationProperties.Name="Tastenkürzel"
+                                         ToolTip="Klicken und die gewünschte Tastenkombination drücken; Entf entfernt das Kürzel"/>
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="Standard" Margin="8,0,0,0" Command="{Binding ResetHotkeyCommand}"
+                                           ToolTip="Strg+Alt+Leertaste"/>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,0" Text="Zum Ändern ins Feld klicken und die Kombination drücken."/>
                         </StackPanel>
                     </Border>
                     <CheckBox Content="Mit Windows starten" IsChecked="{Binding StartWithWindows}" Margin="0,18,0,0"/>

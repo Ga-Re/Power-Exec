@@ -98,6 +98,16 @@ public sealed class PanelHost : IPanelView
 
     public void Hide() => Window.HidePanel();
 
+    public PanelOpenState? OpenState =>
+        Window.IsOpen && !Window.IsHiding && Window.CurrentMonitor is { } m ? new PanelOpenState(m.Index, Window.OpenedViaHotkey) : null;
+
+    public void RestoreOpenState(PanelOpenState state)
+    {
+        var monitor = ScreenService.GetMonitors().FirstOrDefault(m => m.Index == state.MonitorIndex) ?? ScreenService.TriggerMonitors(Config)[0];
+        Window.ShowInPlace(monitor, state.ViaHotkey);
+        KeepTriggersClickable();
+    }
+
     public void HideAfterAction(bool force) => Window.HideAfterAction(force);
 
     public void SetBusy(bool busy)

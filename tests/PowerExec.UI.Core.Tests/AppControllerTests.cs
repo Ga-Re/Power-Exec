@@ -84,6 +84,16 @@ internal sealed class FakePanelView(AppPanel panel) : IPanelView
     public void SetBusy(bool busy) => Busy = busy;
     public void ApplyFullscreen(FullscreenProbe? probe) { }
     public void Dispose() => Disposed = true;
+
+    public PanelOpenState? OpenState => IsOpen ? new PanelOpenState(1, OpenedViaHotkey) : null;
+    public PanelOpenState? Restored { get; private set; }
+
+    public void RestoreOpenState(PanelOpenState state)
+    {
+        Restored = state;
+        IsOpen = true;
+        OpenedViaHotkey = state.ViaHotkey;
+    }
 }
 
 internal sealed class FakeWindow(object? viewModel) : ISettingsWindow
@@ -188,6 +198,22 @@ public sealed class AppControllerTests : IDisposable
         Assert.Single(app.Hosts);
         Assert.NotSame(first, app.Hosts[0].View);
         Assert.Contains("Haupt", error);
+    }
+
+    [Fact]
+    public void OpenPanelStaysOpenAfterRecreate()
+    {
+        var app = Create(new PanelConfig { Name = "A", Hotkey = "Ctrl+Alt+A" }, new PanelConfig { Name = "B", Hotkey = "Ctrl+Alt+B" });
+        app.ShowPanelFromHotkey(app.Hosts[1]);
+
+        app.Recreate();
+
+        var a = (FakePanelView)app.Hosts[0].View;
+        var b = (FakePanelView)app.Hosts[1].View;
+        Assert.False(a.IsOpen);
+        Assert.Null(a.Restored);
+        Assert.True(b.IsOpen);
+        Assert.Equal(new PanelOpenState(1, true), b.Restored);
     }
 
     [Fact]

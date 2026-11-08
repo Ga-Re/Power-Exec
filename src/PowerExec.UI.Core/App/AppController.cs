@@ -185,9 +185,11 @@ public partial class AppController : IDisposable
     /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
     protected string? CreateHosts()
     {
+        // Offene Panels bleiben nach dem Neuaufbau offen – man soll sehen, was die geänderte Einstellung bewirkt
+        var wasOpen = _hosts.Select(h => h.View.OpenState).ToList();
         DisposePanels();
         Ui.Hotkeys.UnregisterAll();
-        if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig());
+        if (Settings.Panels.Count == 0) Settings.Panels.Add(new PanelConfig { Hotkey = PanelConfig.DefaultHotkey });
         var errors = new List<string>();
         int id = 0x5045; // "PE"
         foreach (var config in Settings.Panels)
@@ -200,6 +202,8 @@ public partial class AppController : IDisposable
             if (err != null) errors.Add($"{config.Name}: {err}");
         }
         foreach (var h in _hosts) h.ViewModel.Rebuild();
+        for (var i = 0; i < Math.Min(wasOpen.Count, _hosts.Count); i++)
+            if (wasOpen[i] is { } state) _hosts[i].View.RestoreOpenState(state);
         return errors.Count == 0 ? null : string.Join("\n", errors);
     }
 
