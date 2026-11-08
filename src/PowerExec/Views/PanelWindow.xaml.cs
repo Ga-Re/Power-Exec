@@ -78,6 +78,7 @@ public partial class PanelWindow : Window
         ApplyBackdrop();
         if (GlassActive)
         {
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
             HostContentInChildWindow();
             ApplyFrost(Cfg.Frost); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
         }
@@ -170,14 +171,21 @@ public partial class PanelWindow : Window
         {
             // Glas: Fokus, Aktivierung und erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach.
             // Sonst fallen diese Arbeiten in die ersten (schnellsten) Bilder des Ausfahrens, und es ruckelt.
-            Vm.OnShown();
             if (viaHotkey) FocusSearch();
             Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => { if (IsOpen && !_hiding) Animate(show: true); });
             return;
         }
         Animate(show: true);
-        Vm.OnShown();
         if (viaHotkey) FocusSearch();
+    }
+
+    /// <summary>
+    /// Nach dem Ausfahren: Hintergrundprüfungen (Erreichbarkeit der Einträge) erst jetzt starten – während des Gleitens
+    /// würden ihre Abfragen den UI-Thread belasten.
+    /// </summary>
+    private void OnSlideInFinished()
+    {
+        if (IsOpen && !_hiding) Vm.OnShown();
     }
 
     private void FocusSearch()
@@ -230,11 +238,26 @@ public partial class PanelWindow : Window
     {
         _poll.Stop();
         IsOpen = false;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _peekWindow?.Close();
         _peekWindow = null;
         DisposeGlass();
         DisposeContentHost();
         Close();
+    }
+
+    /// <summary>
+    /// Einstellungen wurden ersetzt (gleiche Fensterart): Aussehen, Weichzeichner und Lage neu anwenden – das Panel bleibt
+    /// dabei sichtbar. Liegt der bisherige Monitor nicht mehr in der Auswahl, wechselt es auf den ersten passenden.
+    /// </summary>
+    public void ApplyConfigChange()
+    {
+        ApplyAppearance(); // samt Hintergrund, Milchglas und Weichzeichner
+        if (!IsOpen || _hiding || _monitor == null) return;
+        var monitors = ScreenService.TriggerMonitors(Cfg);
+        if (!monitors.Any(m => m.Index == _monitor.Index) && monitors.Count > 0) _monitor = monitors[0];
+        Place();
+        UpdatePeekWindow();
     }
 
     /// <summary>Fährt gerade ein.</summary>
@@ -749,6 +772,21 @@ public partial class PanelWindow : Window
         Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
 
+    /// <summary>
+    /// Glas: eingefahren bleibt das Fenster sichtbar hinter dem Rand des Arbeitsbereichs stehen („geparkt“, außerhalb des
+    /// Bildschirms bzw. auf einen leeren Fensterbereich zugeschnitten). Würde es versteckt, müsste Windows beim nächsten
+    /// Ausfahren Weichzeichner, Composition und Kindfenster neu aufbauen – genau in den ersten, schnellsten Bildern der
+    /// Bewegung, und das Ausfahren ruckelte (das Einfahren nicht). Geparkt gleitet es in beide Richtungen gleich.
+    /// </summary>
+    private bool ParkWhenHidden => _contentHost is { IsDisposed: false };
+
+    /// <summary>Für den Selbsttest: eingefahren, aber geparkt statt versteckt.</summary>
+    internal bool IsParked => ParkWhenHidden && IsVisible && !IsOpen && !_hiding;
+
+    /// <summary>Bildschirme geändert: ein geparktes Fenster könnte plötzlich im Bild stehen – dann lieber verstecken.</summary>
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
+        Dispatcher.BeginInvoke(() => { if (IsParked) Hide(); });
+
     /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;
 
@@ -765,13 +803,17 @@ public partial class PanelWindow : Window
             BeginAnimation(RevealProperty, null);
             Reveal = show ? 1 : 0;
             if (!show) FinishHide();
+            else OnSlideInFinished();
             return;
         }
+        // Ausfahren mit EaseInOut: startet mit Geschwindigkeit 0 statt mit dem Dreifachen der mittleren Geschwindigkeit –
+        // der Kaltstart von Weichzeichner und Composition in den ersten Bildern bleibt so unsichtbar.
         var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? duration : TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7))
         {
-            EasingFunction = new CubicEase { EasingMode = show ? EasingMode.EaseOut : EasingMode.EaseIn }
+            EasingFunction = new CubicEase { EasingMode = show ? EasingMode.EaseInOut : EasingMode.EaseIn }
         };
         if (!show) anim.Completed += (_, _) => { if (_hiding) FinishHide(); };
+        else anim.Completed += (_, _) => OnSlideInFinished();
         BeginAnimation(RevealProperty, anim);
     }
 
@@ -801,6 +843,7 @@ public partial class PanelWindow : Window
             PanelBorder.BeginAnimation(OpacityProperty, null);
             PanelBorder.Opacity = show ? 1 : 0;
             if (!show) FinishHide();
+            else OnSlideInFinished();
             return;
         }
 
@@ -812,6 +855,7 @@ public partial class PanelWindow : Window
         };
         var fade = new DoubleAnimation(show ? 0.0 : 1.0, show ? 1.0 : 0.0, TimeSpan.FromMilliseconds(Math.Min(220, duration.TotalMilliseconds)));
         if (!show) slide.Completed += (_, _) => { if (_hiding) FinishHide(); };
+        else slide.Completed += (_, _) => OnSlideInFinished();
         Slide.BeginAnimation(property, slide);
         PanelBorder.BeginAnimation(OpacityProperty, fade);
     }
@@ -822,7 +866,12 @@ public partial class PanelWindow : Window
         IsOpen = false;
         _peekWindow?.Hide();
         OpenedViaHotkey = false;
-        Hide();
+        if (ParkWhenHidden)
+        {
+            // Glas: hinter dem Rand stehen lassen (siehe ParkWhenHidden); den Fokus aber abgeben
+            if (IsActive) Services.ForegroundTracker.ReturnFocus();
+        }
+        else Hide();
         Vm.ResetForNextOpen();
         ListScroll.ScrollToTop();
     }

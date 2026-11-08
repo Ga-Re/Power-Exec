@@ -1189,10 +1189,16 @@
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Neue Gruppe"/></StackPanel>
                         </ui:Button>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding AddSamplesCommand}" VerticalAlignment="Center" Margin="0,0,8,0"
+                                   ToolTip="Mitgelieferte Beispielscripte unter Dokumente › Power-Exec › Scripte anlegen und als Gruppe „Beispiele“ einbinden">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE943;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Beispielscripte anlegen"/></StackPanel>
+                        </ui:Button>
                         <TextBlock Text="Gruppen" Style="{StaticResource PageTitle}"/>
                     </DockPanel>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
                                Text="Gruppen ordnen das Panel. Ziehe eine Gruppe an eine andere Stelle oder auf die Mitte einer anderen Gruppe, um sie zur Untergruppe zu machen; Rechtsklick legt eine Untergruppe an. Einträge ziehst du im Panel per Drag &amp; Drop in jede Gruppe. Welche Gruppen ein Arbeitsbereich zeigt, legst du unter Arbeitsbereiche fest."/>
+                    <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Text.Primary}"
+                               Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
 
                     <TextBlock Text="Deine Gruppen" Style="{StaticResource SettingsSection}"/>
                     <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="4,0,0,8" TextWrapping="Wrap"
@@ -1625,6 +1631,14 @@
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=diag}">
                     <TextBlock Text="Diagnose" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Protokoll für die Fehlersuche und Einlesezeiten der Ordner." Style="{StaticResource Caption}"/>
+
+                    <TextBlock Text="Beispiele" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE943;" Header="Beispielscripte anlegen"
+                                    Description="Legt die mitgelieferten Beispielscripte unter Dokumente › Power-Exec › Scripte an (vorhandene Dateien bleiben unverändert) und bindet den Ordner als Gruppe „Beispiele“ ein.">
+                        <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddSamplesCommand}"/>
+                    </c:SettingsCard>
+                    <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="4,4,0,0" TextWrapping="Wrap"
+                               Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
 
                     <TextBlock Text="Einlesen der Ordner" Style="{StaticResource SettingsSection}"/>
 

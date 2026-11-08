@@ -105,6 +105,17 @@ public sealed class PanelConfig
     };
 
     /// <summary>Übernimmt die Panel-Einstellungen aus Versionen vor 0.7 (ein Panel, globale Felder).</summary>
+    /// <summary>
+    /// Lässt sich <paramref name="updated"/> auf das bestehende Panelfenster von <paramref name="current"/> anwenden?
+    /// Nein nur, wenn sich die Fensterart ändert (Klarglas ↔ Glas) oder es ein anderes Panel ist.
+    /// </summary>
+    public static bool FitsSameWindow(PanelConfig current, PanelConfig updated) =>
+        current.Id == updated.Id && current.EffectiveBackdropSetting == updated.EffectiveBackdropSetting;
+
+    /// <summary>Alles, was Hover-Zonen und Mini-Docks betrifft (ändert es sich, werden sie neu angelegt).</summary>
+    public string TriggerKey =>
+        $"{Edge}|{MonitorMode}|{MonitorIndex}|{HotZone}|{HotZoneThickness}|{HotZoneLength}|{PanelWidth}|{PanelHeightPercent}|{PanelAlignment}|{PanelColor}|{PanelOpacity}|{ShowDock}|{DockCount}";
+
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
         Name = "Hauptpanel",

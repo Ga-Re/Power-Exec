@@ -1316,6 +1316,13 @@ public sealed class PanelViewModel : ObservableObject
 
     public ItemViewModel? SelectedItem => AllItems.FirstOrDefault(i => i.IsSelected);
 
+    /// <summary>Einstellungen des Panels wurden ersetzt: alle Anzeigen neu lesen (Darstellung, Größe, Sprungleiste …).</summary>
+    public void ConfigReplaced()
+    {
+        OnPropertyChanged(string.Empty);
+        foreach (var g in Groups.SelectMany(g => g.SelfAndDescendants)) g.RefreshLayout();
+    }
+
     /// <summary>Schlüssel des ausgewählten Eintrags (bleibt über einen Neuaufbau erhalten).</summary>
     public string? SelectedKey => _selectedKey;
 

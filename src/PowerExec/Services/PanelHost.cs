@@ -7,8 +7,11 @@ namespace PowerExec.Services;
 /// <summary>WPF-Oberfläche eines Panels: Panelfenster, Hover-Zonen bzw. Mini-Docks (je Monitor).</summary>
 public sealed class PanelHost : IPanelView
 {
+    private readonly AppController _app;
+
     public PanelHost(AppController app, AppPanel panel)
     {
+        _app = app;
         Panel = panel;
         Window = new PanelWindow(app, this);
     }
@@ -97,6 +100,14 @@ public sealed class PanelHost : IPanelView
     }
 
     public void Hide() => Window.HidePanel();
+
+    /// <summary>Geänderte Einstellungen ins bestehende Fenster übernehmen; Hover-Zonen nur bei Bedarf neu.</summary>
+    public void ApplyConfig(PanelConfig previous)
+    {
+        Window.ApplyConfigChange();
+        if (previous.TriggerKey != Config.TriggerKey) CreateTriggers(_app);
+        KeepTriggersClickable();
+    }
 
     public PanelOpenState? OpenState =>
         Window.IsOpen && !Window.IsHiding && Window.CurrentMonitor is { } m ? new PanelOpenState(m.Index, Window.OpenedViaHotkey) : null;

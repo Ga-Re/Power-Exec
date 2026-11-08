@@ -90,6 +90,7 @@ public partial class SettingsWindow : Window
 
     private void InitNavigation()
     {
+        Infrastructure.NavigationMotion.Attach(Nav); // weiches Auf-/Zuklappen, gleitender Auswahlbalken
         Nav.Loaded += (_, _) => SyncNavigation();
         // Klick auf einen Eintrag oder „Zurück“: Abschnitt umschalten
         Nav.SelectionChanged += (_, _) =>

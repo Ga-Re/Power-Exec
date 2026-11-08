@@ -468,6 +468,24 @@ public sealed partial class SelfTestController : AppController
                         report.AppendLine($"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
                     }
                     host.Window.HidePanel();
+                    await Settle();
+                    await Task.Delay(300);
+                    if (host.Window.GlassActive)
+                    {
+                        // Glas: eingefahren geparkt statt versteckt – das zweite Ausfahren gleitet wie das Einfahren
+                        if (!host.Window.IsParked) Fail("Glas: eingefahrenes Panel ist nicht geparkt (wird versteckt)");
+                        var again = new List<double>();
+                        var clock2 = System.Diagnostics.Stopwatch.StartNew();
+                        var last2 = 0.0;
+                        EventHandler onFrame2 = (_, _) => { var t = clock2.Elapsed.TotalMilliseconds; again.Add(t - last2); last2 = t; };
+                        System.Windows.Media.CompositionTarget.Rendering += onFrame2;
+                        host.Window.ShowPanel(monitor, viaHotkey: false);
+                        await Settle();
+                        System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
+                        report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
+                        host.Window.HidePanel();
+                        await Settle();
+                    }
                     stripes.Close();
                     await Settle();
                 }
@@ -1014,6 +1032,30 @@ public sealed partial class SelfTestController : AppController
                 if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
+                    // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg.
+                    // Erst aufklappen: WPF UI klappt Oberkategorien beim Einklappen des Rands mit zu.
+                    exec.IsExpanded = true;
+                    await Settle();
+                    var fullHeight = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    if (fullHeight < 1) Fail("Navigation: aufgeklappte Oberkategorie zeigt keine Unterpunkte");
+                    exec.IsExpanded = false;
+                    await Task.Delay(70);
+                    var midClose = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    await Settle();
+                    var closed = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    exec.IsExpanded = true;
+                    await Task.Delay(70);
+                    var midOpen = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    await Settle();
+                    var reopened = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    Step($"Navigation: Unterpunkte {fullHeight:0} → zu {midClose:0} … {closed:0} → auf {midOpen:0} … {reopened:0} px");
+                    Step("Navigation: Unterpunkte " + Infrastructure.NavigationMotion.ChildrenStateForTest(exec));
+                    if (Settings.Animation != AnimationMode.Off)
+                    {
+                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px nach 70 ms)");
+                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px nach 70 ms)");
+                    }
+                    if (closed > 0.5 || Math.Abs(reopened - fullHeight) > 1) Fail($"Navigation: nach dem Klappen {closed:0} bzw. {reopened:0} statt 0 bzw. {fullHeight:0} px");
                     exec.IsExpanded = false;
                     await Settle();
                     if (settingsWindow.Content is FrameworkElement navRoot) Screenshot(navRoot, "settings-navigation-kategorie-zu");
@@ -1022,6 +1064,22 @@ public sealed partial class SelfTestController : AppController
                     settingsVm.Section = "remote";
                     await Settle();
                     if (settingsWindow.NavigationSectionForTest != "remote") Fail("Navigation: Unterpunkt einer Oberkategorie lässt sich nicht auswählen");
+                    // Gleitender Auswahlbalken: steht am ausgewählten Punkt, bei zugeklappter Oberkategorie an ihr
+                    await Task.Delay(400);
+                    var bar = Infrastructure.NavigationMotion.IndicatorForTest(nav);
+                    if (bar is not { Target: { } atItem } || Math.Abs(bar.Value.Top - atItem.Top) > 1)
+                        Fail($"Navigation: Auswahlbalken steht nicht am ausgewählten Punkt ({bar?.Top:0} statt {bar?.Target?.Top:0})");
+                    else
+                    {
+                        exec.IsExpanded = false;
+                        await Settle();
+                        await Task.Delay(400);
+                        var collapsed = Infrastructure.NavigationMotion.IndicatorForTest(nav);
+                        if (collapsed is not { Target: { } atParent } || atParent.Top >= atItem.Top)
+                            Fail("Navigation: bei zugeklappter Oberkategorie steht der Auswahlbalken nicht an ihr");
+                        exec.IsExpanded = true;
+                        await Settle();
+                    }
                 }
                 settingsVm.Section = "custom";
                 await Settle();

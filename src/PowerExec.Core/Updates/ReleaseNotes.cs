@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 22, 0), "Flüssiger: Panel passt sich direkt an, Glas gleitet ruhig", new[]
+        {
+            "Geänderte Einstellungen wirken sofort im offenen Panel – ohne Flackern und ohne Neuaufbau (nur beim Wechsel des Designs oder zwischen Klarglas und Glas wird es neu erzeugt)",
+            "Glas: das Panel fährt sanft an und bleibt eingefahren hinter dem Rand bereit – kein Ruckeln mehr beim Ausfahren",
+            "Einstellungen: Bereiche klappen weich auf und zu, der Auswahlbalken gleitet zum neuen Menüpunkt",
+            "Acht Beispielscripte (Systeminfo, Netzwerktest, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter, Speicherplatz) – unter Inhalte › Gruppen mit „Beispielscripte anlegen“"
+        }),
         new ReleaseNote(new Version(0, 21, 0), "Glas mit eigenem Weichzeichner, neue Einstellungen", new[]
         {
             "Neuer Hintergrund „Glas“ (Windows 11): der Desktop hinter dem Panel wird weichgezeichnet und mit der Panelfarbe getönt – Blur-Stärke und Sättigung einstellbar. Aero-Blur, Acrylic und Mica sind entfallen, Klarglas bekommt ein ruhigeres Milchglas",

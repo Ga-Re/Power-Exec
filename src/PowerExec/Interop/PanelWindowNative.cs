@@ -38,7 +38,7 @@ internal static class PanelWindowNative
             if (clipRight <= clipLeft || clipBottom <= clipTop)
             {
                 var empty = CreateRectRgn(0, 0, 0, 0);
-                if (empty != IntPtr.Zero) SetWindowRgn(hwnd, empty, true);
+                if (empty != IntPtr.Zero) SetWindowRgn(hwnd, empty, false); // ohne synchrones Neuzeichnen (pro Bild beim Gleiten)
                 return;
             }
             var rgn = CreateRoundRectRgn(0, 0, width + 1, height + 1, radius * 2, radius * 2);
@@ -52,7 +52,7 @@ internal static class PanelWindowNative
                     DeleteObject(clip);
                 }
             }
-            SetWindowRgn(hwnd, rgn, true); // Windows übernimmt rgn
+            SetWindowRgn(hwnd, rgn, false); // Windows übernimmt rgn; false: kein synchrones GDI-Neuzeichnen pro Bild beim Gleiten
         }
         catch (EntryPointNotFoundException) { }
         catch (DllNotFoundException) { }

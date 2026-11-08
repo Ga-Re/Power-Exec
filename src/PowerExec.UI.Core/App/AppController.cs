@@ -139,6 +139,7 @@ public partial class AppController : IDisposable
         ClearUndo();
         var foldersChanged = !FoldersEqual(Settings, updated);
         var panelsChanged = PanelKey(Settings) != PanelKey(updated);
+        var previousPanels = Settings.Panels;
         var themeChanged = AppearanceKey(Settings) != AppearanceKey(updated);
         var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
@@ -146,7 +147,10 @@ public partial class AppController : IDisposable
         if (themeChanged) Ui.ApplyTheme(Settings);
         if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
         string? hotkeyError = null;
-        if (panelsChanged || themeChanged || _hosts.Count == 0) hotkeyError = CreateHosts();
+        // Panels möglichst im bestehenden Fenster anpassen (kein Neuaufbau, kein Flackern); neu erzeugt wird nur, wenn sich
+        // das Design oder die Fensterart (Klarglas ↔ Glas) ändert oder Panels hinzukommen bzw. wegfallen
+        if (themeChanged || _hosts.Count == 0 || (panelsChanged && !CanUpdateInPlace(previousPanels))) hotkeyError = CreateHosts();
+        else if (panelsChanged) hotkeyError = UpdateHostsInPlace(previousPanels);
         if (foldersChanged) Repository.UpdateSettings(Settings);
         else
         {
@@ -216,6 +220,29 @@ public partial class AppController : IDisposable
             IUiTimer? later = null;
             later = Ui.Dispatcher.CreateTimer(TimeSpan.FromMilliseconds(250), () => { later!.Stop(); DisposePanels(old); });
             later.Start();
+        }
+        return errors.Count == 0 ? null : string.Join("\n", errors);
+    }
+
+    private bool CanUpdateInPlace(IReadOnlyList<PanelConfig> previous) =>
+        _hosts.Count == Settings.Panels.Count && previous.Count == Settings.Panels.Count &&
+        _hosts.Select((h, i) => PanelConfig.FitsSameWindow(h.Config, Settings.Panels[i])).All(ok => ok);
+
+    /// <summary>Neue Panel-Einstellungen an die bestehenden Panels geben; Tastenkürzel neu anmelden.</summary>
+    /// <returns>Fehlermeldungen zu Tastenkürzeln oder null.</returns>
+    private string? UpdateHostsInPlace(IReadOnlyList<PanelConfig> previous)
+    {
+        Ui.Hotkeys.UnregisterAll();
+        var errors = new List<string>();
+        for (var i = 0; i < _hosts.Count; i++)
+        {
+            var host = _hosts[i];
+            var before = previous.Count > i ? previous[i] : host.Config;
+            host.ReplaceConfig(Settings.Panels[i]);
+            host.View.ApplyConfig(before);
+            host.ViewModel.ConfigReplaced();
+            var err = Ui.Hotkeys.Register(host.HotkeyId, host.Config.Hotkey);
+            if (err != null) errors.Add($"{host.Config.Name}: {err}");
         }
         return errors.Count == 0 ? null : string.Join("\n", errors);
     }

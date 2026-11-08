@@ -19,7 +19,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Beispiel-Script für die Einführung (WelcomeViewModel liest es aus dieser Assembly) -->
-    <EmbeddedResource Include="..\..\samples\Get-DiskSpace.ps1" LogicalName="PowerExec.Sample.Get-DiskSpace.ps1" Link="Assets\Get-DiskSpace.ps1" />
+    <!-- Beispielscripte für den Beispielordner der Einrichtung (alle Scripte aus samples/) -->
+    <EmbeddedResource Include="..\..\samples\*.ps1" LogicalName="PowerExec.Sample.%(Filename)%(Extension)" Link="Assets\Samples\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="PowerExec.UI.Core.Tests" />
