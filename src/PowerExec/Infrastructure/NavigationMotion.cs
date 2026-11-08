@@ -32,6 +32,13 @@ public static class NavigationMotion
     internal static double ChildrenHeightForTest(NavigationViewItem item) =>
         item.Template?.FindName("MenuItemsPresenter", item) is FrameworkElement p && p.IsVisible ? p.ActualHeight : 0;
 
+    /// <summary>Für den Selbsttest: woher die Sichtbarkeit der Unterpunkte kommt (Fehlersuche).</summary>
+    internal static string ChildrenStateForTest(NavigationViewItem item) =>
+        item.Template?.FindName("MenuItemsPresenter", item) is FrameworkElement p
+            ? $"{p.Visibility}/{DependencyPropertyHelper.GetValueSource(p, UIElement.VisibilityProperty).BaseValueSource}" +
+              $"{(DependencyPropertyHelper.GetValueSource(p, UIElement.VisibilityProperty).IsAnimated ? "+Animation" : "")}, {p.ActualHeight:0} px"
+            : "nicht gefunden";
+
     /// <summary>Für den Selbsttest: wo der Balken hin soll (null = nirgends) und wo er gerade steht (oben).</summary>
     internal static (Rect? Target, double Top)? IndicatorForTest(NavigationView nav) =>
         Indicators.TryGetValue(nav, out var a) ? (Target(nav), a.BarTop) : null;
@@ -78,9 +85,33 @@ public static class NavigationMotion
         item.Loaded += (_, _) => HideOwnBar();
 
         if (item.MenuItems.Count == 0) return;
+        void TakeOver()
+        {
+            if (!Animate || item.Template?.FindName("MenuItemsPresenter", item) is not FrameworkElement presenter) return;
+            HoldVisible(presenter);
+            presenter.ClipToBounds = true;
+            if (!item.IsExpanded) HoldHeight(presenter, 0);
+        }
+        if (item.IsLoaded) TakeOver();
+        item.Loaded += (_, _) => TakeOver();
         DependencyPropertyDescriptor.FromProperty(NavigationViewItem.IsExpandedProperty, typeof(NavigationViewItem))
             ?.AddValueChanged(item, (_, _) => AnimateExpand(item));
     }
+
+    /// <summary>
+    /// Unterpunkte dauerhaft sichtbar halten – per Animation, denn Animationen gehen in WPF vor lokalen Werten und
+    /// Vorlagen-Triggern. Ob sie zu sehen sind, bestimmt danach allein die Höhe (zugeklappt: 0).
+    /// </summary>
+    private static void HoldVisible(FrameworkElement presenter)
+    {
+        var hold = new ObjectAnimationUsingKeyFrames { FillBehavior = FillBehavior.HoldEnd };
+        hold.KeyFrames.Add(new DiscreteObjectKeyFrame(Visibility.Visible, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        presenter.BeginAnimation(UIElement.VisibilityProperty, hold);
+        presenter.SetValue(UIElement.OpacityProperty, 1.0);
+    }
+
+    private static void HoldHeight(FrameworkElement presenter, double height) =>
+        presenter.BeginAnimation(FrameworkElement.HeightProperty, new DoubleAnimation(height, height, new Duration(TimeSpan.Zero)) { FillBehavior = FillBehavior.HoldEnd });
 
     /// <summary>
     /// Unterpunkte weich auf- bzw. zuklappen: die Höhe wächst von 0 auf die volle Höhe (bzw. schrumpft auf 0). Während
@@ -89,24 +120,39 @@ public static class NavigationMotion
     private static void AnimateExpand(NavigationViewItem item)
     {
         if (!Animate || !item.IsLoaded || item.Template?.FindName("MenuItemsPresenter", item) is not FrameworkElement presenter) return;
-        var expand = item.IsExpanded;
-        var current = presenter.IsVisible ? presenter.ActualHeight : 0; // unterwegs umgeschaltet: von hier weiter
-        // Sichtbarkeit über eine Animation festhalten: Animationen gehen in WPF vor Vorlagen-Triggern (ein lokaler Wert
-        // reichte nicht – WPF UI blendete die Unterpunkte beim Zuklappen sofort aus)
-        var keep = new ObjectAnimationUsingKeyFrames { Duration = ExpandDuration, FillBehavior = FillBehavior.Stop };
-        keep.KeyFrames.Add(new DiscreteObjectKeyFrame(Visibility.Visible, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        presenter.BeginAnimation(UIElement.VisibilityProperty, keep);
+        HoldVisible(presenter);
         presenter.ClipToBounds = true;
-        presenter.BeginAnimation(FrameworkElement.HeightProperty, null);
-        presenter.Measure(new Size(presenter.ActualWidth > 0 ? presenter.ActualWidth : item.ActualWidth, double.PositiveInfinity));
-        var full = presenter.DesiredSize.Height;
-        if (full <= 0) { presenter.BeginAnimation(UIElement.VisibilityProperty, null); return; }
-        var from = expand ? Math.Min(current, full) : (current > 0 ? Math.Min(current, full) : full);
+        var expand = item.IsExpanded;
+        var current = presenter.ActualHeight; // unterwegs umgeschaltet: von hier weiter
+        // Natürliche Höhe am Inhalt messen – die gehaltene Höhe der Liste bleibt dabei stehen (kein Aufblitzen)
+        var width = presenter.ActualWidth > 0 ? presenter.ActualWidth : item.ActualWidth;
+        double full;
+        if (VisualTreeHelper.GetChildrenCount(presenter) > 0 && VisualTreeHelper.GetChild(presenter, 0) is UIElement content)
+        {
+            content.Measure(new Size(width, double.PositiveInfinity));
+            full = content.DesiredSize.Height;
+        }
+        else
+        {
+            presenter.BeginAnimation(FrameworkElement.HeightProperty, null);
+            presenter.Measure(new Size(width, double.PositiveInfinity));
+            full = presenter.DesiredSize.Height;
+        }
+        if (full <= 0) { if (!expand) HoldHeight(presenter, 0); return; }
+        var from = Math.Clamp(current, 0, full);
         var animation = new DoubleAnimation(from, expand ? full : 0, ExpandDuration)
         {
             EasingFunction = new CubicEase { EasingMode = expand ? EasingMode.EaseOut : EasingMode.EaseIn },
-            FillBehavior = FillBehavior.Stop // danach wieder automatische Höhe (bzw. ausgeblendet durch WPF UI)
+            FillBehavior = FillBehavior.HoldEnd
         };
+        if (expand)
+        {
+            // Aufgeklappt wieder automatische Höhe (neue oder ausgeblendete Unterpunkte passen dann von selbst)
+            animation.Completed += (_, _) =>
+            {
+                if (item.IsExpanded) presenter.BeginAnimation(FrameworkElement.HeightProperty, null);
+            };
+        }
         presenter.BeginAnimation(FrameworkElement.HeightProperty, animation);
     }
 

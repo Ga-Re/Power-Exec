@@ -1049,6 +1049,7 @@ public sealed partial class SelfTestController : AppController
                     await Settle();
                     var reopened = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     Step($"Navigation: Unterpunkte {fullHeight:0} → zu {midClose:0} … {closed:0} → auf {midOpen:0} … {reopened:0} px");
+                    Step("Navigation: Unterpunkte " + Infrastructure.NavigationMotion.ChildrenStateForTest(exec));
                     if (Settings.Animation != AnimationMode.Off)
                     {
                         if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px nach 70 ms)");
