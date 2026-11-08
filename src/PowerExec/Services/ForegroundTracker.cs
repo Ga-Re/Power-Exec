@@ -15,6 +15,12 @@ public static class ForegroundTracker
         _last = hwnd;
     }
 
+    /// <summary>Den Fokus an das vorher aktive Fenster zurückgeben (das Panel wird nicht versteckt, sondern geparkt).</summary>
+    public static void ReturnFocus()
+    {
+        if (_last != IntPtr.Zero && NativeMethods.IsWindow(_last)) NativeMethods.SetForegroundWindow(_last);
+    }
+
     /// <summary>Vorher aktives Fenster nach vorn holen und Strg+V senden. false = kein Zielfenster.</summary>
     /// <remarks>Läuft das Zielfenster mit Adminrechten (Power-Exec nicht), blockiert Windows die Eingabe – dann bleibt der Text nur kopiert.</remarks>
     public static async Task<bool> PasteIntoPreviousAsync()

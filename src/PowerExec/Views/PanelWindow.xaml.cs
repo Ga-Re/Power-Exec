@@ -78,6 +78,7 @@ public partial class PanelWindow : Window
         ApplyBackdrop();
         if (GlassActive)
         {
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
             HostContentInChildWindow();
             ApplyFrost(Cfg.Frost); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
         }
@@ -230,6 +231,7 @@ public partial class PanelWindow : Window
     {
         _poll.Stop();
         IsOpen = false;
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         _peekWindow?.Close();
         _peekWindow = null;
         DisposeGlass();
@@ -763,6 +765,21 @@ public partial class PanelWindow : Window
         Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
 
+    /// <summary>
+    /// Glas: eingefahren bleibt das Fenster sichtbar hinter dem Rand des Arbeitsbereichs stehen („geparkt“, außerhalb des
+    /// Bildschirms bzw. auf einen leeren Fensterbereich zugeschnitten). Würde es versteckt, müsste Windows beim nächsten
+    /// Ausfahren Weichzeichner, Composition und Kindfenster neu aufbauen – genau in den ersten, schnellsten Bildern der
+    /// Bewegung, und das Ausfahren ruckelte (das Einfahren nicht). Geparkt gleitet es in beide Richtungen gleich.
+    /// </summary>
+    private bool ParkWhenHidden => _contentHost is { IsDisposed: false };
+
+    /// <summary>Für den Selbsttest: eingefahren, aber geparkt statt versteckt.</summary>
+    internal bool IsParked => ParkWhenHidden && IsVisible && !IsOpen && !_hiding;
+
+    /// <summary>Bildschirme geändert: ein geparktes Fenster könnte plötzlich im Bild stehen – dann lieber verstecken.</summary>
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
+        Dispatcher.BeginInvoke(() => { if (IsParked) Hide(); });
+
     /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;
 
@@ -836,7 +853,12 @@ public partial class PanelWindow : Window
         IsOpen = false;
         _peekWindow?.Hide();
         OpenedViaHotkey = false;
-        Hide();
+        if (ParkWhenHidden)
+        {
+            // Glas: hinter dem Rand stehen lassen (siehe ParkWhenHidden); den Fokus aber abgeben
+            if (IsActive) Services.ForegroundTracker.ReturnFocus();
+        }
+        else Hide();
         Vm.ResetForNextOpen();
         ListScroll.ScrollToTop();
     }

@@ -468,6 +468,24 @@ public sealed partial class SelfTestController : AppController
                         report.AppendLine($"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
                     }
                     host.Window.HidePanel();
+                    await Settle();
+                    await Task.Delay(300);
+                    if (host.Window.GlassActive)
+                    {
+                        // Glas: eingefahren geparkt statt versteckt – das zweite Ausfahren gleitet wie das Einfahren
+                        if (!host.Window.IsParked) Fail("Glas: eingefahrenes Panel ist nicht geparkt (wird versteckt)");
+                        var again = new List<double>();
+                        var clock2 = System.Diagnostics.Stopwatch.StartNew();
+                        var last2 = 0.0;
+                        EventHandler onFrame2 = (_, _) => { var t = clock2.Elapsed.TotalMilliseconds; again.Add(t - last2); last2 = t; };
+                        System.Windows.Media.CompositionTarget.Rendering += onFrame2;
+                        host.Window.ShowPanel(monitor, viaHotkey: false);
+                        await Settle();
+                        System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
+                        report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
+                        host.Window.HidePanel();
+                        await Settle();
+                    }
                     stripes.Close();
                     await Settle();
                 }
