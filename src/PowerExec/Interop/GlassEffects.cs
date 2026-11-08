@@ -7,14 +7,15 @@ namespace PowerExec.Interop;
 // Eigene Composition-Effekte ohne Win2D. Die Windows-Composition nimmt eine Effektbeschreibung als
 // Windows.Graphics.Effects.IGraphicsEffect entgegen und fragt über IGraphicsEffectD2D1Interop nach dem Direct2D-Effekt
 // (CLSID), seinen Eigenschaften und Quellen. Beide Schnittstellen stellt hier die COM-Brücke von .NET bereit
-// (IInspectable wird mit drei Platzhalter-Methoden nachgebildet).
+// (IInspectable wird mit drei Platzhalter-Methoden nachgebildet). Schnittstellen und Klassen müssen öffentlich sein,
+// sonst lehnt .NET sie für COM ab („The specified type must be visible from COM“).
 
 /// <summary>Zuordnung einer benannten Eigenschaft (für Animationen – hier nicht genutzt).</summary>
-internal enum GraphicsEffectPropertyMapping { Unknown = 0, Direct = 1 }
+public enum GraphicsEffectPropertyMapping { Unknown = 0, Direct = 1 }
 
 /// <summary>IInspectable + Windows.Graphics.Effects.IGraphicsEffectSource (ohne eigene Methoden).</summary>
 [ComVisible(true), Guid("2D8F9DDC-4339-4EB9-9216-F66DEB6B4D7A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-internal interface IGraphicsEffectSourceAbi
+public interface IGraphicsEffectSourceAbi
 {
     [PreserveSig] int GetIids(out int count, out IntPtr iids);
     [PreserveSig] int GetRuntimeClassName(out IntPtr className);
@@ -23,7 +24,7 @@ internal interface IGraphicsEffectSourceAbi
 
 /// <summary>IInspectable + Windows.Graphics.Effects.IGraphicsEffect (Name lesen/schreiben).</summary>
 [ComVisible(true), Guid("CB51C0CE-8FE6-4636-B202-861FAA07D8F3"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-internal interface IGraphicsEffectAbi
+public interface IGraphicsEffectAbi
 {
     [PreserveSig] int GetIids(out int count, out IntPtr iids);
     [PreserveSig] int GetRuntimeClassName(out IntPtr className);
@@ -34,7 +35,7 @@ internal interface IGraphicsEffectAbi
 
 /// <summary>Windows.Graphics.Effects.IGraphicsEffectD2D1Interop (windows.graphics.effects.interop.h).</summary>
 [ComVisible(true), Guid("2FC57384-A068-44D7-A331-30982FCF7177"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-internal interface IGraphicsEffectD2D1Interop
+public interface IGraphicsEffectD2D1Interop
 {
     [PreserveSig] int GetEffectId(out Guid id);
     [PreserveSig] int GetNamedPropertyMapping([MarshalAs(UnmanagedType.LPWStr)] string name, out uint index, out GraphicsEffectPropertyMapping mapping);
@@ -45,7 +46,7 @@ internal interface IGraphicsEffectD2D1Interop
 }
 
 /// <summary>Quelle eines Effekts: ein anderer eigener Effekt oder ein Objekt der Composition (z. B. Effektparameter).</summary>
-internal abstract class GlassEffectSource
+public abstract class GlassEffectSource
 {
     /// <summary>Zeiger auf IGraphicsEffectSource (mit AddRef; der Aufrufer gibt ihn frei).</summary>
     public abstract IntPtr GetSourcePointer();
@@ -53,7 +54,7 @@ internal abstract class GlassEffectSource
 
 /// <summary>Benannter Platzhalter, dem später eine Composition-Pinsel zugeordnet wird (SetSourceParameter).</summary>
 [SupportedOSPlatform("windows10.0.17763.0")]
-internal sealed class GlassSourceParameter(string name) : GlassEffectSource
+public sealed class GlassSourceParameter(string name) : GlassEffectSource
 {
     private readonly Windows.UI.Composition.CompositionEffectSourceParameter _parameter = new(name);
 
@@ -72,7 +73,7 @@ internal sealed class GlassSourceParameter(string name) : GlassEffectSource
 
 /// <summary>Grundlage aller eigenen Effekte: Direct2D-CLSID, Eigenschaften (als IPropertyValue) und Quellen.</summary>
 [ComVisible(true), ClassInterface(ClassInterfaceType.None)]
-internal abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGraphicsEffectSourceAbi, IGraphicsEffectD2D1Interop
+public abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGraphicsEffectSourceAbi, IGraphicsEffectD2D1Interop
 {
     protected abstract Guid EffectId { get; }
     protected abstract object[] Properties { get; }
@@ -152,7 +153,8 @@ internal abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGr
 }
 
 /// <summary>Direct2D „Gaussian blur“: StandardDeviation, Optimization (ausgewogen), BorderMode (hart).</summary>
-internal sealed class GaussianBlurGlassEffect(GlassEffectSource source, float standardDeviation) : GlassEffect
+[ComVisible(true), ClassInterface(ClassInterfaceType.None)]
+public sealed class GaussianBlurGlassEffect(GlassEffectSource source, float standardDeviation) : GlassEffect
 {
     protected override Guid EffectId { get; } = new("1FEB6D69-2FE6-4AC9-8C58-1D7F93E7A6A5");
     protected override object[] Properties => new object[] { standardDeviation, 1u, 1u };
@@ -160,7 +162,8 @@ internal sealed class GaussianBlurGlassEffect(GlassEffectSource source, float st
 }
 
 /// <summary>Direct2D „Saturation“: 0 = grau, 1 = unverändert, 2 = doppelt.</summary>
-internal sealed class SaturationGlassEffect(GlassEffectSource source, float saturation) : GlassEffect
+[ComVisible(true), ClassInterface(ClassInterfaceType.None)]
+public sealed class SaturationGlassEffect(GlassEffectSource source, float saturation) : GlassEffect
 {
     protected override Guid EffectId { get; } = new("5CB2D9CF-327D-459F-A0CE-40C0B2086BF7");
     protected override object[] Properties => new object[] { saturation };
@@ -168,14 +171,16 @@ internal sealed class SaturationGlassEffect(GlassEffectSource source, float satu
 }
 
 /// <summary>Direct2D „Flood“: einfarbige Fläche (RGBA 0–1, vormultipliziert wird von Direct2D erledigt).</summary>
-internal sealed class FloodGlassEffect(float r, float g, float b, float a) : GlassEffect
+[ComVisible(true), ClassInterface(ClassInterfaceType.None)]
+public sealed class FloodGlassEffect(float r, float g, float b, float a) : GlassEffect
 {
     protected override Guid EffectId { get; } = new("61C23C20-AE69-4D8E-94CF-50078DF638F2");
     protected override object[] Properties => new object[] { new[] { r, g, b, a } };
 }
 
 /// <summary>Direct2D „Composite“ (Quelle über Ziel): legt die zweite Quelle über die erste.</summary>
-internal sealed class CompositeGlassEffect(GlassEffectSource bottom, GlassEffectSource top) : GlassEffect
+[ComVisible(true), ClassInterface(ClassInterfaceType.None)]
+public sealed class CompositeGlassEffect(GlassEffectSource bottom, GlassEffectSource top) : GlassEffect
 {
     protected override Guid EffectId { get; } = new("48FC9F51-F6AC-48F1-8B58-3B28AC46F76D");
     protected override object[] Properties => new object[] { 0u }; // D2D1_COMPOSITE_MODE_SOURCE_OVER
