@@ -118,4 +118,5 @@ public sealed class WpfThemeInfo : IThemeInfo
 {
     public bool IsHighContrast => ThemeService.IsHighContrast;
     public bool IsDark => ThemeService.IsDark;
+    public bool TransparencyEffects => ThemeService.TransparencyEffects();
 }

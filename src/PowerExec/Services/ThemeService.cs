@@ -114,6 +114,20 @@ public static class ThemeService
         }
     }
 
+    /// <summary>Windows-Einstellung „Transparenzeffekte“ (HKCU …\Themes\Personalize, EnableTransparency); fehlt sie, gilt „an“.</summary>
+    public static bool TransparencyEffects()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            return key?.GetValue("EnableTransparency") is not int v || v != 0;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
     public static bool SystemUsesDarkTheme()
     {
         try

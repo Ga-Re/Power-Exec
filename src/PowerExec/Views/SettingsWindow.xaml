@@ -1408,6 +1408,34 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <c:SettingsCard Icon="&#xE790;" Header="Hintergrund" Description="{Binding BackdropDescription}">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}"
+                                  AutomationProperties.Name="Hintergrund"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8B3;" Header="Blur-Stärke" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
+                                    Description="Wie stark der Desktop hinter dem Panel weichgezeichnet wird.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                    Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="Blur-Stärke"/>
+                            <TextBlock Text="{Binding GlassBlur}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE790;" Header="Sättigung" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
+                                    Description="Farbkraft des Desktops hinter dem Glas (100 % = unverändert).">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True"
+                                    Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="Sättigung"/>
+                            <TextBlock Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE7B3;" Header="Körnung" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
+                                    Description="Feines Rauschen über dem Glas – verhindert Farbstufen im Weichzeichner.">
+                        <StackPanel Orientation="Horizontal">
+                            <Slider Width="180" Minimum="0" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                    Value="{Binding GlassNoise}" VerticalAlignment="Center" AutomationProperties.Name="Körnung"/>
+                            <TextBlock Text="{Binding GlassNoise, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE7B3;" Header="Milchglas" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}"
                                     Description="{Binding FrostDescription}">
                         <StackPanel Orientation="Horizontal">

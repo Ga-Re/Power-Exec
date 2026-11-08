@@ -111,4 +111,10 @@ public interface IThemeInfo
 {
     bool IsHighContrast { get; }
     bool IsDark { get; }
+
+    /// <summary>Windows-Einstellung „Transparenzeffekte“ (aus: kein Glas-Weichzeichner).</summary>
+    bool TransparencyEffects => true;
+
+    /// <summary>Windows-Build (für Varianten, die erst ab Windows 11 laufen).</summary>
+    int OsBuild => Environment.OSVersion.Version.Build;
 }

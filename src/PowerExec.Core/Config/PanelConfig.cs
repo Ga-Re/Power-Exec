@@ -37,6 +37,15 @@ public sealed class PanelConfig
     /// <summary>Milchglas: Helligkeitsschicht unter der Panelfarbe (dunkel Schwarz, hell Weiß) mit Körnung, 0–60 (0 = aus).</summary>
     public int Frost { get; set; } = 15;
 
+    /// <summary>Glas: Stärke des Weichzeichners, 0–100 (siehe <see cref="PanelBackdrops.GlassBlurRadius"/>).</summary>
+    public int GlassBlur { get; set; } = 60;
+
+    /// <summary>Glas: Sättigung des Hintergrunds in Prozent, 0–200 (100 = unverändert).</summary>
+    public int GlassSaturation { get; set; } = 125;
+
+    /// <summary>Glas: Körnung in Prozent, 0–10.</summary>
+    public int GlassNoise { get; set; } = 3;
+
     [System.Text.Json.Serialization.JsonIgnore]
     public PanelBackdrop EffectiveBackdropSetting => Backdrop is { } b && !PanelBackdrops.IsRetired(b) ? b : PanelBackdrop.Clear;
 
@@ -88,7 +97,7 @@ public sealed class PanelConfig
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, GlassBlur = GlassBlur, GlassSaturation = GlassSaturation, GlassNoise = GlassNoise, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
         ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
         Folders = new List<string>(Folders), Categories = new List<string>(Categories)
@@ -121,6 +130,9 @@ public sealed class PanelConfig
         Backdrop = EffectiveBackdropSetting;
         Acrylic = false;
         Frost = Math.Clamp(Frost, 0, 60);
+        GlassBlur = Math.Clamp(GlassBlur, 0, 100);
+        GlassSaturation = Math.Clamp(GlassSaturation, 0, 200);
+        GlassNoise = Math.Clamp(GlassNoise, 0, 10);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);
         HotZoneLength = Math.Clamp(HotZoneLength, 40, 4000);

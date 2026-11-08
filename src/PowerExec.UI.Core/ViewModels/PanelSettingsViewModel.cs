@@ -179,31 +179,74 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
         : "Farbe des Designs";
 
-    /// <summary>Hintergrund hinter dem Panel (derzeit nur Klarglas mit Milchglas).</summary>
+    /// <summary>Hintergrund hinter dem Panel: Klarglas (WPF) oder Glas mit eigenem Weichzeichner (Windows 11).</summary>
     public PanelBackdrop Backdrop
     {
         get => _c.EffectiveBackdropSetting;
         set { _c.Backdrop = value; RaiseBackdrop(); }
     }
 
+    public static IReadOnlyList<KeyValuePair<PanelBackdrop, string>> BackdropChoices { get; } = new[]
+    {
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, PanelBackdrops.Label(PanelBackdrop.Clear)),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Glass, PanelBackdrops.Label(PanelBackdrop.Glass))
+    };
+
+    public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops => BackdropChoices;
+
+    /// <summary>Variante, die tatsächlich läuft (Rückfall auf Klarglas: Windows 10, Kontrastdesign, Transparenzeffekte aus).</summary>
+    private PanelBackdrop EffectiveBackdrop => PanelBackdrops.Effective(_c.EffectiveBackdropSetting, _app.Theme.OsBuild,
+        _app.Theme.IsHighContrast, _app.Theme.TransparencyEffects);
+
+    /// <summary>Was die gewählte Variante macht – und warum gegebenenfalls Klarglas läuft.</summary>
+    public string BackdropDescription
+    {
+        get
+        {
+            if (_c.EffectiveBackdropSetting != PanelBackdrop.Glass)
+                return "Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.";
+            if (EffectiveBackdrop == PanelBackdrop.Glass)
+                return "Windows zeichnet den Desktop hinter dem Panel weich, das Panel tönt ihn mit seiner Farbe. Nur Windows 11.";
+            if (_app.Theme.IsHighContrast) return "Im Kontrastdesign läuft Klarglas (deckend).";
+            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return "Erst ab Windows 11 – hier läuft Klarglas.";
+            return "Die Windows-Transparenzeffekte sind aus – es läuft Klarglas.";
+        }
+    }
+
+    /// <summary>Regler des Weichzeichners (nur wenn Glas gewählt ist und läuft).</summary>
+    public bool ShowGlass => EffectiveBackdrop == PanelBackdrop.Glass;
+
+    /// <summary>Blur-Stärke 0–100.</summary>
+    public int GlassBlur { get => _c.GlassBlur; set { _c.GlassBlur = Math.Clamp(value, 0, 100); OnPropertyChanged(); } }
+
+    /// <summary>Sättigung 0–200 % (100 = unverändert).</summary>
+    public int GlassSaturation { get => _c.GlassSaturation; set { _c.GlassSaturation = Math.Clamp(value, 0, 200); OnPropertyChanged(); } }
+
+    /// <summary>Körnung 0–10 %.</summary>
+    public int GlassNoise { get => _c.GlassNoise; set { _c.GlassNoise = Math.Clamp(value, 0, 10); OnPropertyChanged(); } }
+
     /// <summary>Hinweis zur Deckkraft.</summary>
-    public string OpacityDescription =>
-        "Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.";
+    public string OpacityDescription => EffectiveBackdrop == PanelBackdrop.Glass
+        ? "Stärke der Tönung mit der Panelfarbe über dem weichgezeichneten Desktop. Schrift bleibt voll deckend."
+        : "Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.";
 
     /// <summary>Was das Milchglas macht – und warum es im Kontrastdesign fehlt.</summary>
     public string FrostDescription => _app.Theme.IsHighContrast
         ? "Im Kontrastdesign ist das Panel deckend, Milchglas entfällt."
-        : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) mit feiner Körnung – "
-          + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
+        : EffectiveBackdrop == PanelBackdrop.Glass
+            ? "Helligkeitsschicht über dem Weichzeichner (dunkle Panels abgedunkelt, helle aufgehellt) – Schrift bleibt gut lesbar."
+            : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) mit feiner Körnung – "
+              + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
 
-    public bool ShowFrost => PanelBackdrops.SupportsFrost(PanelBackdrops.Effective(_c.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, false));
+    public bool ShowFrost => PanelBackdrops.SupportsFrost(EffectiveBackdrop);
 
     /// <summary>Milchglas 0–60 (0 = aus).</summary>
     public int Frost { get => _c.Frost; set { _c.Frost = Math.Clamp(value, 0, 60); OnPropertyChanged(); } }
 
     private void RaiseBackdrop()
     {
-        foreach (var p in new[] { nameof(Backdrop), nameof(FrostDescription), nameof(ShowFrost), nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Backdrop), nameof(BackdropDescription), nameof(ShowGlass), nameof(FrostDescription), nameof(ShowFrost),
+                     nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
     }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>

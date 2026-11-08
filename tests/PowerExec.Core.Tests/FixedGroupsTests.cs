@@ -112,6 +112,21 @@ public class PanelBackdropTests
     }
 
     [Fact]
+    public void GlassFallsBackToClearGlass()
+    {
+        Assert.Equal(PanelBackdrop.Glass, PanelBackdrops.Effective(PanelBackdrop.Glass, 22631, false, transparencyEffects: true));
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 19045, false));                         // Windows 10
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, true));                          // Kontrastdesign
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, false, transparencyEffects: false)); // Transparenzeffekte aus
+        Assert.True(PanelBackdrops.NeedsSystemWindow(PanelBackdrop.Glass));
+        var p = new PanelConfig { Backdrop = PanelBackdrop.Glass, GlassBlur = 500, GlassSaturation = -3, GlassNoise = 99 };
+        p.Normalize();
+        Assert.Equal(PanelBackdrop.Glass, p.Backdrop);
+        Assert.Equal((100, 0, 10), (p.GlassBlur, p.GlassSaturation, p.GlassNoise));
+        Assert.Equal(p.GlassBlur, p.Clone().GlassBlur);
+    }
+
+    [Fact]
     public void FrostBrightnessStaysInItsRange()
     {
         Assert.Equal(0, PanelBackdrops.FrostBrightness(0, darkSurface: true));

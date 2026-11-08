@@ -36,7 +36,8 @@ public partial class PanelWindow : Window
         _host = host;
         InitializeComponent();
         // Weichzeichner-Varianten: Fenster ohne Transparenz-Schicht, Windows zeichnet dahinter und rundet die Ecken
-        _backdrop = PanelBackdrops.Effective(host.Config.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
+        _backdrop = PanelBackdrops.Effective(host.Config.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast,
+            ThemeService.TransparencyEffects());
         _systemWindow = PanelBackdrops.NeedsSystemWindow(_backdrop);
         if (_systemWindow)
         {
@@ -69,6 +70,7 @@ public partial class PanelWindow : Window
             src.AddHook(SystemWindowHook);
         }
         ApplyBackdrop();
+        if (GlassActive) ApplyFrost(Cfg.Frost); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
 
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
@@ -159,6 +161,7 @@ public partial class PanelWindow : Window
     {
         _poll.Stop();
         IsOpen = false;
+        DisposeGlass();
         Close();
     }
 
@@ -245,14 +248,47 @@ public partial class PanelWindow : Window
     internal PanelBackdrop EffectiveBackdrop => _backdrop;
 
     /// <summary>
-    /// Klarglas zeichnet WPF selbst (transparentes Fenster, Milchglas in <see cref="ApplyFrost"/>). Ein Fenster ohne
-    /// Transparenz-Schicht (für einen Weichzeichner von Windows) wird nur vorbereitet – derzeit nutzt das keine Variante.
+    /// Klarglas zeichnet WPF selbst (transparentes Fenster, Milchglas in <see cref="ApplyFrost"/>). Glas läuft in einem
+    /// Fenster ohne Transparenz-Schicht: dahinter hängt der eigene Weichzeichner (<see cref="Interop.GlassBackdrop"/>).
+    /// Scheitert er, bleibt das Fenster durchsichtig und das Milchglas von WPF übernimmt (wie Klarglas).
     /// </summary>
     private void ApplyBackdrop()
     {
         if (_hwnd == IntPtr.Zero || !_systemWindow) return;
         Interop.PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+        if (_backdrop != PanelBackdrop.Glass || GlassError != null || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        try
+        {
+            var glass = _glass as GlassBackdrop ?? new GlassBackdrop(_hwnd);
+            _glass = glass;
+            var s = Cfg;
+            var dark = Vm.IsDarkSurface;
+            var shade = dark ? 0f : 1f; // dunkle Fläche: Schwarz, helle: Weiß
+            glass.Update(PanelBackdrops.GlassBlurRadius(s.GlassBlur), PanelBackdrops.GlassSaturation(s.GlassSaturation),
+                new System.Numerics.Vector4(shade, shade, shade, (float)PanelBackdrops.FrostBrightness(s.Frost, dark)));
+        }
+        catch (Exception ex)
+        {
+            GlassError = ex.Message;
+            AppLog.Error("Glas-Weichzeichner nicht verfügbar, Rückfall auf Milchglas", ex);
+            DisposeGlass();
+        }
     }
+
+    /// <summary>Eigener Weichzeichner (nur bei Glas unter Windows 11; als IDisposable, damit ältere Windows den Typ nie anfassen).</summary>
+    private IDisposable? _glass;
+
+    private void DisposeGlass()
+    {
+        _glass?.Dispose();
+        _glass = null;
+    }
+
+    /// <summary>Für den Selbsttest: läuft der eigene Weichzeichner?</summary>
+    internal bool GlassActive => _glass != null;
+
+    /// <summary>Für den Selbsttest: Fehler beim Aufbau des Weichzeichners (null = keiner).</summary>
+    internal string? GlassError { get; private set; }
 
     /// <summary>Rauschtextur für die Körnung (einmal erzeugt, gekachelt).</summary>
     private static readonly Lazy<ImageBrush> NoiseBrush = new(CreateNoiseBrush);
@@ -271,7 +307,6 @@ public partial class PanelWindow : Window
             Stretch = Stretch.None,
             Viewport = new Rect(0, 0, size, size),
             ViewportUnits = BrushMappingMode.Absolute,
-            Opacity = PanelBackdrops.NoiseOpacity
         };
         brush.Freeze();
         return brush;
@@ -284,6 +319,17 @@ public partial class PanelWindow : Window
     /// </summary>
     private void ApplyFrost(int frost)
     {
+        if (GlassActive)
+        {
+            // Glas: Helligkeitsschicht liegt im Weichzeichner, WPF legt Tönung und Körnung darüber
+            PanelBorder.Background = Brushes.Transparent;
+            FrostBrightness.Background = null;
+            FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+            FrostNoise.Background = NoiseBrush.Value;
+            FrostNoise.Opacity = PanelBackdrops.GlassNoise(Cfg.GlassNoise);
+            FrostLayer.Visibility = Visibility.Visible;
+            return;
+        }
         var alpha = ThemeService.IsHighContrast || !PanelBackdrops.SupportsFrost(_backdrop)
             ? 0 : PanelBackdrops.FrostBrightness(frost, Vm.IsDarkSurface);
         if (alpha <= 0)
@@ -299,6 +345,7 @@ public partial class PanelWindow : Window
         FrostBrightness.Background = Solid(Vm.IsDarkSurface ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), alpha);
         FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
         FrostNoise.Background = NoiseBrush.Value;
+        FrostNoise.Opacity = PanelBackdrops.NoiseOpacity;
         FrostLayer.Visibility = Visibility.Visible;
     }
 
