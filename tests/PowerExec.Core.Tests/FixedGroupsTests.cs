@@ -88,23 +88,36 @@ public class MoveTopLevelTests
 public class PanelBackdropTests
 {
     [Fact]
-    public void OldAcrylicSwitchBecomesBackdrop()
+    public void RetiredBackdropsBecomeClearGlass()
     {
-        var p = new PanelConfig { Acrylic = true };
-        p.Normalize();
-        Assert.Equal(PanelBackdrop.Acrylic, p.Backdrop);
-        var q = new PanelConfig { Backdrop = PanelBackdrop.Clear, Acrylic = true };
-        q.Normalize();
-        Assert.False(q.Acrylic);
+        foreach (var old in new[] { PanelBackdrop.Aero, PanelBackdrop.Acrylic, PanelBackdrop.Mica })
+        {
+            var p = new PanelConfig { Backdrop = old, Acrylic = true };
+            p.Normalize();
+            Assert.Equal(PanelBackdrop.Clear, p.Backdrop);
+            Assert.False(p.Acrylic);
+        }
+        var legacy = new PanelConfig { Acrylic = true };
+        legacy.Normalize();
+        Assert.Equal(PanelBackdrop.Clear, legacy.Backdrop);
     }
 
     [Fact]
-    public void FallbacksByWindowsVersion()
+    public void EffectiveIsClearGlassEverywhere()
     {
-        Assert.Equal(PanelBackdrop.Acrylic, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 22631, false));
-        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 19045, false));
-        Assert.Equal(PanelBackdrop.Aero, PanelBackdrops.Effective(PanelBackdrop.Mica, 22000, false));
+        Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Acrylic, 22631, false));
         Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Mica, 26100, true));
-        Assert.False(PanelBackdrops.SupportsFrost(PanelBackdrop.Mica));
+        Assert.False(PanelBackdrops.NeedsSystemWindow(PanelBackdrop.Clear));
+        Assert.True(PanelBackdrops.SupportsFrost(PanelBackdrop.Clear));
+    }
+
+    [Fact]
+    public void FrostBrightnessStaysInItsRange()
+    {
+        Assert.Equal(0, PanelBackdrops.FrostBrightness(0, darkSurface: true));
+        Assert.Equal(0.40, PanelBackdrops.FrostBrightness(1, darkSurface: true), 2);
+        Assert.Equal(0.60, PanelBackdrops.FrostBrightness(60, darkSurface: true), 3);
+        Assert.Equal(0.50, PanelBackdrops.FrostBrightness(1, darkSurface: false), 2);
+        Assert.Equal(0.70, PanelBackdrops.FrostBrightness(99, darkSurface: false), 3);
     }
 }

@@ -28,17 +28,17 @@ public sealed class PanelConfig
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
     public string PanelColor { get; set; } = string.Empty;
     public int PanelOpacity { get; set; } = 100;
-    /// <summary>Bis 0.19: Acrylic an/aus – wird zu <see cref="Backdrop"/> (und bleibt dazu passend gesetzt).</summary>
+    /// <summary>Bis 0.19: Acrylic an/aus. Wird nur noch eingelesen und beim Normalisieren zurückgesetzt.</summary>
     public bool Acrylic { get; set; }
 
-    /// <summary>Hintergrund hinter dem Panel: Klarglas, Aero-Blur, Acrylic oder Mica (null = aus <see cref="Acrylic"/> übernehmen).</summary>
+    /// <summary>Hintergrund hinter dem Panel; alte Varianten (Aero-Blur, Acrylic, Mica) werden zu Klarglas.</summary>
     public PanelBackdrop? Backdrop { get; set; }
 
-    /// <summary>Milchglas: heller bzw. dunkler Schleier über dem Weichzeichner, 0–60 %.</summary>
+    /// <summary>Milchglas: Helligkeitsschicht unter der Panelfarbe (dunkel Schwarz, hell Weiß) mit Körnung, 0–60 (0 = aus).</summary>
     public int Frost { get; set; } = 15;
 
     [System.Text.Json.Serialization.JsonIgnore]
-    public PanelBackdrop EffectiveBackdropSetting => Backdrop ?? (Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear);
+    public PanelBackdrop EffectiveBackdropSetting => Backdrop is { } b && !PanelBackdrops.IsRetired(b) ? b : PanelBackdrop.Clear;
 
     /// <summary>Mini-Dock: schmale Symbolleiste mit den Favoriten am Rand (Klick startet, „⋯“ öffnet das Panel).</summary>
     public bool ShowDock { get; set; }
@@ -117,8 +117,9 @@ public sealed class PanelConfig
         PanelWidth = Math.Clamp(PanelWidth, 280, 900);
         DockCount = Math.Clamp(DockCount == 0 ? 9 : DockCount, 1, 20);
         PanelOpacity = Math.Clamp(PanelOpacity, 20, 100);
-        Backdrop ??= Acrylic ? PanelBackdrop.Acrylic : PanelBackdrop.Clear;
-        Acrylic = Backdrop != PanelBackdrop.Clear;
+        // Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr (ruckelten beim Gleiten): Klarglas mit Milchglas
+        Backdrop = EffectiveBackdropSetting;
+        Acrylic = false;
         Frost = Math.Clamp(Frost, 0, 60);
         PanelHeightPercent = Math.Clamp(PanelHeightPercent, 30, 100);
         HotZoneThickness = Math.Clamp(HotZoneThickness, 1, 40);

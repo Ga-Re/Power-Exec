@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
@@ -136,7 +137,7 @@ public partial class PanelWindow : Window
         Place();
         if (!IsVisible) Show();
         Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
-        if (_systemWindow) Interop.Acrylic.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
+        if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
         IsOpen = true;
         _poll.Start();
         Animate(show: true);
@@ -194,7 +195,7 @@ public partial class PanelWindow : Window
         foreach (var d in Resources.MergedDictionaries.Where(IsOwnPalette).ToList()) Resources.MergedDictionaries.Remove(d);
         foreach (var key in AppearanceKeys) Resources.Remove(key);
         double opacity = s.PanelOpacity / 100.0;
-        // Deckkraft wie am Regler eingestellt (auch mit Acrylic und bei hellen Panels)
+        // Deckkraft wie am Regler eingestellt (auch bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
 
@@ -232,48 +233,80 @@ public partial class PanelWindow : Window
         }
         // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
         Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
-        // Milchglas: heller Schleier (dunkle Panels halb so stark), nur über einem Weichzeichner
-        var frost = PanelBackdrops.SupportsFrost(_backdrop) ? s.Frost / 100.0 : 0;
-        if (!Vm.IsDarkSurface) FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost) : null;
-        else FrostLayer.Background = frost > 0 ? Solid(new Rgb(255, 255, 255), frost * 0.5) : null;
+        ApplyFrost(s.Frost);
     }
 
-    // ---- Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica ---------------------------------
+    // ---- Hintergrund: Klarglas mit Milchglas ------------------------------------------------
 
     private readonly PanelBackdrop _backdrop;
     private readonly bool _systemWindow;
 
-    /// <summary>Tatsächlich laufende Variante (nach Rückfall für Windows 10 bzw. Kontrastdesign).</summary>
+    /// <summary>Tatsächlich laufende Variante (nach Rückfall für Kontrastdesign bzw. alte Einstellungen).</summary>
     internal PanelBackdrop EffectiveBackdrop => _backdrop;
 
+    /// <summary>
+    /// Klarglas zeichnet WPF selbst (transparentes Fenster, Milchglas in <see cref="ApplyFrost"/>). Ein Fenster ohne
+    /// Transparenz-Schicht (für einen Weichzeichner von Windows) wird nur vorbereitet – derzeit nutzt das keine Variante.
+    /// </summary>
     private void ApplyBackdrop()
     {
-        if (_hwnd == IntPtr.Zero) return;
-        if (!_systemWindow)
+        if (_hwnd == IntPtr.Zero || !_systemWindow) return;
+        Interop.PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+    }
+
+    /// <summary>Rauschtextur für die Körnung (einmal erzeugt, gekachelt).</summary>
+    private static readonly Lazy<ImageBrush> NoiseBrush = new(CreateNoiseBrush);
+
+    private static ImageBrush CreateNoiseBrush()
+    {
+        const int size = 128;
+        var pixels = new byte[size * size];
+        var random = new Random(4711); // fest: gleiches Muster bei jedem Start
+        random.NextBytes(pixels);
+        var bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Gray8, null, pixels, size);
+        bitmap.Freeze();
+        var brush = new ImageBrush(bitmap)
         {
-            Interop.Acrylic.Apply(_hwnd, false);
-            return;
-        }
-        Interop.Acrylic.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
-        switch (_backdrop)
-        {
-            case PanelBackdrop.Acrylic:
-                Interop.Acrylic.Apply(_hwnd, false);
-                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: true);
-                break;
-            case PanelBackdrop.Mica:
-                Interop.Acrylic.Apply(_hwnd, false);
-                Interop.Acrylic.SetSystemBackdrop(_hwnd, acrylic: false);
-                break;
-            default: // Aero-Blur: klassischer Weichzeichner
-                if (Environment.OSVersion.Version.Build >= PanelBackdrops.SystemBackdropBuild) Interop.Acrylic.SetSystemBackdrop(_hwnd, null);
-                Interop.Acrylic.Apply(_hwnd, true, acrylic: false);
-                break;
-        }
+            TileMode = TileMode.Tile,
+            Stretch = Stretch.None,
+            Viewport = new Rect(0, 0, size, size),
+            ViewportUnits = BrushMappingMode.Absolute,
+            Opacity = PanelBackdrops.NoiseOpacity
+        };
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>
-    /// Windows zeigt Acrylic und Mica nur für „aktive“ Fenster, sonst eine schlichte Ersatzfarbe. Das Panel wird oft
+    /// Milchglas: von unten Helligkeitsschicht (dunkle Fläche Schwarz, helle Weiß; Stärke vom Milchglas-Regler),
+    /// darüber die Panelfarbe als Tönung (mit der eingestellten Deckkraft), darüber feine Körnung. Ohne Milchglas
+    /// (Regler 0, Kontrastdesign) trägt der Panelrahmen die Panelfarbe wie bisher.
+    /// </summary>
+    private void ApplyFrost(int frost)
+    {
+        var alpha = ThemeService.IsHighContrast || !PanelBackdrops.SupportsFrost(_backdrop)
+            ? 0 : PanelBackdrops.FrostBrightness(frost, Vm.IsDarkSurface);
+        if (alpha <= 0)
+        {
+            PanelBorder.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+            FrostBrightness.Background = null;
+            FrostTint.ClearValue(Border.BackgroundProperty);
+            FrostNoise.Background = null;
+            FrostLayer.Visibility = Visibility.Collapsed;
+            return;
+        }
+        PanelBorder.Background = Brushes.Transparent;
+        FrostBrightness.Background = Solid(Vm.IsDarkSurface ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), alpha);
+        FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
+        FrostNoise.Background = NoiseBrush.Value;
+        FrostLayer.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>Für den Selbsttest: Deckkraft der Helligkeitsschicht (0 = kein Milchglas).</summary>
+    internal double FrostBrightnessAlpha => FrostLayer.Visibility == Visibility.Visible && FrostBrightness.Background is SolidColorBrush b ? b.Color.A / 255.0 : 0;
+
+    /// <summary>
+    /// Windows zeigt Hintergründe eines Systemfensters nur für „aktive“ Fenster, sonst eine schlichte Ersatzfarbe. Das Panel wird oft
     /// ohne Fokus gezeigt (Hover-Zone) – es soll trotzdem wie aktiv aussehen.
     /// </summary>
     private IntPtr SystemWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -282,7 +315,7 @@ public partial class PanelWindow : Window
         if (msg == WM_NCACTIVATE && wParam == IntPtr.Zero)
         {
             handled = true;
-            return Interop.Acrylic.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
+            return Interop.PanelWindowNative.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
         }
         // Beim Gleiten liegt das Fenster kurz auf dem Nachbarmonitor (dort weggeschnitten). Hat der eine andere
         // Skalierung, meldet Windows einen DPI-Wechsel – WPF würde Fenster und Inhalt mitten im Gleiten umskalieren.
@@ -453,8 +486,8 @@ public partial class PanelWindow : Window
         var r = PanelSlide.At(_rect, _hidden, Reveal);
         var visible = _clipSlide ? PanelSlide.Visible(r, _monitor.WorkArea) : new System.Drawing.Rectangle(0, 0, r.Width, r.Height);
         bool full = visible.Size == r.Size;
-        // Aero-Blur zeichnet Windows nur mit Fensterbereich; die anderen brauchen einen nur, solange zugeschnitten wird
-        System.Drawing.Rectangle? region = KeepsRegion || !full ? visible : null;
+        // Fensterbereich nur, solange zugeschnitten wird (Taskleiste oder Nachbarmonitor an der Kante)
+        System.Drawing.Rectangle? region = !full ? visible : null;
 
         // Wird der sichtbare Teil kleiner, zuerst zuschneiden, dann verschieben (sonst umgekehrt) –
         // so ragt das Panel auch für ein einzelnes Bild nicht über die Taskleiste oder auf den Nachbarmonitor.
@@ -473,13 +506,10 @@ public partial class PanelWindow : Window
         if (_regionApplied && Nullable.Equals(region, _region)) return; // unverändert: kein Fensterbereich pro Bild
         _region = region;
         _regionApplied = true;
-        if (region is not { } v) { Interop.Acrylic.ClearRegion(_hwnd); return; }
+        if (region is not { } v) { Interop.PanelWindowNative.ClearRegion(_hwnd); return; }
         var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
-        Interop.Acrylic.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
+        Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
-
-    /// <summary>Aero-Blur braucht dauerhaft einen Fensterbereich (ohne verschwindet der Weichzeichner nach dem Einfahren).</summary>
-    private bool KeepsRegion => _backdrop == PanelBackdrop.Aero;
 
     /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;

@@ -202,7 +202,8 @@ public class V016Tests
         s.Panels.Add(new PanelConfig());
         var glass = Appearance.Presets.Single(p => p.Key == "glass");
         Appearance.Apply(s, glass);
-        Assert.True(s.Panels[0].Acrylic);
+        Assert.Equal(Appearance.FrostedPreset, s.Panels[0].Frost);
+        Assert.Equal(PanelBackdrop.Clear, s.Panels[0].Backdrop);
         Assert.True(s.UseWindowsAccent);
         Assert.Equal(WindowBackdrop.Mica, s.WindowBackdrop);
         Assert.Equal("glass", Appearance.Current(s)?.Key);

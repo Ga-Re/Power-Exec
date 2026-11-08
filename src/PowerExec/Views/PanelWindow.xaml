@@ -853,8 +853,12 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <!-- Milchglas: Schleier über dem Weichzeichner (Farbe setzt ApplyAppearance) -->
-            <Border x:Name="FrostLayer" Grid.RowSpan="8" IsHitTestVisible="False" Panel.ZIndex="-1"/>
+            <!-- Milchglas (ApplyFrost): Helligkeitsschicht, darüber die Panelfarbe als Tönung, darüber feine Körnung -->
+            <Grid x:Name="FrostLayer" Grid.RowSpan="8" IsHitTestVisible="False" Panel.ZIndex="-1" Visibility="Collapsed">
+                <Border x:Name="FrostBrightness" CornerRadius="7"/>
+                <Border x:Name="FrostTint" CornerRadius="7"/>
+                <Border x:Name="FrostNoise" CornerRadius="7" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+            </Grid>
 
             <!-- Kopfzeile: Titel und Arbeitsbereich schrumpfen, die Knöpfe bleiben immer sichtbar -->
             <Grid Margin="14,10,8,8">

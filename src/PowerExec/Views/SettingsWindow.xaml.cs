@@ -31,6 +31,7 @@ public partial class SettingsWindow : Window
         _snapshot = SettingsStore.Clone(app.Settings);
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
+        InitNavigation();
         WindowHelper.ApplyTitleBar(this);
         Attach(vm);
         _lastApplied = Fingerprint(app.Settings);
@@ -64,8 +65,11 @@ public partial class SettingsWindow : Window
 
     private void Attach(SettingsViewModel vm)
     {
+        if (_vm != null) _vm.PropertyChanged -= OnVmPropertyChanged;
         _vm = vm;
         DataContext = vm;
+        vm.PropertyChanged += OnVmPropertyChanged;
+        SyncNavigation();
         vm.ReopenRequested += () =>
         {
             Close();
@@ -79,6 +83,41 @@ public partial class SettingsWindow : Window
             _app.ShowSettings(section: "workspaces");
         };
     }
+
+    // ---- Navigationsleiste ↔ Abschnitt -----------------------------------------------------
+
+    private bool _navSync;
+
+    private void InitNavigation()
+    {
+        Nav.Loaded += (_, _) => SyncNavigation();
+        // Klick auf einen Eintrag oder „Zurück“: Abschnitt umschalten
+        Nav.SelectionChanged += (_, _) =>
+        {
+            if (_navSync || Nav.SelectedItem?.TargetPageTag is not { Length: > 0 } tag || tag == _vm.Section) return;
+            _navSync = true;
+            try { _vm.Section = tag; }
+            finally { _navSync = false; }
+        };
+    }
+
+    private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.Section)) SyncNavigation();
+    }
+
+    /// <summary>Abschnitt wurde im Code gewechselt (Suche, „Einstellungen öffnen bei …“): Auswahl der Leiste nachziehen.</summary>
+    private void SyncNavigation()
+    {
+        if (_navSync || Nav == null || !Nav.IsLoaded || Nav.SelectedItem?.TargetPageTag == _vm.Section) return;
+        _navSync = true;
+        try { Nav.Navigate(_vm.Section); }
+        finally { _navSync = false; }
+    }
+
+    /// <summary>Für den Selbsttest: Abschnitt der ausgewählten Navigationseintrags.</summary>
+    internal string? NavigationSectionForTest => Nav.SelectedItem?.TargetPageTag;
+    internal Wpf.Ui.Controls.NavigationView NavigationForTest => Nav;
 
     internal void ApplyNowForTest() => ApplyNow(force: true);
     internal SettingsViewModel CurrentViewModel => _vm;

@@ -3,36 +3,12 @@ using System.Runtime.InteropServices;
 namespace PowerExec.Interop;
 
 /// <summary>
-/// Weichgezeichneter Hintergrund hinter einem Fenster (Aero-Blur bzw. Acrylic) über SetWindowCompositionAttribute,
-/// dazu Systemhintergrund (Acrylic/Mica) und runde Ecken von Windows 11 über DWM.
-/// Die Tönung liefert der halbtransparente Panelhintergrund.
+/// Fenster-Hilfen für das Panel: Fensterbereich (abgerundet, beim Gleiten beschnitten) und die Vorbereitung eines
+/// Fensters ohne Transparenz-Schicht, hinter dem Windows zeichnet (runde Ecken von Windows 11, kein farbiger Rand).
+/// Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr.
 /// </summary>
-internal static class Acrylic
+internal static class PanelWindowNative
 {
-    private enum AccentState { Disabled = 0, BlurBehind = 3, AcrylicBlurBehind = 4 }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct AccentPolicy
-    {
-        public AccentState AccentState;
-        public int AccentFlags;
-        public uint GradientColor; // AABBGGRR
-        public int AnimationId;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct WindowCompositionAttributeData
-    {
-        public int Attribute; // 19 = WCA_ACCENT_POLICY
-        public IntPtr Data;
-        public int SizeOfData;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
-
-    public static bool IsAcrylicSupported => Environment.OSVersion.Version.Build >= 17134;
-
     [DllImport("gdi32.dll")]
     private static extern IntPtr CreateRoundRectRgn(int x1, int y1, int x2, int y2, int widthEllipse, int heightEllipse);
 
@@ -90,28 +66,6 @@ internal static class Acrylic
         catch (EntryPointNotFoundException) { }
     }
 
-    /// <param name="acrylic">true = Acrylic (Windows 10 1803+), false = klassischer Weichzeichner (Aero-Blur).</param>
-    /// <returns>false, wenn Windows die Funktion nicht kennt.</returns>
-    public static bool Apply(IntPtr hwnd, bool enabled, bool acrylic = false)
-    {
-        if (hwnd == IntPtr.Zero) return false;
-        var policy = new AccentPolicy
-        {
-            AccentState = !enabled ? AccentState.Disabled : acrylic && IsAcrylicSupported ? AccentState.AcrylicBlurBehind : AccentState.BlurBehind,
-            GradientColor = 0x01000000 // minimale eigene Tönung, Farbe kommt vom Panel (geglättet von WPF gezeichnet)
-        };
-        var size = Marshal.SizeOf(policy);
-        var ptr = Marshal.AllocHGlobal(size);
-        try
-        {
-            Marshal.StructureToPtr(policy, ptr, false);
-            var data = new WindowCompositionAttributeData { Attribute = 19, Data = ptr, SizeOfData = size };
-            return SetWindowCompositionAttribute(hwnd, ref data) != 0;
-        }
-        catch (EntryPointNotFoundException) { return false; }
-        finally { Marshal.FreeHGlobal(ptr); }
-    }
-
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
@@ -121,8 +75,8 @@ internal static class Acrylic
     [StructLayout(LayoutKind.Sequential)]
     private struct Margins { public int Left, Right, Top, Bottom; }
 
-    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20, DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWA_BORDER_COLOR = 34, DWMWA_SYSTEMBACKDROP_TYPE = 38;
-    private const int DWMWCP_ROUND = 2, DWMSBT_NONE = 1, DWMSBT_MAINWINDOW = 2, DWMSBT_TRANSIENTWINDOW = 3;
+    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20, DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWA_BORDER_COLOR = 34;
+    private const int DWMWCP_ROUND = 2;
     private const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
 
     private static void Set(IntPtr hwnd, int attr, int value)
@@ -149,10 +103,6 @@ internal static class Acrylic
         Set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND);
         Set(hwnd, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE);
     }
-
-    /// <summary>Systemhintergrund von Windows 11 22H2+: Acrylic (wie Menüs) oder Mica; false = keiner.</summary>
-    public static void SetSystemBackdrop(IntPtr hwnd, bool? acrylic) =>
-        Set(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, acrylic switch { true => DWMSBT_TRANSIENTWINDOW, false => DWMSBT_MAINWINDOW, null => DWMSBT_NONE });
 
     [DllImport("user32.dll")]
     public static extern IntPtr DefWindowProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);

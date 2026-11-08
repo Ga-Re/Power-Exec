@@ -118,7 +118,7 @@ public sealed partial class SelfTestController : AppController
                     }
                 }
             });
-            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", Acrylic = true, PanelOpacity = 90 });
+            Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", PanelOpacity = 90, Frost = 30 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
             Settings.DataVersion = 14;
@@ -351,7 +351,7 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
             }
 
-            Step("Hintergrund: Klarglas, Aero-Blur, Acrylic, Mica");
+            Step("Hintergrund: Klarglas und Milchglas");
             {
                 // Messung für den CI-Bericht: Fenster so groß wie das Panel? Ist hinter dem Panel weichgezeichnet?
                 // Dafür liegt ein Streifenmuster hinter dem Panel; ohne Weichzeichner bleibt der Kontrast benachbarter Pixel hoch.
@@ -360,20 +360,24 @@ public sealed partial class SelfTestController : AppController
                 var report = new System.Text.StringBuilder();
                 report.AppendLine("### Hintergrund hinter dem Panel");
                 report.AppendLine();
-                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(SystemParameters.IsGlassEnabled ? "an" : "aus")} · Deckkraft 40 %, Milchglas 0 %, Breite 560");
+                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(SystemParameters.IsGlassEnabled ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
                 report.AppendLine();
-                report.AppendLine("| Gewählt | Läuft als | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s |");
-                report.AppendLine("|---|---|---|---|---:|---:|");
+                report.AppendLine("| Variante | Läuft als | Helligkeitsschicht | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s |");
+                report.AppendLine("|---|---|---:|---|---|---:|---:|");
                 cfg.PanelOpacity = 40;
-                cfg.Frost = 0;
                 cfg.PanelWidth = 560;
-                foreach (var b in new[] { PanelBackdrop.Clear, PanelBackdrop.Aero, PanelBackdrop.Mica, PanelBackdrop.Acrylic })
+                // Klarglas ohne und mit Milchglas; alte Varianten (Acrylic) laufen als Klarglas
+                foreach (var (b, frost, name) in new[] { (PanelBackdrop.Clear, 0, "klarglas"), (PanelBackdrop.Clear, 30, "milchglas"), (PanelBackdrop.Acrylic, 60, "alt-acrylic") })
                 {
                     cfg.Backdrop = b;
+                    cfg.Frost = frost;
                     CreateHosts();
                     var host = WpfHost(0);
                     var expected = PanelBackdrops.Effective(b, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast);
                     if (host.Window.EffectiveBackdrop != expected) Fail($"Hintergrund {b}: läuft als {host.Window.EffectiveBackdrop} statt {expected}");
+                    var wantAlpha = ThemeService.IsHighContrast ? 0 : PanelBackdrops.FrostBrightness(frost, host.ViewModel.IsDarkSurface);
+                    if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)
+                        Fail($"Milchglas {frost}: Helligkeitsschicht {host.Window.FrostBrightnessAlpha:P0} statt {wantAlpha:P0}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
                     var monitor = ScreenService.TriggerMonitors(host.Config)[0];
                     var rect = ScreenService.PanelRect(monitor, host.Config);
@@ -399,10 +403,10 @@ public sealed partial class SelfTestController : AppController
                     var c1 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                     await Task.Delay(1500);
                     var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
-                    report.AppendLine($"| {b} | {expected} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} |");
+                    report.AppendLine($"| {name} (Milchglas {frost}) | {expected} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} |");
                     if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
                         Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
-                    if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + b.ToString().ToLowerInvariant());
+                    if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + name);
                     host.Window.HidePanel();
                     stripes.Close();
                     await Settle();
@@ -901,7 +905,34 @@ public sealed partial class SelfTestController : AppController
                 Step("Einstellungen " + section);
                 await Settle();
                 if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
+                if (settingsWindow.NavigationSectionForTest != section)
+                    Fail($"Navigation: Abschnitt „{section}“ ist in der Leiste nicht ausgewählt ({settingsWindow.NavigationSectionForTest ?? "nichts"})");
                 await Settle();
+            }
+
+            Step("Einstellungen: Zurück und einklappbarer Rand");
+            {
+                var nav = settingsWindow.NavigationForTest;
+                settingsVm.Section = "look";
+                await Settle();
+                settingsVm.Section = "behavior";
+                await Settle();
+                if (!nav.CanGoBack) Fail("Navigation: Zurück ist nach zwei Abschnitten nicht möglich");
+                nav.GoBack();
+                await Settle();
+                if (settingsVm.Section != "look") Fail($"Navigation: Zurück führt zu „{settingsVm.Section}“ statt „look“");
+                nav.IsPaneOpen = false;
+                await Settle();
+                if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
+                nav.IsPaneOpen = true;
+                await Settle();
+                settingsVm.Section = "custom";
+                await Settle();
+                // Auswahlspalte der eigenen Einträge: Kästchen ohne Beschriftung ohne Innenabstand (sonst halb verdeckt)
+                var listChecks = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.CheckBox>()
+                    .Where(c => c.IsVisible && c.Content == null).ToList();
+                if (listChecks.Count == 0) Fail("Eigene Einträge: kein Auswahl-Kästchen gefunden");
+                else if (listChecks.Any(c => c.Padding.Left > 0)) Fail("Eigene Einträge: Auswahl-Kästchen hat Innenabstand und wird abgeschnitten");
             }
 
             Step("Fluent-Bedienelemente (WPF UI) im Einstellungsfenster");

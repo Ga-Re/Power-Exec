@@ -670,36 +670,6 @@ public sealed class SettingsViewModel : ObservableObject
         new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
     };
 
-    // ---- Navigation: einklappbare Bereiche --------------------------------------
-
-    private bool _navContent = true, _navPanel = true, _navExec = true, _navHelp = true;
-    public bool NavContent { get => _navContent; set => Set(ref _navContent, value); }
-    public bool NavPanel { get => _navPanel; set => Set(ref _navPanel, value); }
-    public bool NavExec { get => _navExec; set => Set(ref _navExec, value); }
-    public bool NavHelp { get => _navHelp; set => Set(ref _navHelp, value); }
-    public ICommand ToggleNavCommand => new RelayCommand(p =>
-    {
-        switch (p?.ToString())
-        {
-            case "content": NavContent = !NavContent; break;
-            case "panel": NavPanel = !NavPanel; break;
-            case "exec": NavExec = !NavExec; break;
-            case "help": NavHelp = !NavHelp; break;
-        }
-    });
-
-    /// <summary>Bereich der gewählten Seite aufklappen (z. B. nach Suche).</summary>
-    private void NavExpandFor(string section)
-    {
-        switch (Pages.FirstOrDefault(x => x.Section == section).Segment)
-        {
-            case "content": NavContent = true; break;
-            case "panel": NavPanel = true; break;
-            case "exec": NavExec = true; break;
-            case "help": NavHelp = true; break;
-        }
-    }
-
     private string _searchText = string.Empty;
     public string SearchText
     {
@@ -734,7 +704,6 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
-            NavExpandFor(value);
         }
     }
 
@@ -805,7 +774,7 @@ public sealed class SettingsViewModel : ObservableObject
         UseMica = p.Backdrop == WindowBackdrop.Mica;
         Panel.PanelColor = p.PanelColor;
         Panel.PanelOpacity = p.Opacity;
-        Panel.Acrylic = p.Acrylic;
+        if (p.Frosted) Panel.Frost = Appearance.FrostedPreset;
         RaisePresets();
     }
 

@@ -179,72 +179,31 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
         : "Farbe des Designs";
 
-    public bool Acrylic
-    {
-        get => _c.Acrylic;
-        set { _c.Acrylic = value; _c.Backdrop = value ? PanelBackdrop.Acrylic : PanelBackdrop.Clear; RaiseBackdrop(); }
-    }
-
-    /// <summary>Hintergrund hinter dem Panel (Klarglas, Aero-Blur, Acrylic, Mica).</summary>
+    /// <summary>Hintergrund hinter dem Panel (derzeit nur Klarglas mit Milchglas).</summary>
     public PanelBackdrop Backdrop
     {
         get => _c.EffectiveBackdropSetting;
-        set
-        {
-            _c.Backdrop = value;
-            _c.Acrylic = value != PanelBackdrop.Clear;
-            // Bei voller Deckkraft wäre vom Weichzeichner nichts zu sehen
-            if (value is PanelBackdrop.Aero or PanelBackdrop.Acrylic && _c.PanelOpacity >= 95) PanelOpacity = 70;
-            RaiseBackdrop();
-        }
+        set { _c.Backdrop = value; RaiseBackdrop(); }
     }
 
-    /// <summary>Hinweis zur Deckkraft – mit Weichzeichner: bei 100 % ist er nicht zu sehen.</summary>
+    /// <summary>Hinweis zur Deckkraft.</summary>
     public string OpacityDescription =>
-        _c.EffectiveBackdropSetting is PanelBackdrop.Aero or PanelBackdrop.Acrylic
-            ? _c.PanelOpacity >= 95
-                ? "Bei voller Deckkraft ist vom Weichzeichner nichts zu sehen – etwa 50–80 % zeigen ihn deutlich."
-                : "Je geringer, desto mehr vom weichgezeichneten Hintergrund scheint durch. Schrift bleibt voll deckend."
-            : "Unter 100 % scheint der Desktop durch; Schrift bleibt voll deckend.";
+        "Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.";
 
-    public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops { get; } = new[]
-    {
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, "Klarglas (nur Deckkraft)"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Aero, "Aero-Blur"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Acrylic, "Acrylic (Windows 11)"),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Mica, "Mica (Windows 11)")
-    };
-
-    /// <summary>Was die Variante macht – und was auf diesem PC tatsächlich läuft.</summary>
-    public string BackdropDescription
-    {
-        get
-        {
-            var wanted = _c.EffectiveBackdropSetting;
-            var text = wanted switch
-            {
-                PanelBackdrop.Aero => "Klassischer Weichzeichner ohne Rauschen – der Desktop dahinter bleibt eher erkennbar.",
-                PanelBackdrop.Acrylic => "Acrylic wie Startmenü und Kontextmenüs: starker Weichzeichner, leichtes Rauschen, Ecken rundet Windows.",
-                PanelBackdrop.Mica => "Nimmt nur die Farbstimmung des Hintergrundbilds auf, kein Durchblick – ruhig und gut lesbar.",
-                _ => "Kein Weichzeichner; unter 100 % Deckkraft scheint der Desktop leicht durch."
-            };
-            var effective = PanelBackdrops.Effective(wanted, Environment.OSVersion.Version.Build, _app.Theme.IsHighContrast);
-            if (effective != wanted)
-                text += effective == PanelBackdrop.Clear
-                    ? " Im Kontrastdesign ist das Panel deckend."
-                    : $" Auf diesem PC (vor Windows 11 22H2) läuft stattdessen {PanelBackdrops.Label(effective)}.";
-            return text;
-        }
-    }
+    /// <summary>Was das Milchglas macht – und warum es im Kontrastdesign fehlt.</summary>
+    public string FrostDescription => _app.Theme.IsHighContrast
+        ? "Im Kontrastdesign ist das Panel deckend, Milchglas entfällt."
+        : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) mit feiner Körnung – "
+          + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
 
     public bool ShowFrost => PanelBackdrops.SupportsFrost(PanelBackdrops.Effective(_c.EffectiveBackdropSetting, Environment.OSVersion.Version.Build, false));
 
-    /// <summary>Milchglas 0–60 %.</summary>
+    /// <summary>Milchglas 0–60 (0 = aus).</summary>
     public int Frost { get => _c.Frost; set { _c.Frost = Math.Clamp(value, 0, 60); OnPropertyChanged(); } }
 
     private void RaiseBackdrop()
     {
-        foreach (var p in new[] { nameof(Acrylic), nameof(Backdrop), nameof(BackdropDescription), nameof(ShowFrost), nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Backdrop), nameof(FrostDescription), nameof(ShowFrost), nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
     }
 
     /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
