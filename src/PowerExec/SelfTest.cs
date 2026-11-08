@@ -393,6 +393,9 @@ public sealed partial class SelfTestController : AppController
                     if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)
                         Fail($"Milchglas {frost}: Helligkeitsschicht {host.Window.FrostBrightnessAlpha:P0} statt {wantAlpha:P0}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
+                    // Körnung nur bei Glas
+                    if (host.Window.HasGrain != host.Window.GlassActive)
+                        Fail($"Hintergrund {b}: Körnung {(host.Window.HasGrain ? "sichtbar" : "fehlt")}");
                     var monitor = ScreenService.TriggerMonitors(host.Config)[0];
                     var rect = ScreenService.PanelRect(monitor, host.Config);
                     var stripes = StripeWindow(rect);
@@ -434,9 +437,11 @@ public sealed partial class SelfTestController : AppController
                     ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-" + name);
                     if (host.Window.GlassActive)
                     {
-                        // Inhalt muss über dem Weichzeichner liegen: Software-Darstellung, sobald das Panel gezeigt wird
-                        if (host.Window.WindowRenderMode != System.Windows.Interop.RenderMode.SoftwareOnly)
-                            Fail($"Glas: Panelinhalt wird nicht über dem Weichzeichner gezeichnet (Darstellung {host.Window.WindowRenderMode?.ToString() ?? "ohne Zeichenfläche"} statt Software)");
+                        // Inhalt muss über dem Weichzeichner liegen: im durchsichtigen Kindfenster (Ebene über dem Composition-Baum)
+                        if (!host.Window.ContentInChildWindow)
+                            Fail("Glas: Panelinhalt liegt nicht im Kindfenster über dem Weichzeichner");
+                        if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
+                            Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
                         // Inaktiv: ein anderes Fenster bekommt den Fokus, der Weichzeichner muss bleiben (angeheftet, damit es nicht einfährt)
                         var pinned = host.Config.Pinned;
                         host.Config.Pinned = true;

@@ -3,7 +3,7 @@ namespace PowerExec.Core.Config;
 /// <summary>Hintergrund hinter dem Panel.</summary>
 public enum PanelBackdrop
 {
-    /// <summary>Klarglas: Deckkraft der Panelfarbe, dazu Milchglas (Helligkeitsschicht, Tönung, Körnung).</summary>
+    /// <summary>Klarglas: Deckkraft der Panelfarbe, dazu Milchglas (Helligkeitsschicht und Tönung, ohne Körnung).</summary>
     Clear,
     /// <summary>Bis 0.20: Aero-Blur hinter einem Systemfenster – wird beim Einlesen zu <see cref="Clear"/>.</summary>
     Aero,
@@ -26,9 +26,6 @@ public static class PanelBackdrops
 
     /// <summary>Eigener Weichzeichner (Composition mit Hintergrund des Hosts) ab Windows 11.</summary>
     public const int GlassBuild = 22000;
-
-    /// <summary>Deckkraft der Rauschtextur („Körnung“) über dem Milchglas.</summary>
-    public const double NoiseOpacity = 0.03;
 
     /// <summary>
     /// Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr: Windows zeichnete sie hinter einem eigenen
