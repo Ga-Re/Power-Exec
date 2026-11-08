@@ -7,6 +7,14 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 21, 0), "Glas mit eigenem Weichzeichner, neue Einstellungen", new[]
+        {
+            "Neuer Hintergrund „Glas“ (Windows 11): der Desktop hinter dem Panel wird weichgezeichnet und mit der Panelfarbe getönt – Blur-Stärke und Sättigung einstellbar. Aero-Blur, Acrylic und Mica sind entfallen, Klarglas bekommt ein ruhigeres Milchglas",
+            "Einstellungen mit Navigationsleiste: einklappbarer Rand, einklappbare Bereiche und Zurück; die Panelfarbe wählst du wie die Akzentfarbe in Windows",
+            "Vorschau (Leertaste) in einem eigenen Fenster neben dem Panel – sie folgt dem ausgewählten Eintrag",
+            "Angeheftetes Panel per Klick auf die Hover-Zone ein- und ausfahren; Ordner als Gruppe ablegen öffnet gleich den Gruppendialog mit Farbe und Darstellung",
+            "Beim Ändern von Einstellungen bleibt das Panel sichtbar und behält seine Größe; das Tastenkürzel (Strg+Alt+Leertaste) lässt sich schon bei der Einrichtung festlegen; der Installer folgt hell/dunkel von Windows"
+        }),
         new ReleaseNote(new Version(0, 20, 0), "Neues Aussehen im Stil von Windows 11", new[]
         {
             "Schaltflächen, Schalter, Eingabefelder, Auswahllisten, Menüs und Bildlaufleisten im Fluent-Design – in den Einstellungen, allen Dialogen, im Panel, in der Spotlight-Suche und im Mini-Dock",
