@@ -18,11 +18,23 @@ public sealed class PanelSettingsViewModel : ObservableObject
     {
         _app = app;
         _c = config.Clone();
+        _startSize = (config.PanelWidth, config.PanelHeightPercent);
         Monitors = monitors;
         ClearHotkeyCommand = new RelayCommand(() => Hotkey = string.Empty);
     }
 
     public string Id => _c.Id;
+
+    /// <summary>Größe beim Öffnen des Formulars (um eine im Panel gezogene Größe nicht zu überschreiben).</summary>
+    private readonly (int Width, int HeightPercent) _startSize;
+
+    /// <summary>
+    /// Größe, die übernommen wird: im Formular geändert → Formular; sonst die aktuelle Größe des Panels
+    /// (am Rand gezogen, während die Einstellungen offen waren).
+    /// </summary>
+    public (int Width, int HeightPercent) EffectiveSize(PanelConfig live) =>
+        (_c.PanelWidth != _startSize.Width ? _c.PanelWidth : live.PanelWidth,
+         _c.PanelHeightPercent != _startSize.HeightPercent ? _c.PanelHeightPercent : live.PanelHeightPercent);
 
     public string Name
     {
@@ -222,8 +234,6 @@ public sealed class PanelSettingsViewModel : ObservableObject
     /// <summary>Sättigung 0–200 % (100 = unverändert).</summary>
     public int GlassSaturation { get => _c.GlassSaturation; set { _c.GlassSaturation = Math.Clamp(value, 0, 200); OnPropertyChanged(); } }
 
-    /// <summary>Körnung 0–10 %.</summary>
-    public int GlassNoise { get => _c.GlassNoise; set { _c.GlassNoise = Math.Clamp(value, 0, 10); OnPropertyChanged(); } }
 
     /// <summary>Hinweis zur Deckkraft.</summary>
     public string OpacityDescription => EffectiveBackdrop == PanelBackdrop.Glass
@@ -235,7 +245,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         ? "Im Kontrastdesign ist das Panel deckend, Milchglas entfällt."
         : EffectiveBackdrop == PanelBackdrop.Glass
             ? "Helligkeitsschicht über dem Weichzeichner (dunkle Panels abgedunkelt, helle aufgehellt) – Schrift bleibt gut lesbar."
-            : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) mit feiner Körnung – "
+            : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) – "
               + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
 
     public bool ShowFrost => PanelBackdrops.SupportsFrost(EffectiveBackdrop);

@@ -37,6 +37,21 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void PanelSizeDraggedWhileSettingsOpenSurvivesApply()
+    {
+        var (host, vm) = Create(s => s.Panels.Add(new PanelConfig { PanelWidth = 400, PanelHeightPercent = 80 }));
+
+        // Panel am Rand gezogen, während die Einstellungen offen sind
+        host.Settings.Panels[0].PanelWidth = 620;
+        host.Settings.Panels[0].PanelHeightPercent = 95;
+        Assert.Equal((620, 95), (vm.Build().Panels[0].PanelWidth, vm.Build().Panels[0].PanelHeightPercent));
+
+        // Im Formular geändert: das Formular gilt
+        vm.Panel.PanelWidth = 500;
+        Assert.Equal((500, 95), (vm.Build().Panels[0].PanelWidth, vm.Build().Panels[0].PanelHeightPercent));
+    }
+
+    [Fact]
     public void FolderRowsAreFilterable()
     {
         var (_, vm) = Create();

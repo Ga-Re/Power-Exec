@@ -87,11 +87,11 @@
             </MenuItem>
             <MenuItem Header="Darstellung" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8A9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                <MenuItem Header="Wie das Panel" Command="{Binding SetLayoutCommand}" CommandParameter="panel" IsCheckable="False"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="Wie das Panel" Command="{Binding SetLayoutCommand}" CommandParameter="panel"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
-                <MenuItem Header="Liste" Command="{Binding SetLayoutCommand}" CommandParameter="List"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="Liste" Command="{Binding SetLayoutCommand}" CommandParameter="List"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=List}"/>
-                <MenuItem Header="Raster" Command="{Binding SetLayoutCommand}" CommandParameter="Grid"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="Raster" Command="{Binding SetLayoutCommand}" CommandParameter="Grid"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Grid}"/>
             </MenuItem>
             <MenuItem Header="Farbe" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}" ItemsSource="{Binding ColorChoices}">
@@ -336,6 +336,7 @@
                     <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
                             Visibility="{Binding HasInlineForm, Converter={StaticResource Vis}}">
                         <StackPanel DataContext="{Binding Inline}">
+                            <TextBlock Text="Parameter" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <ItemsControl ItemsSource="{Binding Fields}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -853,11 +854,10 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <!-- Milchglas (ApplyFrost): Helligkeitsschicht, darüber die Panelfarbe als Tönung, darüber feine Körnung -->
+            <!-- Milchglas (ApplyFrost): Helligkeitsschicht, darüber die Panelfarbe als Tönung -->
             <Grid x:Name="FrostLayer" Grid.RowSpan="8" IsHitTestVisible="False" Panel.ZIndex="-1" Visibility="Collapsed">
                 <Border x:Name="FrostBrightness" CornerRadius="7"/>
                 <Border x:Name="FrostTint" CornerRadius="7"/>
-                <Border x:Name="FrostNoise" CornerRadius="7" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
             </Grid>
 
             <!-- Kopfzeile: Titel und Arbeitsbereich schrumpfen, die Knöpfe bleiben immer sichtbar -->
@@ -1315,19 +1315,18 @@
                 </DockPanel>
             </Border>
 
-            <!-- Vorschau (Leertaste): Code mit Syntaxfarben, Parameter, Signatur, letzter Start -->
+            <!-- Vorschau (Leertaste): Code mit Syntaxfarben, Parameter, Signatur, letzter Start.
+                 Läuft in einem eigenen Fenster neben dem Panel (PeekWindow); die Karte zieht beim Start dorthin um. -->
             <Border x:Name="PeekCard" Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="29"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
-                    Visibility="{Binding DataContext.ShowPeek, RelativeSource={RelativeSource AncestorType=c:PanelRoot}, Converter={StaticResource Vis}}" DataContext="{Binding Peek}"
-                    AutomationProperties.Name="Vorschau">
+                    DataContext="{Binding Peek}" AutomationProperties.Name="Vorschau">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
                 <DockPanel>
                     <!-- Kopf -->
                     <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
-                                Command="{Binding DataContext.ClosePeekCommand, RelativeSource={RelativeSource AncestorType=c:PanelRoot}}"
+                        <ui:Button x:Name="PeekCloseButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
                                 ToolTip="Schließen (Leertaste oder Esc)" AutomationProperties.Name="Vorschau schließen">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                         </ui:Button>

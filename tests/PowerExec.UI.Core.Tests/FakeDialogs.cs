@@ -48,7 +48,7 @@ internal sealed class FakeDialogs : IDialogs
     public string? PickColor(string title, string? initial, object? owner = null) { Asked.Add("PickColor " + title); return ColorAnswer; }
     public IconRef? PickIcon(IconRef current, string heading) { Asked.Add("PickIcon"); return IconAnswer; }
 
-    public NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder)
+    public NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder, string? initialFolder = null)
     {
         Asked.Add("AskNewGroup " + heading);
         return NewGroupAnswer;

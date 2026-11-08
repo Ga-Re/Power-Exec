@@ -73,7 +73,7 @@ public interface IDialogs
     IconRef? PickIcon(IconRef current, string heading);
 
     /// <summary>Neue Gruppe (Name, optional Ordner und Symbol); null = abgebrochen.</summary>
-    NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder);
+    NewGroupSpec? AskNewGroup(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder, string? initialFolder = null);
 
     /// <summary>Vorlagen aus dem Werkzeug-Katalog wählen; null = abgebrochen.</summary>
     IReadOnlyList<CatalogTemplate>? PickCatalogTemplates();

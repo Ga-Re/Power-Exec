@@ -10,7 +10,6 @@ namespace PowerExec.Interop;
 /// Glas (eigener Weichzeichner): Windows-Composition direkt im Panelfenster. Hinter dem WPF-Inhalt liegt ein
 /// SpriteVisual mit der Effektkette Hintergrund des Hosts → Gaußscher Weichzeichner → Sättigung → Helligkeitsschicht → Tönung.
 /// Es gibt kein zweites Fenster: der Effekt gehört zum Panelfenster, gleitet mit und wird vom Fensterbereich beschnitten.
-/// Die Körnung zeichnet WPF darüber.
 /// </summary>
 [SupportedOSPlatform("windows10.0.22000.0")]
 internal sealed class GlassBackdrop : IDisposable

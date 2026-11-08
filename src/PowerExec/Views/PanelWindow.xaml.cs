@@ -54,6 +54,7 @@ public partial class PanelWindow : Window
             ClearValue(HeightProperty);
         }
         DataContext = host.ViewModel;
+        DetachPeekCard();
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
         AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
         host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
@@ -64,6 +65,7 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
+        Interop.PanelWindowNative.DisableTransitions(_hwnd);
         if (_systemWindow) Interop.NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
         if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
         {
@@ -178,11 +180,44 @@ public partial class PanelWindow : Window
         SearchBox.SelectAll();
     }
 
+    // ---- Vorschau im eigenen Fenster ----------------------------------------------------------
+
+    private PeekWindow? _peekWindow;
+
+    /// <summary>Vorschau-Karte aus dem Panel lösen: sie erscheint in einem eigenen Fenster neben dem Panel.</summary>
+    private void DetachPeekCard()
+    {
+        if (PeekCard.Parent is Panel parent) parent.Children.Remove(PeekCard);
+        PeekCard.Margin = new Thickness(12);
+        PeekCloseButton.Command = Vm.ClosePeekCommand;
+        Vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ViewModels.PanelViewModel.ShowPeek)) UpdatePeekWindow();
+        };
+    }
+
+    private void UpdatePeekWindow()
+    {
+        if (Vm.ShowPeek && IsOpen && !_hiding && _monitor != null)
+        {
+            _peekWindow ??= new PeekWindow(PeekCard, Resources, this) { DataContext = Vm };
+            _peekWindow.PlaceBeside(_rect, _monitor.WorkArea, _monitor.Scale, Cfg.Edge);
+            if (!_peekWindow.IsVisible) _peekWindow.Show();
+            ScreenService.Place(new WindowInteropHelper(_peekWindow).Handle, _peekWindow.PixelRect);
+        }
+        else _peekWindow?.Hide();
+    }
+
+    /// <summary>Für den Selbsttest: ist das Vorschaufenster sichtbar?</summary>
+    internal bool PeekWindowVisible => _peekWindow?.IsVisible == true;
+
     /// <summary>Fenster endgültig schließen (Panel entfernt oder Einstellungen neu angewendet).</summary>
     public void CloseForGood()
     {
         _poll.Stop();
         IsOpen = false;
+        _peekWindow?.Close();
+        _peekWindow = null;
         DisposeGlass();
         DisposeContentHost();
         Close();
@@ -224,7 +259,7 @@ public partial class PanelWindow : Window
     }
 
     private static readonly string[] AppearanceKeys =
-        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
+        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Subtle", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
 
     /// <summary>
     /// Panelfarbe und Deckkraft anwenden. Bei einer hellen Farbe im dunklen Design (oder umgekehrt)
@@ -285,6 +320,9 @@ public partial class PanelWindow : Window
                     Resources["Bg.Selected"] = Solid(new Rgb(sel.Color.R, sel.Color.G, sel.Color.B), SelectedAlpha(opacity));
             }
         }
+        // Glas: auch Flächen in den Details (Parameter) lassen den Weichzeichner durchscheinen
+        if (_backdrop == PanelBackdrop.Glass && !ThemeService.IsHighContrast && TryFindResource("Bg.Subtle") is SolidColorBrush subtle)
+            Resources["Bg.Subtle"] = Solid(new Rgb(subtle.Color.R, subtle.Color.G, subtle.Color.B), HoverAlpha(opacity));
         // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
         Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
         ApplyFrost(s.Frost);
@@ -455,44 +493,20 @@ public partial class PanelWindow : Window
     /// <summary>Für den Selbsttest: Fehler beim Aufbau des Weichzeichners (null = keiner).</summary>
     internal string? GlassError { get; private set; }
 
-    /// <summary>Rauschtextur für die Körnung (einmal erzeugt, gekachelt).</summary>
-    private static readonly Lazy<ImageBrush> NoiseBrush = new(CreateNoiseBrush);
-
-    private static ImageBrush CreateNoiseBrush()
-    {
-        const int size = 128;
-        var pixels = new byte[size * size];
-        var random = new Random(4711); // fest: gleiches Muster bei jedem Start
-        random.NextBytes(pixels);
-        var bitmap = BitmapSource.Create(size, size, 96, 96, PixelFormats.Gray8, null, pixels, size);
-        bitmap.Freeze();
-        var brush = new ImageBrush(bitmap)
-        {
-            TileMode = TileMode.Tile,
-            Stretch = Stretch.None,
-            Viewport = new Rect(0, 0, size, size),
-            ViewportUnits = BrushMappingMode.Absolute,
-        };
-        brush.Freeze();
-        return brush;
-    }
-
     /// <summary>
     /// Milchglas: von unten Helligkeitsschicht (dunkle Fläche Schwarz, helle Weiß; Stärke vom Milchglas-Regler),
-    /// darüber die Panelfarbe als Tönung (mit der eingestellten Deckkraft). Körnung gibt es nur bei Glas. Ohne Milchglas
+    /// darüber die Panelfarbe als Tönung (mit der eingestellten Deckkraft). Ohne Milchglas
     /// (Regler 0, Kontrastdesign) trägt der Panelrahmen die Panelfarbe wie bisher.
     /// </summary>
     private void ApplyFrost(int frost)
     {
         if (GlassActive)
         {
-            // Glas: Helligkeitsschicht und Tönung liegen im Weichzeichner, WPF legt nur die Körnung darüber
+            // Glas: Helligkeitsschicht und Tönung liegen im Weichzeichner
             PanelBorder.Background = HitSurface;
             FrostBrightness.Background = null;
             FrostTint.Background = null;
-            FrostNoise.Background = NoiseBrush.Value;
-            FrostNoise.Opacity = PanelBackdrops.GlassNoise(Cfg.GlassNoise);
-            FrostLayer.Visibility = Visibility.Visible;
+            FrostLayer.Visibility = Visibility.Collapsed;
             UpdateGlass();
             return;
         }
@@ -503,19 +517,14 @@ public partial class PanelWindow : Window
             PanelBorder.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
             FrostBrightness.Background = null;
             FrostTint.ClearValue(Border.BackgroundProperty);
-            FrostNoise.Background = null;
             FrostLayer.Visibility = Visibility.Collapsed;
             return;
         }
         PanelBorder.Background = Brushes.Transparent;
         FrostBrightness.Background = Solid(Vm.IsDarkSurface ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), alpha);
         FrostTint.SetResourceReference(Border.BackgroundProperty, "Bg.Panel");
-        FrostNoise.Background = null; // Körnung nur bei Glas (eigener Regler)
         FrostLayer.Visibility = Visibility.Visible;
     }
-
-    /// <summary>Für den Selbsttest: liegt eine Körnung über dem Panel?</summary>
-    internal bool HasGrain => FrostLayer.Visibility == Visibility.Visible && FrostNoise.Background != null && FrostNoise.Opacity > 0;
 
     /// <summary>Für den Selbsttest: Deckkraft der Helligkeitsschicht (0 = kein Milchglas).</summary>
     internal double FrostBrightnessAlpha => FrostLayer.Visibility == Visibility.Visible && FrostBrightness.Background is SolidColorBrush b ? b.Color.A / 255.0 : 0;
@@ -797,6 +806,7 @@ public partial class PanelWindow : Window
     {
         _hiding = false;
         IsOpen = false;
+        _peekWindow?.Hide();
         OpenedViaHotkey = false;
         Hide();
         Vm.ResetForNextOpen();
@@ -810,7 +820,8 @@ public partial class PanelWindow : Window
         // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
         if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
 
-        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2));
+        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2))
+                      || (_peekWindow is { IsVisible: true } peek && ScreenService.CursorInside(peek.PixelRect, 2));
         if (inside)
         {
             _outsideSince = null;

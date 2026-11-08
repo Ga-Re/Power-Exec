@@ -3,7 +3,7 @@ namespace PowerExec.Core.Config;
 /// <summary>Hintergrund hinter dem Panel.</summary>
 public enum PanelBackdrop
 {
-    /// <summary>Klarglas: Deckkraft der Panelfarbe, dazu Milchglas (Helligkeitsschicht und Tönung, ohne Körnung).</summary>
+    /// <summary>Klarglas: Deckkraft der Panelfarbe, dazu Milchglas (Helligkeitsschicht und Tönung).</summary>
     Clear,
     /// <summary>Bis 0.20: Aero-Blur hinter einem Systemfenster – wird beim Einlesen zu <see cref="Clear"/>.</summary>
     Aero,
@@ -13,7 +13,7 @@ public enum PanelBackdrop
     Mica,
     /// <summary>
     /// Glas (eigener Weichzeichner, Windows 11): Hintergrund hinter dem Panel über die Windows-Composition im Panelfenster
-    /// selbst weichgezeichnet (Weichzeichner, Sättigung, Helligkeit), darüber Panelfarbe und Körnung.
+    /// selbst weichgezeichnet (Weichzeichner, Sättigung, Helligkeit), darüber die Panelfarbe.
     /// </summary>
     Glass
 }
@@ -56,8 +56,6 @@ public static class PanelBackdrops
     /// <summary>Sättigung als Faktor (1 = unverändert) zum Regler 0–200 %.</summary>
     public static float GlassSaturation(int percent) => Math.Clamp(percent, 0, 200) / 100f;
 
-    /// <summary>Deckkraft der Körnung zum Regler 0–10 %.</summary>
-    public static double GlassNoise(int percent) => Math.Clamp(percent, 0, 10) / 100.0;
 
     /// <summary>
     /// Deckkraft der Helligkeitsschicht unter der Panelfarbe: dunkle Fläche Schwarz 40–60 %, helle Fläche Weiß 50–70 %;

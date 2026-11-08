@@ -1,4 +1,5 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Models;
 using PowerExec.Infrastructure;
 using PowerExec.Services;
 using PowerExec.ViewModels;
@@ -214,6 +215,36 @@ public sealed class AppControllerTests : IDisposable
         Assert.Null(a.Restored);
         Assert.True(b.IsOpen);
         Assert.Equal(new PanelOpenState(1, true), b.Restored);
+    }
+
+    [Fact]
+    public void DroppedFolderAsGroupOpensNewGroupDialogWithChosenOptions()
+    {
+        var app = Create();
+        var folder = Path.Combine(_dir, "Werkzeuge");
+        Directory.CreateDirectory(folder);
+        app.FakeUi.FakeDialogs.ChoiceAnswer = (0, false); // als Gruppe
+        app.FakeUi.FakeDialogs.NewGroupAnswer = new NewGroupSpec("Werkzeuge", IconRef.None, folder, "#3B82F6", ItemLayout.Grid);
+
+        app.AddDropped(new[] { new DroppedTarget(CustomEntryKind.Folder, folder, "Werkzeuge") }, group: null);
+
+        Assert.Contains("AskNewGroup Ordner als Gruppe hinzufügen", app.FakeUi.FakeDialogs.Asked);
+        Assert.Contains(app.Settings.Folders, f => f.Path == folder);
+        Assert.Equal(ItemLayout.Grid, GroupManager.LayoutOf(app.Settings, "Werkzeuge"));
+    }
+
+    [Fact]
+    public void DroppedFolderDialogCancelledAddsNothing()
+    {
+        var app = Create();
+        var folder = Path.Combine(_dir, "Abbruch");
+        Directory.CreateDirectory(folder);
+        app.FakeUi.FakeDialogs.ChoiceAnswer = (0, false);
+        app.FakeUi.FakeDialogs.NewGroupAnswer = null;
+
+        app.AddDropped(new[] { new DroppedTarget(CustomEntryKind.Folder, folder, "Abbruch") }, group: null);
+
+        Assert.DoesNotContain(app.Settings.Folders, f => f.Path == folder);
     }
 
     [Fact]

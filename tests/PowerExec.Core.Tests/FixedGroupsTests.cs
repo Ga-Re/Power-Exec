@@ -119,10 +119,10 @@ public class PanelBackdropTests
         Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, true));                          // Kontrastdesign
         Assert.Equal(PanelBackdrop.Clear, PanelBackdrops.Effective(PanelBackdrop.Glass, 26100, false, transparencyEffects: false)); // Transparenzeffekte aus
         Assert.True(PanelBackdrops.NeedsSystemWindow(PanelBackdrop.Glass));
-        var p = new PanelConfig { Backdrop = PanelBackdrop.Glass, GlassBlur = 500, GlassSaturation = -3, GlassNoise = 99 };
+        var p = new PanelConfig { Backdrop = PanelBackdrop.Glass, GlassBlur = 500, GlassSaturation = -3 };
         p.Normalize();
         Assert.Equal(PanelBackdrop.Glass, p.Backdrop);
-        Assert.Equal((100, 0, 10), (p.GlassBlur, p.GlassSaturation, p.GlassNoise));
+        Assert.Equal((100, 0), (p.GlassBlur, p.GlassSaturation));
         Assert.Equal(p.GlassBlur, p.Clone().GlassBlur);
     }
 

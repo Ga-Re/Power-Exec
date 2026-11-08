@@ -41,13 +41,20 @@ public partial class NewGroupWindow : Window
     /// <param name="validateName">Fehlermeldung zum Namen oder null.</param>
     /// <param name="validateFolder">Fehlermeldung zum Ordner (z. B. schon vergeben) oder null.</param>
     /// <returns>Angaben oder null bei Abbruch.</returns>
-    public static NewGroupSpec? Ask(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder)
+    /// <param name="initialFolder">Vorausgefüllter Ordner (z. B. ins Panel gezogen) oder null.</param>
+    public static NewGroupSpec? Ask(string heading, string initialName, Func<string, string?> validateName, Func<string?, string?>? validateFolder,
+        string? initialFolder = null)
     {
         var w = new NewGroupWindow { _validateName = validateName, _validateFolder = validateFolder };
         w.Heading.Text = heading;
         w._settingName = true;
         w.NameBox.Text = initialName;
         w._settingName = false;
+        if (!string.IsNullOrWhiteSpace(initialFolder))
+        {
+            w.FolderBox.Text = initialFolder;
+            w.ClearFolderButton.Visibility = Visibility.Visible;
+        }
         return w.ShowDialog() == true ? w.Result() : null;
     }
 

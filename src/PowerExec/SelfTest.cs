@@ -231,9 +231,12 @@ public sealed partial class SelfTestController : AppController
                     if (!vm.TogglePeek() || vm.Peek == null) Fail("Vorschau: öffnet nicht");
                     else if (!vm.Peek.HasCode) Fail("Vorschau: kein Code für ein PowerShell-Script");
                     await Settle();
-                    if (host.Window.Content is FrameworkElement peekRoot) Screenshot(peekRoot, "panel-vorschau");
+                    if (!host.Window.PeekWindowVisible) Fail("Vorschau: eigenes Fenster neben dem Panel erscheint nicht");
+                    Screenshot(host.Window.PeekCard, "panel-vorschau");
                     vm.TogglePeek();
+                    await Settle();
                     if (vm.ShowPeek) Fail("Vorschau: zweite Leertaste schließt nicht");
+                    if (host.Window.PeekWindowVisible) Fail("Vorschau: Fenster bleibt nach dem Schließen sichtbar");
                 }
 
                 // Strg+K: Gruppe suchen und anspringen
@@ -393,9 +396,6 @@ public sealed partial class SelfTestController : AppController
                     if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)
                         Fail($"Milchglas {frost}: Helligkeitsschicht {host.Window.FrostBrightnessAlpha:P0} statt {wantAlpha:P0}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");
-                    // Körnung nur bei Glas
-                    if (host.Window.HasGrain != host.Window.GlassActive)
-                        Fail($"Hintergrund {b}: Körnung {(host.Window.HasGrain ? "sichtbar" : "fehlt")}");
                     var monitor = ScreenService.TriggerMonitors(host.Config)[0];
                     var rect = ScreenService.PanelRect(monitor, host.Config);
                     var stripes = StripeWindow(rect);

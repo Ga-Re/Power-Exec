@@ -79,6 +79,14 @@ internal static class PanelWindowNative
     private const int DWMWCP_ROUND = 2;
     private const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
 
+    private const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
+
+    /// <summary>Ein-/Ausblend-Übergänge von Windows abschalten: das Panel gleitet selbst, beim Neuaufbau soll nichts aufblitzen.</summary>
+    public static void DisableTransitions(IntPtr hwnd)
+    {
+        if (hwnd != IntPtr.Zero) Set(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, 1);
+    }
+
     private static void Set(IntPtr hwnd, int attr, int value)
     {
         try { DwmSetWindowAttribute(hwnd, attr, ref value, sizeof(int)); }

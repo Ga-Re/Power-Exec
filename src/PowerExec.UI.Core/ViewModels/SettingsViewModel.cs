@@ -1514,9 +1514,13 @@ public sealed class SettingsViewModel : ObservableObject
         _s.Favorites = new List<string>(_app.Settings.Favorites);
         _s.CollapsedGroups = new List<string>(_app.Settings.CollapsedGroups);
         _s.EditorSizes = new Dictionary<string, string>(_app.Settings.EditorSizes);
-        // Panel: Formular, aber „angeheftet“ aus dem laufenden Zustand übernehmen
+        // Panel: Formular, aber „angeheftet“ und eine am Panel gezogene Größe aus dem laufenden Zustand übernehmen
         var panel = Panel.ToConfig();
-        if (_app.Settings.Panels.FirstOrDefault() is { } live) panel.Pinned = live.Pinned;
+        if (_app.Settings.Panels.FirstOrDefault() is { } live)
+        {
+            panel.Pinned = live.Pinned;
+            (panel.PanelWidth, panel.PanelHeightPercent) = Panel.EffectiveSize(live);
+        }
         _s.Panels = new List<PanelConfig> { panel };
         EntryList.ApplyTo(_s);
         _s.MachineGroups = MachineGroups.Select(g => g.ToGroup()).Where(g => g.Name.Length > 0)
