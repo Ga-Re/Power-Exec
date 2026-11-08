@@ -467,6 +467,8 @@ public sealed partial class SelfTestController : AppController
                 {
                     if (dock.SlotCount != host.ViewModel.DockItems.Count + 1) Fail($"Mini-Dock: {dock.SlotCount} Plätze statt {host.ViewModel.DockItems.Count + 1}");
                     if (dock.Content is FrameworkElement dockRoot) Screenshot(dockRoot, "mini-dock");
+                    if (dock.TryFindResource("DefaultUiButtonStyle") is null)
+                        Fail("Fluent: Mini-Dock ohne Fluent-Stile");
                     if (host.Triggers.Count > 0) Fail("Mini-Dock: Hover-Zone bleibt zusätzlich aktiv");
                     host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
                     await Settle();
@@ -520,6 +522,8 @@ public sealed partial class SelfTestController : AppController
                 {
                     if (host.Window.IsOpen) Fail("Spotlight: Panel öffnet zusätzlich");
                     if (spotlight.ViewModel.IsEmpty) Fail("Spotlight: ohne Suchtext keine Favoriten");
+                    if (spotlight.SearchBox.Template?.FindName("Placeholder", spotlight.SearchBox) is not System.Windows.Controls.TextBlock { IsVisible: true })
+                        Fail("Fluent: Spotlight-Suchfeld ohne Hinweistext");
                     spotlight.ViewModel.SearchText = "clnup";
                     await Settle();
                     if (spotlight.ViewModel.Selected?.Item.FileName != "Cleanup.cmd") Fail("Spotlight: „clnup“ findet Cleanup.cmd nicht als besten Treffer");

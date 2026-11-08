@@ -81,6 +81,7 @@ public partial class DockWindow : Window
         _host = host;
         _monitor = monitor;
         InitializeComponent();
+        Infrastructure.FluentTheme.Attach(this);
         Orientation = host.Config.Edge is ScreenEdge.Left or ScreenEdge.Right ? Orientation.Vertical : Orientation.Horizontal;
         // Abgerundet nur zur Bildschirmmitte hin
         DockBorder.CornerRadius = host.Config.Edge switch

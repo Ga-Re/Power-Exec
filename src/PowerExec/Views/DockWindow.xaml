@@ -1,9 +1,14 @@
 <Window x:Class="PowerExec.Views.DockWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         Title="Power-Exec Mini-Dock" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False" Focusable="False">
+    <Window.Resources>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
+    </Window.Resources>
     <Border x:Name="DockBorder" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}" BorderThickness="1" Padding="3">
         <ItemsControl x:Name="Slots" Focusable="False">
             <ItemsControl.ItemsPanel>
