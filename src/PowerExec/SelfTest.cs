@@ -118,6 +118,16 @@ public sealed partial class SelfTestController : AppController
                     }
                 }
             });
+            File.WriteAllText(Path.Combine(dir, "rechner.csv"), "Hostname;Standort\nSRV-B1;Berlin\nSRV-H1;Hamburg\nSRV-B2;Berlin\n");
+            Settings.MachineGroups.Add(new MachineGroup
+            {
+                Name = "Berlin", Machines = ["SRV-B1", "SRV-B2"],
+                ListQuery = new ListGroupQuery
+                {
+                    Path = Path.Combine(dir, "rechner.csv"), NameColumn = "Hostname",
+                    Filters = { new ListFilter { Column = "Standort", Operator = AdOperator.Equals, Value = "Berlin" } }
+                }
+            });
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", PanelOpacity = 90, Frost = 30 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
@@ -220,6 +230,8 @@ public sealed partial class SelfTestController : AppController
                 vm.ShowShortcuts = true;
                 await Settle();
                 if (host.Window.Content is FrameworkElement keysRoot) Screenshot(keysRoot, "panel-tastenkuerzel");
+                // Per Tastenkürzel geöffnet: Schließen nur über Fokusverlust – der Zeitgeber fürs Auto-Einfahren ruht
+                if (host.Window.AutoHideTimerRunning) Fail("Auto-Einfahren: Zeitgeber läuft dauerhaft, obwohl das Panel per Tastenkürzel offen ist");
                 vm.ShowShortcuts = false;
 
                 // Leertaste: Vorschau eines Scripts
@@ -1053,7 +1065,14 @@ public sealed partial class SelfTestController : AppController
                 if (dyn.Blocks[0].Rules[0].Attribute != "operatingSystem") Fail("Rechnergruppen: Attribut-Auswahl wird nicht übernommen");
                 dyn.Blocks[0].Rules[0].AttributeText = "name";
             }
-            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "look", "behavior", "exec", "remote", "machines", "diag" })
+            if (settingsVm.MachineGroups.FirstOrDefault(m => m.IsListSource) is not { } listGroup) Fail("Rechnergruppen: Gruppe aus Liste fehlt in den Einstellungen");
+            else
+            {
+                if (!listGroup.IsCsv || listGroup.ListFilters.Count != 1) Fail($"Rechnergruppen: CSV-Liste falsch geladen ({listGroup.ListSummary})");
+                if (listGroup.MachinesInline != "SRV-B1, SRV-B2") Fail($"Rechnergruppen: Listenfilter liefert {listGroup.MachinesInline}");
+                if (listGroup.ToGroup().ListQuery?.Filters.Count != 1) Fail("Rechnergruppen: Listen-Gruppe geht beim Speichern verloren");
+            }
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
@@ -1245,6 +1264,7 @@ public sealed partial class SelfTestController : AppController
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(NewGroupWindow.ForTest());
             await ShowAndClose(ChoiceWindow.ForTest());
+            await ShowAndClose(OuPickerWindow.ForTest());
             await ShowAndClose(PlaceholderWindow.ForTestWithProfiles());
             await ShowAndClose(PlaceholderWindow.ForTest(new[] { new Placeholder("Rechner", "SRV-01"), new Placeholder("Ticket", "") }));
             // Eintragsdialog: Kachelauswahl, jedes Formular, Live-Prüfung

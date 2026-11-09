@@ -84,8 +84,11 @@ public partial class PanelWindow : Window
             ApplyFrost(Cfg.Frost); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
         }
 
+        // Auto-Einfahren: der Zeitgeber läuft nur, solange der Mauszeiger draußen sein kann. Steht er im Panel,
+        // ruht der Zeitgeber, bis das Verlassen (MouseLeave) ihn wieder weckt.
         _poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         _poll.Tick += (_, _) => CheckAutoHide();
+        MouseLeave += (_, _) => WatchCursor();
 
         Deactivated += (_, _) => OnDeactivated();
         PreviewKeyDown += OnPanelPreviewKeyDown;
@@ -167,6 +170,7 @@ public partial class PanelWindow : Window
                 Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen – nur dann ein zweites Mal
             }
         }
+        else if (_systemWindow) ResizeContentHost(_rect.Width, _rect.Height); // geparkt: Kindfenster trotzdem verankern
         if (!wasVisible && _contentHost is { IsDisposed: false })
         {
             // Glas: das Kindfenster erst fertig zeichnen lassen – sonst fällt das Zeichnen in den schnellen Anfang des Ausfahrens
@@ -222,6 +226,7 @@ public partial class PanelWindow : Window
         Vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(ViewModels.PanelViewModel.ShowPeek) or nameof(ViewModels.PanelViewModel.Peek)) UpdatePeekWindow();
+            else if (e.PropertyName == nameof(ViewModels.PanelViewModel.IsPinned) && !Cfg.Pinned) WatchCursor(); // gelöst: wieder auf Verlassen achten
         };
     }
 
@@ -241,6 +246,9 @@ public partial class PanelWindow : Window
         }
         else _peekWindow?.Hide();
     }
+
+    /// <summary>Für den Selbsttest: läuft der Zeitgeber fürs Auto-Einfahren?</summary>
+    internal bool AutoHideTimerRunning => _poll.IsEnabled;
 
     /// <summary>Für den Selbsttest: ist das Vorschaufenster sichtbar?</summary>
     internal bool PeekWindowVisible => _peekWindow?.IsVisible == true;
@@ -503,6 +511,7 @@ public partial class PanelWindow : Window
         root.SetBinding(TextElement.FontSizeProperty, new System.Windows.Data.Binding(nameof(FontSize)) { Source = this });
         root.SetBinding(TextElement.ForegroundProperty, new System.Windows.Data.Binding(nameof(Foreground)) { Source = this });
         root.PreviewKeyDown += OnPanelPreviewKeyDown;
+        root.MouseLeave += (_, _) => WatchCursor(); // Glas: der Inhalt liegt im Kindfenster – auch dort das Verlassen melden
         root.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
 
         Infrastructure.FluentTheme.RegisterRoot(root); // Fluent-Stile im Kindfenster festhalten (Kontrollkästchen, Animationen)
@@ -511,17 +520,22 @@ public partial class PanelWindow : Window
         if (HwndSource.FromHwnd(_hwnd) is { } src) src.AddHook(ChildHostHook);
     }
 
-    /// <summary>Kindfenster des Glas-Panels auf die Größe des Fensterinhalts setzen (falls abweichend).</summary>
+    /// <summary>
+    /// Kindfenster des Glas-Panels bedingungslos bei (0, 0) mit voller Größe verankern. Eine Prüfung über GetClientRect
+    /// sah die Lage im Elternfenster nicht (immer 0/0) – ein verrutschtes Kindfenster blieb verrutscht.
+    /// </summary>
+    private void ResizeContentHost(int w, int h)
+    {
+        if (_contentHost is not { IsDisposed: false } host || host.Handle == IntPtr.Zero || w <= 0 || h <= 0) return;
+        NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, w, h, NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
+    }
+
+    /// <summary>Kindfenster auf die Größe des Fensterinhalts.</summary>
     private void ResizeContentHost()
     {
-        if (_contentHost is not { IsDisposed: false } host || _hwnd == IntPtr.Zero) return;
+        if (_hwnd == IntPtr.Zero) return;
         NativeMethods.GetClientRect(_hwnd, out var client);
-        var w = Math.Max(1, client.Right - client.Left);
-        var h = Math.Max(1, client.Bottom - client.Top);
-        NativeMethods.GetClientRect(host.Handle, out var current);
-        if (current.Right - current.Left == w && current.Bottom - current.Top == h) return;
-        const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
-        NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
+        ResizeContentHost(client.Right - client.Left, client.Bottom - client.Top);
     }
 
     /// <summary>Für den Selbsttest: Größe von Fensterinhalt und Kindfenster in Pixeln (Kindfenster null = keins).</summary>
@@ -684,8 +698,9 @@ public partial class PanelWindow : Window
             var targetH = _rect.Height / dpi.DpiScaleY;
             if (double.IsNaN(PanelBorder.Width) || Math.Abs(PanelBorder.Width - targetW) > 0.5) PanelBorder.Width = targetW;
             if (double.IsNaN(PanelBorder.Height) || Math.Abs(PanelBorder.Height - targetH) > 0.5) PanelBorder.Height = targetH;
-            PanelBorder.HorizontalAlignment = Cfg.Edge == ScreenEdge.Left ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-            PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
+            // Inhalt füllt immer die ganze Fläche (Fenster bzw. Kindfenster) – kein leerer Glas-Bereich daneben
+            PanelBorder.HorizontalAlignment = HorizontalAlignment.Stretch;
+            PanelBorder.VerticalAlignment = VerticalAlignment.Stretch;
             PrepareSlide();
             ApplyReveal();
             ResizeContentHost(); // Kindfenster (Glas) ausdrücklich auf Fenstergröße – nicht nur über WM_SIZE
@@ -923,6 +938,9 @@ public partial class PanelWindow : Window
         OpenedViaHotkey = false;
         if (ParkWhenHidden)
         {
+            // Animation sauber beenden: geparkt steht das Fenster genau bei Reveal = 0
+            BeginAnimation(RevealProperty, null);
+            Reveal = 0.0;
             // Glas: hinter dem Rand stehen lassen (siehe ParkWhenHidden); den Fokus aber abgeben
             if (IsActive) Services.ForegroundTracker.ReturnFocus();
         }
@@ -931,16 +949,30 @@ public partial class PanelWindow : Window
         ListScroll.ScrollToTop();
     }
 
+    /// <summary>Mauszeiger hat das Panel (oder die Vorschau) verlassen: Zeitgeber fürs Auto-Einfahren wecken.</summary>
+    private void WatchCursor()
+    {
+        if (IsOpen && !_hiding && !Cfg.Pinned && !_poll.IsEnabled) _poll.Start();
+    }
+
     private void CheckAutoHide()
     {
-        if (!IsOpen || _hiding || Cfg.Pinned || _resizing || _app.IsDialogOpen) { _outsideSince = null; return; }
-        if (AnyPopupOpen()) { _outsideSince = null; return; }
-        // Per Tastenkürzel geöffnet oder aktiv am Tippen: Schließen erst beim Fokusverlust.
-        if (OpenedViaHotkey || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
+        if (!IsOpen || _hiding) { _outsideSince = null; _poll.Stop(); return; }
+        // Angeheftet oder per Tastenkürzel geöffnet: Schließen nur über Fokusverlust/Lösen – der Zeitgeber ruht
+        if (Cfg.Pinned || OpenedViaHotkey) { _outsideSince = null; _poll.Stop(); return; }
+        // Vorübergehende Sperren (Größe ziehen, Dialog, Menü, Tippen): weiter prüfen, sie enden ohne Mausereignis
+        if (_resizing || _app.IsDialogOpen || AnyPopupOpen() || (IsActive && Vm.IsSearching)) { _outsideSince = null; return; }
 
-        bool inside = ScreenService.CursorInside(_rect, 2) || _host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2))
-                      || (_peekWindow is { IsVisible: true } peek && ScreenService.CursorInside(peek.PixelRect, 2));
-        if (inside)
+        if (ScreenService.CursorInside(_rect, 2))
+        {
+            // Im Panel selbst: ruhen, bis MouseLeave meldet
+            _outsideSince = null;
+            _poll.Stop();
+            return;
+        }
+        // Auslösezone und Vorschau zählen als „drin“, melden das Verlassen aber nicht – dort weiter prüfen
+        if (_host.Triggers.Any(t => ScreenService.CursorInside(t.CurrentRect, 2))
+            || (_peekWindow is { IsVisible: true } peek && ScreenService.CursorInside(peek.PixelRect, 2)))
         {
             _outsideSince = null;
             return;

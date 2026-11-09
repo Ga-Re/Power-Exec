@@ -278,17 +278,21 @@ public sealed class MachineGroup
     /// <summary>Feste Liste bzw. bei dynamischen Gruppen das Ergebnis der letzten Synchronisierung (auch offline nutzbar).</summary>
     public List<string> Machines { get; set; } = new();
 
-    /// <summary>Dynamische Gruppe: Regeln für das Active Directory; null = feste Liste.</summary>
+    /// <summary>Dynamische Gruppe: Regeln für das Active Directory; null = keine AD-Gruppe.</summary>
     public AdGroupQuery? AdQuery { get; set; }
+
+    /// <summary>Dynamische Gruppe aus einer Liste (Text oder CSV mit Filtern); null = keine Listengruppe.</summary>
+    public ListGroupQuery? ListQuery { get; set; }
     public DateTime? LastSyncUtc { get; set; }
     /// <summary>Fehler der letzten Synchronisierung (die bisherige Liste bleibt dann erhalten).</summary>
     public string? LastSyncError { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsDynamic => AdQuery != null;
+    public bool IsDynamic => AdQuery != null || ListQuery != null;
 
     public MachineGroup Clone() => new()
     {
-        Name = Name, Machines = new List<string>(Machines), AdQuery = AdQuery?.Clone(), LastSyncUtc = LastSyncUtc, LastSyncError = LastSyncError
+        Name = Name, Machines = new List<string>(Machines), AdQuery = AdQuery?.Clone(), ListQuery = ListQuery?.Clone(),
+        LastSyncUtc = LastSyncUtc, LastSyncError = LastSyncError
     };
 }

@@ -8,6 +8,27 @@ public static class AdSearch
     public const int MaxResults = 5000;
 
     /// <summary>
+    /// Distinguished Names der Domäne, aller Organisationseinheiten und des Containers „Computers“ – für die Auswahl
+    /// „Ab OU“ als Baum.
+    /// </summary>
+    public static Task<IReadOnlyList<string>> FindOrganizationalUnitsAsync(CancellationToken token = default) =>
+        Task.Run<IReadOnlyList<string>>(() =>
+        {
+            using var root = new DirectoryEntry();
+            var result = new List<string>();
+            if (root.Properties["distinguishedName"] is { Count: > 0 } d && d[0] is string domain) result.Add(domain);
+            using var searcher = new DirectorySearcher(root, "(|(objectCategory=organizationalUnit)(&(objectCategory=container)(cn=Computers)))",
+                new[] { "distinguishedName" }) { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
+            using var results = searcher.FindAll();
+            foreach (SearchResult r in results)
+            {
+                token.ThrowIfCancellationRequested();
+                if (r.Properties["distinguishedName"] is { Count: > 0 } p && p[0] is string dn) result.Add(dn);
+            }
+            return result;
+        }, token);
+
+    /// <summary>
     /// Eingabe: Name mit Platzhaltern (z. B. „SRV-*“), eine OU („OU=Server,DC=firma,DC=local“)
     /// oder ein eigener LDAP-Filter in Klammern („(operatingSystem=*Server*)“).
     /// </summary>

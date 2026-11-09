@@ -520,6 +520,9 @@
                 <ui:NavigationViewItem Content="Hilfe" IsExpanded="True" AutomationProperties.Name="Hilfe">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE897;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                     <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="Beispiele" TargetPageTag="samples" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE943;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
                         <ui:NavigationViewItem Content="Diagnose" TargetPageTag="diag" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE9D9;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
@@ -769,9 +772,15 @@
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
                     <TextBlock Text="Rechnergruppen" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Gruppen fassen Rechner zusammen. Im Ausführen-Dialog wählst du eine Gruppe mit einem Klick aus; in Startprofilen trägst du sie als @Name ein (z. B. @Webserver). Gruppen werden beim Start aufgelöst – Änderungen gelten sofort für alle Profile." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
-                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Left" Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Gruppe hinzufügen"/></StackPanel>
-                    </ui:Button>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddGroupCommand}">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Gruppe hinzufügen"/></StackPanel>
+                        </ui:Button>
+                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ImportGroupFromListCommand}" Margin="8,0,0,0"
+                                   ToolTip="Neue Gruppe aus einer Namensliste oder CSV-Datei – dynamisch, mit Filtern">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Gruppe aus Liste importieren …"/></StackPanel>
+                        </ui:Button>
+                    </StackPanel>
                     <TextBlock Text="Noch keine Gruppen." Style="{StaticResource Caption}" Visibility="{Binding HasNoGroups, Converter={StaticResource Vis}}"/>
                     <ItemsControl ItemsSource="{Binding MachineGroups}" Focusable="False">
                         <ItemsControl.ItemTemplate>
@@ -787,6 +796,15 @@
                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Gruppe löschen">
                                                 <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
                                             </ui:Button>
+                                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding ExportCommand}"
+                                                       ToolTip="Gruppe exportieren (CSV oder Text)" AutomationProperties.Name="Exportieren">
+                                                <TextBlock Text="&#xEDE1;" Style="{StaticResource Icon}" FontSize="12"/>
+                                            </ui:Button>
+                                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding SyncNowCommand}"
+                                                       Visibility="{Binding CanSync, Converter={StaticResource Vis}}"
+                                                       ToolTip="Jetzt synchronisieren (aus dem AD bzw. der Liste lesen)" AutomationProperties.Name="Synchronisieren">
+                                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="12"/>
+                                            </ui:Button>
                                             <TextBlock Text="@" FontSize="16" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
                                             <TextBox Width="220" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="Name der Gruppe"/>
                                             <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
@@ -795,15 +813,60 @@
                                                        Visibility="{Binding IsExpanded, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                         </DockPanel>
                                         <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="36,0,0,4">
-                                        <!-- Feste Liste oder dynamisch aus dem AD -->
+                                        <!-- Quelle: feste Liste, dynamisch aus einer Liste (Datei mit Filtern) oder aus dem AD (Regeln) -->
                                         <DockPanel Margin="0,8,0,0">
-                                            <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding IsDynamic}" AutomationProperties.Name="Dynamisch aus dem AD" />
+                                            <ComboBox DockPanel.Dock="Right" Width="210" ItemsSource="{Binding Sources}" SelectedValue="{Binding Source}"
+                                                      DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="Quelle der Rechnergruppe"/>
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="Dynamisch aus dem Active Directory" FontWeight="SemiBold"/>
+                                                <TextBlock Text="Quelle" FontWeight="SemiBold"/>
                                                 <TextBlock Style="{StaticResource Caption}" FontSize="11" TextWrapping="Wrap"
-                                                           Text="Rechner werden nach Regeln gesucht und beim Start sowie regelmäßig aktualisiert – die zuletzt gefundene Liste gilt auch offline."/>
+                                                           Text="Dynamische Gruppen werden beim Start und regelmäßig aktualisiert – die zuletzt gefundene Liste gilt auch offline."/>
                                             </StackPanel>
                                         </DockPanel>
+                                        <!-- Dynamisch aus einer Liste: Datei, Namensspalte, Filter -->
+                                        <StackPanel Visibility="{Binding IsListSource, Converter={StaticResource Vis}}" Margin="0,10,0,0">
+                                            <DockPanel Margin="0,0,0,8">
+                                                <TextBlock Text="Liste" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
+                                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Datei wählen …" Command="{Binding ChooseListCommand}" Margin="6,0,0,0"/>
+                                                <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                         Tag="Text (ein Rechner pro Zeile) oder CSV mit Spalten"/>
+                                            </DockPanel>
+                                            <DockPanel Margin="0,0,0,8" Visibility="{Binding IsCsv, Converter={StaticResource Vis}}">
+                                                <TextBlock Text="Namen in" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
+                                                <ComboBox Width="220" HorizontalAlignment="Left" ItemsSource="{Binding ListColumns}" SelectedItem="{Binding NameColumn}"
+                                                          AutomationProperties.Name="Spalte mit den Rechnernamen"/>
+                                            </DockPanel>
+                                            <TextBlock Text="Filter – alle müssen zutreffen (bei einer Namensliste nach dem Namen, bei einer CSV nach jeder Spalte)"
+                                                       Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,4" TextWrapping="Wrap"/>
+                                            <ItemsControl ItemsSource="{Binding ListFilters}" Focusable="False">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <DockPanel Margin="0,0,0,6">
+                                                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
+                                                                       ToolTip="Filter entfernen" AutomationProperties.Name="Filter entfernen">
+                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                            </ui:Button>
+                                                            <ComboBox DockPanel.Dock="Left" Width="190" ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}"
+                                                                      AutomationProperties.Name="Spalte"/>
+                                                            <ComboBox DockPanel.Dock="Left" Width="170" Margin="6,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
+                                                                      SelectedValuePath="Key" SelectedValue="{Binding Operator}" AutomationProperties.Name="Vergleich"/>
+                                                            <TextBox Margin="6,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="Wert (bei „ist gleich“ gehen * und ?)"
+                                                                     Visibility="{Binding NeedsValue, Converter={StaticResource Vis}}"/>
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddFilterCommand}" Padding="6,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                                    <TextBlock Text="Filter (UND)" Foreground="{DynamicResource Accent}"/>
+                                                </StackPanel>
+                                            </ui:Button>
+                                            <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
+                                        </StackPanel>
                                         <StackPanel Visibility="{Binding IsStatic, Converter={StaticResource Vis}}">
                                         <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
                                                  MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
@@ -822,6 +885,13 @@
                                         <StackPanel Visibility="{Binding IsDynamic, Converter={StaticResource Vis}}" Margin="0,10,0,0">
                                             <DockPanel Margin="0,0,0,8">
                                                 <TextBlock Text="Ab OU" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
+                                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding PickOuCommand}" Margin="6,0,0,0"
+                                                           ToolTip="OU-Baum aus dem Active Directory anzeigen und eine OU auswählen" AutomationProperties.Name="OU auswählen">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="OU wählen …"/>
+                                                    </StackPanel>
+                                                </ui:Button>
                                                 <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{StaticResource MonoFont}" FontSize="12"
                                                          Tag="leer = ganze Domäne · z. B. OU=Server,DC=firma,DC=local"/>
                                             </DockPanel>
@@ -895,9 +965,10 @@
                                                          Padding="6,4" Margin="0,4,0,0"/>
                                             </Expander>
                                         </StackPanel>
-                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
-                                                   Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                                         </StackPanel>
+                                        <!-- Rückmeldung (Synchronisieren, Export, OU) – auch im eingeklappten Zustand -->
+                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="36,6,0,0" TextWrapping="Wrap"
+                                                   Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -1189,16 +1260,10 @@
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Neue Gruppe"/></StackPanel>
                         </ui:Button>
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding AddSamplesCommand}" VerticalAlignment="Center" Margin="0,0,8,0"
-                                   ToolTip="Mitgelieferte Beispielscripte unter Dokumente › Power-Exec › Scripte anlegen und als Gruppe „Beispiele“ einbinden">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE943;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="Beispielscripte anlegen"/></StackPanel>
-                        </ui:Button>
                         <TextBlock Text="Gruppen" Style="{StaticResource PageTitle}"/>
                     </DockPanel>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
                                Text="Gruppen ordnen das Panel. Ziehe eine Gruppe an eine andere Stelle oder auf die Mitte einer anderen Gruppe, um sie zur Untergruppe zu machen; Rechtsklick legt eine Untergruppe an. Einträge ziehst du im Panel per Drag &amp; Drop in jede Gruppe. Welche Gruppen ein Arbeitsbereich zeigt, legst du unter Arbeitsbereiche fest."/>
-                    <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Text.Primary}"
-                               Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
 
                     <TextBlock Text="Deine Gruppen" Style="{StaticResource SettingsSection}"/>
                     <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="4,0,0,8" TextWrapping="Wrap"
@@ -1636,18 +1701,23 @@
                     </c:SettingsCard>
                 </StackPanel>
 
-                <!-- Diagnose & Daten -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=diag}">
-                    <TextBlock Text="Diagnose" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Text="Protokoll für die Fehlersuche und Einlesezeiten der Ordner." Style="{StaticResource Caption}"/>
-
-                    <TextBlock Text="Beispiele" Style="{StaticResource SettingsSection}"/>
+                <!-- Hilfe › Beispiele -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=samples}">
+                    <TextBlock Text="Beispiele" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Fertige Beispielscripte zum Ausprobieren und als Vorlage für eigene Scripte." Style="{StaticResource Caption}"/>
+                    <TextBlock Text="Beispielscripte" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsCard Icon="&#xE943;" Header="Beispielscripte anlegen"
-                                    Description="Legt die mitgelieferten Beispielscripte unter Dokumente › Power-Exec › Scripte an (vorhandene Dateien bleiben unverändert) und bindet den Ordner als Gruppe „Beispiele“ ein.">
+                                    Description="Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen und Kennwörter – unter Dokumente › Power-Exec › Scripte (vorhandene Dateien bleiben unverändert), im Panel als Gruppe „Beispiele“.">
                         <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddSamplesCommand}"/>
                     </c:SettingsCard>
                     <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="4,4,0,0" TextWrapping="Wrap"
                                Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
+                </StackPanel>
+
+                <!-- Diagnose & Daten -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=diag}">
+                    <TextBlock Text="Diagnose" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Text="Protokoll für die Fehlersuche und Einlesezeiten der Ordner." Style="{StaticResource Caption}"/>
 
                     <TextBlock Text="Einlesen der Ordner" Style="{StaticResource SettingsSection}"/>
 
