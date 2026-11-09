@@ -1,7 +1,11 @@
 # Power-Exec Marktplatz
 
 Dieser Ordner ist die Standardquelle des Marktplatzes in Power-Exec (Einstellungen › Inhalte › Marktplatz).
-Eigene Marktplätze sind genauso aufgebaut: ein Ordner (oder Repository) mit einer `index.json`.
+Eigene Marktplätze sind genauso aufgebaut: ein Ordner (oder Repository) mit einer `index.json`. In Power-Exec unter
+Marktplatz › Quellen › „Quelle hinzufügen …“ die Repository-URL eintragen, z. B. `https://github.com/firma/px-katalog`
+oder einen Unterordner `https://github.com/firma/px-katalog/tree/main/marktplatz` (GitLab: `…/-/tree/main/ordner`).
+Das Repository muss öffentlich lesbar sein. Vor der ersten Installation aus einer neuen Quelle fragt Power-Exec einmal,
+ob du ihr vertraust.
 
 ## index.json
 

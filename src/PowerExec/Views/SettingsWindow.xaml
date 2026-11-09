@@ -1073,7 +1073,7 @@
                 <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=marketplace}" DataContext="{Binding MarketplacePage}">
                     <TextBlock Text="Marktplatz" Style="{StaticResource PageTitle}"/>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
-                               Text="Fertige Einträge, Pakete, Designs und Scripte zum Herunterladen. Vor jeder Installation siehst du, was übernommen wird; benötigte Variablen fragt Power-Exec einmal ab. Ändert sich ein installiertes Element, steht hier „Update verfügbar“."/>
+                               Text="Fertige Einträge, Pakete, Designs und Scripte zum Herunterladen – aus dem mitgelieferten Marktplatz und aus eigenen Quellen. Vor jeder Installation siehst du, was übernommen wird; benötigte Variablen fragt Power-Exec einmal ab. Ändert sich ein installiertes Element, steht hier „Update verfügbar“."/>
                     <DockPanel Margin="0,16,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding RefreshCommand}" Margin="8,0,0,0" ToolTip="Marktplatz neu laden">
                             <StackPanel Orientation="Horizontal">
@@ -1087,7 +1087,61 @@
                             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
                         </Grid>
                     </DockPanel>
+                    <!-- Quellen: mitgelieferte und eigene Repositorys; fremde Quellen werden vor der ersten Installation bestätigt -->
+                    <c:SettingsExpander Icon="&#xE774;" Header="Quellen" Margin="0,0,0,8"
+                                        Description="Weitere Marktplätze per Repository-URL (GitHub oder GitLab) hinzufügen – z. B. den Katalog deines Teams.">
+                        <c:SettingsExpander.HeaderContent>
+                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddSourceCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Quelle hinzufügen …" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ui:Button>
+                        </c:SettingsExpander.HeaderContent>
+                        <ItemsControl ItemsSource="{Binding SourceList}" Focusable="False" Margin="0,6,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Style="{StaticResource SubSetting}">
+                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}"
+                                                   ToolTip="Quelle entfernen" AutomationProperties.Name="Quelle entfernen"
+                                                   Visibility="{Binding CanRemove, Converter={StaticResource Vis}}">
+                                            <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}"/>
+                                        </ui:Button>
+                                        <TextBlock DockPanel.Dock="Left" Width="22" VerticalAlignment="Center" FontFamily="{StaticResource IconFont}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="&#xE7BA;"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource InfoBar.Warning.Icon}"/>
+                                                    <Setter Property="ToolTip" Value="Noch nicht als vertrauenswürdig bestätigt"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Trusted}" Value="True">
+                                                            <Setter Property="Text" Value="&#xE83F;"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource InfoBar.Success.Icon}"/>
+                                                            <Setter Property="ToolTip" Value="Vertrauenswürdig"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="SourceSummary" Text="{Binding Summary}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                                            <Setter TargetName="SourceSummary" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </c:SettingsExpander>
                     <WrapPanel Margin="0,0,0,8">
+                        <ComboBox Width="190" Margin="0,0,8,4" ItemsSource="{Binding SourceChoices}" SelectedValue="{Binding SourceFilter}"
+                                  DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Quelle"
+                                  Visibility="{Binding HasSeveralSources, Converter={StaticResource Vis}}"/>
                         <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
                         <RadioButton Style="{StaticResource Chip}" Content="Pakete" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Package}"/>
                         <RadioButton Style="{StaticResource Chip}" Content="Einträge" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Entry}"/>
