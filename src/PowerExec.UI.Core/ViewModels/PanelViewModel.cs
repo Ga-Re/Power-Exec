@@ -477,6 +477,9 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Sprungleiste rechts: ab 2 Gruppen auf oberster Ebene (bei einer gäbe es kein Ziel), nicht während der Suche.</summary>
     public bool ShowJumpRail => _host.Config.ShowJumpRail && Groups.Count >= 2 && !IsSearching;
 
+    /// <summary>Gruppen als Fluent-Karten mit Akzentstreifen (sonst getönte Karten in Gruppenfarbe).</summary>
+    public bool IsAccentGroups => _host.Config.GroupStyle == GroupCardStyle.Accent;
+
     /// <summary>Scrollbalken der Liste anzeigen (ausgeblendet scrollt das Mausrad weiter).</summary>
     /// <summary>Scrollbalken der Liste anzeigen (sonst nur per Mausrad/Tastatur scrollen).</summary>
     public bool ShowListScrollBar => _host.Config.ShowScrollBar;

@@ -112,7 +112,7 @@ public static class GroupManager
             s.CustomOrder.Remove(key);
         s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path));
         foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) s.GroupIcons.Remove(key);
-        foreach (var dict in new[] { s.GroupColors, s.GroupLayouts })
+        foreach (var dict in new[] { s.GroupColors, s.GroupLayouts, s.GroupItemSizes })
             foreach (var key in dict.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) dict.Remove(key);
         foreach (var p in s.Panels) p.Categories.RemoveAll(c => IsSameOrBelow(Normalize(c), path));
     }
@@ -224,6 +224,17 @@ public static class GroupManager
         if (layout is ItemLayout.Grid or ItemLayout.List) s.GroupLayouts[Normalize(groupPath)] = layout == ItemLayout.Grid ? "Grid" : "List";
     }
 
+    /// <summary>Elementgröße der Gruppe: null = wie das Panel.</summary>
+    public static ItemSize? ItemSizeOf(AppSettings s, string groupPath) =>
+        Enum.TryParse<ItemSize>(s.GroupItemSizes.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value, out var size)
+            ? size : null;
+
+    public static void SetItemSize(AppSettings s, string groupPath, ItemSize? size)
+    {
+        foreach (var k in s.GroupItemSizes.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupItemSizes.Remove(k);
+        if (size is { } v) s.GroupItemSizes[Normalize(groupPath)] = v.ToString();
+    }
+
     public static void SetIcon(AppSettings s, string groupPath, IconRef icon)
     {
         foreach (var k in s.GroupIcons.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupIcons.Remove(k);
@@ -249,7 +260,7 @@ public static class GroupManager
         foreach (var ws in s.Workspaces)
             for (int i = 0; i < ws.HiddenGroups.Count; i++)
                 if (IsSameOrBelow(ws.HiddenGroups[i], oldPath)) ws.HiddenGroups[i] = Map(ws.HiddenGroups[i]);
-        foreach (var dict in new[] { s.GroupIcons, s.GroupColors, s.GroupLayouts })
+        foreach (var dict in new[] { s.GroupIcons, s.GroupColors, s.GroupLayouts, s.GroupItemSizes })
             foreach (var key in dict.Keys.Where(k => IsSameOrBelow(k, oldPath)).ToList())
             {
                 dict.Remove(key, out var value);

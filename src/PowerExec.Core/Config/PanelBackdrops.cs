@@ -15,7 +15,9 @@ public enum PanelBackdrop
     /// Glas (eigener Weichzeichner, Windows 11): Hintergrund hinter dem Panel über die Windows-Composition im Panelfenster
     /// selbst weichgezeichnet (Weichzeichner, Sättigung, Helligkeit), darüber die Panelfarbe.
     /// </summary>
-    Glass
+    Glass,
+    /// <summary>Vollton: deckende Panelfarbe – keine Transparenz, kein Milchglas, kein Weichzeichner.</summary>
+    Solid
 }
 
 /// <summary>Welche Variante tatsächlich läuft und wie das Milchglas aussieht.</summary>
@@ -45,7 +47,7 @@ public static class PanelBackdrops
     }
 
     /// <summary>Glas braucht ein Fenster ohne Transparenz-Schicht (Windows zeichnet die Composition dahinter).</summary>
-    public static bool NeedsSystemWindow(PanelBackdrop effective) => effective != PanelBackdrop.Clear;
+    public static bool NeedsSystemWindow(PanelBackdrop effective) => effective == PanelBackdrop.Glass;
 
     /// <summary>Milchglas (Helligkeitsschicht) gibt es auf Klarglas und auf Glas.</summary>
     public static bool SupportsFrost(PanelBackdrop effective) => effective is PanelBackdrop.Clear or PanelBackdrop.Glass;
@@ -68,5 +70,13 @@ public static class PanelBackdrops
         return (darkSurface ? 0.40 : 0.50) + 0.20 * t;
     }
 
-    public static string Label(PanelBackdrop b) => b == PanelBackdrop.Glass ? "Glas (eigener Weichzeichner)" : "Klarglas";
+    public static string Label(PanelBackdrop b) => b switch
+    {
+        PanelBackdrop.Glass => "Glas (eigener Weichzeichner)",
+        PanelBackdrop.Solid => "Vollton (deckend)",
+        _ => "Klarglas"
+    };
+
+    /// <summary>Deckkraft, mit der das Panel tatsächlich gezeichnet wird: Vollton ist immer deckend.</summary>
+    public static int EffectiveOpacity(PanelBackdrop setting, int opacity) => setting == PanelBackdrop.Solid ? 100 : opacity;
 }

@@ -141,6 +141,7 @@ internal sealed class FakePanelHost : IPanelHost
     public void SetGroupColor(string groupPath, string? color) => Log($"SetGroupColor {groupPath} {color}");
     public void PickGroupColor(string groupPath) => Log($"PickGroupColor {groupPath}");
     public void SetGroupLayout(string groupPath, ItemLayout? layout) => Log($"SetGroupLayout {groupPath} {layout}");
+    public void SetGroupItemSize(string groupPath, ItemSize? size) { GroupManager.SetItemSize(Settings, groupPath, size); Log($"SetGroupItemSize {groupPath} {size}"); }
     public void ExportGroup(string groupPath) => Log("ExportGroup");
 
     public void ShowSettings(string? folderPath = null, string? section = null) => Log($"ShowSettings {folderPath} {section}");

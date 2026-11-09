@@ -76,6 +76,8 @@ public interface IPanelHost : IHistoryHost, IWorkflowHost
     void SetGroupColor(string groupPath, string? color);
     void PickGroupColor(string groupPath);
     void SetGroupLayout(string groupPath, ItemLayout? layout);
+    /// <summary>Elementgröße einer Gruppe (null = wie das Panel).</summary>
+    void SetGroupItemSize(string groupPath, ItemSize? size);
     void ExportGroup(string groupPath);
 
     // ── Fenster und Wechsel ──────────────────────────────────────────

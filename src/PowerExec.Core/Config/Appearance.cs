@@ -5,8 +5,13 @@ namespace PowerExec.Core.Config;
 /// <summary>Akzentfarben für das Design, abgeleitet aus einer Grundfarbe (z. B. der Windows-Akzentfarbe).</summary>
 public sealed record AccentColors(Rgb Accent, Rgb Hover, Rgb Pressed, Rgb OnAccent, Rgb Highlight);
 
-/// <summary>Eine Designvorlage: Design, Panelfarbe, Deckkraft, Milchglas und Akzent in einem Klick.</summary>
-public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, bool Frosted, bool WindowsAccent);
+/// <summary>
+/// Eine Designvorlage: Design, Panelfarbe, Deckkraft, Hintergrund (Klarglas/Glas/Vollton), Milchglas und Akzent in einem
+/// Klick. Eigene Designs der Benutzer haben dieselbe Form (<see cref="IsCustom"/>).
+/// </summary>
+public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, int Frost,
+    bool WindowsAccent, PanelBackdrop Backdrop = PanelBackdrop.Clear, int GlassBlur = 50, int GlassSaturation = 100, string AccentColor = "",
+    bool IsCustom = false);
 
 public static class Appearance
 {
@@ -33,34 +38,64 @@ public static class Appearance
 
     public static readonly IReadOnlyList<DesignPreset> Presets = new[]
     {
-        new DesignPreset("fluent", "Fluent", "Wie Windows: Design und Akzentfarbe vom System", ThemeMode.System, string.Empty, 100, false, true),
-        new DesignPreset("glass", "Glas", "Dunkel, durchscheinend mit Milchglas", ThemeMode.Dark, string.Empty, 80, true, true),
-        new DesignPreset("graphite", "Graphit", "Dunkel und deckend, klassische Akzentfarbe", ThemeMode.Dark, "#1C1C1C", 100, false, false),
-        new DesignPreset("paper", "Papier", "Hell und ruhig", ThemeMode.Light, "#FAFAFA", 100, false, false),
-        new DesignPreset("midnight", "Mitternacht", "Dunkelblau getönt", ThemeMode.Dark, "#14213D", 95, false, false),
+        new DesignPreset("fluent", "Fluent", "Wie Windows: Design und Akzentfarbe vom System", ThemeMode.System, string.Empty, 100, 0, true),
+        new DesignPreset("glass", "Glas", "Weichgezeichneter Desktop hinter dem Panel (Windows 11)", ThemeMode.Dark, string.Empty, 70, 20, true,
+            PanelBackdrop.Glass, GlassBlur: 60, GlassSaturation: 125),
+        new DesignPreset("clean", "Fluent Clean", "Dezentes Anthrazit wie Explorer und Einstellungen", ThemeMode.Dark, "#202020", 85, 15, true),
+        new DesignPreset("oled", "OLED", "Tiefschwarz und deckend, Akzentfarbe von Windows", ThemeMode.Dark, "#000000", 100, 0, true, PanelBackdrop.Solid),
+        new DesignPreset("nordic", "Nordic Frost", "Kühles Schiefergrau mit eisblauem Akzent und Eisglas", ThemeMode.Dark, "#2E3440", 80, 20, false,
+            PanelBackdrop.Glass, GlassBlur: 40, GlassSaturation: 110, AccentColor: "#88C0D0"),
+        new DesignPreset("espresso", "Espresso", "Dunkles Kaffeebraun mit Champagner-Akzent", ThemeMode.Dark, "#1E1A18", 95, 0, false,
+            AccentColor: "#D9B87C"),
+        new DesignPreset("graphite", "Graphit", "Dunkel und deckend, klassische Akzentfarbe", ThemeMode.Dark, "#1C1C1C", 100, 0, false),
+        new DesignPreset("paper", "Papier", "Hell und ruhig", ThemeMode.Light, "#FAFAFA", 100, 0, false),
+        new DesignPreset("midnight", "Mitternacht", "Dunkelblau getönt", ThemeMode.Dark, "#14213D", 95, 0, false),
     };
+
+    /// <summary>Mitgelieferte und eigene Designs (eigene am Ende).</summary>
+    public static IReadOnlyList<DesignPreset> All(AppSettings s) => Presets.Concat(s.CustomDesigns).ToList();
 
     /// <summary>Vorlage auf Einstellungen und Panels anwenden.</summary>
     public static void Apply(AppSettings s, DesignPreset p)
     {
         s.Theme = p.Theme;
         s.UseWindowsAccent = p.WindowsAccent;
-        foreach (var panel in s.Panels)
+        foreach (var panel in s.Panels) Apply(panel, p);
+    }
+
+    /// <summary>Vorlage auf ein Panel anwenden (Farbe, Deckkraft, Hintergrund, Milchglas, Weichzeichner, Akzent).</summary>
+    public static void Apply(PanelConfig panel, DesignPreset p)
+    {
+        panel.PanelColor = p.PanelColor;
+        panel.PanelOpacity = Math.Clamp(p.Opacity, 20, 100);
+        panel.Acrylic = false;
+        panel.Backdrop = p.Backdrop;
+        panel.Frost = Math.Clamp(p.Frost, 0, 60);
+        panel.AccentColor = p.AccentColor;
+        if (p.Backdrop == PanelBackdrop.Glass)
         {
-            panel.PanelColor = p.PanelColor;
-            panel.PanelOpacity = p.Opacity;
-            panel.Acrylic = false;
-            panel.Backdrop = PanelBackdrop.Clear;
-            // Milchglas sieht man nur bei durchscheinenden Panels; die deckenden Vorlagen lassen den Regler stehen
-            if (p.Frosted) panel.Frost = FrostedPreset;
+            panel.GlassBlur = Math.Clamp(p.GlassBlur, 0, 100);
+            panel.GlassSaturation = Math.Clamp(p.GlassSaturation, 0, 200);
         }
     }
 
-    /// <summary>Milchglas der durchscheinenden Vorlage („Glas“).</summary>
-    public const int FrostedPreset = 35;
+    /// <summary>Aktuellen Stand (Design und erstes Panel) als eigenes Design festhalten.</summary>
+    public static DesignPreset Capture(AppSettings s, PanelConfig panel, string name) => new(
+        "custom:" + Guid.NewGuid().ToString("N")[..8], name.Trim(), DescribeCustom(panel), s.Theme, panel.PanelColor, panel.PanelOpacity,
+        panel.Frost, s.UseWindowsAccent, panel.EffectiveBackdropSetting, panel.GlassBlur, panel.GlassSaturation, panel.AccentColor, IsCustom: true);
+
+    private static string DescribeCustom(PanelConfig p) =>
+        $"Eigenes Design · {PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]}" + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");
+
+    /// <summary>Passt das Panel zur Vorlage? (für die Markierung)</summary>
+    public static bool Matches(AppSettings s, PanelConfig x, DesignPreset p) =>
+        p.Theme == s.Theme && p.WindowsAccent == s.UseWindowsAccent &&
+        string.Equals(x.PanelColor, p.PanelColor, StringComparison.OrdinalIgnoreCase) &&
+        x.EffectiveBackdropSetting == p.Backdrop &&
+        (p.Backdrop == PanelBackdrop.Solid || x.PanelOpacity == p.Opacity) &&
+        string.Equals(x.AccentColor, p.AccentColor, StringComparison.OrdinalIgnoreCase) &&
+        (p.Backdrop == PanelBackdrop.Solid || (p.Frost > 0) == (x.Frost > 0));
 
     /// <summary>Passende Vorlage zum aktuellen Stand (für die Markierung), sonst null.</summary>
-    public static DesignPreset? Current(AppSettings s) => Presets.FirstOrDefault(p =>
-        p.Theme == s.Theme && p.WindowsAccent == s.UseWindowsAccent &&
-        s.Panels.All(x => string.Equals(x.PanelColor, p.PanelColor, StringComparison.OrdinalIgnoreCase) && x.PanelOpacity == p.Opacity && (!p.Frosted || x.Frost > 0)));
+    public static DesignPreset? Current(AppSettings s) => All(s).FirstOrDefault(p => s.Panels.Count > 0 && s.Panels.All(x => Matches(s, x, p)));
 }

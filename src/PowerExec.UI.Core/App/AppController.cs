@@ -826,6 +826,14 @@ public partial class AppController : IDisposable
         SettingsChangedOutside?.Invoke();
     }
 
+    public void SetGroupItemSize(string groupPath, ItemSize? size)
+    {
+        GroupManager.SetItemSize(Settings, groupPath, size);
+        SaveSettings();
+        foreach (var h in Hosts) h.ViewModel.GroupLayoutsChanged();
+        SettingsChangedOutside?.Invoke();
+    }
+
     /// <summary>Gruppenfarbe setzen (leer = keine bzw. von der übergeordneten Gruppe).</summary>
     public void SetGroupColor(string groupPath, string? color)
     {

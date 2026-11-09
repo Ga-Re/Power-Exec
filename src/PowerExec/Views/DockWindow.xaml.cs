@@ -91,7 +91,7 @@ public partial class DockWindow : Window
             ScreenEdge.Bottom => new CornerRadius(8, 8, 0, 0),
             _ => new CornerRadius(8, 0, 0, 8)
         };
-        DockBorder.Opacity = Math.Max(0.6, host.Config.PanelOpacity / 100.0);
+        DockBorder.Opacity = Math.Max(0.6, host.Config.EffectiveOpacity / 100.0);
 
         _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(150, app.Settings.HoverDelayMs)) };
         _hoverTimer.Tick += (_, _) => { _hoverTimer.Stop(); OpenPanel(); };

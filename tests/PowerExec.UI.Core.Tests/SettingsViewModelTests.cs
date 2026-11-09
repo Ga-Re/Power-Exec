@@ -37,6 +37,41 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void DesignPresetsApplyGlassAndSaveOwnDesign()
+    {
+        var (host, vm) = Create(s => s.Panels.Add(new PanelConfig()));
+        Assert.False(vm.PresetsExpanded);
+
+        vm.DesignPresets.Single(p => p.Preset.Key == "glass").ApplyCommand.Execute(null);
+        Assert.Equal(PanelBackdrop.Glass, vm.Panel.Backdrop);
+        Assert.Equal(60, vm.Panel.GlassBlur);
+        Assert.Equal(125, vm.Panel.GlassSaturation);
+        Assert.Equal("Aktuell: Glas", vm.CurrentPresetText);
+        Assert.True(vm.DesignPresets.Single(p => p.Preset.Key == "glass").IsCurrent);
+
+        vm.DesignPresets.Single(p => p.Preset.Key == "nordic").ApplyCommand.Execute(null);
+        Assert.Equal("#88C0D0", vm.Panel.AccentColor);
+        Assert.False(vm.UseWindowsAccent);
+
+        vm.Panel.PanelOpacity = 61;
+        Assert.Equal("Aktuell: eigene Einstellungen", vm.CurrentPresetText);
+        host.FakeDialogs.Answer = "Mein Nord";
+        vm.SaveDesignCommand.Execute(null);
+        var mine = vm.DesignPresets.Single(p => p.IsCustom);
+        Assert.Equal("Mein Nord", mine.Name);
+        Assert.True(mine.IsCurrent);
+        Assert.NotNull(mine.DeleteCommand);
+        Assert.Single(vm.Build().CustomDesigns);
+
+        // gleicher Name ein zweites Mal: abgelehnt
+        vm.SaveDesignCommand.Execute(null);
+        Assert.Single(vm.DesignPresets, p => p.IsCustom);
+
+        mine.DeleteCommand!.Execute(null);
+        Assert.DoesNotContain(vm.DesignPresets, p => p.IsCustom);
+    }
+
+    [Fact]
     public void PanelSizeDraggedWhileSettingsOpenSurvivesApply()
     {
         var (host, vm) = Create(s => s.Panels.Add(new PanelConfig { PanelWidth = 400, PanelHeightPercent = 80 }));

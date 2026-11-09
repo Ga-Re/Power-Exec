@@ -151,9 +151,20 @@ public sealed class GroupViewModel : ObservableObject
     public string LayoutToolTip => IsGrid ? "Diese Gruppe als Liste anzeigen" : "Diese Gruppe als Raster anzeigen";
     public bool CanChangeLayout => GroupPath != null;
 
+    /// <summary>Elementgröße dieser Gruppe: eigene Einstellung oder die des Panels.</summary>
+    public ItemSize ItemSize => (GroupPath != null ? GroupManager.ItemSizeOf(_app.Settings, GroupPath) : null) ?? _panel.ItemSize;
+    public bool IsCompact => ItemSize == ItemSize.Small;
+    public bool IsLarge => ItemSize == ItemSize.Large;
+    /// <summary>Menü „Elementgröße“: panel, Small, Medium oder Large.</summary>
+    public string ItemSizeSetting => GroupPath != null && GroupManager.ItemSizeOf(_app.Settings, GroupPath) is { } s ? s.ToString() : "panel";
+    public ICommand SetItemSizeCommand => _setItemSize ??= new RelayCommand(
+        p => _app.SetGroupItemSize(GroupPath!, Enum.TryParse<ItemSize>(p?.ToString(), out var size) ? size : null), _ => GroupPath != null);
+    private ICommand? _setItemSize;
+
     internal void RefreshLayout()
     {
-        foreach (var p in new[] { nameof(IsGrid), nameof(LayoutSetting), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(IsGrid), nameof(LayoutSetting), nameof(LayoutGlyph), nameof(LayoutToolTip),
+                     nameof(ItemSize), nameof(IsCompact), nameof(IsLarge), nameof(ItemSizeSetting) }) OnPropertyChanged(p);
     }
 
     /// <summary>Wirksame Farbe (eigene oder geerbt), leer = keine.</summary>

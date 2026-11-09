@@ -8,6 +8,9 @@ public enum ItemLayout { List, Compact, Grid }
 /// <summary>Größe der Einträge im Panel (Liste und Raster).</summary>
 public enum ItemSize { Small, Medium, Large }
 
+/// <summary>Aussehen der Gruppen im Panel: getönte Karten in Gruppenfarbe oder ruhige Fluent-Karten mit Akzentstreifen.</summary>
+public enum GroupCardStyle { Tinted, Accent }
+
 /// <summary>Einstellungen eines einzelnen Panels (Position, Hover-Zone, Aussehen, Inhalt).</summary>
 public sealed class PanelConfig
 {
@@ -28,6 +31,10 @@ public sealed class PanelConfig
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
     public string PanelColor { get; set; } = string.Empty;
     public int PanelOpacity { get; set; } = 100;
+    /// <summary>Eigene Akzentfarbe (Auswahl, Knöpfe, Hover-Zone), leer = aus der Panelfarbe. Gilt nur ohne Windows-Akzent.</summary>
+    public string AccentColor { get; set; } = string.Empty;
+    /// <summary>Gruppen als getönte Karten oder als Fluent-Karten mit Akzentstreifen.</summary>
+    public GroupCardStyle GroupStyle { get; set; }
     /// <summary>Bis 0.19: Acrylic an/aus. Wird nur noch eingelesen und beim Normalisieren zurückgesetzt.</summary>
     public bool Acrylic { get; set; }
 
@@ -43,6 +50,10 @@ public sealed class PanelConfig
     /// <summary>Glas: Sättigung des Hintergrunds in Prozent, 0–200 (100 = unverändert).</summary>
     public int GlassSaturation { get; set; } = 125;
 
+
+    /// <summary>Gezeichnete Deckkraft (Vollton: immer 100 %).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int EffectiveOpacity => PanelBackdrops.EffectiveOpacity(EffectiveBackdropSetting, PanelOpacity);
 
     [System.Text.Json.Serialization.JsonIgnore]
     public PanelBackdrop EffectiveBackdropSetting => Backdrop is { } b && !PanelBackdrops.IsRetired(b) ? b : PanelBackdrop.Clear;
@@ -97,7 +108,7 @@ public sealed class PanelConfig
     {
         Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
         HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
-        PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor,
+        PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor, AccentColor = AccentColor, GroupStyle = GroupStyle,
         PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, GlassBlur = GlassBlur, GlassSaturation = GlassSaturation, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
         ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
         Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
@@ -114,7 +125,7 @@ public sealed class PanelConfig
 
     /// <summary>Alles, was Hover-Zonen und Mini-Docks betrifft (ändert es sich, werden sie neu angelegt).</summary>
     public string TriggerKey =>
-        $"{Edge}|{MonitorMode}|{MonitorIndex}|{HotZone}|{HotZoneThickness}|{HotZoneLength}|{PanelWidth}|{PanelHeightPercent}|{PanelAlignment}|{PanelColor}|{PanelOpacity}|{ShowDock}|{DockCount}";
+        $"{Edge}|{MonitorMode}|{MonitorIndex}|{HotZone}|{HotZoneThickness}|{HotZoneLength}|{PanelWidth}|{PanelHeightPercent}|{PanelAlignment}|{PanelColor}|{AccentColor}|{PanelOpacity}|{Backdrop}|{ShowDock}|{DockCount}";
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {

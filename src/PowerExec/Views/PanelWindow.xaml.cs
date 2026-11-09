@@ -250,6 +250,24 @@ public partial class PanelWindow : Window
     /// <summary>Für den Selbsttest: läuft der Zeitgeber fürs Auto-Einfahren?</summary>
     internal bool AutoHideTimerRunning => _poll.IsEnabled;
 
+    /// <summary>Für den Selbsttest: Liste auf eine Position scrollen.</summary>
+    internal void ScrollListForTest(double offset)
+    {
+        ListScroll.ScrollToVerticalOffset(offset);
+        ListScroll.UpdateLayout();
+        UpdateStickyGroup();
+    }
+
+    /// <summary>Für den Selbsttest: Abweichung (px) zwischen fixiertem Kopf und Karte der Gruppe, links plus Breite.</summary>
+    internal double? StickyMisalignmentForTest()
+    {
+        if (Vm.StickyGroup is not { } g || GroupContainers().FirstOrDefault(x => ReferenceEquals(x.Group, g)).Element is not ContentPresenter cp
+            || cp.ContentTemplate?.FindName("GroupBox", cp) is not FrameworkElement box) return null;
+        var sticky = StickyHeader.TranslatePoint(new Point(0, 0), ListScroll).X;
+        var boxLeft = box.TranslatePoint(new Point(0, 0), ListScroll).X;
+        return Math.Abs(sticky - boxLeft) + Math.Abs(StickyHeader.ActualWidth - box.ActualWidth);
+    }
+
     /// <summary>Für den Selbsttest: ist das Vorschaufenster sichtbar?</summary>
     internal bool PeekWindowVisible => _peekWindow?.IsVisible == true;
 
@@ -321,7 +339,8 @@ public partial class PanelWindow : Window
     }
 
     private static readonly string[] AppearanceKeys =
-        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Subtle", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default"];
+        ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Subtle", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default",
+         "Accent", "Accent.Hover", "Accent.Pressed", "OnAccent", "Search.Highlight"];
 
     /// <summary>
     /// Panelfarbe und Deckkraft anwenden. Bei einer hellen Farbe im dunklen Design (oder umgekehrt)
@@ -337,7 +356,7 @@ public partial class PanelWindow : Window
         // Nur das eigene Gegen-Farbschema entfernen – Themes/Fluent.xaml und das Fluent-Design bleiben eingebunden
         foreach (var d in Resources.MergedDictionaries.Where(IsOwnPalette).ToList()) Resources.MergedDictionaries.Remove(d);
         foreach (var key in AppearanceKeys) Resources.Remove(key);
-        double opacity = s.PanelOpacity / 100.0;
+        double opacity = s.EffectiveOpacity / 100.0; // Vollton: deckend
         // Deckkraft wie am Regler eingestellt (auch bei hellen Panels)
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
@@ -382,12 +401,30 @@ public partial class PanelWindow : Window
                     Resources["Bg.Selected"] = Solid(new Rgb(sel.Color.R, sel.Color.G, sel.Color.B), SelectedAlpha(opacity));
             }
         }
+        ApplyPanelAccent();
         // Glas: auch Flächen in den Details (Parameter) lassen den Weichzeichner durchscheinen
         if (_backdrop == PanelBackdrop.Glass && !ThemeService.IsHighContrast && TryFindResource("Bg.Subtle") is SolidColorBrush subtle)
             Resources["Bg.Subtle"] = Solid(new Rgb(subtle.Color.R, subtle.Color.G, subtle.Color.B), HoverAlpha(opacity));
         // Fluent-Bedienelemente (WPF UI): Hell/Dunkel nach der Panelfläche, Flächenfarben setzt das Panel selbst
         Infrastructure.FluentTheme.Attach(this, dark: () => Vm.IsDarkSurface, mapPalette: false);
         ApplyFrost(s.Frost);
+    }
+
+    /// <summary>
+    /// Ohne „Akzentfarbe von Windows“: Akzente (Auswahl, Knöpfe, Fokus, Suchtreffer) aus der eigenen Akzentfarbe des Panels
+    /// bzw. aus der Panelfarbe – lesbar aufgehellt oder abgedunkelt für die Panelfläche.
+    /// </summary>
+    private void ApplyPanelAccent()
+    {
+        if (ThemeService.IsHighContrast || _app.Settings.UseWindowsAccent) return;
+        if (!PanelColors.TryParse(Cfg.AccentColor, out var source) && !PanelColors.TryParse(Cfg.PanelColor, out source)) return;
+        bool dark = Vm.IsDarkSurface;
+        var a = Appearance.Derive(source, dark);
+        Resources["Accent"] = Solid(a.Accent, 1);
+        Resources["Accent.Hover"] = Solid(a.Hover, 1);
+        Resources["Accent.Pressed"] = Solid(a.Pressed, 1);
+        Resources["OnAccent"] = Solid(a.OnAccent, 1);
+        Resources["Search.Highlight"] = Solid(a.Highlight, dark ? 0.33 : 0.25);
     }
 
     /// <summary>
@@ -1074,9 +1111,25 @@ public partial class PanelWindow : Window
         ? e.GetPosition(row).X > row.ActualWidth / 2
         : e.GetPosition(row).Y > row.ActualHeight / 2;
 
-    private Thickness InsertMarker(FrameworkElement row, DragEventArgs e) => Vm.IsGrid
+    private Thickness InsertMarker(FrameworkElement row, DragEventArgs e) =>
+        (row.DataContext is ViewModels.ItemViewModel item && GroupOf(item) is { } g ? g.IsGrid : Vm.IsGrid)
         ? (InsertAfter(row, e) ? new Thickness(0, 0, 2, 0) : new Thickness(2, 0, 0, 0))
         : (InsertAfter(row, e) ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0));
+
+    /// <summary>Einfügemarke (Akzentlinie) setzen bzw. entfernen – entfernt, gelten wieder Rand und Hover der Vorlage.</summary>
+    private void SetInsertMarker(Border row, Thickness? marker)
+    {
+        if (marker is { } t)
+        {
+            row.BorderThickness = t;
+            row.SetResourceReference(Border.BorderBrushProperty, "Accent");
+        }
+        else
+        {
+            row.ClearValue(Border.BorderThicknessProperty);
+            row.ClearValue(Border.BorderBrushProperty);
+        }
+    }
 
     private ViewModels.GroupViewModel? GroupOf(ViewModels.ItemViewModel item) => Vm.AllGroups.FirstOrDefault(g => g.Items.Contains(item));
 
@@ -1188,7 +1241,7 @@ public partial class PanelWindow : Window
         if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel over && GroupOf(over) is { AcceptsItems: true } overGroup)
         {
             e.Effects = DragDropEffects.Move;
-            row.BorderThickness = overGroup.Kind != "fav" ? InsertMarker(row, e) : new Thickness(0);
+            SetInsertMarker(row, overGroup.Kind != "fav" ? InsertMarker(row, e) : null);
             e.Handled = true;
             return;
         }
@@ -1201,19 +1254,19 @@ public partial class PanelWindow : Window
                        (sameGroup ? group.AllowReorder : group.AcceptsItems);
         e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
         // Einfügemarke oben bzw. unten (nicht bei Favoriten: dort wird nur markiert)
-        row.BorderThickness = allowed && group!.Kind != "fav" ? InsertMarker(row, e) : new Thickness(0);
+        SetInsertMarker(row, allowed && group!.Kind != "fav" ? InsertMarker(row, e) : null);
         e.Handled = true;
     }
 
     private void Row_DragLeave(object sender, DragEventArgs e)
     {
-        if (sender is Border row) row.BorderThickness = new Thickness(0);
+        if (sender is Border row) SetInsertMarker(row, null);
     }
 
     private void Row_Drop(object sender, DragEventArgs e)
     {
         if (sender is not Border row) return;
-        row.BorderThickness = new Thickness(0);
+        SetInsertMarker(row, null);
         if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel dropTarget && GroupOf(dropTarget) is { } dropGroup)
         {
             e.Handled = true;
@@ -1499,6 +1552,23 @@ public partial class PanelWindow : Window
             }
         }
         Vm.StickyGroup = best;
+        if (best != null) AlignStickyHeader(GroupContainers().First(x => ReferenceEquals(x.Group, best)).Element);
+    }
+
+    /// <summary>
+    /// Fixierten Kopf genau über die Karte der Gruppe legen: gleiche linke und rechte Kante (Einrückung von Untergruppen,
+    /// Scrollbalken, Sprungleiste) – so ragt er weder über die Karte hinaus noch schaut deren Ecke daneben hervor.
+    /// </summary>
+    private void AlignStickyHeader(FrameworkElement container)
+    {
+        if (container is not ContentPresenter cp || cp.ContentTemplate?.FindName("GroupBox", cp) is not FrameworkElement box || !box.IsVisible
+            || StickyHeader.Parent is not UIElement cell) return;
+        var cellLeft = ListScroll.TranslatePoint(new Point(0, 0), cell).X;
+        var left = box.TranslatePoint(new Point(0, 0), cell).X - cellLeft;
+        var right = ListScroll.ActualWidth - left - box.ActualWidth;
+        if (left < 0 || right < 0) return;
+        var margin = new Thickness(Math.Round(left), 0, Math.Round(right), 0);
+        if (StickyHeader.Margin != margin) StickyHeader.Margin = margin;
     }
 
     private void ScrollToGroup(ViewModels.GroupViewModel group)

@@ -227,6 +227,8 @@ public sealed class AppSettings
 
     /// <summary>Darstellung je Gruppe: „List“ oder „Grid“ (fehlt = wie das Panel).</summary>
     public Dictionary<string, string> GroupLayouts { get; set; } = new();
+    /// <summary>Elementgröße je Gruppe (Small/Medium/Large); fehlt = wie das Panel.</summary>
+    public Dictionary<string, string> GroupItemSizes { get; set; } = new();
 
     /// <summary>Farbe je Schlagwort (#RRGGBB).</summary>
     public Dictionary<string, string> TagColors { get; set; } = new();
@@ -245,6 +247,9 @@ public sealed class AppSettings
 
     /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
     public List<MachineGroup> MachineGroups { get; set; } = new();
+
+    /// <summary>Eigene, gespeicherte Designs (erscheinen hinter den mitgelieferten Designvorlagen).</summary>
+    public List<DesignPreset> CustomDesigns { get; set; } = new();
 
     /// <summary>Position der festen Gruppen unter den Gruppen der obersten Ebene (siehe <see cref="FixedGroups"/>).</summary>
     public Dictionary<string, int> FixedGroupPositions { get; set; } = new();
