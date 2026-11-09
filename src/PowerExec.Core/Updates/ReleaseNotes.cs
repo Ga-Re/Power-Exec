@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 23, 0), "Rechnergruppen aus Listen, OU-Auswahl und Export", new[]
+        {
+            "Rechnergruppen: Quelle „Dynamisch aus Liste“ – eine Namensliste nach Namen oder eine CSV nach beliebigen Spalten filtern; die Liste wird beim Synchronisieren neu gelesen. „Gruppe aus Liste importieren …“ legt so eine Gruppe direkt an",
+            "Jede Rechnergruppe hat in der Kopfzeile Synchronisieren und Exportieren (CSV oder Text)",
+            "Dynamisch aus AD: „OU wählen …“ zeigt den ganzen OU-Baum mit Suche und setzt die gewählte OU in „Ab OU“ ein",
+            "Beispielscripte anlegen findest du jetzt unter Hilfe › Beispiele; das Panel sitzt beim Ausfahren genauer und prüft das Auto-Einfahren nur noch, wenn der Mauszeiger das Panel verlassen hat"
+        }),
         new ReleaseNote(new Version(0, 22, 3), "Feinschliff: Ausfahren, Auswahllisten, Einstellungen", new[]
         {
             "Panel fährt zügiger und gleichmäßiger aus; geparkt wird es ohne erneutes Platzieren gestartet",
