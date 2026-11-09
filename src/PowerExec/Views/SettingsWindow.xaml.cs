@@ -129,6 +129,23 @@ public partial class SettingsWindow : Window
         if (_reloading || !IsLoaded) return;
         _applyTimer.Stop();
         _applyTimer.Start();
+        ShowSaveState(SaveState.Pending);
+    }
+
+    private enum SaveState { Saved, Pending, Warning, Error }
+
+    /// <summary>Speicherstand in der Fußzeile: Symbol und Text.</summary>
+    private void ShowSaveState(SaveState state, string? text = null)
+    {
+        (SaveIcon.Text, var brush, SaveHint.Text) = state switch
+        {
+            SaveState.Pending => ("\uE895", "Text.Secondary", text ?? "Speichert …"),
+            SaveState.Warning => ("\uE7BA", "InfoBar.Warning.Icon", text ?? string.Empty),
+            SaveState.Error => ("\uEA39", "InfoBar.Error.Icon", text ?? string.Empty),
+            _ => ("\uE73E", "InfoBar.Success.Icon", text ?? "Alle Änderungen gespeichert")
+        };
+        SaveIcon.SetResourceReference(TextBlock.ForegroundProperty, brush);
+        SaveHint.ToolTip = state == SaveState.Saved ? $"Zuletzt gespeichert um {DateTime.Now:HH:mm:ss}" : null;
     }
 
     private static string Fingerprint(AppSettings s) => System.Text.Json.JsonSerializer.Serialize(s);
@@ -149,18 +166,18 @@ public partial class SettingsWindow : Window
             if (Keyboard.FocusedElement is TextBox tb) tb.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
             var built = SettingsStore.Clone(_vm.Build());
             var fp = Fingerprint(built);
-            if (fp == _lastApplied) return;
+            if (fp == _lastApplied) { ShowSaveState(SaveState.Saved); return; }
             var hotkeyError = _app.ApplySettings(built);
             _lastApplied = Fingerprint(_app.Settings);
             _vm.HotkeyError = hotkeyError;
-            SaveHint.Text = hotkeyError != null
-                ? "Übernommen – aber ein Tastenkürzel konnte nicht registriert werden (siehe Panel › Verhalten)."
-                : $"Übernommen um {DateTime.Now:HH:mm:ss}.";
+            if (hotkeyError != null)
+                ShowSaveState(SaveState.Warning, "Gespeichert – aber ein Tastenkürzel konnte nicht registriert werden (siehe Panel › Verhalten).");
+            else ShowSaveState(SaveState.Saved);
         }
         catch (Exception ex)
         {
             AppLog.Error("Einstellungen konnten nicht übernommen werden", ex);
-            SaveHint.Text = "Fehler beim Übernehmen: " + ex.Message;
+            ShowSaveState(SaveState.Error, "Nicht gespeichert: " + ex.Message);
         }
     }
 
@@ -193,7 +210,15 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private ScrollViewer? FindScroll()
+    /// <summary>Geheimer Variablenwert: beim Verlassen verschlüsselt übernehmen, das Feld wird wieder leer.</summary>
+    private void SecretBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is not PasswordBox box || box.Password.Length == 0 || box.DataContext is not VariableRowViewModel row) return;
+        row.SecretValue = box.Password;
+        box.Clear();
+    }
+
+        private ScrollViewer? FindScroll()
     {
         static ScrollViewer? Find(DependencyObject d)
         {
@@ -226,7 +251,7 @@ public partial class SettingsWindow : Window
         _app.ApplySettings(restored);
         _reloading = false;
         Reload();
-        SaveHint.Text = "Änderungen verworfen.";
+        ShowSaveState(SaveState.Saved, "Änderungen verworfen – alles gespeichert");
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

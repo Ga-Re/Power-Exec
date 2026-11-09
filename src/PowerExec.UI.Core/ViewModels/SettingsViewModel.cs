@@ -585,6 +585,7 @@ public sealed class SettingsViewModel : ObservableObject
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
+        VariablesPage = new VariablesViewModel(app, _s, text => app.Shell.SetClipboardText(text));
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
@@ -607,7 +608,7 @@ public sealed class SettingsViewModel : ObservableObject
     private static readonly (string Section, string Page, string Segment)[] Pages =
     {
         ("general", "Allgemein", ""),
-        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("workspaces", "Arbeitsbereiche", "content"),
+        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("variables", "Variablen", "content"), ("workspaces", "Arbeitsbereiche", "content"),
         ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
         ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
         ("samples", "Beispiele", "help"), ("diag", "Diagnose", "help")
@@ -635,6 +636,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
         new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
         new("tags", "Schlagworte", "Schlagworte verwalten", "tag umbenennen zusammenführen löschen farbe #"),
+        new("variables", "Variablen", "Variablen verwalten", "variable platzhalter $ firmenname datum uhrzeit benutzer computer zwischenablage geheim token umgebungsvariable powershell arbeitsbereich"),
         new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
         new("workspaces", "Arbeitsbereiche", "Gruppen je Arbeitsbereich", "ausblenden sichtbar auswahl"),
         new("look", "Darstellung", "Design", "hell dunkel theme farbe"),
@@ -856,6 +858,10 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Schlagwort-Verwaltung.</summary>
     public TagsViewModel TagList { get; }
+
+    // ---- Variablen ({{$Name}}) --------------------------------------------------
+
+    public VariablesViewModel VariablesPage { get; }
 
     // ---- Rechnergruppen -------------------------------------------------------
 
@@ -1349,7 +1355,9 @@ public sealed class SettingsViewModel : ObservableObject
     });
 
     private string? _samplesStatus;
-    public string? SamplesStatus { get => _samplesStatus; private set => Set(ref _samplesStatus, value); }
+    public string? SamplesStatus { get => _samplesStatus; private set { if (Set(ref _samplesStatus, value)) OnPropertyChanged(nameof(SamplesSeverity)); } }
+    /// <summary>Art der Rückmeldung für die InfoBar: Success oder Error.</summary>
+    public string SamplesSeverity => _samplesStatus?.Contains("nicht", StringComparison.Ordinal) == true ? "Error" : "Success";
 
     private void AddCategory()
     {

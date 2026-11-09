@@ -484,6 +484,9 @@
                         <ui:NavigationViewItem Content="Schlagworte" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Variablen" TargetPageTag="variables" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE943;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
                         <ui:NavigationViewItem Content="Arbeitsbereiche" TargetPageTag="workspaces" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
@@ -617,18 +620,15 @@
                             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
                         </Grid>
                     </DockPanel>
-                    <WrapPanel Margin="0,0,0,8">
+                    <!-- Typ-Filter: die häufigsten als Chips, der Rest im Dropdown – bleibt auch in schmalen Fenstern einzeilig -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
                         <RadioButton Style="{StaticResource Chip}" Content="Webseiten" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Url}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Ordner" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Folder}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="RDP" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Rdp}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="SSH" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Ssh}"/>
                         <RadioButton Style="{StaticResource Chip}" Content="Snippets" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Snippet}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Werkzeuge" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Tool}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Befehle" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Command}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Dateien" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=File}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Mit Problemen" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=problems}"/>
-                    </WrapPanel>
+                        <RadioButton Style="{StaticResource Chip}" Content="RDP/SSH" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=remote}"/>
+                        <ComboBox Width="170" Margin="4,0,0,0" VerticalAlignment="Center" ItemsSource="{Binding MoreKinds}" SelectedValue="{Binding MoreKind}"
+                                  DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="Weitere Typen"/>
+                    </StackPanel>
                     <DockPanel Margin="0,0,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding CheckCommand}"
                                 ToolTip="Webseiten, Ordner, Dateien, RDP-/SSH-Ports und Programme prüfen (Auswahl bzw. alle sichtbaren)">
@@ -1066,6 +1066,159 @@
                 </StackPanel>
                 </Grid>
 
+                <!-- Variablen: {{$Name}} in Texten, Links, Befehlen und Code -->
+                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=variables}" DataContext="{Binding VariablesPage}">
+                    <TextBlock Text="Variablen" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                               Text="Variablen schreibst du als {{$Name}} in Texte, Links, Befehle, Ziele, PowerShell-Code und Script-Parameter – Power-Exec setzt den Wert beim Start ein, ohne zu fragen. Normale {{Platzhalter}} werden weiterhin vor dem Start abgefragt."/>
+
+                    <TextBlock Text="Eingebaut" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsExpander Icon="&#xE787;" Header="Datum, Uhrzeit, Benutzer, Computer, Zwischenablage"
+                                        Description="Immer verfügbar. Das Format von Datum und Uhrzeit stellst du hier ein.">
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Builtins}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <DockPanel Style="{StaticResource SubSetting}">
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Preview}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"
+                                                       MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock DockPanel.Dock="Left" Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" Width="190" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <ComboBox DockPanel.Dock="Right" Width="220" IsEditable="True" ItemsSource="{Binding DateFormats}"
+                                          Text="{Binding DateFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="Datumsformat"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Format von {{$Datum}}"/>
+                                    <TextBlock Text=".NET-Format, z. B. dd.MM.yyyy oder yyyy-MM-dd." Style="{StaticResource Caption}" FontSize="12"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <ComboBox DockPanel.Dock="Right" Width="220" IsEditable="True" ItemsSource="{Binding TimeFormats}"
+                                          Text="{Binding TimeFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="Uhrzeitformat"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Format von {{$Uhrzeit}}"/>
+                                    <TextBlock Text=".NET-Format, z. B. HH:mm oder HH:mm:ss." Style="{StaticResource Caption}" FontSize="12"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </c:SettingsExpander>
+
+                    <DockPanel Margin="0,24,0,8">
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding AddCommand}" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Variable hinzufügen" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ui:Button>
+                        <TextBlock Text="Eigene Variablen" Style="{StaticResource SettingsSection}" Margin="2,0,0,0" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Text="Noch keine eigenen Variablen – z. B. {{$CompanyName}} für den Firmennamen in Signaturen und Antworten."
+                               Style="{StaticResource Caption}" TextWrapping="Wrap" Visibility="{Binding HasNoItems, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <c:SettingsExpander Icon="&#xE943;" Header="{Binding Token}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}">
+                                    <c:SettingsExpander.Description>
+                                        <TextBlock TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding KindText, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Preview, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </c:SettingsExpander.Description>
+                                    <c:SettingsExpander.HeaderContent>
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding CopyTokenCommand}" ToolTip="{}{{$Name}} kopieren"
+                                                       AutomationProperties.Name="Variable kopieren">
+                                                <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource IconFont}"/>
+                                            </ui:Button>
+                                            <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="Variable löschen"
+                                                       AutomationProperties.Name="Variable löschen" Margin="4,0,0,0">
+                                                <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}"/>
+                                            </ui:Button>
+                                        </StackPanel>
+                                    </c:SettingsExpander.HeaderContent>
+                                    <StackPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}">
+                                            <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                                                     AutomationProperties.Name="Name der Variable"/>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="Name"/>
+                                                <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap"
+                                                           Visibility="{Binding HasNameError, Converter={StaticResource Vis}}"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}">
+                                            <ComboBox DockPanel.Dock="Right" Width="280" ItemsSource="{Binding Kinds}" SelectedValue="{Binding Kind}"
+                                                      DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Art der Variable"/>
+                                            <TextBlock Text="Art" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                            <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                                                     FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="Wert der Variable"
+                                                     AcceptsReturn="{Binding IsPowerShell}" TextWrapping="Wrap" MaxHeight="120" VerticalScrollBarVisibility="Auto"/>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="{Binding ValueLabel}"/>
+                                                <TextBlock Text="z. B. (Get-ADDomain).DNSRoot – die Ausgabe wird der Wert." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                                                           Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
+                                                <TextBlock Text="Name der Windows-Umgebungsvariable, z. B. USERDNSDOMAIN." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                                                           Visibility="{Binding IsEnvironment, Converter={StaticResource Vis}}"/>
+                                                <TextBlock Text="Gilt für Arbeitsbereiche ohne eigenen Wert." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                                                           Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}}">
+                                            <PasswordBox DockPanel.Dock="Right" Width="280" VerticalAlignment="Center" LostFocus="SecretBox_LostFocus"
+                                                         AutomationProperties.Name="Geheimer Wert"/>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="Geheimer Wert"/>
+                                                <TextBlock Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                                                           Text="Verschlüsselt mit deinem Windows-Konto gespeichert – nur du kannst ihn auf diesem PC lesen. Zum Ändern neu eingeben."/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <ItemsControl ItemsSource="{Binding WorkspaceValues}" Focusable="False" Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Style="{StaticResource SubSetting}">
+                                                        <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                                                                 AutomationProperties.Name="{Binding Workspace}"/>
+                                                        <TextBlock VerticalAlignment="Center"><Run Text="Arbeitsbereich"/> <Run Text="{Binding Workspace, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBox Width="60" Text="{Binding CacheMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" VerticalAlignment="Center"
+                                                         Visibility="{Binding IsCached, Converter={StaticResource Vis}}" AutomationProperties.Name="Minuten"/>
+                                                <TextBlock Text="min" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="{Binding IsCached, Converter={StaticResource Vis}}"/>
+                                                <ComboBox Width="200" ItemsSource="{Binding Refreshes}" SelectedValue="{Binding Refresh}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                                          AutomationProperties.Name="Wann ausführen"/>
+                                            </StackPanel>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                                <TextBlock Text="Wann ausführen"/>
+                                                <TextBlock Text="Zwischenspeichern: Ergebnis für die angegebene Zeit merken – Starts warten nicht jedes Mal auf PowerShell."
+                                                           Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}">
+                                            <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                                                     AutomationProperties.Name="Beschreibung"/>
+                                            <TextBlock Text="Beschreibung (optional)" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <DockPanel Style="{StaticResource SubSetting}">
+                                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Jetzt ermitteln" Command="{Binding TestCommand}" VerticalAlignment="Center"
+                                                       ToolTip="Wert jetzt auflösen (PowerShell: Befehl ausführen)"/>
+                                            <TextBlock Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,16,0"/>
+                                        </DockPanel>
+                                    </StackPanel>
+                                </c:SettingsExpander>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
                 <!-- Arbeitsbereiche -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=workspaces}">
                     <TextBlock Text="Arbeitsbereiche" Style="{StaticResource PageTitle}"/>
@@ -1139,39 +1292,33 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Border Style="{StaticResource Card}" Padding="16,12">
-                        <StackPanel>
-                            <TextBlock Text="Neuer Arbeitsbereich" Style="{StaticResource RowTitle}"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <TextBox Width="280" Text="{Binding NewWorkspace, UpdateSourceTrigger=PropertyChanged}" Tag="Name, z. B. Kunde A"/>
+                    <c:SettingsCard Icon="&#xE710;" Header="Neuer Arbeitsbereich" Description="„Aktuellen kopieren“ übernimmt Favoriten, Startprofile und Gruppenauswahl.">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox Width="220" Text="{Binding NewWorkspace, UpdateSourceTrigger=PropertyChanged}" Tag="Name, z. B. Kunde A" VerticalAlignment="Center"/>
                                 <CheckBox Content="Aktuellen kopieren" IsChecked="{Binding CopyWorkspace}" Margin="12,0,0,0" VerticalAlignment="Center"
                                           ToolTip="Favoriten, Startprofile und Gruppenauswahl übernehmen"/>
-                                <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddWorkspaceCommand}" Margin="12,0,0,0" />
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddWorkspaceCommand}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                    </c:SettingsCard>
                 </StackPanel>
 
                 <!-- Allgemein -->
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
                     <TextBlock Text="Allgemein" Style="{StaticResource PageTitle}"/>
                     <TextBlock Text="Team-Kataloge" Style="{StaticResource SettingsSection}"/>
-                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="16,12" Margin="0,0,0,4">
-                        <StackPanel>
-                            <DockPanel>
-                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                    <c:SettingsExpander Icon="&#xE716;" Header="Gemeinsame Einträge vom Team" IsExpanded="True"
+                                        Description="Eine exportierte Gruppe (Rechtsklick › Exportieren) auf einer Freigabe ablegen und hier abonnieren. Power-Exec prüft beim Start und alle 30 Minuten auf Änderungen. Katalogeinträge sind schreibgeschützt; Favoriten und eigene Einträge in der Gruppe bleiben lokal.">
+                        <c:SettingsExpander.HeaderContent>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <ui:Button Style="{StaticResource Btn.Subtle}" Content="Jetzt prüfen" Command="{Binding CheckCatalogsCommand}" Foreground="{DynamicResource Accent}" Margin="0,0,8,0"
                                             Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}}" />
                                     <ui:Button Style="{StaticResource Btn.Accent}" Content="Abonnieren …" Command="{Binding SubscribeCatalogCommand}" />
                                 </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Gemeinsame Einträge vom Team" FontWeight="SemiBold"/>
-                                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                               Text="Eine exportierte Gruppe (Rechtsklick › Exportieren) auf einer Freigabe ablegen und hier abonnieren. Power-Exec prüft beim Start und alle 30 Minuten auf Änderungen. Katalogeinträge sind schreibgeschützt; Favoriten und eigene Einträge in der Gruppe bleiben lokal."/>
-                                </StackPanel>
-                            </DockPanel>
-                            <TextBlock Text="{Binding CatalogError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
-                                       Visibility="{Binding CatalogError, Converter={StaticResource Vis}}"/>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <TextBlock Text="Noch kein Team-Katalog abonniert." Style="{StaticResource Caption}" Margin="0,10,0,4"
+                                       Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                            <c:InfoBar Severity="Error" Message="{Binding CatalogError}" Margin="0,8,0,0"/>
                             <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -1204,7 +1351,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </StackPanel>
-                    </Border>
+                    </c:SettingsExpander>
                     <TextBlock Text="Version und Updates" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsExpander Icon="&#xE895;" Header="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Description="{Binding UpdateStatus}">
                         <c:SettingsExpander.HeaderContent>
@@ -1279,50 +1426,25 @@
                                Text="Löschen entfernt die Gruppe samt Untergruppen (nach Rückfrage). Hineingezogene Einträge erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“; Dateien bleiben unverändert."/>
 
                     <TextBlock Text="Für alle smarten Gruppen (Ordner)" Style="{StaticResource SettingsSection}"/>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Width="300" VerticalAlignment="Center">
+                    <c:SettingsCard Icon="&#xE8A5;" Header="Standard-Dateiendungen" Description="Gilt für smarte Gruppen ohne eigene Angabe. Mit Semikolon getrennt, z. B. .ps1; .cmd; .exe">
+                            <StackPanel Width="300">
                                 <TextBox Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag=".ps1; .cmd; .exe"/>
                                 <TextBlock Text="{Binding DefaultExtensionsError}" FontSize="11" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,4,0,0"
                                            Visibility="{Binding DefaultExtensionsError, Converter={StaticResource Vis}}"/>
                             </StackPanel>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock Text="Standard-Dateiendungen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Gilt für smarte Gruppen ohne eigene Angabe. Mit Semikolon getrennt, z. B. .ps1; .cmd; .exe" Style="{StaticResource RowDesc}"/>
-                            </StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <TextBox DockPanel.Dock="Right" Width="300" Text="{Binding GlobalExcludes, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}"
-                                     VerticalAlignment="Center" Tag="z. B. *.bak.ps1; *\Old\*"/>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock Text="Globale Ausschlüsse" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Gelten für alle Ordner, mit Semikolon getrennt. „Ausblenden“ im Panel legt Ausschlüsse beim jeweiligen Ordner an." Style="{StaticResource RowDesc}"/>
-                            </StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding AutoRescan}" VerticalAlignment="Center" />
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock Text="Bei Änderungen automatisch neu einlesen" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Neue, umbenannte oder gelöschte Dateien erscheinen sofort." Style="{StaticResource RowDesc}"/>
-                            </StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <Border Style="{StaticResource Card}">
-                        <DockPanel>
-                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE8D8;" Header="Globale Ausschlüsse" Description="Gelten für alle Ordner, mit Semikolon getrennt. „Ausblenden“ im Panel legt Ausschlüsse beim jeweiligen Ordner an.">
+                            <TextBox Width="300" Text="{Binding GlobalExcludes, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="z. B. *.bak.ps1; *\Old\*"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE72C;" Header="Bei Änderungen automatisch neu einlesen" Description="Neue, umbenannte oder gelöschte Dateien erscheinen sofort.">
+                            <ui:ToggleSwitch IsChecked="{Binding AutoRescan}" AutomationProperties.Name="Bei Änderungen automatisch neu einlesen"/>
+                    </c:SettingsCard>
+                    <c:SettingsCard Icon="&#xE916;" Header="Zeitlimit für nicht erreichbare Ordner" Description="Antwortet ein Ordner (z. B. eine Freigabe) nicht rechtzeitig, zeigt das Panel den zuletzt eingelesenen Stand.">
+                            <StackPanel Orientation="Horizontal">
                                 <Slider Width="180" Minimum="2" Maximum="60" TickFrequency="1" Value="{Binding ScanTimeoutSeconds}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding ScanTimeoutSeconds, StringFormat={}{0} s}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock Text="Zeitlimit für nicht erreichbare Ordner" Style="{StaticResource RowTitle}"/>
-                                <TextBlock Text="Antwortet ein Ordner (z. B. eine Freigabe) nicht rechtzeitig, zeigt das Panel den zuletzt eingelesenen Stand." Style="{StaticResource RowDesc}"/>
-                            </StackPanel>
-                        </DockPanel>
-                    </Border>
+                    </c:SettingsCard>
                 </StackPanel>
 
                 <!-- Panel › Verhalten -->
@@ -1373,8 +1495,7 @@
                                         Description="Spotlight-Modus: ein schwebendes Suchfenster mit den besten Treffern – ohne Mausweg zum Rand. Tab wechselt ins volle Panel. Die Hover-Zone öffnet weiter das Panel.">
                             <ui:ToggleSwitch IsChecked="{Binding HotkeyOpensSpotlight}" AutomationProperties.Name="Spotlight-Modus" />
                         </c:SettingsCard>
-                        <TextBlock Text="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Error}"
-                                   FontSize="12" Margin="4,0,0,6" Visibility="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
+                        <c:InfoBar Severity="Error" Message="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -1789,8 +1910,7 @@
                                     Description="Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen und Kennwörter – unter Dokumente › Power-Exec › Scripte (vorhandene Dateien bleiben unverändert), im Panel als Gruppe „Beispiele“.">
                         <ui:Button Style="{StaticResource Btn.Standard}" Content="Anlegen" Command="{Binding AddSamplesCommand}"/>
                     </c:SettingsCard>
-                    <TextBlock Text="{Binding SamplesStatus}" Style="{StaticResource Caption}" Margin="4,4,0,0" TextWrapping="Wrap"
-                               Visibility="{Binding SamplesStatus, Converter={StaticResource Vis}}"/>
+                    <c:InfoBar Message="{Binding SamplesStatus}" Severity="{Binding SamplesSeverity}"/>
                 </StackPanel>
 
                 <!-- Diagnose & Daten -->
@@ -1859,8 +1979,12 @@
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="Schließen" MinWidth="110" Height="34" Margin="8,0,0,0" IsCancel="True" Click="Close_Click" />
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Änderungen verwerfen" Height="34" Click="Revert_Click"
                         ToolTip="Stand beim Öffnen der Einstellungen wiederherstellen" />
-                <TextBlock x:Name="SaveHint" Style="{StaticResource Caption}" VerticalAlignment="Center"
-                           Text="Änderungen werden sofort übernommen."/>
+                <!-- Speicherstand: „Speichert …“ während der kurzen Wartezeit, danach „Alle Änderungen gespeichert“ -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="Änderungen werden automatisch übernommen und gespeichert – ein Speichern-Knopf ist nicht nötig.">
+                    <TextBlock x:Name="SaveIcon" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"
+                               Foreground="{DynamicResource InfoBar.Success.Icon}"/>
+                    <TextBlock x:Name="SaveHint" Style="{StaticResource Caption}" VerticalAlignment="Center" Text="Alle Änderungen gespeichert"/>
+                </StackPanel>
             </DockPanel>
         </Border>
     </Grid>

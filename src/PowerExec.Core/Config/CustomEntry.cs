@@ -221,7 +221,7 @@ public sealed class CustomEntry
         var c = Clone();
         c.Target = Config.Placeholders.Apply(Target, values, urlEncode: Kind == CustomEntryKind.Url);
         c.Arguments = Config.Placeholders.Apply(Arguments, values);
-        c.Code = Config.Placeholders.Apply(Code, values);
+        c.Code = Config.Placeholders.Apply(Code, values, powerShell: Kind == CustomEntryKind.Snippet && Language == SnippetLanguage.PowerShell);
         c.User = Config.Placeholders.Apply(User, values);
         c.RemoteCommand = Config.Placeholders.Apply(RemoteCommand, values);
         c.WorkingDirectory = Config.Placeholders.Apply(WorkingDirectory, values);

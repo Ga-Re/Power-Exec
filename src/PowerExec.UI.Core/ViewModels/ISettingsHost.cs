@@ -26,4 +26,7 @@ public interface ISettingsHost
     Task<IReadOnlyList<string>> FindComputersAsync(string query);
     /// <summary>Distinguished Names von Domäne, OUs und dem Container „Computers“ (für die OU-Auswahl).</summary>
     Task<IReadOnlyList<string>> FindOrganizationalUnitsAsync() => AdSearch.FindOrganizationalUnitsAsync();
+
+    /// <summary>PowerShell-Befehl einer Variable ausführen (Ausgabe als Text; wirft bei Fehler).</summary>
+    string RunVariableCommand(string command) => VariableCommandRunner.Run(command, Settings.DefaultEngine);
 }

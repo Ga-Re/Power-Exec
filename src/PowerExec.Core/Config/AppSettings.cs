@@ -245,6 +245,13 @@ public sealed class AppSettings
     public List<Workspace> Workspaces { get; set; } = new();
     public string ActiveWorkspace { get; set; } = "Standard";
 
+    /// <summary>Eigene Variablen ({{$Name}} in Texten, Links, Befehlen und Code).</summary>
+    public List<UserVariable> Variables { get; set; } = new();
+    /// <summary>Format von {{$Datum}} (.NET-Format, z. B. dd.MM.yyyy).</summary>
+    public string DateFormat { get; set; } = Config.Variables.DefaultDateFormat;
+    /// <summary>Format von {{$Uhrzeit}} (.NET-Format, z. B. HH:mm).</summary>
+    public string TimeFormat { get; set; } = Config.Variables.DefaultTimeFormat;
+
     /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
     public List<MachineGroup> MachineGroups { get; set; } = new();
 

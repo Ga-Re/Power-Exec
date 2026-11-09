@@ -288,8 +288,24 @@ public sealed class CustomEntryViewModel : ObservableObject
     /// <summary>Welche param()-Parameter beim Start abgefragt werden.</summary>
     public string ParameterPreview { get => _parameterPreview; private set => Set(ref _parameterPreview, value); }
 
-    /// <summary>Eingebaute Variablen zum Einfügen.</summary>
-    public IReadOnlyList<string> Builtins { get; } = Placeholders.BuiltinNames.Select(n => "{{" + n + "}}").ToList();
+    /// <summary>Variablen zum Einfügen: eingebaute und eigene ({{$Name}}).</summary>
+    public IReadOnlyList<string> Builtins =>
+        Placeholders.BuiltinNames.Select(n => "{{" + n + "}}").Concat(_app.UserVariables.Select(v => "{{$" + v.Name + "}}")).ToList();
+
+    /// <summary>{{$Variablen}}, die es nicht gibt – Hinweis im Editor (der Start bricht sonst ab).</summary>
+    public string? VariableWarning
+    {
+        get
+        {
+            var unknown = Placeholders.VariableNames(_e.Target, _e.Arguments, _e.Code, _e.User, _e.RemoteCommand, _e.WorkingDirectory)
+                .Where(n => !Variables.IsBuiltin(n) && !_app.UserVariables.Any(v => v.Name.Equals(Variables.Normalize(n), StringComparison.CurrentCultureIgnoreCase)))
+                .Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+            return unknown.Count == 0 ? null
+                : (unknown.Count == 1 ? $"Die Variable {{{{{unknown[0]}}}}} gibt es nicht" : "Diese Variablen gibt es nicht: " + string.Join(", ", unknown.Select(n => "{{" + n + "}}")))
+                  + " – unter Einstellungen › Inhalte › Variablen anlegen, sonst startet der Eintrag nicht.";
+        }
+    }
+    public bool HasVariableWarning => VariableWarning != null;
 
     public string PlaceholderInfo
     {
@@ -297,7 +313,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         {
             var ph = _e.Placeholders;
             return ph.Count == 0
-                ? "{{Name}} bzw. {{Name:Vorgabe}} wird beim Start abgefragt; {{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}} setzt Power-Exec selbst ein."
+                ? "{{Name}} bzw. {{Name:Vorgabe}} wird beim Start abgefragt; {{$Variablen}} (eingebaute und eigene) setzt Power-Exec selbst ein."
                 : "Wird beim Start abgefragt: " + string.Join(", ", ph.Select(p => p.Default.Length > 0 ? $"{p.Name} (Vorgabe {p.Default})" : p.Name));
         }
     }
@@ -368,7 +384,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     private static readonly string[] IssueProps =
     {
         nameof(TargetError), nameof(CodeError), nameof(PortError), nameof(RdpFileError), nameof(ScreenSizeError), nameof(PortForwardError),
-        nameof(OpenWithProgramError), nameof(Warnings), nameof(IsValid), nameof(FirstError), nameof(PlaceholderInfo), nameof(HasPlaceholders), nameof(RdpHint)
+        nameof(OpenWithProgramError), nameof(Warnings), nameof(IsValid), nameof(FirstError), nameof(PlaceholderInfo), nameof(HasPlaceholders), nameof(RdpHint),
+        nameof(VariableWarning), nameof(HasVariableWarning)
     };
 
     private void Revalidate()

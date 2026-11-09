@@ -73,4 +73,17 @@
     <SolidColorBrush x:Key="Border.TileHover" Color="#2EFFFFFF"/>
     <SolidColorBrush x:Key="Bg.GroupCard" Color="#0FFFFFFF"/>
     <SolidColorBrush x:Key="Border.GroupCard" Color="#1FFFFFFF"/>
+    <!-- InfoBar (Rückmeldungen wie in Windows 11) -->
+    <SolidColorBrush x:Key="InfoBar.Success.Bg" Color="#393D1B"/>
+    <SolidColorBrush x:Key="InfoBar.Success.Border" Color="#4D5A2A"/>
+    <SolidColorBrush x:Key="InfoBar.Success.Icon" Color="#6CCB5F"/>
+    <SolidColorBrush x:Key="InfoBar.Warning.Bg" Color="#433519"/>
+    <SolidColorBrush x:Key="InfoBar.Warning.Border" Color="#5E4B22"/>
+    <SolidColorBrush x:Key="InfoBar.Warning.Icon" Color="#FCE100"/>
+    <SolidColorBrush x:Key="InfoBar.Error.Bg" Color="#442726"/>
+    <SolidColorBrush x:Key="InfoBar.Error.Border" Color="#5E3533"/>
+    <SolidColorBrush x:Key="InfoBar.Error.Icon" Color="#FF99A4"/>
+    <SolidColorBrush x:Key="InfoBar.Info.Bg" Color="#1F3346"/>
+    <SolidColorBrush x:Key="InfoBar.Info.Border" Color="#2F4B65"/>
+    <SolidColorBrush x:Key="InfoBar.Info.Icon" Color="#60CDFF"/>
 </ResourceDictionary>

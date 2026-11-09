@@ -21,6 +21,9 @@ internal sealed class FakeEntryHost : ISettingsWindowHost
     public IUiDispatcher UiDispatcher => Ui;
     public HealthService Health { get; } = new(Ui);
     public object? SettingsDialogOwner => null;
+    public IReadOnlyList<UserVariable> UserVariables => Settings.Variables;
+    public Func<string, string> CommandAnswer { get; set; } = cmd => "ok:" + cmd;
+    public string RunVariableCommand(string command) => CommandAnswer(command);
     public IThemeInfo Theme { get; } = new FakeTheme();
     public FakeItemSource Items { get; } = new();
     public IItemSource Repository => Items;

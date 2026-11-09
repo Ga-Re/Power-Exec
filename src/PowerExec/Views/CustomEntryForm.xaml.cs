@@ -11,6 +11,30 @@ public partial class CustomEntryForm : UserControl
     {
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
+        Loaded += (_, _) => AttachVariableCompletion();
+    }
+
+    private static readonly HashSet<string> VariableFields = new() { "Target", "Arguments", "Code", "User", "RemoteCommand", "WorkingDirectory" };
+    private readonly HashSet<TextBox> _completionAttached = new();
+
+    /// <summary>Vorschläge bei {{$ in allen Feldern, in denen Variablen eingesetzt werden.</summary>
+    private void AttachVariableCompletion()
+    {
+        void Walk(DependencyObject d)
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(d, i);
+                if (child is TextBox box && !_completionAttached.Contains(box) &&
+                    box.GetBindingExpression(TextBox.TextProperty)?.ParentBinding.Path?.Path is { } path && VariableFields.Contains(path))
+                {
+                    _completionAttached.Add(box);
+                    Infrastructure.VariableCompletion.Attach(box, () => Vm?.Builtins ?? Array.Empty<string>());
+                }
+                Walk(child);
+            }
+        }
+        Walk(this);
     }
 
     private CustomEntryViewModel? Vm => DataContext as CustomEntryViewModel;
