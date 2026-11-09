@@ -166,6 +166,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         set
         {
             _manualMode = value == "manual";
+            if (_manualMode) ColorsExpanded = true; // wie in Windows: „Manuell“ klappt die Farben auf
             if (!_manualMode) PanelColor = string.Empty;
             else if (_c.PanelColor.Length == 0) PanelColor = _recentColors.FirstOrDefault() ?? "#1E1E1E";
             OnPropertyChanged();
@@ -176,6 +177,14 @@ public sealed class PanelSettingsViewModel : ObservableObject
     private bool _manualMode;
 
     public bool ShowManualColors => ColorMode == "manual";
+
+    private bool _colorsExpanded, _backdropExpanded;
+
+    /// <summary>Ausklappbereich „Panelfarbe“ offen.</summary>
+    public bool ColorsExpanded { get => _colorsExpanded; set => Set(ref _colorsExpanded, value); }
+
+    /// <summary>Ausklappbereich „Hintergrund“ offen (Regler der gewählten Variante).</summary>
+    public bool BackdropExpanded { get => _backdropExpanded; set => Set(ref _backdropExpanded, value); }
 
     /// <summary>Zuletzt verwendete Farben (neueste zuerst).</summary>
     public IReadOnlyList<ColorPresetViewModel> RecentColors =>

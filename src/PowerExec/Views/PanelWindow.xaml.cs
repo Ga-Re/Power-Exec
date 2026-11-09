@@ -55,6 +55,7 @@ public partial class PanelWindow : Window
         }
         DataContext = host.ViewModel;
         DetachPeekCard();
+        HeaderLogo.Source = Infrastructure.AppIcon.Frame(52); // scharf auch bei 200 % Skalierung
         // Geteilte Kontextmenüs (ItemMenu, GroupMenu): beim Rechtsklick an das angeklickte Element binden
         AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
         host.ViewModel.ScrollToGroupRequested += ScrollToGroup;
@@ -142,6 +143,7 @@ public partial class PanelWindow : Window
             return;
         }
 
+        var sameMonitor = _monitor?.Index == monitor.Index;
         _monitor = monitor;
         _hiding = false;
         // Für „Text einfügen“: das Fenster merken, in dem vorher gearbeitet wurde
@@ -153,13 +155,17 @@ public partial class PanelWindow : Window
             BeginAnimation(RevealProperty, null);
             Reveal = 0;
         }
-        Place();
         var wasVisible = IsVisible;
-        if (!wasVisible)
+        // Geparkt auf demselben Monitor steht das Fenster schon genau bei Reveal = 0 – kein SetWindowPos vor dem Start
+        if (!wasVisible || !sameMonitor)
         {
-            Show();
-            EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
-            Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen – nur dann ein zweites Mal
+            Place();
+            if (!wasVisible)
+            {
+                Show();
+                EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
+                Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen – nur dann ein zweites Mal
+            }
         }
         if (!wasVisible && _contentHost is { IsDisposed: false })
         {
@@ -259,6 +265,8 @@ public partial class PanelWindow : Window
     public void ApplyConfigChange()
     {
         ApplyAppearance(); // samt Hintergrund, Milchglas und Weichzeichner
+        // Geparkt (Glas, eingefahren): neu platzieren – beim nächsten Ausfahren wird Place() übersprungen
+        if (IsParked && _monitor != null) { Place(); return; }
         if (!IsOpen || _hiding || _monitor == null) return;
         var monitors = ScreenService.TriggerMonitors(Cfg);
         if (!monitors.Any(m => m.Index == _monitor.Index) && monitors.Count > 0) _monitor = monitors[0];
@@ -273,6 +281,9 @@ public partial class PanelWindow : Window
     internal MonitorInfo? CurrentMonitor => _monitor;
 
     private bool _skipNextAnimation;
+
+    /// <summary>DPI-Faktor des Panels (in Place() gemerkt; beim Gleiten nicht pro Bild abfragen).</summary>
+    private double _dpiScaleX = 1.0;
 
     /// <summary>
     /// Nach dem Neuaufbau (geänderte Einstellungen) sofort wieder zeigen: ohne Gleiten und ohne Fokus – die Einstellungen
@@ -500,6 +511,32 @@ public partial class PanelWindow : Window
         if (HwndSource.FromHwnd(_hwnd) is { } src) src.AddHook(ChildHostHook);
     }
 
+    /// <summary>Kindfenster des Glas-Panels auf die Größe des Fensterinhalts setzen (falls abweichend).</summary>
+    private void ResizeContentHost()
+    {
+        if (_contentHost is not { IsDisposed: false } host || _hwnd == IntPtr.Zero) return;
+        NativeMethods.GetClientRect(_hwnd, out var client);
+        var w = Math.Max(1, client.Right - client.Left);
+        var h = Math.Max(1, client.Bottom - client.Top);
+        NativeMethods.GetClientRect(host.Handle, out var current);
+        if (current.Right - current.Left == w && current.Bottom - current.Top == h) return;
+        const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
+        NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+
+    /// <summary>Für den Selbsttest: Größe von Fensterinhalt und Kindfenster in Pixeln (Kindfenster null = keins).</summary>
+    internal ((int W, int H) Client, (int W, int H)? Content) SizesForTest()
+    {
+        NativeMethods.GetClientRect(_hwnd, out var client);
+        (int, int)? content = null;
+        if (_contentHost is { IsDisposed: false } host)
+        {
+            NativeMethods.GetClientRect(host.Handle, out var c);
+            content = (c.Right - c.Left, c.Bottom - c.Top);
+        }
+        return ((client.Right - client.Left, client.Bottom - client.Top), content);
+    }
+
     /// <summary>Kindfenster immer so groß wie der Fensterinhalt.</summary>
     private IntPtr ChildHostHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
@@ -638,6 +675,7 @@ public partial class PanelWindow : Window
         if (_monitor == null) return;
         _rect = ScreenService.PanelRect(_monitor, Cfg);
         var dpi = VisualTreeHelper.GetDpi(this);
+        _dpiScaleX = dpi.DpiScaleX;
         if (_systemWindow)
         {
             // Panelrahmen so groß wie das Fenster; die Lage beim Ein-/Ausfahren setzt ApplyReveal
@@ -650,6 +688,7 @@ public partial class PanelWindow : Window
             PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
             PrepareSlide();
             ApplyReveal();
+            ResizeContentHost(); // Kindfenster (Glas) ausdrücklich auf Fenstergröße – nicht nur über WM_SIZE
         }
         else
         {
@@ -779,7 +818,7 @@ public partial class PanelWindow : Window
         _region = region;
         _regionApplied = true;
         if (region is not { } v) { Interop.PanelWindowNative.ClearRegion(_hwnd); return; }
-        var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * VisualTreeHelper.GetDpi(this).DpiScaleX);
+        var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * _dpiScaleX);
         Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
 
@@ -817,12 +856,15 @@ public partial class PanelWindow : Window
             else OnSlideInFinished();
             return;
         }
-        // Ausfahren mit sanftem Quadratic-EaseOut (natürlicher Start ohne Geschwindigkeitssprung in der Mitte),
-        // Einfahren wie bisher mit Cubic-EaseIn.
-        var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? duration : TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7))
+        // Ausfahren zügig (80 % der Dauer, wie Windows 11) mit Sine-EaseOut, Einfahren mit Cubic-EaseIn (70 %);
+        // Startwert ausdrücklich der aktuelle Stand
+        var showDuration = TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.8);
+        var hideDuration = TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7);
+        var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? showDuration : hideDuration)
         {
+            From = Reveal,
             EasingFunction = show
-                ? new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                ? new SineEase { EasingMode = EasingMode.EaseOut }
                 : new CubicEase { EasingMode = EasingMode.EaseIn }
         };
         if (!show) anim.Completed += (_, _) => { if (_hiding) FinishHide(); };
