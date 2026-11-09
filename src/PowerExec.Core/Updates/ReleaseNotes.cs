@@ -7,6 +7,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 22, 1), "Fehlerbehebung beim Ausführen mit Glas", new[]
+        {
+            "Mit dem Hintergrund „Glas“ erschien beim Ausführen eines Scripts aus dem Panel die Meldung „Value cannot be null (defaultDestinationValue)“ – behoben",
+            "Ersteinrichtung: Beispielscripte lassen sich zusätzlich zum eigenen Ordner anlegen (Gruppe „Beispiele“)"
+        }),
         new ReleaseNote(new Version(0, 22, 0), "Flüssiger: Panel passt sich direkt an, Glas gleitet ruhig", new[]
         {
             "Geänderte Einstellungen wirken sofort im offenen Panel – ohne Flackern und ohne Neuaufbau (nur beim Wechsel des Designs oder zwischen Klarglas und Glas wird es neu erzeugt)",

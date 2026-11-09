@@ -42,8 +42,9 @@ public static class FluentTheme
         // Das Kontrollkästchen von WPF UI animiert „Tag“ (Wert null). Verlässt es den Baum eines Fluent-Fensters
         // (z. B. beim Neuaufbau einer Liste), fiele es auf den App-Stil zurück, die Vorlage würde mitten in der
         // Animation getauscht – WPF wirft dann ArgumentNullException. Daher den Stil beim Laden fest setzen.
-        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.CheckBox), FrameworkElement.LoadedEvent,
-            new RoutedEventHandler((s, _) => PinStyle((FrameworkElement)s)));
+        // Gleiches gilt für andere animierte Bedienelemente in Listen (Optionsfelder, Auswahllisten, Eingabefelder)
+        foreach (var type in new[] { typeof(System.Windows.Controls.Primitives.ToggleButton), typeof(System.Windows.Controls.ComboBox), typeof(System.Windows.Controls.TextBox) })
+            EventManager.RegisterClassHandler(type, FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) => PinStyle((FrameworkElement)s)));
     }
 
     /// <summary>Impliziten Fluent-Stil eines Elements in einem Fluent-Fenster lokal festschreiben.</summary>
@@ -56,10 +57,33 @@ public static class FluentTheme
 
     private static bool IsInFluentRoot(DependencyObject e)
     {
-        var window = Window.GetWindow(e);
-        if (window == null) return false;
-        lock (Attached) return Attached.Any(a => a.Root.TryGetTarget(out var r) && ReferenceEquals(r, window));
+        // Fenster mit WPF UI – oder ein eigener Darstellungsbereich darin (Panelinhalt bei Glas im Kindfenster)
+        var root = (FrameworkElement?)Window.GetWindow(e) ?? (PresentationSource.FromDependencyObject(e)?.RootVisual as FrameworkElement);
+        if (root == null) return false;
+        lock (Attached)
+            return Attached.Any(a => a.Root.TryGetTarget(out var r) && ReferenceEquals(r, root))
+                   || ExtraRoots.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, root));
     }
+
+    /// <summary>Weitere Wurzeln mit WPF-UI-Bedienelementen, die kein eigenes Fenster sind (Kindfenster des Glas-Panels).</summary>
+    private static readonly List<WeakReference<FrameworkElement>> ExtraRoots = new();
+
+    /// <summary>
+    /// Wurzel eines Kindfensters mit WPF-UI-Bedienelementen anmelden (Design hängt am übergeordneten Fenster). Ohne das
+    /// fiele z. B. ein Kontrollkästchen beim Neuaufbau der Liste mitten in seiner Animation auf den App-Stil zurück –
+    /// „Value cannot be null (defaultDestinationValue)“.
+    /// </summary>
+    public static void RegisterRoot(FrameworkElement root)
+    {
+        lock (Attached)
+        {
+            ExtraRoots.RemoveAll(w => !w.TryGetTarget(out _));
+            if (!ExtraRoots.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, root))) ExtraRoots.Add(new WeakReference<FrameworkElement>(root));
+        }
+    }
+
+    /// <summary>Für den Selbsttest: hält dieses Element seinen Fluent-Stil fest?</summary>
+    internal static bool IsPinnedForTest(FrameworkElement e) => IsInFluentRoot(e);
 
     /// <summary>
     /// Fenster (oder anderes Element) mit WPF UI ausstatten. Das XAML bindet <c>ui:ThemesDictionary</c> und
