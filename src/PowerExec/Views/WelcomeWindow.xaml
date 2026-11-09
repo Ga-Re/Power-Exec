@@ -127,8 +127,13 @@
                     </ui:Button>
                     <TextBlock Text="{Binding Folder, StringFormat=Gewählt: {0}}" Margin="0,8,0,0" TextWrapping="Wrap"
                                Visibility="{Binding HasFolder, Converter={StaticResource Vis}}"/>
-                    <CheckBox Content="Oder: Beispielordner mit Beispielscripten anlegen (Dokumente › Power-Exec › Scripte)" IsChecked="{Binding CreateSample}" Margin="0,16,0,0"
-                              Visibility="{Binding HasFolder, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                    <CheckBox IsChecked="{Binding CreateSample}" Margin="0,16,0,0">
+                        <TextBlock TextWrapping="Wrap">
+                            <Run Text="Beispielscripte anlegen" FontWeight="SemiBold"/>
+                            <LineBreak/>
+                            <Run Text="Acht fertige Scripte (Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter) unter Dokumente › Power-Exec › Scripte – im Panel als Gruppe „Beispiele“." Foreground="{DynamicResource Text.Secondary}"/>
+                        </TextBlock>
+                    </CheckBox>
                     <TextBlock Text="{Binding ExistingFoldersText}" Style="{StaticResource Tip}" Margin="0,16,0,0"
                                Visibility="{Binding HasExistingFolders, Converter={StaticResource Vis}}"/>
                 </StackPanel>

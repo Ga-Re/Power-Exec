@@ -21,9 +21,13 @@ public sealed class WelcomeViewModel : ObservableObject
     private bool _useWindowsAccent;
     private string _hotkey;
 
-    public WelcomeViewModel(IWelcomeHost app)
+    private readonly Func<string?> _createSamples;
+
+    /// <param name="createSamples">Beispielscripte anlegen und den Ordner liefern (Tests: ohne Dateizugriff); null = Standard.</param>
+    public WelcomeViewModel(IWelcomeHost app, Func<string?>? createSamples = null)
     {
         _app = app;
+        _createSamples = createSamples ?? CreateSampleFolder;
         var panel = app.Settings.Panels.FirstOrDefault();
         _edge = panel?.Edge ?? ScreenEdge.Right;
         _hotkey = panel is { Hotkey.Length: > 0 } ? panel.Hotkey : PanelConfig.DefaultHotkey;
@@ -109,10 +113,7 @@ public sealed class WelcomeViewModel : ObservableObject
     private void ChooseFolder()
     {
         if (_app.PickFolder("Ordner mit Scripten und Programmen auswählen") is { } folder)
-        {
-            Folder = folder;
-            CreateSample = false;
-        }
+            Folder = folder; // Beispielscripte bleiben wählbar – zusätzlich zum eigenen Ordner
     }
 
     private void Skip()
@@ -134,11 +135,18 @@ public sealed class WelcomeViewModel : ObservableObject
         foreach (var p in s.Panels) p.Edge = _edge;
         s.Panels[0].Hotkey = _hotkey;
         var folder = _folder;
-        if (folder == null && _createSample) folder = CreateSampleFolder();
         if (folder != null && !s.Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))
             SmartGroups.Add(s, folder, null, null);
+        // Beispielscripte als eigene Gruppe „Beispiele“ – unabhängig vom eigenen Ordner
+        var samples = _createSample ? _createSamples() : null;
+        if (samples != null && !s.Folders.Any(f => f.Path.Equals(samples, StringComparison.OrdinalIgnoreCase)))
+        {
+            var name = "Beispiele";
+            for (int i = 2; GroupManager.Exists(s, name); i++) name = $"Beispiele {i}";
+            SmartGroups.Add(s, samples, name, null);
+        }
         _app.ApplySettings(s);
-        AppLog.Info($"Einführung abgeschlossen: Rand {_edge}, Ordner {folder ?? "–"}");
+        AppLog.Info($"Einführung abgeschlossen: Rand {_edge}, Ordner {folder ?? "–"}, Beispiele {samples ?? "–"}");
         CloseRequested?.Invoke(true);
     }
 

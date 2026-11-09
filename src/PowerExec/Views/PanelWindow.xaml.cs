@@ -488,6 +488,7 @@ public partial class PanelWindow : Window
         root.PreviewKeyDown += OnPanelPreviewKeyDown;
         root.AddHandler(ContextMenuOpeningEvent, new ContextMenuEventHandler(OnContextMenuOpening));
 
+        Infrastructure.FluentTheme.RegisterRoot(root); // Fluent-Stile im Kindfenster festhalten (Kontrollkästchen, Animationen)
         _contentHost = new HwndSource(parameters) { SizeToContent = SizeToContent.Manual, RootVisual = root };
         if (_contentHost.CompositionTarget != null) _contentHost.CompositionTarget.BackgroundColor = Colors.Transparent;
         if (HwndSource.FromHwnd(_hwnd) is { } src) src.AddHook(ChildHostHook);

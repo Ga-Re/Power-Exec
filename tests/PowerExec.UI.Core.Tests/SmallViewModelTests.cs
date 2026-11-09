@@ -326,8 +326,8 @@ public class WelcomeViewModelTests
     {
         var host = new FakeWelcomeHost { FolderToPick = @"D:\Scripte" };
         host.Settings.Panels.Add(new PanelConfig());
-        var vm = new WelcomeViewModel(host);
-        Assert.True(vm.CreateSample); // noch keine Ordner: Beispiel vorgeschlagen
+        var vm = new WelcomeViewModel(host, () => @"C:\Users\test\Documents\Power-Exec\Scripte");
+        Assert.True(vm.CreateSample); // noch keine Ordner: Beispiele vorgeschlagen
         bool? tryPanel = null;
         vm.CloseRequested += t => tryPanel = t;
 
@@ -337,13 +337,25 @@ public class WelcomeViewModelTests
         vm.Finish();
 
         Assert.Equal(@"D:\Scripte", vm.Folder);
-        Assert.False(vm.CreateSample);
+        Assert.True(vm.CreateSample); // Beispiele zusätzlich zum eigenen Ordner
         var s = Assert.Single(host.Applied);
         Assert.True(s.WelcomeDone);
         Assert.True(s.StartWithWindows);
         Assert.All(s.Panels, p => Assert.Equal(ScreenEdge.Top, p.Edge));
-        Assert.Equal(@"D:\Scripte", Assert.Single(s.Folders).Path);
+        Assert.Equal(new[] { @"D:\Scripte", @"C:\Users\test\Documents\Power-Exec\Scripte" }, s.Folders.Select(f => f.Path));
+        Assert.True(GroupManager.Exists(s, "Beispiele"));
         Assert.True(tryPanel);
+    }
+
+    [Fact]
+    public void SamplesCanBeSkipped()
+    {
+        var host = new FakeWelcomeHost();
+        var created = false;
+        var vm = new WelcomeViewModel(host, () => { created = true; return @"C:\x"; }) { CreateSample = false };
+        vm.Finish();
+        Assert.False(created);
+        Assert.Empty(Assert.Single(host.Applied).Folders);
     }
 
     [Fact]
