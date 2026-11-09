@@ -54,9 +54,7 @@ public partial class AppController : IDisposable
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => Shell.GetClipboardText();
         // {{$Variablen}}: eingebaute und eigene; PowerShell-Variablen mit Zwischenspeicher im Hintergrund vorwärmen
-        VariableResolver = new VariableResolver(() => Settings, cmd => VariableCommandRunner.Run(cmd, Settings.DefaultEngine),
-            SecretProtector.Unprotect, () => Shell.GetClipboardText());
-        Placeholders.Resolver = VariableResolver.Resolve;
+        Placeholders.Resolver = name => VariableResolver.Resolve(name);
         WarmVariables();
 
         Health = new HealthService(UiDispatcher);
@@ -173,7 +171,9 @@ public partial class AppController : IDisposable
     public IReadOnlyList<UserVariable> UserVariables => Settings.Variables;
 
     /// <summary>Löst {{$Variablen}} auf (eingebaute und eigene, mit Zwischenspeicher für PowerShell-Befehle).</summary>
-    public VariableResolver VariableResolver { get; private set; } = null!;
+    public VariableResolver VariableResolver => _variableResolver ??= new VariableResolver(() => Settings,
+        cmd => VariableCommandRunner.Run(cmd, Settings.DefaultEngine), SecretProtector.Unprotect, () => Shell.GetClipboardText());
+    private VariableResolver? _variableResolver;
 
     /// <summary>PowerShell-Variablen mit Zwischenspeicher bzw. „je Sitzung“ im Hintergrund ermitteln.</summary>
     public void WarmVariables()
