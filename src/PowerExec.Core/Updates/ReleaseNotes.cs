@@ -7,6 +7,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 26, 0), "Eigene Marktplatz-Quellen", new[]
+        {
+            "Marktplatz › Quellen: weitere Marktplätze einfach per Repository-URL hinzufügen (GitHub oder GitLab, auch Unterordner) – z. B. den Katalog deines Teams",
+            "Fremde Quellen werden vor der ersten Installation einmal als vertrauenswürdig bestätigt; danach zeigt die Liste ihren Stand, der Quellenfilter grenzt die Elemente ein",
+            "Eine nicht erreichbare Quelle hält die anderen nicht auf; Entfernen einer Quelle lässt bereits Installiertes stehen"
+        }),
         new ReleaseNote(new Version(0, 25, 0), "Variablen, Marktplatz und aufgeräumte Einstellungen", new[]
         {
             "Neu: Marktplatz (Inhalte › Marktplatz) – Pakete (z. B. Matrix42, Recherche), Links (Google, Microsoft Learn, VirusTotal, IP-Whois, GitHub/GitLab-Issues), Designs und die Beispielscripte mit einem Klick installieren; vorher zeigt eine Vorschau den Inhalt, benötigte Variablen werden abgefragt, Änderungen erscheinen als „Update verfügbar“",

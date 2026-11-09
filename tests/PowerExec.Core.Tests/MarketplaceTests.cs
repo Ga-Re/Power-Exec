@@ -119,4 +119,21 @@ public class MarketplaceTests
         }
         finally { Directory.Delete(folder, true); }
     }
+
+    [Fact]
+    public void SourcesTrustAndValidation()
+    {
+        var s = new AppSettings();
+        Assert.Single(Marketplace.Sources(s));
+        Assert.True(Marketplace.IsTrusted(s, Marketplace.DefaultSource));
+        Assert.NotNull(Marketplace.ValidateSource(s, "ftp://x"));
+        Assert.NotNull(Marketplace.ValidateSource(s, Marketplace.DefaultSource + "/"));
+        Assert.Null(Marketplace.ValidateSource(s, "https://github.com/firma/katalog"));
+        s.MarketplaceSources.Add(new MarketplaceSource { Url = "https://github.com/firma/katalog" });
+        Assert.Equal(2, Marketplace.Sources(s).Count);
+        Assert.False(Marketplace.IsTrusted(s, "https://github.com/firma/katalog/"));
+        s.MarketplaceSources[0].Trusted = true;
+        Assert.True(Marketplace.IsTrusted(s, "https://GITHUB.com/firma/katalog"));
+        Assert.Equal("firma/katalog", Marketplace.NameFromUrl("https://github.com/firma/katalog.git"));
+    }
 }

@@ -49,6 +49,17 @@ public sealed class MarketplaceIndex
     public List<MarketplaceItem> Items { get; set; } = new();
 }
 
+/// <summary>Eine zusätzliche Marktplatz-Quelle (Repository-URL).</summary>
+public sealed class MarketplaceSource
+{
+    public string Url { get; set; } = string.Empty;
+    /// <summary>Anzeigename (aus der Index-Datei, sonst aus der URL).</summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Einmal bestätigt: Inhalte dieser Quelle dürfen installiert werden.</summary>
+    public bool Trusted { get; set; }
+    public DateTime AddedUtc { get; set; }
+}
+
 /// <summary>Installiertes Element: Herkunft und Stand (für „Update verfügbar“).</summary>
 public sealed class MarketplaceInstall
 {
@@ -117,6 +128,33 @@ public static class Marketplace
         var index = JsonSerializer.Deserialize<MarketplaceIndex>(json, Json) ?? throw new InvalidDataException("Leere Index-Datei.");
         index.Items = index.Items.Where(i => i.Id.Trim().Length > 0 && i.File.Trim().Length > 0).ToList();
         return index;
+    }
+
+    /// <summary>Alle Quellen: die mitgelieferte zuerst (immer vertrauenswürdig), dann die eigenen.</summary>
+    public static IReadOnlyList<MarketplaceSource> Sources(AppSettings s) =>
+        new[] { new MarketplaceSource { Url = DefaultSource, Name = "Power-Exec", Trusted = true } }
+            .Concat(s.MarketplaceSources.Where(x => !SameSource(x.Url, DefaultSource))).ToList();
+
+    public static bool IsDefault(string source) => SameSource(source, DefaultSource);
+
+    public static bool IsTrusted(AppSettings s, string source) =>
+        IsDefault(source) || s.MarketplaceSources.Any(x => SameSource(x.Url, source) && x.Trusted);
+
+    /// <summary>Quelle hinzufügen (URL wird geprüft); liefert eine Fehlermeldung oder null.</summary>
+    public static string? ValidateSource(AppSettings s, string url)
+    {
+        try { IndexUri(url); }
+        catch (ArgumentException ex) { return ex.Message; }
+        if (Sources(s).Any(x => SameSource(x.Url, url))) return "Diese Quelle ist schon eingetragen.";
+        return null;
+    }
+
+    /// <summary>Name aus der URL (owner/repo), falls die Index-Datei keinen nennt.</summary>
+    public static string NameFromUrl(string url)
+    {
+        if (!Uri.TryCreate(url.Trim(), UriKind.Absolute, out var u)) return url;
+        var parts = u.AbsolutePath.Trim('/').Split('/');
+        return parts.Length >= 2 ? $"{parts[0]}/{parts[1].Replace(".git", "")}" : u.Host;
     }
 
     public static MarketplaceInstall? FindInstall(AppSettings s, string source, string itemId) =>

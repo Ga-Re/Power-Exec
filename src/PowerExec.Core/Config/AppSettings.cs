@@ -254,6 +254,8 @@ public sealed class AppSettings
 
     /// <summary>Aus dem Marktplatz installierte Elemente (Herkunft und Stand, für „Update verfügbar“).</summary>
     public List<MarketplaceInstall> MarketplaceInstalls { get; set; } = new();
+    /// <summary>Zusätzliche Marktplatz-Quellen (Repository-URLs) neben der mitgelieferten.</summary>
+    public List<MarketplaceSource> MarketplaceSources { get; set; } = new();
 
     /// <summary>Benannte Rechnerlisten für die Massenausführung („@Name“ in Profilen).</summary>
     public List<MachineGroup> MachineGroups { get; set; } = new();

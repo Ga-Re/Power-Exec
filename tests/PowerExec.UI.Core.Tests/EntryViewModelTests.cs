@@ -24,6 +24,14 @@ internal sealed class FakeEntryHost : ISettingsWindowHost
     public IReadOnlyList<UserVariable> UserVariables => Settings.Variables;
     public Func<string, string> CommandAnswer { get; set; } = cmd => "ok:" + cmd;
     public string RunVariableCommand(string command) => CommandAnswer(command);
+    public Dictionary<string, string> Downloads { get; } = new();
+    public List<string> Downloaded { get; } = new();
+    public Task<string> DownloadTextAsync(Uri uri)
+    {
+        Downloaded.Add(uri.ToString());
+        return Downloads.TryGetValue(uri.ToString(), out var text) ? Task.FromResult(text) : Task.FromException<string>(new HttpRequestException("404"));
+    }
+    public string MarketplaceScriptFolder { get; set; } = Path.Combine(Path.GetTempPath(), "px-test-market");
     public IThemeInfo Theme { get; } = new FakeTheme();
     public FakeItemSource Items { get; } = new();
     public IItemSource Repository => Items;
