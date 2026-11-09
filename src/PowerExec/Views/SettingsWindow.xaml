@@ -1384,18 +1384,20 @@
                     <TextBlock Text="Alles rund um das Aussehen: Design, Einträge, Panel und Hover-Zone." Style="{StaticResource Caption}" TextWrapping="Wrap"/>
 
                     <TextBlock Text="Allgemein" Style="{StaticResource SettingsSection}"/>
-                    <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Deckkraft, Milchglas und Akzent -->
-                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="16,12" Margin="0,0,0,4">
-                        <StackPanel>
-                            <TextBlock Text="Designvorlagen" FontWeight="SemiBold"/>
-                            <TextBlock Text="Setzt Design, Panelfarbe, Deckkraft, Milchglas, Akzentfarbe und Fensterhintergrund auf einmal – einzeln anpassbar." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                    <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Hintergrund, Deckkraft, Milchglas und Akzent; eingeklappt nur die aktuelle -->
+                    <c:SettingsExpander Icon="&#xE771;" Header="Designvorlagen" Description="{Binding CurrentPresetText}"
+                                        IsExpanded="{Binding PresetsExpanded, Mode=TwoWay}">
+                        <StackPanel Margin="0,10,0,4">
+                            <TextBlock Text="Setzt Design, Panelfarbe, Hintergrund, Deckkraft, Milchglas und Akzentfarbe auf einmal – danach einzeln anpassbar."
+                                       Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
                             <ItemsControl ItemsSource="{Binding DesignPresets}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Command="{Binding ApplyCommand}" Width="150" Margin="0,0,8,8" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
+                                        <Grid Width="150" Margin="0,0,8,8">
+                                        <Button Command="{Binding ApplyCommand}" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
                                                 AutomationProperties.Name="{Binding Name}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
@@ -1403,13 +1405,15 @@
                                                         <StackPanel>
                                                             <Border Height="44" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}" Padding="8,6">
                                                                 <StackPanel>
-                                                                    <Border Height="5" Width="54" HorizontalAlignment="Left" CornerRadius="2" Background="{DynamicResource Accent}"/>
+                                                                    <Border Height="5" Width="54" HorizontalAlignment="Left" CornerRadius="2"
+                                                                            Background="{Binding AccentSwatch, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
                                                                     <Border Height="4" Width="80" HorizontalAlignment="Left" CornerRadius="2" Margin="0,6,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.5"/>
                                                                     <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.3"/>
                                                                 </StackPanel>
                                                             </Border>
-                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}"/>
-                                                            <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30"/>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding BackdropText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
                                                         </StackPanel>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
@@ -1426,17 +1430,28 @@
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
+                                        <!-- Eigene Designs: löschen -->
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="24" Height="24" MinHeight="24" Padding="0" Margin="0,4,4,0"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding DeleteCommand}"
+                                                   ToolTip="Eigenes Design löschen" AutomationProperties.Name="Eigenes Design löschen"
+                                                   Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
+                                            <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>
+                                        </ui:Button>
+                                        </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
+                            <ui:Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Margin="0,4,0,0" Command="{Binding SaveDesignCommand}"
+                                       ToolTip="Farbe, Hintergrund, Deckkraft, Milchglas und Akzent des Panels als eigene Vorlage speichern">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Aktuelles Design speichern …" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ui:Button>
                         </StackPanel>
-                    </Border>
+                    </c:SettingsExpander>
                     <c:SettingsCard Icon="&#xE790;" Header="Design" Description="Hell oder dunkel für alle Fenster. Ist in Windows ein Kontrastdesign aktiv, verwendet Power-Exec automatisch dessen Farben.">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE2B1;" Header="Akzentfarbe von Windows übernehmen"
-                                    Description="Knöpfe, Auswahl und Hover-Zone nutzen die Akzentfarbe aus den Windows-Einstellungen (Personalisierung › Farben) – passend aufgehellt bzw. abgedunkelt.">
-                        <ui:ToggleSwitch IsChecked="{Binding UseWindowsAccent}" />
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8D3;" Header="Schrift- und Elementgröße" Description="Vergrößert Schrift und Bedienelemente im Panel und in allen Fenstern (zusätzlich zur Windows-Skalierung).">
                             <StackPanel Orientation="Horizontal">
@@ -1477,6 +1492,31 @@
                             </StackPanel>
                         </c:SettingsExpander.HeaderContent>
                         <StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <ui:ToggleSwitch DockPanel.Dock="Right" VerticalAlignment="Center" AutomationProperties.Name="Akzentfarbe von Windows übernehmen"
+                                                 IsChecked="{Binding DataContext.UseWindowsAccent, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Akzentfarbe von Windows übernehmen"/>
+                                    <TextBlock Text="An: Hover-Zone, Auswahl und Knöpfe in der Akzentfarbe von Windows (Personalisierung › Farben). Aus: in der gewählten Panelfarbe – passend aufgehellt bzw. abgedunkelt."
+                                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}"
+                                       Visibility="{Binding DataContext.UseWindowsAccent, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Width="28" Height="28" CornerRadius="4" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
+                                            Background="{Binding AccentPreview, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
+                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="Farbe wählen" Command="{Binding PickAccentCommand}"/>
+                                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="Aus Panelfarbe" Command="{Binding ResetAccentCommand}" Margin="6,0,0,0"
+                                               Visibility="{Binding HasAccentColor, Converter={StaticResource Vis}}"/>
+                                </StackPanel>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Eigene Akzentfarbe"/>
+                                    <TextBlock Style="{StaticResource Caption}" FontSize="12">
+                                        <Run Text="Aktuell:"/> <Run Text="{Binding AccentText, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DockPanel>
                             <TextBlock Text="Das Panel nimmt die Fläche des hellen bzw. dunklen Designs. Für eine eigene Farbe oben „Manuell“ wählen."
                                        Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,10"
                                        Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
@@ -1543,7 +1583,7 @@
                                     <TextBlock Text="{Binding FrostDescription}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
-                            <DockPanel Style="{StaticResource SubSetting}">
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowOpacity, Converter={StaticResource Vis}}">
                                 <TextBlock DockPanel.Dock="Right" Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
                                 <Slider DockPanel.Dock="Right" Width="180" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
                                         Value="{Binding PanelOpacity}" VerticalAlignment="Center" AutomationProperties.Name="Deckkraft"/>
@@ -1554,17 +1594,28 @@
                             </DockPanel>
                         </StackPanel>
                     </c:SettingsExpander>
-                    <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
-                                    Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
-                        <ui:ToggleSwitch IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand" />
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE734;" Header="Favoriten im Mini-Dock" Description="Wie viele Favoriten das Dock zeigt (in der Reihenfolge der Gruppe „Favoriten“)."
-                                    IsEnabled="{Binding ShowDock}">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="1" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding DockCount}" VerticalAlignment="Center"
-                                        AutomationProperties.Name="Favoriten im Mini-Dock"/>
-                                <TextBlock Text="{Binding DockCount}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
+                    <c:SettingsExpander Icon="&#xE8A0;" Header="Mini-Dock am Rand"
+                                        Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone."
+                                        IsExpanded="{Binding DockExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <ui:ToggleSwitch IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand" VerticalAlignment="Center"/>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" IsEnabled="{Binding ShowDock}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding DockCount}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="1" Maximum="20" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding DockCount}"
+                                        VerticalAlignment="Center" AutomationProperties.Name="Favoriten im Mini-Dock"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Wie viele Favoriten anzeigen"/>
+                                    <TextBlock Text="In der Reihenfolge der Gruppe „Favoriten“. Das Dock ruht, solange das Panel offen ist oder ein Vollbild-Programm läuft."
+                                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </c:SettingsExpander>
+                    <c:SettingsCard Icon="&#xE8A1;" Header="Gruppen-Stil"
+                                    Description="Akzentstreifen: ruhige, halbtransparente Karten – die Gruppenfarbe nur als Streifen, im Symbol und im Titel. Farbige Karten: die ganze Gruppe ist in ihrer Farbe getönt.">
+                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding GroupStyles}" SelectedValue="{Binding GroupStyle}" AutomationProperties.Name="Gruppen-Stil"/>
                     </c:SettingsCard>
                     <c:SettingsCard Icon="&#xE8FD;" Header="Sprungleiste" Description="Ab zwei Gruppen ein Punkt je Gruppe rechts im Panel – Klick springt hin, erneuter Klick klappt zu.">
                         <ui:ToggleSwitch IsChecked="{Binding ShowJumpRail}" AutomationProperties.Name="Sprungleiste" />
@@ -1573,21 +1624,37 @@
                         <ui:ToggleSwitch IsChecked="{Binding ShowScrollBar}" AutomationProperties.Name="Scrollbalken" />
                     </c:SettingsCard>
 
-                    <c:SettingsCard Icon="&#xE9A6;" Header="Breite" Description="Breite und Höhe lassen sich auch direkt am Panel per Ziehen am Innenrand ändern.">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="280" Maximum="900" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE9A6;" Header="Höhe" Description="Anteil der Bildschirmhöhe (ohne Taskleiste). 100 % = ganze Höhe.">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="30" Maximum="100" TickFrequency="5" Value="{Binding PanelHeightPercent}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PanelHeightPercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE8A0;" Header="Lage" Description="Wo das kleinere Panel entlang der Kante erscheint. „An der Hover-Zone“ öffnet es auf Höhe des Auslösebereichs." Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
-                            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding PanelAlignments}" SelectedValue="{Binding PanelAlignment}"/>
-                    </c:SettingsCard>
+                    <c:SettingsExpander Icon="&#xE9A6;" Header="Panel-Abmessungen" Description="Breite, Höhe und Lage – auch direkt am Panel per Ziehen am Innenrand änderbar."
+                                        IsExpanded="{Binding SizeExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <TextBlock Text="{Binding SizeSummary}" VerticalAlignment="Center" Foreground="{DynamicResource Text.Secondary}"/>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding PanelWidth, StringFormat={}{0} px}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="280" Maximum="900" TickFrequency="20" Value="{Binding PanelWidth}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Breite"/>
+                                <TextBlock Text="Breite" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding PanelHeightPercent, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="30" Maximum="100" TickFrequency="5" Value="{Binding PanelHeightPercent}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Höhe"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Höhe"/>
+                                    <TextBlock Text="Anteil der Bildschirmhöhe (ohne Taskleiste). 100 % = ganze Höhe." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
+                                <ComboBox DockPanel.Dock="Right" Width="236" ItemsSource="{Binding PanelAlignments}" SelectedValue="{Binding PanelAlignment}"
+                                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Lage"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Lage am Rand"/>
+                                    <TextBlock Text="Wo das kleinere Panel entlang der Kante erscheint." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </c:SettingsExpander>
 
                     <TextBlock Text="Hover-Zone" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsCard Icon="&#xE7F4;" Header="Bildschirmrand" Description="An welchem Rand die Hover-Zone liegt und das Panel ausfährt.">
@@ -1596,21 +1663,33 @@
                     <c:SettingsCard Icon="&#xE7F4;" Header="Monitor" Description="Bei „Alle Monitore“ öffnet das Tastenkürzel das Panel auf dem Monitor mit dem Mauszeiger.">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Monitors}" SelectedValue="{Binding MonitorChoice}"/>
                     </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE8A0;" Header="Lage" Description="Lage des Auslösebereichs am Rand. Die Hover-Zone hat die Panelfarbe (ohne eigene Farbe: Akzentfarbe).">
-                            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"/>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE9A6;" Header="Länge" Description="Ausdehnung entlang der Kante, mittig ausgerichtet." Visibility="{Binding IsHotZoneMiddle, Converter={StaticResource Vis}}">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="50" Maximum="1200" TickFrequency="25" Value="{Binding HotZoneLength}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding HotZoneLength, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE9A6;" Header="Breite" Description="Wie weit der Auslösebereich vom Rand nach innen reicht. Breiter = leichter zu treffen, aber auffälliger.">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="1" Maximum="30" TickFrequency="1" Value="{Binding HotZoneThickness}" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding HotZoneThickness, StringFormat={}{0} px}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
+                    <c:SettingsExpander Icon="&#xE8A0;" Header="Hover-Zone" Description="Auslösebereich am Rand – in der Akzent- bzw. Panelfarbe."
+                                        IsExpanded="{Binding HotZoneExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <ComboBox Width="200" ItemsSource="{Binding HotZones}" SelectedValue="{Binding HotZone}"
+                                      DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Lage der Hover-Zone"/>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsHotZoneMiddle, Converter={StaticResource Vis}}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding HotZoneLength, StringFormat={}{0} px}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="50" Maximum="1200" TickFrequency="25" Value="{Binding HotZoneLength}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Länge der Hover-Zone"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Länge"/>
+                                    <TextBlock Text="Ausdehnung entlang der Kante, mittig ausgerichtet." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding HotZoneThickness, StringFormat={}{0} px}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="1" Maximum="30" TickFrequency="1" Value="{Binding HotZoneThickness}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Breite der Hover-Zone"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Breite / Empfindlichkeit"/>
+                                    <TextBlock Text="Wie weit der Auslösebereich vom Rand ins Bild ragt. Breiter = leichter zu treffen, aber auffälliger." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </StackPanel>
+                    </c:SettingsExpander>
                     </StackPanel>
                 </StackPanel>
 

@@ -38,12 +38,12 @@ public sealed class EdgeTriggerWindow : Window
         Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
         Title = "Power-Exec Hover-Zone";
 
-        // Die sichtbare Leiste füllt die ganze Hover-Zone und nimmt die Panelfarbe an
-        // (ohne eigene Farbe: Akzentfarbe des Designs).
+        // Die sichtbare Leiste füllt die ganze Hover-Zone: mit „Akzentfarbe von Windows“ in der Windows-Akzentfarbe,
+        // sonst in der eigenen Akzentfarbe bzw. der Panelfarbe (ohne beides: Akzentfarbe des Designs).
         var settings = host.Config;
         Brush fill;
         Brush outline = Brushes.Transparent;
-        if (PanelColors.TryParse(settings.PanelColor, out var rgb))
+        if (!app.Settings.UseWindowsAccent && (PanelColors.TryParse(settings.AccentColor, out var rgb) || PanelColors.TryParse(settings.PanelColor, out rgb)))
         {
             fill = new SolidColorBrush(Color.FromRgb(rgb.R, rgb.G, rgb.B));
             // Feiner Rand, damit auch sehr dunkle oder sehr helle Farben auf dem Desktop sichtbar bleiben
@@ -60,7 +60,7 @@ public sealed class EdgeTriggerWindow : Window
             Background = fill,
             BorderBrush = outline,
             BorderThickness = new Thickness(thicknessDip >= 4 ? 1 : 0),
-            Opacity = Math.Max(0.55, settings.PanelOpacity / 100.0 * 0.85),
+            Opacity = Math.Max(0.55, settings.EffectiveOpacity / 100.0 * 0.85),
             CornerRadius = new CornerRadius(Math.Min(4, thicknessDip / 2)),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
@@ -82,11 +82,20 @@ public sealed class EdgeTriggerWindow : Window
             else _hoverTimer.Start();
         };
         MouseLeave += (_, _) => _hoverTimer.Stop();
+        // Eingefahren, während der Mauszeiger noch in der Zone steht (Klick auf die Zone, Einfahren nach einer Aktion):
+        // ein MouseEnter kommt dann nicht mehr. Bewegung in der Zone startet die Verweilzeit neu – ruhig stehen lassen nicht.
+        MouseMove += (_, _) =>
+        {
+            if (_hoverTimer.IsEnabled || _host.Window.IsOpen || DateTime.UtcNow - _toggledAt < TimeSpan.FromMilliseconds(500)) return;
+            if (_app.Settings.HoverDelayMs <= 0) _host.ShowFromTrigger(_monitor);
+            else _hoverTimer.Start();
+        };
         // Angeheftetes Panel: Klick auf die Zone fährt es ein bzw. aus
         MouseLeftButtonUp += (_, e) =>
         {
             if (!_host.Config.Pinned) return;
             _hoverTimer.Stop();
+            _toggledAt = DateTime.UtcNow;
             _host.ToggleFromTrigger(_monitor);
             e.Handled = true;
         };
@@ -125,6 +134,7 @@ public sealed class EdgeTriggerWindow : Window
     public MonitorInfo Monitor => _monitor;
 
     private bool _suspended;
+    private DateTime _toggledAt;
     private readonly Border _strip;
     private readonly double _baseOpacity;
     private bool _busy;

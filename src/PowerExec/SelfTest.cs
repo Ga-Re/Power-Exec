@@ -272,6 +272,41 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 if (vm.ShowGroupJump) Fail("Strg+K: Auswahl schließt die Gruppensuche nicht");
 
+                // Fixierter Gruppenkopf: genau so breit wie die Karte der Gruppe – in beiden Gruppen-Stilen
+                foreach (var style in new[] { GroupCardStyle.Tinted, GroupCardStyle.Accent })
+                {
+                    host.Config.GroupStyle = style;
+                    vm.ConfigReplaced();
+                    await Settle();
+                    for (double offset = 20; offset <= 400 && vm.StickyGroup == null; offset += 20)
+                    {
+                        host.Window.ScrollListForTest(offset);
+                        await Settle();
+                    }
+                    if (vm.StickyGroup == null) { Step($"Fixierter Kopf ({style}): keine Gruppe lang genug"); continue; }
+                    if (host.Window.StickyMisalignmentForTest() is { } off && off > 1.5)
+                        Fail($"Fixierter Kopf ({style}): weicht {off:0.#} px von der Karte der Gruppe ab");
+                    if (host.Window.Content is FrameworkElement stickyRoot) Screenshot(stickyRoot, "panel-fixierter-kopf-" + style.ToString().ToLowerInvariant());
+                    host.Window.ScrollListForTest(0);
+                    await Settle();
+                }
+                host.Config.GroupStyle = GroupCardStyle.Tinted;
+                vm.ConfigReplaced();
+
+                // Elementgröße je Gruppe: nur diese Gruppe groß, das Panel bleibt
+                if (vm.AllGroups.FirstOrDefault(g => g.CanChangeLayout) is { } sizeGroup)
+                {
+                    var panelSize = vm.ItemSize;
+                    sizeGroup.SetItemSizeCommand.Execute("Large");
+                    if (!sizeGroup.IsLarge || vm.ItemSize != panelSize) Fail("Elementgröße je Gruppe: wird nicht nur für die Gruppe übernommen");
+                    if (vm.AllGroups.Any(g => !ReferenceEquals(g, sizeGroup) && g.CanChangeLayout && g.IsLarge && panelSize != ItemSize.Large))
+                        Fail("Elementgröße je Gruppe: färbt auf andere Gruppen ab");
+                    await Settle();
+                    if (host.Window.Content is FrameworkElement sizeRoot) Screenshot(sizeRoot, "panel-gruppe-gross");
+                    sizeGroup.SetItemSizeCommand.Execute("panel");
+                    if (sizeGroup.ItemSizeSetting != "panel") Fail("Elementgröße je Gruppe: „Wie das Panel“ setzt nicht zurück");
+                }
+
                 // Geteiltes Kontextmenü: folgt dem jeweiligen Eintrag und vergisst sein Ziel beim Schließen
                 var sharedMenu = host.Window.ItemMenu;
                 foreach (var menuItem in vm.VisibleItems.Where(i => !i.IsSingleClick).Take(2).ToList())
@@ -393,7 +428,7 @@ public sealed partial class SelfTestController : AppController
                 cfg.PanelWidth = 560;
                 // Klarglas ohne und mit Milchglas; alte Varianten (Acrylic) laufen als Klarglas; Glas mit eigenem Weichzeichner
                 foreach (var (b, frost, name) in new[] { (PanelBackdrop.Clear, 0, "klarglas"), (PanelBackdrop.Clear, 30, "milchglas"),
-                             (PanelBackdrop.Acrylic, 60, "alt-acrylic"), (PanelBackdrop.Glass, 30, "glas") })
+                             (PanelBackdrop.Acrylic, 60, "alt-acrylic"), (PanelBackdrop.Glass, 30, "glas"), (PanelBackdrop.Solid, 30, "vollton") })
                 {
                     cfg.Backdrop = b;
                     cfg.Frost = frost;
@@ -412,8 +447,11 @@ public sealed partial class SelfTestController : AppController
                             Fail($"Glas: Tönung {tint} folgt nicht der Panelfarbe {panelBrush?.Color}");
                         if (Math.Abs(tint.A - 255 * 0.4) > 3) Fail($"Glas: Tönung mit Deckkraft {tint.A / 2.55:0} % statt 40 %");
                     }
+                    // Vollton: deckend, ohne Milchglas – egal, was Deckkraft und Milchglas-Regler sagen
+                    if (expected == PanelBackdrop.Solid && host.Window.TryFindResource("Bg.Panel") is System.Windows.Media.SolidColorBrush solidBrush && solidBrush.Color.A != 255)
+                        Fail($"Vollton: Panelfläche mit Deckkraft {solidBrush.Color.A / 2.55:0} % statt deckend");
                     // Glas: die Helligkeitsschicht liegt im Weichzeichner, nicht in WPF
-                    var wantAlpha = ThemeService.IsHighContrast || host.Window.GlassActive ? 0 : PanelBackdrops.FrostBrightness(frost, host.ViewModel.IsDarkSurface);
+                    var wantAlpha = ThemeService.IsHighContrast || host.Window.GlassActive || expected == PanelBackdrop.Solid ? 0 : PanelBackdrops.FrostBrightness(frost, host.ViewModel.IsDarkSurface);
                     if (Math.Abs(host.Window.FrostBrightnessAlpha - wantAlpha) > 0.01)
                         Fail($"Milchglas {frost}: Helligkeitsschicht {host.Window.FrostBrightnessAlpha:P0} statt {wantAlpha:P0}");
                     if (host.Window.AllowsTransparency == PanelBackdrops.NeedsSystemWindow(expected)) Fail($"Hintergrund {b}: falsche Fensterart");

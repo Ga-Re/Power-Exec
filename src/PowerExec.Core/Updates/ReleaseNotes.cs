@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 24, 0), "Neue Designs, Vollton und ruhigere Gruppen", new[]
+        {
+            "Designvorlagen einklappbar und erweitert: Glas schaltet jetzt den echten Weichzeichner ein (Blur 60, Sättigung 125 %), neu sind OLED, Nordic Frost, Fluent Clean und Espresso – und eigene Designs lassen sich speichern",
+            "Neuer Hintergrund „Vollton“ (deckend, ohne Transparenz); unter Panelfarbe wählst du, ob Hover-Zone, Auswahl und Knöpfe der Windows-Akzentfarbe, einer eigenen Akzentfarbe oder der Panelfarbe folgen",
+            "Gruppen-Stil „Akzentstreifen“: ruhige, halbtransparente Karten mit Farbstreifen; Kacheln schweben dezent, Typ-Kürzel als Pillen; Elementgröße je Gruppe im Gruppenmenü; der fixierte Gruppenkopf sitzt genau auf der Gruppe",
+            "Einstellungen aufgeräumt: Mini-Dock, Hover-Zone und Panel-Abmessungen als Ausklappbereiche, Scrollbalken nur beim Scrollen; ein angeheftetes, per Klick eingefahrenes Panel fährt beim Darüberfahren wieder aus"
+        }),
         new ReleaseNote(new Version(0, 23, 0), "Rechnergruppen aus Listen, OU-Auswahl und Export", new[]
         {
             "Rechnergruppen: Quelle „Dynamisch aus Liste“ – eine Namensliste nach Namen oder eine CSV nach beliebigen Spalten filtern; die Liste wird beim Synchronisieren neu gelesen. „Gruppe aus Liste importieren …“ legt so eine Gruppe direkt an",

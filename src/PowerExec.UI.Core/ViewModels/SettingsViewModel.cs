@@ -641,9 +641,14 @@ public sealed class SettingsViewModel : ObservableObject
         new("look", "Darstellung", "Animation", "ausfahren sanft schnell"),
         new("look", "Darstellung", "Symbole anzeigen", "icons favicon programmsymbol"),
         new("look", "Darstellung", "Liste oder Raster", "kacheln ansicht"),
+        new("look", "Darstellung", "Gruppen-Stil", "akzentstreifen karten farbig fluent gruppenfarbe"),
         new("look", "Darstellung", "Elementgröße", "klein mittel groß kompakt"),
         new("look", "Darstellung", "Panelfarbe und Deckkraft", "farbe transparenz"),
-        new("look", "Darstellung", "Panelgröße", "breite höhe lage"),
+        new("look", "Darstellung", "Panel-Abmessungen", "breite höhe lage größe"),
+        new("look", "Darstellung", "Designvorlagen", "vorlage design oled nordic espresso fluent glas eigenes design speichern"),
+        new("look", "Darstellung", "Akzentfarbe", "akzent windows farbe hover-zone"),
+        new("look", "Darstellung", "Mini-Dock", "dock favoriten leiste"),
+        new("look", "Darstellung", "Hintergrund", "vollton deckend klarglas glas milchglas"),
         new("look", "Darstellung", "Hover-Zone", "rand monitor breite länge auslöser links rechts oben unten"),
         new("behavior", "Verhalten", "Verweilzeit bis zum Ausfahren", "hover verzögerung"),
         new("behavior", "Verhalten", "Einklappen nach Verlassen", "schließen verzögerung"),
@@ -658,7 +663,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
         new("exec", "PowerShell", "Beim Start nach dem Profil fragen", "profil auswahl fragen"),
         new("machines", "Rechnergruppen", "Dynamische Gruppen aus dem AD", "active directory regeln filter ldap dynamisch"),
-        new("look", "Darstellung", "Stärke des Weichzeichners (Acrylic)", "transparenz blur milchglas acrylic"),
+        new("look", "Darstellung", "Blur-Stärke und Sättigung (Glas)", "transparenz blur milchglas weichzeichner"),
         new("exec", "PowerShell", "Editor", "vscode ise notepad"),
         new("remote", "Remote", "PowerShell bei Remote", "winrm 5.1 7"),
         new("remote", "Remote", "HTTPS (Port 5986)", "ssl winrm"),
@@ -744,31 +749,65 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool IsHighContrast => _app.Theme.IsHighContrast;
 
-    /// <summary>Designvorlagen: Design, Panelfarbe, Deckkraft, Acrylic und Akzent mit einem Klick.</summary>
-    public IReadOnlyList<DesignPresetChoice> DesignPresets => Appearance.Presets.Select(p => new DesignPresetChoice(p,
-        CurrentPresetKey == p.Key, new RelayCommand(() => ApplyPreset(p)))).ToList();
+    /// <summary>Designvorlagen und eigene Designs: Design, Panelfarbe, Deckkraft, Hintergrund, Milchglas und Akzent mit einem Klick.</summary>
+    public IReadOnlyList<DesignPresetChoice> DesignPresets
+    {
+        get
+        {
+            var current = CurrentPreset?.Key;
+            return Appearance.All(_s).Select(p => new DesignPresetChoice(p, current == p.Key, new RelayCommand(() => ApplyPreset(p)),
+                p.IsCustom ? new RelayCommand(() => DeleteDesign(p)) : null)).ToList();
+        }
+    }
 
-    private string? CurrentPresetKey
+    private DesignPreset? CurrentPreset
     {
         get
         {
             var probe = SettingsStore.Clone(_s);
             probe.Panels = new List<PanelConfig> { Panel.ToConfig() };
-            return Appearance.Current(probe)?.Key;
+            return Appearance.Current(probe);
         }
     }
+
+    /// <summary>Kopfzeile der Designvorlagen: welche gerade aktiv ist.</summary>
+    public string CurrentPresetText => CurrentPreset is { } p ? "Aktuell: " + p.Name : "Aktuell: eigene Einstellungen";
+
+    private bool _presetsExpanded;
+    public bool PresetsExpanded { get => _presetsExpanded; set => Set(ref _presetsExpanded, value); }
 
     private void ApplyPreset(DesignPreset p)
     {
         Theme = p.Theme;
         UseWindowsAccent = p.WindowsAccent;
-        Panel.PanelColor = p.PanelColor;
-        Panel.PanelOpacity = p.Opacity;
-        if (p.Frosted) Panel.Frost = Appearance.FrostedPreset;
+        Panel.ApplyDesign(p);
         RaisePresets();
     }
 
-    private void RaisePresets() => OnPropertyChanged(nameof(DesignPresets));
+    /// <summary>Aktuelles Aussehen unter einem Namen als eigenes Design speichern.</summary>
+    public ICommand SaveDesignCommand => _saveDesign ??= new RelayCommand(() =>
+    {
+        var name = _app.Dialogs.Ask("Design speichern", "Name für das aktuelle Design (Farbe, Hintergrund, Deckkraft, Milchglas, Akzent):",
+            "Mein Design", "Speichern", n => n.Trim().Length == 0 ? "Bitte einen Namen eingeben."
+                : Appearance.All(_s).Any(d => d.IsCustom && d.Name.Equals(n.Trim(), StringComparison.OrdinalIgnoreCase)) ? "Ein eigenes Design mit diesem Namen gibt es schon." : null);
+        if (name == null) return;
+        _s.CustomDesigns.Add(Appearance.Capture(_s, Panel.ToConfig(), name));
+        RaisePresets();
+    });
+    private ICommand? _saveDesign;
+
+    private void DeleteDesign(DesignPreset p)
+    {
+        if (!_app.Dialogs.Confirm($"Das eigene Design „{p.Name}“ löschen?", "Design löschen", destructive: true, owner: _app.SettingsDialogOwner)) return;
+        _s.CustomDesigns.RemoveAll(d => d.Key == p.Key);
+        RaisePresets();
+    }
+
+    private void RaisePresets()
+    {
+        OnPropertyChanged(nameof(DesignPresets));
+        OnPropertyChanged(nameof(CurrentPresetText));
+    }
 
     public ICommand ShowWelcomeCommand { get; }
 
@@ -1578,8 +1617,18 @@ public sealed class SettingsViewModel : ObservableObject
 }
 
 /// <summary>Kachel einer Designvorlage in den Einstellungen.</summary>
-public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICommand ApplyCommand)
+public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICommand ApplyCommand, ICommand? DeleteCommand = null)
 {
+    public bool IsCustom => Preset.IsCustom;
+    /// <summary>Akzent der Vorschau: eigene Akzentfarbe der Vorlage, sonst die aktuelle Akzentfarbe.</summary>
+    public ArgbColor? AccentSwatch => ArgbColor.FromHex(Preset.AccentColor, 255);
+    /// <summary>Kurzinfo zum Hintergrund (Glas, Vollton …) für die Kachel.</summary>
+    public string BackdropText => Preset.Backdrop switch
+    {
+        PanelBackdrop.Glass => "Glas",
+        PanelBackdrop.Solid => "Vollton",
+        _ => Preset.Opacity < 100 ? $"Klarglas {Preset.Opacity} %" : "Deckend"
+    };
     public string Name => Preset.Name;
     public string Description => Preset.Description;
     /// <summary>Vorschau: Panelfarbe bzw. Grundfarbe des Designs.</summary>

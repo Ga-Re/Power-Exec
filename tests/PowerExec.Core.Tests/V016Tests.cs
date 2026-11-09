@@ -202,8 +202,8 @@ public class V016Tests
         s.Panels.Add(new PanelConfig());
         var glass = Appearance.Presets.Single(p => p.Key == "glass");
         Appearance.Apply(s, glass);
-        Assert.Equal(Appearance.FrostedPreset, s.Panels[0].Frost);
-        Assert.Equal(PanelBackdrop.Clear, s.Panels[0].Backdrop);
+        Assert.Equal(glass.Frost, s.Panels[0].Frost);
+        Assert.Equal(PanelBackdrop.Glass, s.Panels[0].Backdrop); // echtes Glas, nicht Klarglas
         Assert.True(s.UseWindowsAccent);
         Assert.Equal("glass", Appearance.Current(s)?.Key);
         s.Panels[0].PanelOpacity = 60;

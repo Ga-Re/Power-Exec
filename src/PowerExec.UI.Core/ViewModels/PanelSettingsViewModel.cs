@@ -95,11 +95,11 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     // ---- Größe ------------------------------------------------------------
 
-    public int PanelWidth { get => _c.PanelWidth; set { _c.PanelWidth = value; OnPropertyChanged(); } }
+    public int PanelWidth { get => _c.PanelWidth; set { _c.PanelWidth = value; OnPropertyChanged(); OnPropertyChanged(nameof(SizeSummary)); } }
     public int PanelHeightPercent
     {
         get => _c.PanelHeightPercent;
-        set { _c.PanelHeightPercent = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsPartialHeight)); }
+        set { _c.PanelHeightPercent = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsPartialHeight)); OnPropertyChanged(nameof(SizeSummary)); }
     }
     public bool IsPartialHeight => _c.PanelHeightPercent < 100;
     public PanelAlignment PanelAlignment { get => _c.PanelAlignment; set { _c.PanelAlignment = value; OnPropertyChanged(); } }
@@ -266,7 +266,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public string? ColorError => _colorError;
 
     /// <summary>Vorschau der Panelfarbe mit Deckkraft; null = Farbe des Designs.</summary>
-    public ArgbColor? PreviewColor => ArgbColor.FromHex(_c.PanelColor, (byte)(255 * _c.PanelOpacity / 100));
+    public ArgbColor? PreviewColor => ArgbColor.FromHex(_c.PanelColor, (byte)(255 * _c.EffectiveOpacity / 100));
 
     public string PreviewText => PanelColors.TryParse(_c.PanelColor, out var c)
         ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
@@ -282,7 +282,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public static IReadOnlyList<KeyValuePair<PanelBackdrop, string>> BackdropChoices { get; } = new[]
     {
         new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Clear, PanelBackdrops.Label(PanelBackdrop.Clear)),
-        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Glass, PanelBackdrops.Label(PanelBackdrop.Glass))
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Glass, PanelBackdrops.Label(PanelBackdrop.Glass)),
+        new KeyValuePair<PanelBackdrop, string>(PanelBackdrop.Solid, PanelBackdrops.Label(PanelBackdrop.Solid))
     };
 
     public IReadOnlyList<KeyValuePair<PanelBackdrop, string>> Backdrops => BackdropChoices;
@@ -296,6 +297,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
     {
         get
         {
+            if (_c.EffectiveBackdropSetting == PanelBackdrop.Solid)
+                return "Vollton: das Panel ist deckend in seiner Farbe – ohne Transparenz, Milchglas oder Weichzeichner.";
             if (_c.EffectiveBackdropSetting != PanelBackdrop.Glass)
                 return "Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.";
             if (EffectiveBackdrop == PanelBackdrop.Glass)
@@ -331,22 +334,85 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public bool ShowFrost => PanelBackdrops.SupportsFrost(EffectiveBackdrop);
 
+    /// <summary>Deckkraft-Regler (bei Vollton ohne Wirkung, daher ausgeblendet).</summary>
+    public bool ShowOpacity => EffectiveBackdrop != PanelBackdrop.Solid;
+
     /// <summary>Milchglas 0–60 (0 = aus).</summary>
     public int Frost { get => _c.Frost; set { _c.Frost = Math.Clamp(value, 0, 60); OnPropertyChanged(); } }
 
     private void RaiseBackdrop()
     {
         foreach (var p in new[] { nameof(Backdrop), nameof(BackdropDescription), nameof(ShowGlass), nameof(FrostDescription), nameof(ShowFrost),
-                     nameof(PreviewColor), nameof(OpacityDescription) }) OnPropertyChanged(p);
+                     nameof(PreviewColor), nameof(OpacityDescription), nameof(ShowOpacity) }) OnPropertyChanged(p);
     }
 
-    /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten.</summary>
-    public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); } }
+    /// <summary>Mini-Dock mit den Favoriten am Rand ein- oder ausschalten; Einschalten klappt die Anzahl auf.</summary>
+    public bool ShowDock { get => _c.ShowDock; set { _c.ShowDock = value; OnPropertyChanged(); if (value) DockExpanded = true; } }
+
+    private bool _dockExpanded, _sizeExpanded, _hotZoneExpanded;
+    public bool DockExpanded { get => _dockExpanded; set => Set(ref _dockExpanded, value); }
+    public bool SizeExpanded { get => _sizeExpanded; set => Set(ref _sizeExpanded, value); }
+    public bool HotZoneExpanded { get => _hotZoneExpanded; set => Set(ref _hotZoneExpanded, value); }
+
+    /// <summary>Kopfzeile „Panel-Abmessungen“: z. B. „420 px × 100 %“.</summary>
+    public string SizeSummary => $"{_c.PanelWidth} px × {_c.PanelHeightPercent} %";
+
+    // ---- Eigene Akzentfarbe (nur ohne „Akzentfarbe von Windows“) ----------------------------
+
+    /// <summary>Akzentfarbe des Panels; leer = aus der Panelfarbe abgeleitet.</summary>
+    public string AccentColor
+    {
+        get => _c.AccentColor;
+        set
+        {
+            var v = value ?? string.Empty;
+            if (v.Length > 0 && PanelColors.TryParse(v, out var c)) v = c.Hex;
+            _c.AccentColor = v;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AccentPreview));
+            OnPropertyChanged(nameof(AccentText));
+            OnPropertyChanged(nameof(HasAccentColor));
+        }
+    }
+
+    public bool HasAccentColor => _c.AccentColor.Length > 0;
+    public ArgbColor? AccentPreview => ArgbColor.FromHex(_c.AccentColor, 255) ?? ArgbColor.FromHex(_c.PanelColor, 255);
+    public string AccentText => HasAccentColor ? _c.AccentColor : "Aus der Panelfarbe";
+
+    public System.Windows.Input.ICommand PickAccentCommand => _pickAccent ??= new RelayCommand(() =>
+    {
+        var picked = _app.Dialogs.PickColor("Akzentfarbe", _c.AccentColor.Length > 0 ? _c.AccentColor : _c.PanelColor, _app.SettingsDialogOwner);
+        if (picked != null) AccentColor = picked;
+    });
+    public System.Windows.Input.ICommand ResetAccentCommand => _resetAccent ??= new RelayCommand(() => AccentColor = string.Empty);
+    private System.Windows.Input.ICommand? _pickAccent, _resetAccent;
+
+    /// <summary>Designvorlage übernehmen (Farbe, Deckkraft, Hintergrund, Milchglas, Weichzeichner, Akzent).</summary>
+    public void ApplyDesign(DesignPreset p)
+    {
+        Appearance.Apply(_c, p);
+        _customColor = _c.PanelColor;
+        _manualMode = _c.PanelColor.Length > 0;
+        foreach (var name in new[] { nameof(PanelColor), nameof(CustomColor), nameof(PanelOpacity), nameof(Frost), nameof(GlassBlur), nameof(GlassSaturation),
+                     nameof(PreviewText), nameof(ColorMode), nameof(ShowManualColors) })
+            OnPropertyChanged(name);
+        AccentColor = _c.AccentColor;
+        RaiseBackdrop();
+        foreach (var c in ColorPresets.Concat(PanelColorChoices).Concat(WindowsColors).Concat(RecentColors)) c.Refresh();
+    }
 
     /// <summary>Anzahl der Favoriten im Mini-Dock.</summary>
     public int DockCount { get => _c.DockCount; set { _c.DockCount = Math.Clamp(value, 1, 20); OnPropertyChanged(); } }
 
     public bool ShowJumpRail { get => _c.ShowJumpRail; set { _c.ShowJumpRail = value; OnPropertyChanged(); } }
+
+    /// <summary>Aussehen der Gruppen: getönte Karten oder Fluent-Karten mit Akzentstreifen.</summary>
+    public GroupCardStyle GroupStyle { get => _c.GroupStyle; set { _c.GroupStyle = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<GroupCardStyle, string>> GroupStyles { get; } = new[]
+    {
+        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Accent, "Akzentstreifen (Fluent-Karten)"),
+        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Tinted, "Farbige Karten")
+    };
     public bool ShowScrollBar { get => _c.ShowScrollBar; set { _c.ShowScrollBar = value; OnPropertyChanged(); } }
 
     /// <summary>Tastenkürzel öffnet die Suche in der Bildschirmmitte statt des Panels.</summary>

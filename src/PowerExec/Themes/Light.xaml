@@ -49,17 +49,28 @@
     <SolidColorBrush x:Key="Excl.Bg" Color="#FDE7E9"/>
     <SolidColorBrush x:Key="Excl.Border" Color="#F1B8BF"/>
     <SolidColorBrush x:Key="Excl.Text" Color="#A4262C"/>
-    <SolidColorBrush x:Key="Badge.PowerShell.Bg" Color="#DCEBFA"/>
-    <SolidColorBrush x:Key="Badge.PowerShell.Fg" Color="#0B4A85"/>
-    <SolidColorBrush x:Key="Badge.Batch.Bg" Color="#E6E6E6"/>
-    <SolidColorBrush x:Key="Badge.Batch.Fg" Color="#333333"/>
-    <SolidColorBrush x:Key="Badge.Executable.Bg" Color="#D9F2E4"/>
-    <SolidColorBrush x:Key="Badge.Executable.Fg" Color="#0B5A33"/>
-    <SolidColorBrush x:Key="Badge.ConsoleSnapIn.Bg" Color="#EBE1FA"/>
-    <SolidColorBrush x:Key="Badge.ConsoleSnapIn.Fg" Color="#4B2A80"/>
-    <SolidColorBrush x:Key="Badge.Shortcut.Bg" Color="#FBE7D3"/>
-    <SolidColorBrush x:Key="Badge.Shortcut.Fg" Color="#7A3E00"/>
-    <SolidColorBrush x:Key="Badge.Other.Bg" Color="#E6E6E6"/>
-    <SolidColorBrush x:Key="Badge.Other.Fg" Color="#333333"/>
     <Color x:Key="ShadowColor">#808080</Color>
+    <SolidColorBrush x:Key="Badge.PowerShell.Bg" Color="#2E3B82F6"/>
+    <SolidColorBrush x:Key="Badge.PowerShell.Fg" Color="#0B4A85"/>
+    <SolidColorBrush x:Key="Badge.PowerShell.Border" Color="#663B82F6"/>
+    <SolidColorBrush x:Key="Badge.Batch.Bg" Color="#1F808080"/>
+    <SolidColorBrush x:Key="Badge.Batch.Fg" Color="#333333"/>
+    <SolidColorBrush x:Key="Badge.Batch.Border" Color="#4D808080"/>
+    <SolidColorBrush x:Key="Badge.Executable.Bg" Color="#2E34C27A"/>
+    <SolidColorBrush x:Key="Badge.Executable.Fg" Color="#0B5A33"/>
+    <SolidColorBrush x:Key="Badge.Executable.Border" Color="#6634C27A"/>
+    <SolidColorBrush x:Key="Badge.ConsoleSnapIn.Bg" Color="#2E9B6BE0"/>
+    <SolidColorBrush x:Key="Badge.ConsoleSnapIn.Fg" Color="#4B2A80"/>
+    <SolidColorBrush x:Key="Badge.ConsoleSnapIn.Border" Color="#669B6BE0"/>
+    <SolidColorBrush x:Key="Badge.Shortcut.Bg" Color="#2EE08A3B"/>
+    <SolidColorBrush x:Key="Badge.Shortcut.Fg" Color="#7A3E00"/>
+    <SolidColorBrush x:Key="Badge.Shortcut.Border" Color="#66E08A3B"/>
+    <SolidColorBrush x:Key="Badge.Other.Bg" Color="#1F808080"/>
+    <SolidColorBrush x:Key="Badge.Other.Fg" Color="#333333"/>
+    <SolidColorBrush x:Key="Badge.Other.Border" Color="#4D808080"/>
+    <!-- Panel: schwebende Kacheln und Fluent-Gruppenkarten -->
+    <SolidColorBrush x:Key="Bg.Tile" Color="#08000000"/>
+    <SolidColorBrush x:Key="Border.TileHover" Color="#24000000"/>
+    <SolidColorBrush x:Key="Bg.GroupCard" Color="#99FFFFFF"/>
+    <SolidColorBrush x:Key="Border.GroupCard" Color="#1A000000"/>
 </ResourceDictionary>
