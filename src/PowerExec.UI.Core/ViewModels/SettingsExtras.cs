@@ -36,8 +36,184 @@ public sealed class MachineGroupViewModel : ObservableObject
         _lastSyncError = group.LastSyncError;
         foreach (var b in group.AdQuery?.Blocks ?? new List<AdRuleBlock>()) Blocks.Add(new AdBlockViewModel(this, b));
         AddBlockCommand = new RelayCommand(() => { Blocks.Add(new AdBlockViewModel(this, NewBlock())); RulesChanged(); });
-        SyncNowCommand = new RelayCommand(() => _ = SyncNowAsync(), () => !_searching && _isDynamic);
+        SyncNowCommand = new RelayCommand(() => _ = SyncNowAsync(), () => !_searching && (_isDynamic || _isList));
+        ExportCommand = new RelayCommand(Export);
+        PickOuCommand = new RelayCommand(() => _ = PickOuAsync(), () => !_searching);
+
+        // Dynamisch aus einer Liste (Text oder CSV mit Filtern)
+        _isList = group.ListQuery != null;
+        _listPath = group.ListQuery?.Path ?? string.Empty;
+        _nameColumn = group.ListQuery?.NameColumn ?? string.Empty;
+        foreach (var f in group.ListQuery?.Filters ?? new List<ListFilter>()) ListFilters.Add(new ListFilterViewModel(this, f));
+        AddFilterCommand = new RelayCommand(() => { ListFilters.Add(new ListFilterViewModel(this, new ListFilter { Column = DefaultFilterColumn })); ListChanged(); });
+        ChooseListCommand = new RelayCommand(ChooseList);
+        if (_isList) LoadTable();
         RulesChanged();
+    }
+
+    // ---- Quelle: feste Liste, dynamisch aus einer Liste, dynamisch aus dem AD -------------
+
+    public static IReadOnlyList<KeyValuePair<string, string>> SourceChoices { get; } = new[]
+    {
+        new KeyValuePair<string, string>("static", "Feste Liste"),
+        new KeyValuePair<string, string>("list", "Dynamisch aus Liste"),
+        new KeyValuePair<string, string>("ad", "Dynamisch aus AD")
+    };
+
+    public IReadOnlyList<KeyValuePair<string, string>> Sources => SourceChoices;
+
+    /// <summary>„static“, „list“ oder „ad“.</summary>
+    public string Source
+    {
+        get => _isDynamic ? "ad" : _isList ? "list" : "static";
+        set
+        {
+            var v = value ?? "static";
+            if (v == Source) return;
+            IsListSource = v == "list";
+            IsDynamic = v == "ad";
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Synchronisieren in der Kopfzeile (dynamische Gruppen).</summary>
+    public bool CanSync => _isDynamic || _isList;
+
+    public ICommand ExportCommand { get; }
+    public ICommand PickOuCommand { get; }
+
+    // ---- Dynamisch aus einer Liste ---------------------------------------------------------
+
+    private bool _isList;
+    private string _listPath;
+    private string _nameColumn;
+    private MachineTable? _table;
+    private string? _listError;
+
+    public bool IsListSource
+    {
+        get => _isList;
+        set
+        {
+            if (!Set(ref _isList, value)) return;
+            if (value) LoadTable();
+            foreach (var p in new[] { nameof(IsStatic), nameof(CanSync), nameof(Source), nameof(Preview), nameof(SyncText) }) OnPropertyChanged(p);
+            CommandRequery.Invalidate();
+        }
+    }
+
+    /// <summary>Pfad der Liste; beim Synchronisieren wird sie neu gelesen.</summary>
+    public string ListPath
+    {
+        get => _listPath;
+        set { if (Set(ref _listPath, value ?? string.Empty)) LoadTable(); }
+    }
+
+    /// <summary>CSV: Spalte mit den Rechnernamen.</summary>
+    public string NameColumn
+    {
+        get => _table?.NameColumnFor(_nameColumn) ?? _nameColumn;
+        set { if (Set(ref _nameColumn, value ?? string.Empty)) ListChanged(); }
+    }
+
+    /// <summary>Spalten der Liste (reine Namensliste: nur „Name“).</summary>
+    public IReadOnlyList<string> ListColumns => _table?.Columns ?? new[] { MachineTable.NameOnlyColumn };
+    public bool IsCsv => _table?.IsCsv == true;
+    public System.Collections.ObjectModel.ObservableCollection<ListFilterViewModel> ListFilters { get; } = new();
+    public ICommand AddFilterCommand { get; }
+    public ICommand ChooseListCommand { get; }
+
+    private string DefaultFilterColumn => _table?.NameColumnFor(_nameColumn) ?? MachineTable.NameOnlyColumn;
+
+    /// <summary>Art der Liste und Zahl der Treffer mit den aktuellen Filtern.</summary>
+    public string ListSummary => _listError != null ? "Liste nicht lesbar: " + _listError
+        : _table == null ? "Noch keine Liste gewählt."
+        : (_table.IsCsv ? $"CSV mit {_table.Columns.Count} Spalten und {_table.Rows.Count} Zeilen" : $"Namensliste mit {_table.Rows.Count} Einträgen")
+          + $" – mit den Filtern {ListMatches.Count} Rechner.";
+
+    private IReadOnlyList<string> ListMatches => _table?.Apply(ListQuery()) ?? Array.Empty<string>();
+
+    public ListGroupQuery ListQuery() => new()
+    {
+        Path = _listPath.Trim(), NameColumn = (_table is { IsCsv: true } ? NameColumn : _nameColumn).Trim(), Filters = ListFilters.Select(f => f.ToFilter()).ToList()
+    };
+
+    private void ChooseList()
+    {
+        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*", "Liste für die Rechnergruppe wählen");
+        if (file != null) ListPath = file;
+    }
+
+    /// <summary>Liste einlesen (Spalten, Vorschau); Fehler stehen in der Zusammenfassung.</summary>
+    private void LoadTable()
+    {
+        _table = null;
+        _listError = null;
+        if (_listPath.Trim().Length > 0)
+        {
+            try { _table = MachineTable.Parse(File.ReadAllText(_listPath.Trim())); }
+            catch (Exception ex) { _listError = ex.Message; }
+        }
+        OnPropertyChanged(nameof(ListColumns));
+        OnPropertyChanged(nameof(IsCsv));
+        OnPropertyChanged(nameof(NameColumn));
+        ListChanged();
+    }
+
+    /// <summary>Filter oder Namensspalte geändert: Vorschau nachziehen.</summary>
+    internal void ListChanged()
+    {
+        foreach (var p in new[] { nameof(ListSummary), nameof(Preview) }) OnPropertyChanged(p);
+        if (_isList && _table != null) Machines = string.Join(Environment.NewLine, ListMatches);
+    }
+
+    internal void RemoveFilter(ListFilterViewModel f)
+    {
+        ListFilters.Remove(f);
+        ListChanged();
+    }
+
+    /// <summary>Liste oder Spaltenwahl aus „Gruppe aus Liste importieren“ setzen.</summary>
+    internal void UseList(string path)
+    {
+        IsListSource = true;
+        ListPath = path;
+        IsExpanded = true;
+    }
+
+    private void Export()
+    {
+        var file = _app.Dialogs.SaveFile("CSV (*.csv)|*.csv|Text (*.txt)|*.txt", $"{(_name.Trim().Length > 0 ? _name.Trim() : "Rechnergruppe")}.csv",
+            "Rechnergruppe exportieren");
+        if (file == null) return;
+        try
+        {
+            File.WriteAllText(file, MachineGroupExport.ToFileText(ToGroup(), file.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)), new System.Text.UTF8Encoding(true));
+            Status = $"{CountText} exportiert nach {file}.";
+        }
+        catch (Exception ex)
+        {
+            Status = "Export fehlgeschlagen: " + ex.Message;
+        }
+    }
+
+    /// <summary>OU-Baum aus dem AD laden und eine OU für „Ab OU“ wählen lassen.</summary>
+    private async Task PickOuAsync()
+    {
+        IsSearching = true;
+        Status = "Lese OUs aus dem Active Directory …";
+        try
+        {
+            var roots = OuTree.Build(await _app.FindOrganizationalUnitsAsync());
+            Status = string.Empty;
+            if (roots.Count == 0) { Status = "Keine OUs gefunden."; return; }
+            if (_app.Dialogs.PickOrganizationalUnit(roots, _searchBase, _app.SettingsDialogOwner) is { } dn) SearchBase = dn;
+        }
+        catch (Exception ex)
+        {
+            Status = "OUs nicht lesbar: " + ex.Message;
+        }
+        finally { IsSearching = false; }
     }
 
     // ---- Dynamische Gruppe: Regeln für das Active Directory -----------------------
@@ -56,11 +232,13 @@ public sealed class MachineGroupViewModel : ObservableObject
             if (!Set(ref _isDynamic, value)) return;
             if (value && Blocks.Count == 0) Blocks.Add(new AdBlockViewModel(this, NewBlock()));
             OnPropertyChanged(nameof(IsStatic));
+            OnPropertyChanged(nameof(CanSync));
+            OnPropertyChanged(nameof(Source));
             RulesChanged();
             CommandRequery.Invalidate();
         }
     }
-    public bool IsStatic => !_isDynamic;
+    public bool IsStatic => !_isDynamic && !_isList;
 
     public string SearchBase { get => _searchBase; set { if (Set(ref _searchBase, value ?? string.Empty)) RulesChanged(); } }
     public System.Collections.ObjectModel.ObservableCollection<AdBlockViewModel> Blocks { get; } = new();
@@ -90,20 +268,22 @@ public sealed class MachineGroupViewModel : ObservableObject
     /// <summary>„Zuletzt aktualisiert …“ bzw. Fehler der letzten Synchronisierung.</summary>
     public string SyncText => _lastSyncError != null
         ? $"Letzte Aktualisierung fehlgeschlagen: {_lastSyncError} – die bisherige Liste ({CountText}) gilt weiter."
-        : _lastSyncUtc is { } t ? $"Zuletzt aktualisiert {t.ToLocalTime():dd.MM. HH:mm} · {CountText}" : "Noch nicht aus dem AD gelesen.";
+        : _lastSyncUtc is { } t ? $"Zuletzt aktualisiert {t.ToLocalTime():dd.MM. HH:mm} · {CountText}"
+        : _isList ? "Noch nicht synchronisiert – die Liste wird beim Start und regelmäßig neu gelesen." : "Noch nicht aus dem AD gelesen.";
 
     private async Task SyncNowAsync()
     {
         IsSearching = true;
-        Status = "Lese Rechner aus dem Active Directory …";
+        Status = _isList ? "Lese die Liste …" : "Lese Rechner aus dem Active Directory …";
         try
         {
+            if (_isList) LoadTable(); // Datei kann sich geändert haben
             var g = ToGroup();
             var names = await _app.SyncMachineGroupAsync(g);
             _lastSyncUtc = g.LastSyncUtc;
             _lastSyncError = g.LastSyncError;
             if (names != null) Machines = string.Join(Environment.NewLine, names);
-            Status = names == null ? string.Empty : names.Count == 0 ? "Keine Rechner gefunden – Regeln prüfen." : $"{names.Count} Rechner gefunden.";
+            Status = names == null ? string.Empty : names.Count == 0 ? (_isList ? "Keine Rechner – Filter prüfen." : "Keine Rechner gefunden – Regeln prüfen.") : $"{names.Count} Rechner gefunden.";
             OnPropertyChanged(nameof(SyncText));
         }
         finally { IsSearching = false; }
@@ -112,7 +292,7 @@ public sealed class MachineGroupViewModel : ObservableObject
     /// <summary>Nach einer Synchronisierung im Hintergrund: Liste und Stand übernehmen (Regeln bleiben, wie sie im Fenster stehen).</summary>
     internal void ApplySynced(MachineGroup g)
     {
-        if (!_isDynamic || g.AdQuery == null) return;
+        if (!(_isDynamic && g.AdQuery != null) && !(_isList && g.ListQuery != null)) return;
         _lastSyncUtc = g.LastSyncUtc;
         _lastSyncError = g.LastSyncError;
         Machines = string.Join(Environment.NewLine, g.Machines);
@@ -129,6 +309,7 @@ public sealed class MachineGroupViewModel : ObservableObject
         get
         {
             if (_isDynamic) return "AD: " + RulesSummary;
+            if (_isList) return "Liste: " + (_listPath.Trim().Length > 0 ? Path.GetFileName(_listPath.Trim()) : "–") + (ListFilters.Count > 0 ? $" · {ListFilters.Count} Filter" : string.Empty);
             var names = Parse();
             return names.Count == 0 ? "leer" : string.Join(", ", names.Take(6)) + (names.Count > 6 ? $" … (+{names.Count - 6})" : string.Empty);
         }
@@ -197,9 +378,48 @@ public sealed class MachineGroupViewModel : ObservableObject
     {
         Name = _name.Trim(), Machines = Parse().ToList(),
         AdQuery = _isDynamic ? Query() : null,
-        LastSyncUtc = _isDynamic ? _lastSyncUtc : null,
-        LastSyncError = _isDynamic ? _lastSyncError : null
+        ListQuery = _isList && !_isDynamic ? ListQuery() : null,
+        LastSyncUtc = _isDynamic || _isList ? _lastSyncUtc : null,
+        LastSyncError = _isDynamic || _isList ? _lastSyncError : null
     };
+}
+
+/// <summary>Filter einer Listengruppe: [Spalte] [Vergleich] [Wert].</summary>
+public sealed class ListFilterViewModel : ObservableObject
+{
+    private readonly MachineGroupViewModel _group;
+    private string _column;
+    private AdOperator _operator;
+    private string _value;
+
+    public ListFilterViewModel(MachineGroupViewModel group, ListFilter filter)
+    {
+        _group = group;
+        _column = filter.Column;
+        _operator = filter.Operator;
+        _value = filter.Value;
+        RemoveCommand = new RelayCommand(() => _group.RemoveFilter(this));
+    }
+
+    /// <summary>Spalten der Liste (reine Namensliste: „Name“ – dann filtert man nach dem Namen).</summary>
+    public IReadOnlyList<string> Columns => _group.ListColumns;
+
+    public string Column { get => _column; set { if (Set(ref _column, value ?? string.Empty)) _group.ListChanged(); } }
+
+    public IReadOnlyList<KeyValuePair<AdOperator, string>> Operators { get; } =
+        MachineTable.Operators.Select(o => new KeyValuePair<AdOperator, string>(o, AdRules.Label(o))).ToList();
+
+    public AdOperator Operator
+    {
+        get => _operator;
+        set { if (Set(ref _operator, value)) { OnPropertyChanged(nameof(NeedsValue)); _group.ListChanged(); } }
+    }
+
+    public bool NeedsValue => AdRules.NeedsValue(_operator);
+    public string Value { get => _value; set { if (Set(ref _value, value ?? string.Empty)) _group.ListChanged(); } }
+    public ICommand RemoveCommand { get; }
+
+    public ListFilter ToFilter() => new() { Column = _column.Trim(), Operator = _operator, Value = _value.Trim() };
 }
 
 /// <summary>Regelblock: alle Regeln müssen zutreffen; Blöcke untereinander mit ODER.</summary>

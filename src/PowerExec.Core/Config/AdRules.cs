@@ -214,5 +214,5 @@ public static class AdRules
 
     /// <summary>Ist eine dynamische Gruppe fällig (nie synchronisiert oder älter als das Intervall)?</summary>
     public static bool IsDue(MachineGroup g, int intervalHours, DateTime nowUtc) =>
-        g.AdQuery != null && (g.LastSyncUtc is not { } last || nowUtc - last >= TimeSpan.FromHours(Math.Max(1, intervalHours)));
+        g.IsDynamic && (g.LastSyncUtc is not { } last || nowUtc - last >= TimeSpan.FromHours(Math.Max(1, intervalHours)));
 }

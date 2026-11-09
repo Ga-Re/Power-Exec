@@ -610,7 +610,7 @@ public sealed class SettingsViewModel : ObservableObject
         ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("workspaces", "Arbeitsbereiche", "content"),
         ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
         ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
-        ("diag", "Diagnose", "help")
+        ("samples", "Beispiele", "help"), ("diag", "Diagnose", "help")
     };
 
     private static readonly SearchHit[] Index =
@@ -666,6 +666,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("remote", "Remote", "Benachrichtigung und Log-Ordner", "protokoll fertig"),
         new("remote", "Remote", "Zuletzt verwendete Rechner", "rechnerliste leeren"),
         new("machines", "Rechnergruppen", "Rechnergruppen", "gruppe csv import ad active directory"),
+        new("samples", "Beispiele", "Beispielscripte anlegen", "beispiel samples scripte vorlagen"),
         new("diag", "Diagnose", "Protokoll", "log fehler kopieren"),
         new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
     };
@@ -830,6 +831,21 @@ public sealed class SettingsViewModel : ObservableObject
         MachineGroups.Add(new MachineGroupViewModel(_app, new MachineGroup { Name = name }, RemoveGroup));
         OnPropertyChanged(nameof(HasNoGroups));
     }
+
+    /// <summary>Neue Rechnergruppe aus einer Liste (Text oder CSV): dynamisch aus der Datei, mit Filtern.</summary>
+    public ICommand ImportGroupFromListCommand => new RelayCommand(() =>
+    {
+        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*", "Rechnergruppe aus Liste importieren");
+        if (file == null) return;
+        var name = System.IO.Path.GetFileNameWithoutExtension(file).Trim();
+        if (name.Length == 0) name = "Gruppe";
+        var unique = name;
+        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(unique, StringComparison.CurrentCultureIgnoreCase)); i++) unique = $"{name} {i}";
+        var vm = new MachineGroupViewModel(_app, new MachineGroup { Name = unique }, RemoveGroup);
+        vm.UseList(file);
+        MachineGroups.Add(vm);
+        OnPropertyChanged(nameof(HasNoGroups));
+    });
 
     private void RemoveGroup(MachineGroupViewModel g)
     {

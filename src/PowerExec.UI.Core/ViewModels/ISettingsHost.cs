@@ -24,4 +24,6 @@ public interface ISettingsHost
 
     /// <summary>Rechner im Active Directory suchen (Name mit * als Platzhalter).</summary>
     Task<IReadOnlyList<string>> FindComputersAsync(string query);
+    /// <summary>Distinguished Names von Domäne, OUs und dem Container „Computers“ (für die OU-Auswahl).</summary>
+    Task<IReadOnlyList<string>> FindOrganizationalUnitsAsync() => AdSearch.FindOrganizationalUnitsAsync();
 }

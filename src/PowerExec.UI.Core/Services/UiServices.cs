@@ -66,6 +66,9 @@ public interface IDialogs
     /// <summary>Ordner wählen; null = abgebrochen.</summary>
     string? PickFolder(string? title = null, object? owner = null);
 
+    /// <summary>Organisationseinheit aus dem OU-Baum wählen (Distinguished Name); null = abgebrochen.</summary>
+    string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) => null;
+
     /// <summary>Farbe wählen (#RRGGBB); null = abgebrochen.</summary>
     string? PickColor(string title, string? initial, object? owner = null);
 

@@ -211,3 +211,82 @@ public class MachineGroupViewModelTests
         Assert.Equal(44, new WorkspaceGroupChoice(ws, "Kunde/AD/Server", "", () => { }).IndentLeft);
     }
 }
+
+public class MachineGroupListSourceTests
+{
+    [Fact]
+    public void ListSourceFiltersCsvAndSyncsWithoutHost()
+    {
+        var host = new FakeEntryHost();
+        var vm = new MachineGroupViewModel(host, new MachineGroup { Name = "Liste" }, _ => { });
+        var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".csv");
+        try
+        {
+            File.WriteAllText(file, "Hostname;Standort\nsrv1;Berlin\nsrv2;Hamburg\nsrv3;Berlin\n");
+            vm.UseList(file);
+
+            Assert.True(vm.IsListSource);
+            Assert.Equal("list", vm.Source);
+            Assert.True(vm.CanSync);
+            Assert.False(vm.IsStatic);
+            Assert.True(vm.IsCsv);
+            Assert.Equal("Hostname", vm.NameColumn);
+            Assert.Equal("SRV1, SRV2, SRV3", vm.MachinesInline);
+
+            vm.AddFilterCommand.Execute(null);
+            var f = Assert.Single(vm.ListFilters);
+            f.Column = "Standort";
+            f.Operator = AdOperator.Equals;
+            f.Value = "Berlin";
+            Assert.Equal("SRV1, SRV3", vm.MachinesInline);
+
+            var g = vm.ToGroup();
+            Assert.Null(g.AdQuery);
+            Assert.Equal(file, g.ListQuery!.Path);
+            Assert.Equal("Hostname", g.ListQuery.NameColumn);
+            Assert.Equal("Standort", Assert.Single(g.ListQuery.Filters).Column);
+
+            f.RemoveCommand.Execute(null);
+            Assert.Equal("SRV1, SRV2, SRV3", vm.MachinesInline);
+
+            // Zurück auf statisch: Liste fällt weg, Rechner bleiben
+            vm.Source = "static";
+            Assert.True(vm.IsStatic);
+            Assert.Null(vm.ToGroup().ListQuery);
+            Assert.Equal("SRV1, SRV2, SRV3", vm.MachinesInline);
+        }
+        finally { File.Delete(file); }
+    }
+
+    [Fact]
+    public void ExportWritesMachines()
+    {
+        var host = new FakeEntryHost();
+        var vm = new MachineGroupViewModel(host, new MachineGroup { Name = "Web", Machines = { "SRV-01", "SRV-02" } }, _ => { });
+        var file = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".csv");
+        try
+        {
+            host.FakeDialogs.FileAnswer = file;
+            vm.ExportCommand.Execute(null);
+            Assert.Contains("SaveFile Web.csv", host.FakeDialogs.Asked);
+            Assert.Equal("Name\nSRV-01\nSRV-02\n", File.ReadAllText(file).Replace("\r", ""));
+            Assert.Contains("exportiert", vm.Status);
+        }
+        finally { File.Delete(file); }
+    }
+
+    [Fact]
+    public void PickOuShowsTreeAndSetsSearchBase()
+    {
+        var host = new FakeEntryHost { OuAnswer = new[] { "DC=firma,DC=local", "OU=Server,DC=firma,DC=local" } };
+        host.FakeDialogs.OuAnswer = "OU=Server,DC=firma,DC=local";
+        var vm = new MachineGroupViewModel(host, new MachineGroup { Name = "Dyn" }, _ => { }) { Source = "ad" };
+
+        vm.PickOuCommand.Execute(null);
+
+        Assert.Equal("OU=Server,DC=firma,DC=local", vm.SearchBase);
+        var root = Assert.Single(host.FakeDialogs.OuRoots!);
+        Assert.Equal("Server", Assert.Single(root.Children).Name);
+        Assert.False(vm.IsSearching);
+    }
+}

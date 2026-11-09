@@ -40,10 +40,11 @@ public partial class AppController
         finally { _adSyncRunning = false; }
     }
 
-    /// <summary>Eine dynamische Gruppe aus dem AD lesen; bei Fehler bleibt die bisherige Liste.</summary>
+    /// <summary>Eine dynamische Gruppe aus dem AD bzw. ihrer Liste lesen; bei Fehler bleibt die bisherige Liste.</summary>
     /// <returns>Gefundene Rechner oder null bei Fehler.</returns>
     public static async Task<IReadOnlyList<string>?> SyncMachineGroupAsync(MachineGroup g)
     {
+        if (g.ListQuery is { } list) return await SyncFromListAsync(g, list);
         if (g.AdQuery is not { } q) return null;
         if (AdRules.Validate(q) is { } invalid)
         {
@@ -64,6 +65,29 @@ public partial class AppController
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow; // nicht jede Minute erneut versuchen
             AppLog.Info($"Rechnergruppe @{g.Name}: AD nicht erreichbar ({ex.Message})");
+            return null;
+        }
+    }
+
+    /// <summary>Listengruppe: Datei neu lesen und filtern.</summary>
+    private static async Task<IReadOnlyList<string>?> SyncFromListAsync(MachineGroup g, ListGroupQuery q)
+    {
+        try
+        {
+            if (q.Path.Trim().Length == 0) throw new InvalidOperationException("Keine Datei angegeben.");
+            var text = await File.ReadAllTextAsync(q.Path.Trim());
+            var names = MachineTable.Parse(text).Apply(q);
+            g.Machines = names.ToList();
+            g.LastSyncUtc = DateTime.UtcNow;
+            g.LastSyncError = null;
+            AppLog.Info($"Rechnergruppe @{g.Name}: {names.Count} Rechner aus {q.Path}");
+            return names;
+        }
+        catch (Exception ex)
+        {
+            g.LastSyncError = ex.Message;
+            g.LastSyncUtc = DateTime.UtcNow;
+            AppLog.Info($"Rechnergruppe @{g.Name}: Liste nicht lesbar ({ex.Message})");
             return null;
         }
     }

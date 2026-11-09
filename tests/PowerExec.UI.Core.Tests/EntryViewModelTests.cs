@@ -35,6 +35,8 @@ internal sealed class FakeEntryHost : ISettingsWindowHost
     }
 
     public Task<IReadOnlyList<string>> FindComputersAsync(string query) => Task.FromResult(AdAnswer);
+    public IReadOnlyList<string> OuAnswer { get; set; } = Array.Empty<string>();
+    public Task<IReadOnlyList<string>> FindOrganizationalUnitsAsync() => Task.FromResult(OuAnswer);
 
     public List<(CustomEntry Entry, LaunchProfile Profile)> TestRuns { get; } = new();
     public int ProfilesSaved { get; private set; }

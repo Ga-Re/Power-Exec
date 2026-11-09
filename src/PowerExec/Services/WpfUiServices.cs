@@ -85,6 +85,9 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
         return dlg.ShowDialog(owner as Window) == true ? dlg.FileName : null;
     }
 
+    public string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) =>
+        OuPickerWindow.Pick(roots, current, owner as Window);
+
     public string? PickFolder(string? title = null, object? owner = null)
     {
         var dlg = new Microsoft.Win32.OpenFolderDialog();

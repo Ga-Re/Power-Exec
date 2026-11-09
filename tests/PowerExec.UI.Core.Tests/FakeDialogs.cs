@@ -44,6 +44,9 @@ internal sealed class FakeDialogs : IDialogs
     public string? OpenFile(string filter, string? title = null, object? owner = null) { Asked.Add("OpenFile"); return FileAnswer; }
     public IReadOnlyList<string> OpenFiles(string filter, string? title = null, object? owner = null) { Asked.Add("OpenFiles"); return FilesAnswer; }
     public string? SaveFile(string filter, string fileName, string? title = null, object? owner = null) { Asked.Add("SaveFile " + fileName); return FileAnswer; }
+    public string? OuAnswer { get; set; }
+    public IReadOnlyList<OuNode>? OuRoots { get; private set; }
+    public string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) { OuRoots = roots; Asked.Add("PickOu " + current); return OuAnswer; }
     public string? PickFolder(string? title = null, object? owner = null) { Asked.Add("PickFolder"); return FolderAnswer; }
     public string? PickColor(string title, string? initial, object? owner = null) { Asked.Add("PickColor " + title); return ColorAnswer; }
     public IconRef? PickIcon(IconRef current, string heading) { Asked.Add("PickIcon"); return IconAnswer; }
