@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Minze",
+  "Description": "Hell und frisch mit Mintgrün",
+  "Theme": "Light",
+  "PanelColor": "#F4FBF8",
+  "Opacity": 100,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Solid",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#2E9E7A"
+}

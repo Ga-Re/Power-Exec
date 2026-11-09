@@ -76,6 +76,8 @@ public static class Placeholders
     public static string Apply(string? text, IReadOnlyDictionary<string, string> values, bool urlEncode = false, bool powerShell = false)
     {
         if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
+        // Variablen vor dem ? einer URL (Server, Basisadresse) bleiben unverändert, dahinter werden sie codiert
+        var query = urlEncode ? text.IndexOf('?') : -1;
         return Pattern.Replace(text, m =>
         {
             var name = m.Groups[1].Value.Trim();
@@ -83,7 +85,7 @@ public static class Placeholders
             {
                 if (BuiltinValue(name) is not { } variable) return m.Value;
                 if (powerShell) variable = Variables.EscapeForPowerShell(variable);
-                return urlEncode ? Uri.EscapeDataString(variable) : variable;
+                return urlEncode && query >= 0 && m.Index > query ? Uri.EscapeDataString(variable) : variable;
             }
             var value = values.FirstOrDefault(kv => kv.Key.Equals(name, StringComparison.CurrentCultureIgnoreCase)).Value
                         ?? (m.Groups[2].Success ? m.Groups[2].Value : string.Empty);

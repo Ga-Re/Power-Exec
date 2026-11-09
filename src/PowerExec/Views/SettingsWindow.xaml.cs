@@ -75,6 +75,8 @@ public partial class SettingsWindow : Window
             Close();
             _app.ShowSettings();
         };
+        // Marktplatz: Installiertes sofort übernehmen und alle Seiten neu lesen (neue Gruppen, Variablen, Designs)
+        vm.MarketplaceChanged += () => Dispatcher.BeginInvoke(() => { ApplyNow(force: true); Reload(); });
         vm.SwitchWorkspaceRequested += name =>
         {
             ApplyNow(force: true);

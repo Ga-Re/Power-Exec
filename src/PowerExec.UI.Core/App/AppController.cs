@@ -17,7 +17,12 @@ namespace PowerExec;
 public partial class AppController : IDisposable
 {
     /// <param name="createUi">Erzeugt die Oberfläche zu diesem Kern.</param>
-    public AppController(Func<AppController, IAppUi> createUi) => Ui = createUi(this);
+    public AppController(Func<AppController, IAppUi> createUi)
+    {
+        Ui = createUi(this);
+        // {{$Variablen}} gleich auflösbar – auch wenn Teile der Initialisierung übersprungen werden (Selbsttest)
+        Placeholders.Resolver = name => VariableResolver.Resolve(name);
+    }
 
     protected readonly List<AppPanel> _hosts = new();
     private ISettingsWindow? _settingsWindow;
@@ -54,7 +59,6 @@ public partial class AppController : IDisposable
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => Shell.GetClipboardText();
         // {{$Variablen}}: eingebaute und eigene; PowerShell-Variablen mit Zwischenspeicher im Hintergrund vorwärmen
-        Placeholders.Resolver = name => VariableResolver.Resolve(name);
         WarmVariables();
 
         Health = new HealthService(UiDispatcher);

@@ -7,8 +7,9 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
-        new ReleaseNote(new Version(0, 25, 0), "Variablen und aufgeräumte Einstellungen", new[]
+        new ReleaseNote(new Version(0, 25, 0), "Variablen, Marktplatz und aufgeräumte Einstellungen", new[]
         {
+            "Neu: Marktplatz (Inhalte › Marktplatz) – Pakete (z. B. Matrix42, Recherche), Links (Google, Microsoft Learn, VirusTotal, IP-Whois, GitHub/GitLab-Issues), Designs und die Beispielscripte mit einem Klick installieren; vorher zeigt eine Vorschau den Inhalt, benötigte Variablen werden abgefragt, Änderungen erscheinen als „Update verfügbar“",
             "Neu: Variablen (Inhalte › Variablen). {{$CompanyName}} wird in Texten, Links, Befehlen, Zielen, PowerShell-Code und Script-Parametern ohne Rückfrage eingesetzt – als fester Text, je Arbeitsbereich, geheim (verschlüsselt), aus einer Umgebungsvariable oder als Ergebnis eines PowerShell-Befehls (mit Zwischenspeicher)",
             "{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}} und {{$Zwischenablage}} sind eingebaut, das Datums- und Uhrzeitformat ist einstellbar; normale {{Platzhalter}} werden weiter vor dem Start abgefragt",
             "Im Eintrags-Editor: Vorschläge beim Tippen von {{$, Einfügen per Klick und ein Hinweis bei Variablen, die es nicht gibt; die Vorschau im Panel zeigt die eingesetzten Werte",

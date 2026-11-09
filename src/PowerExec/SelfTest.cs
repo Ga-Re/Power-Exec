@@ -1141,7 +1141,7 @@ public sealed partial class SelfTestController : AppController
                 if (listGroup.MachinesInline != "SRV-B1, SRV-B2") Fail($"Rechnergruppen: Listenfilter liefert {listGroup.MachinesInline}");
                 if (listGroup.ToGroup().ListQuery?.Filters.Count != 1) Fail("Rechnergruppen: Listen-Gruppe geht beim Speichern verloren");
             }
-            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "marketplace", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);

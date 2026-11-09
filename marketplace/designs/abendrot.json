@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Abendrot",
+  "Description": "Pflaume mit warmem Korall-Akzent",
+  "Theme": "Dark",
+  "PanelColor": "#2D1B2E",
+  "Opacity": 90,
+  "Frost": 15,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#FF8A65"
+}

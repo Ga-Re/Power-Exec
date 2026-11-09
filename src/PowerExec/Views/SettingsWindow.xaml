@@ -484,6 +484,9 @@
                         <ui:NavigationViewItem Content="Schlagworte" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="Marktplatz" TargetPageTag="marketplace" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
                         <ui:NavigationViewItem Content="Variablen" TargetPageTag="variables" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE943;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
@@ -1066,8 +1069,72 @@
                 </StackPanel>
                 </Grid>
 
+                <!-- Marktplatz: Einträge, Pakete, Designs und Scripte aus dem Power-Exec-Repository -->
+                <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=marketplace}" DataContext="{Binding MarketplacePage}">
+                    <TextBlock Text="Marktplatz" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                               Text="Fertige Einträge, Pakete, Designs und Scripte zum Herunterladen. Vor jeder Installation siehst du, was übernommen wird; benötigte Variablen fragt Power-Exec einmal ab. Ändert sich ein installiertes Element, steht hier „Update verfügbar“."/>
+                    <DockPanel Margin="0,16,0,8">
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding RefreshCommand}" Margin="8,0,0,0" ToolTip="Marktplatz neu laden">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="Aktualisieren" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ui:Button>
+                        <Grid>
+                            <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="Marktplatz durchsuchen"
+                                     AutomationProperties.Name="Marktplatz durchsuchen"/>
+                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                        </Grid>
+                    </DockPanel>
+                    <WrapPanel Margin="0,0,0,8">
+                        <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Pakete" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Package}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Einträge" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Entry}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Designs" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Design}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Scripte" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Script}"/>
+                        <RadioButton Style="{StaticResource Chip}" Content="Updates" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
+                        <TextBlock Text="{Binding UpdateSummary}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </WrapPanel>
+                    <c:InfoBar Message="{Binding Status}" Severity="{Binding StatusSeverity}"/>
+                    <ui:ProgressRing IsIndeterminate="True" Width="28" Height="28" HorizontalAlignment="Left" Margin="4,8"
+                                     Visibility="{Binding IsLoading, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="Keine Treffer." Style="{StaticResource Caption}" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+                    <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <c:SettingsCard Icon="{Binding Glyph}" Header="{Binding Name}">
+                                    <c:SettingsCard.Description>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Details}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </c:SettingsCard.Description>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding StateText}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <ui:Button Command="{Binding InstallCommand}" Content="{Binding ActionText}" MinWidth="120">
+                                            <ui:Button.Style>
+                                                <Style TargetType="ui:Button" BasedOn="{StaticResource Btn.Standard}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsInstalled}" Value="False">
+                                                            <Setter Property="Appearance" Value="Primary"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                                            <Setter Property="Appearance" Value="Primary"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ui:Button.Style>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </c:SettingsCard>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
                 <!-- Variablen: {{$Name}} in Texten, Links, Befehlen und Code -->
-                <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=variables}" DataContext="{Binding VariablesPage}">
+                <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=variables}" DataContext="{Binding VariablesPage}">
                     <TextBlock Text="Variablen" Style="{StaticResource PageTitle}"/>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
                                Text="Variablen schreibst du als {{$Name}} in Texte, Links, Befehle, Ziele, PowerShell-Code und Script-Parameter – Power-Exec setzt den Wert beim Start ein, ohne zu fragen. Normale {{Platzhalter}} werden weiterhin vor dem Start abgefragt."/>
