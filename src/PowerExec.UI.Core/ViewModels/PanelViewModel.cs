@@ -116,7 +116,14 @@ public sealed class PanelViewModel : ObservableObject
     {
         _raisedLayoutKey = LayoutKey;
         foreach (var p in new[] { nameof(Layout), nameof(IsCompact), nameof(IsLarge), nameof(ItemSize), nameof(ItemSizeText), nameof(IsGrid), nameof(IsList), nameof(LayoutGlyph), nameof(LayoutToolTip) }) OnPropertyChanged(p);
+        GroupLayoutsChanged();
+    }
+
+    /// <summary>Darstellung einer oder aller Gruppen geändert (Liste/Raster): Gruppen und Detailbereich nachziehen.</summary>
+    internal void GroupLayoutsChanged()
+    {
         foreach (var g in AllGroups) g.RefreshLayout();
+        OnPropertyChanged(nameof(ShowTileDetails));
     }
 
     /// <summary>Elementgröße: Klein (Liste einzeilig, kleine Kacheln), Mittel, Groß.</summary>
@@ -1032,7 +1039,7 @@ public sealed class PanelViewModel : ObservableObject
         if (_checked.Count > 0 || reuse) ApplyChecked();
         if (!reuse) StickyGroup = null;
         OnPropertyChanged(nameof(ShowJumpRail));
-        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(ShowTileDetails));
 
         // Auswahl wiederherstellen
         ItemViewModel? selected = null;
@@ -1316,6 +1323,13 @@ public sealed class PanelViewModel : ObservableObject
 
     public ItemViewModel? SelectedItem => AllItems.FirstOrDefault(i => i.IsSelected);
 
+    /// <summary>
+    /// Details unten im Panel zeigen: der ausgewählte Eintrag steht als Kachel da – das Panel oder seine Gruppe ist auf
+    /// „Raster“ gestellt (in der Liste klappen die Details direkt am Eintrag auf).
+    /// </summary>
+    public bool ShowTileDetails => SelectedItem is { } selected &&
+        (Groups.SelectMany(g => g.SelfAndDescendants).FirstOrDefault(g => g.Items.Contains(selected)) is { } group ? group.IsGrid : IsGrid);
+
     /// <summary>Einstellungen des Panels wurden ersetzt: alle Anzeigen neu lesen (Darstellung, Größe, Sprungleiste …).</summary>
     public void ConfigReplaced()
     {
@@ -1336,7 +1350,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var i in AllItems) i.IsSelected = false;
         item.IsSelected = !wasSelected;
         _selectedKey = item.IsSelected ? item.Key : null;
-        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(ShowTileDetails));
         // Offene Vorschau folgt dem angeklickten Eintrag
         if (_peek != null && item.IsSelected && !ReferenceEquals(_peek.Item, item)) Peek = new PeekViewModel(_app, item);
     }
@@ -1351,7 +1365,7 @@ public sealed class PanelViewModel : ObservableObject
         foreach (var i in AllItems) i.IsSelected = false;
         list[next].IsSelected = true;
         _selectedKey = list[next].Key;
-        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(ShowTileDetails));
         return list[next];
     }
 
@@ -1384,7 +1398,7 @@ public sealed class PanelViewModel : ObservableObject
     {
         foreach (var i in AllItems) i.IsSelected = false;
         _selectedKey = null;
-        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedItem)); OnPropertyChanged(nameof(HasSelection)); OnPropertyChanged(nameof(ShowTileDetails));
     }
 
     internal void OnGroupExpandedChanged(GroupViewModel group)

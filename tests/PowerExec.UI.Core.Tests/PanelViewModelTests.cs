@@ -46,6 +46,24 @@ public class PanelViewModelTests
     }
 
     [Fact]
+    public void TileDetailsAppearWhenOnlyTheGroupIsAGrid()
+    {
+        var (host, vm) = Panel();
+        Assert.False(vm.IsGrid); // Panel als Liste
+        var group = Assert.Single(vm.AllGroups);
+        vm.Select(group.Items[0]);
+        Assert.False(vm.ShowTileDetails); // Liste: Details klappen am Eintrag auf
+
+        GroupManager.SetLayout(host.Settings, group.GroupPath!, ItemLayout.Grid);
+        vm.GroupLayoutsChanged();
+        Assert.True(group.IsGrid);
+        Assert.True(vm.ShowTileDetails); // Kacheln dieser Gruppe: Details unten im Panel
+
+        vm.Select(group.Items[0]); // Auswahl aufgehoben
+        Assert.False(vm.ShowTileDetails);
+    }
+
+    [Fact]
     public void FuzzySearchFindsInitialsAndHighlights()
     {
         var (_, vm) = Panel();
