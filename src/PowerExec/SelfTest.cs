@@ -272,6 +272,30 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 if (vm.ShowGroupJump) Fail("Strg+K: Auswahl schließt die Gruppensuche nicht");
 
+                // Geteiltes Kontextmenü: folgt dem jeweiligen Eintrag und vergisst sein Ziel beim Schließen
+                var sharedMenu = host.Window.ItemMenu;
+                foreach (var menuItem in vm.VisibleItems.Where(i => !i.IsSingleClick).Take(2).ToList())
+                {
+                    if (!host.Window.OpenItemMenu(menuItem)) { Fail($"Kontextmenü: öffnet für „{menuItem.DisplayName}“ nicht"); continue; }
+                    await Settle();
+                    if (!ReferenceEquals(sharedMenu.DataContext, menuItem))
+                        Fail($"Kontextmenü: zeigt nicht „{menuItem.DisplayName}“, sondern {(sharedMenu.DataContext as ItemViewModel)?.DisplayName ?? "nichts"}");
+                    sharedMenu.IsOpen = false;
+                    await Settle();
+                    if (sharedMenu.PlacementTarget != null) Fail("Kontextmenü: Ziel bleibt nach dem Schließen gesetzt");
+                }
+                host.Window.HidePanel();
+                await Settle();
+            }
+
+            Step("Gruppen-Stil, fixierter Kopf und Elementgröße je Gruppe");
+            {
+                var host = WpfHost(0);
+                var vm = host.ViewModel;
+                vm.SearchText = string.Empty;
+                vm.Rebuild();
+                host.Window.ShowPanel(ScreenService.TriggerMonitors(host.Config)[0], viaHotkey: true);
+                await Settle();
                 // Fixierter Gruppenkopf: genau so breit wie die Karte der Gruppe – in beiden Gruppen-Stilen
                 foreach (var style in new[] { GroupCardStyle.Tinted, GroupCardStyle.Accent })
                 {
@@ -305,19 +329,6 @@ public sealed partial class SelfTestController : AppController
                     if (host.Window.Content is FrameworkElement sizeRoot) Screenshot(sizeRoot, "panel-gruppe-gross");
                     sizeGroup.SetItemSizeCommand.Execute("panel");
                     if (sizeGroup.ItemSizeSetting != "panel") Fail("Elementgröße je Gruppe: „Wie das Panel“ setzt nicht zurück");
-                }
-
-                // Geteiltes Kontextmenü: folgt dem jeweiligen Eintrag und vergisst sein Ziel beim Schließen
-                var sharedMenu = host.Window.ItemMenu;
-                foreach (var menuItem in vm.VisibleItems.Where(i => !i.IsSingleClick).Take(2).ToList())
-                {
-                    if (!host.Window.OpenItemMenu(menuItem)) { Fail($"Kontextmenü: öffnet für „{menuItem.DisplayName}“ nicht"); continue; }
-                    await Settle();
-                    if (!ReferenceEquals(sharedMenu.DataContext, menuItem))
-                        Fail($"Kontextmenü: zeigt nicht „{menuItem.DisplayName}“, sondern {(sharedMenu.DataContext as ItemViewModel)?.DisplayName ?? "nichts"}");
-                    sharedMenu.IsOpen = false;
-                    await Settle();
-                    if (sharedMenu.PlacementTarget != null) Fail("Kontextmenü: Ziel bleibt nach dem Schließen gesetzt");
                 }
                 host.Window.HidePanel();
                 await Settle();
