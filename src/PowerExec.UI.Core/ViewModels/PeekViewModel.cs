@@ -30,8 +30,10 @@ public sealed class PeekViewModel
         // Code bzw. Inhalt
         string? code = null;
         bool truncated = false;
+        // {{$Variablen}} mit ihren Werten zeigen (Geheimes verdeckt, nichts wird ausgeführt)
+        string Vars(string? text) => Placeholders.PreviewVariables(text, app.VariablePreview);
         if (li.Source is { Kind: CustomEntryKind.Snippet } snippet)
-            (code, truncated) = CodePreview.Head(snippet.Code);
+            (code, truncated) = CodePreview.Head(Vars(snippet.Code));
         else if ((li.Type is ItemType.PowerShell or ItemType.Batch) && (!li.IsCustom || li.CustomKind == CustomEntryKind.File))
         {
             if (CodePreview.ReadHead(li.FullPath) is { } head) (code, truncated) = head;
@@ -49,10 +51,13 @@ public sealed class PeekViewModel
         // Fakten
         if (li.IsCustom && li.CustomKind != CustomEntryKind.File)
         {
-            var target = ((li.LaunchTarget ?? string.Empty) + " " + li.LaunchArguments).Trim();
+            var target = Vars(((li.LaunchTarget ?? string.Empty) + " " + li.LaunchArguments).Trim());
             if (target.Length > 0 && li.CustomKind != CustomEntryKind.Snippet) facts.Add(new PeekFact("Ziel", target));
         }
         else facts.Add(new PeekFact("Pfad", li.FullPath));
+        if (li.Source is { } src && Placeholders.VariableNames(src.Target, src.Arguments, src.Code, src.User, src.RemoteCommand, src.WorkingDirectory) is { Count: > 0 } used)
+            facts.Add(new PeekFact("Variablen", string.Join(" · ", used.Distinct(StringComparer.CurrentCultureIgnoreCase)
+                .Select(n => $"{n} = {app.VariablePreview(n)}"))));
         if (li.RequiresAdmin) facts.Add(new PeekFact("Rechte", "benötigt Administrator (#Requires)"));
         if (li.RequiredPsVersion.Length > 0) facts.Add(new PeekFact("PowerShell", li.RequiredPsVersion + " oder neuer"));
         if (li.RequiredModules.Count > 0) facts.Add(new PeekFact("Module", string.Join(", ", li.RequiredModules)));

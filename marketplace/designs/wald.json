@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Wald",
+  "Description": "Dunkles Moosgrün mit frischem Grün",
+  "Theme": "Dark",
+  "PanelColor": "#1B2A1F",
+  "Opacity": 95,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#8BC34A"
+}

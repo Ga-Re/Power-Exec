@@ -1,0 +1,27 @@
+{
+  "Format": "Power-Exec-Einträge",
+  "Version": 1,
+  "Groups": [
+    "Links"
+  ],
+  "GroupIcons": {},
+  "Entries": [
+    {
+      "Entry": {
+        "Id": "mk-google-search",
+        "Name": "Google Sofortsuche",
+        "Kind": "Url",
+        "Target": "https://www.google.com/search?q={{Suchbegriff}}",
+        "Description": "Fragt den Begriff im Panel ab und öffnet die Treffer sofort im Standardbrowser.",
+        "Icon": "fluent:search"
+      },
+      "Group": "Links",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    }
+  ]
+}

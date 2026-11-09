@@ -78,6 +78,9 @@ public interface IPanelHost : IHistoryHost, IWorkflowHost
     void SetGroupLayout(string groupPath, ItemLayout? layout);
     /// <summary>Elementgröße einer Gruppe (null = wie das Panel).</summary>
     void SetGroupItemSize(string groupPath, ItemSize? size);
+
+    /// <summary>Anzeigewert einer {{$Variable}} für die Vorschau (Geheimes verdeckt, PowerShell nur aus dem Zwischenspeicher).</summary>
+    string VariablePreview(string name) => Placeholders.BuiltinValue(name) ?? name;
     void ExportGroup(string groupPath);
 
     // ── Fenster und Wechsel ──────────────────────────────────────────

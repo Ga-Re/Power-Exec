@@ -267,9 +267,12 @@ public static class NavigationMotion
         protected override void OnRender(DrawingContext dc)
         {
             if (_target is not { } t) return;
-            var brush = _nav.TryFindResource("NavigationViewSelectionIndicatorForeground") as Brush
+            // Akzentbalken wie in den Windows-11-Einstellungen: 3 px breit, in der Akzentfarbe (auch die von Windows)
+            var brush = _nav.TryFindResource("Accent") as Brush
+                        ?? _nav.TryFindResource("NavigationViewSelectionIndicatorForeground") as Brush
                         ?? _nav.TryFindResource("SystemAccentColorPrimaryBrush") as Brush ?? Brushes.DodgerBlue;
-            dc.DrawRoundedRectangle(brush, null, new Rect(BarLeft, BarTop, Math.Max(3, t.Width), Math.Max(16, t.Height)), 2, 2);
+            var height = Math.Max(18, t.Height);
+            dc.DrawRoundedRectangle(brush, null, new Rect(BarLeft, BarTop + (t.Height - height) / 2, 3, height), 1.5, 1.5);
         }
     }
 }

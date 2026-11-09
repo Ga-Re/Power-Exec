@@ -155,7 +155,31 @@ public sealed class CustomEntryListViewModel : ObservableObject
     public bool NoMatches => Rows.Count > 0 && VisibleRows.Count == 0;
 
     public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Refilter(); } }
-    public string KindFilter { get => _kindFilter; set { if (Set(ref _kindFilter, value)) Refilter(); } }
+    public string KindFilter
+    {
+        get => _kindFilter;
+        set { if (Set(ref _kindFilter, value ?? "all")) { OnPropertyChanged(nameof(MoreKind)); Refilter(); } }
+    }
+
+    /// <summary>Weitere Typen im Dropdown neben den vier Chips (Alle, Webseiten, Snippets, RDP/SSH).</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> MoreKinds { get; } = new[]
+    {
+        new KeyValuePair<string, string>("more", "Weitere Typen …"),
+        new KeyValuePair<string, string>("Folder", "Ordner"),
+        new KeyValuePair<string, string>("Tool", "Werkzeuge"),
+        new KeyValuePair<string, string>("Command", "Befehle"),
+        new KeyValuePair<string, string>("File", "Dateien"),
+        new KeyValuePair<string, string>("Rdp", "Nur RDP"),
+        new KeyValuePair<string, string>("Ssh", "Nur SSH"),
+        new KeyValuePair<string, string>("problems", "Mit Problemen")
+    };
+
+    /// <summary>Gewählter weiterer Typ („more“ = Hinweistext, solange ein Chip aktiv ist).</summary>
+    public string? MoreKind
+    {
+        get => MoreKinds.Any(k => k.Key == _kindFilter) ? _kindFilter : "more";
+        set { if (value != null && value != "more") KindFilter = value; }
+    }
     public string GroupFilter
     {
         get => _groupFilter;
@@ -220,6 +244,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
         {
             "all" => true,
             "problems" => r.HealthOk == false,
+            "remote" => r.Entry.Kind is CustomEntryKind.Rdp or CustomEntryKind.Ssh,
             _ => r.Entry.Kind.ToString().Equals(_kindFilter, StringComparison.OrdinalIgnoreCase)
         };
         if (!kindOk) return false;

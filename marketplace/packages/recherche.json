@@ -1,0 +1,97 @@
+{
+  "Format": "Power-Exec-Einträge",
+  "Version": 1,
+  "Groups": [
+    "Recherche"
+  ],
+  "GroupIcons": {
+    "Recherche": "fluent:search"
+  },
+  "Entries": [
+    {
+      "Entry": {
+        "Id": "mk-google-search",
+        "Name": "Google Sofortsuche",
+        "Kind": "Url",
+        "Target": "https://www.google.com/search?q={{Suchbegriff}}",
+        "Description": "Fragt den Begriff im Panel ab und öffnet die Treffer sofort im Standardbrowser.",
+        "Icon": "fluent:search"
+      },
+      "Group": "Recherche",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    },
+    {
+      "Entry": {
+        "Id": "mk-ms-learn",
+        "Name": "Microsoft Learn / PS-Hilfe",
+        "Kind": "Url",
+        "Target": "https://learn.microsoft.com/en-us/search/?terms={{Cmdlet_oder_Fehler}}",
+        "Description": "Schnelles Nachschlagen von PowerShell-Cmdlets oder Fehlercodes (z. B. 0x80070005).",
+        "Icon": "fluent:book"
+      },
+      "Group": "Recherche",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    },
+    {
+      "Entry": {
+        "Id": "mk-virustotal",
+        "Name": "VirusTotal Hash-Check",
+        "Kind": "Url",
+        "Target": "https://www.virustotal.com/gui/search/{{SHA256_oder_IP}}",
+        "Description": "Datei-Hash, IP oder URL sofort auf Schadsoftware prüfen – praktisch bei Security-Vorfällen.",
+        "Icon": "fluent:shield"
+      },
+      "Group": "Recherche",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    },
+    {
+      "Entry": {
+        "Id": "mk-ip-whois",
+        "Name": "IP / Whois Lookup",
+        "Kind": "Url",
+        "Target": "https://ipinfo.io/{{IP_Adresse}}",
+        "Description": "Herkunft und ASN einer externen IP-Adresse nachschlagen.",
+        "Icon": "fluent:globe"
+      },
+      "Group": "Recherche",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    },
+    {
+      "Entry": {
+        "Id": "mk-github-issue",
+        "Name": "GitHub Issue",
+        "Kind": "Url",
+        "Target": "https://github.com/{{Organisation}}/{{Repository}}/issues/{{IssueNr}}",
+        "Description": "Schneller Sprung in Entwicklungs-Tickets (Organisation, Repository und Nummer werden abgefragt).",
+        "Icon": "fluent:bug"
+      },
+      "Group": "Recherche",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    }
+  ]
+}

@@ -75,7 +75,7 @@ public static class ThemeService
                 "OnAccent" => SystemColors.HighlightTextBrush,
                 "Bg.Hover" or "Bg.Pressed" or "Bg.Selected" => SystemColors.HighlightBrush,
                 "Text.Disabled" => SystemColors.GrayTextBrush,
-                _ when key.StartsWith("Text.") || key.StartsWith("Status.") || key == "Star" || key.EndsWith(".Fg") || key.EndsWith(".Text") || key.StartsWith("Code.")
+                _ when key.StartsWith("Text.") || key.StartsWith("Status.") || key == "Star" || key.EndsWith(".Fg") || key.EndsWith(".Icon") || key.EndsWith(".Text") || key.StartsWith("Code.")
                     => SystemColors.WindowTextBrush,
                 _ when key.StartsWith("Border.") || key.EndsWith(".Border") => SystemColors.WindowTextBrush,
                 _ => SystemColors.WindowBrush

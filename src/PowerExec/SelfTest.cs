@@ -128,6 +128,10 @@ public sealed partial class SelfTestController : AppController
                     Filters = { new ListFilter { Column = "Standort", Operator = AdOperator.Equals, Value = "Berlin" } }
                 }
             });
+            Settings.Variables.Add(new UserVariable { Name = "CompanyName", Value = "Med360°" });
+            Settings.Variables.Add(new UserVariable { Name = "Kundendomain", Kind = VariableKind.Workspace, Value = "firma.local" });
+            Settings.Variables.Add(new UserVariable { Name = "Ps", Kind = VariableKind.PowerShell, Value = "'aus ' + 'PowerShell'", Refresh = VariableRefresh.Session });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Firmengruß", Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Grüße von {{$CompanyName}} am {{$Datum}}" });
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", PanelOpacity = 90, Frost = 30 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
@@ -634,6 +638,22 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
             }
 
+            Step("Variablen: eigene, je Arbeitsbereich und aus PowerShell");
+            {
+                if (VariableResolver.Resolve("$CompanyName") != "Med360°") Fail("Variablen: {{$CompanyName}} wird nicht aufgelöst");
+                if (VariableResolver.Resolve("Kundendomain") != "firma.local") Fail("Variablen: Standardwert je Arbeitsbereich fehlt");
+                try
+                {
+                    var ps = VariableResolver.Resolve("Ps");
+                    if (ps != "aus PowerShell") Fail($"Variablen: PowerShell-Variable liefert „{ps}“");
+                }
+                catch (Exception ex) { Fail("Variablen: PowerShell-Variable – " + ex.Message); }
+                var secret = SecretProtector.Protect("geheim äöü");
+                if (!secret.StartsWith("dpapi:") || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
+                var gruss = Settings.CustomEntries.First(e => e.Name == "Firmengruß").WithValues(new Dictionary<string, string>());
+                if (!gruss.Code.StartsWith("Grüße von Med360° am ")) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
+            }
+
             Step("Darstellung: Windows-Akzentfarbe und Größe");
             {
                 Settings.UseWindowsAccent = true;
@@ -1121,7 +1141,7 @@ public sealed partial class SelfTestController : AppController
                 if (listGroup.MachinesInline != "SRV-B1, SRV-B2") Fail($"Rechnergruppen: Listenfilter liefert {listGroup.MachinesInline}");
                 if (listGroup.ToGroup().ListQuery?.Filters.Count != 1) Fail("Rechnergruppen: Listen-Gruppe geht beim Speichern verloren");
             }
-            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "marketplace", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);

@@ -17,7 +17,12 @@ namespace PowerExec;
 public partial class AppController : IDisposable
 {
     /// <param name="createUi">Erzeugt die Oberfläche zu diesem Kern.</param>
-    public AppController(Func<AppController, IAppUi> createUi) => Ui = createUi(this);
+    public AppController(Func<AppController, IAppUi> createUi)
+    {
+        Ui = createUi(this);
+        // {{$Variablen}} gleich auflösbar – auch wenn Teile der Initialisierung übersprungen werden (Selbsttest)
+        Placeholders.Resolver = name => VariableResolver.Resolve(name);
+    }
 
     protected readonly List<AppPanel> _hosts = new();
     private ISettingsWindow? _settingsWindow;
@@ -53,6 +58,8 @@ public partial class AppController : IDisposable
         CustomEntry.TerminalAvailable = () => ProgramResolver.Resolve("wt.exe") != null;
         CustomEntry.RdpFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "Rdp");
         Placeholders.ClipboardText = () => Shell.GetClipboardText();
+        // {{$Variablen}}: eingebaute und eigene; PowerShell-Variablen mit Zwischenspeicher im Hintergrund vorwärmen
+        WarmVariables();
 
         Health = new HealthService(UiDispatcher);
         Health.Changed += RebuildPanels;
@@ -143,6 +150,7 @@ public partial class AppController : IDisposable
         var themeChanged = AppearanceKey(Settings) != AppearanceKey(updated);
         var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
+        WarmVariables();
         SaveSettings();
         if (themeChanged) Ui.ApplyTheme(Settings);
         if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
@@ -158,6 +166,25 @@ public partial class AppController : IDisposable
             RebuildPanels();
         }
         return hotkeyError;
+    }
+
+    /// <summary>Anzeigewert einer {{$Variable}} (Vorschau im Panel).</summary>
+    public string VariablePreview(string name) => VariableResolver.Preview(name);
+
+    /// <summary>Eigene Variablen für den Eintrags-Editor (Einfügen, Warnung bei unbekannten).</summary>
+    public IReadOnlyList<UserVariable> UserVariables => Settings.Variables;
+
+    /// <summary>Löst {{$Variablen}} auf (eingebaute und eigene, mit Zwischenspeicher für PowerShell-Befehle).</summary>
+    public VariableResolver VariableResolver => _variableResolver ??= new VariableResolver(() => Settings,
+        cmd => VariableCommandRunner.Run(cmd, Settings.DefaultEngine), SecretProtector.Unprotect, () => Shell.GetClipboardText());
+    private VariableResolver? _variableResolver;
+
+    /// <summary>PowerShell-Variablen mit Zwischenspeicher bzw. „je Sitzung“ im Hintergrund ermitteln.</summary>
+    public void WarmVariables()
+    {
+        if (!Settings.Variables.Any(v => v.Kind == VariableKind.PowerShell && v.Refresh != VariableRefresh.EveryUse)) return;
+        var resolver = VariableResolver;
+        _ = Task.Run(resolver.Warm);
     }
 
     /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
@@ -424,6 +451,14 @@ public partial class AppController : IDisposable
     private LaunchItem? ResolvePlaceholders(LaunchItem item, IReadOnlyDictionary<string, string>? preset = null)
     {
         if (item.PlaceholdersResolved || item.Source is not { } entry || !entry.NeedsResolving) return item;
+        // {{$Variablen}} müssen angelegt sein (normale {{Platzhalter}} werden abgefragt)
+        var unknown = Variables.Unknown(Settings, entry.Target, entry.Arguments, entry.Code, entry.User, entry.RemoteCommand, entry.WorkingDirectory);
+        if (unknown.Count > 0)
+        {
+            Dialogs.Warn($"„{item.DisplayName}“ verwendet {string.Join(", ", unknown.Select(n => "{{" + n + "}}"))} – diese Variable gibt es nicht. " +
+                         "Bitte unter Einstellungen › Inhalte › Variablen anlegen oder den Eintrag korrigieren.", "Variable fehlt");
+            return null;
+        }
         IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
         if (preset == null && entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
             values = WithDialog(() => Dialogs.AskPlaceholders(item.DisplayName, entry.Placeholders,
@@ -431,7 +466,13 @@ public partial class AppController : IDisposable
         if (values == null) return null;
         foreach (var kv in values) ParameterHistory.Add(Settings, entry.Key, kv.Key, kv.Value);
         SaveSettings();
-        var resolved = entry.WithValues(values);
+        CustomEntry resolved;
+        try { resolved = entry.WithValues(values); }
+        catch (Exception ex)
+        {
+            Dialogs.Warn($"Eine Variable von „{item.DisplayName}“ ließ sich nicht ermitteln: {ex.Message}", "Variable");
+            return null;
+        }
         LaunchItem result;
         if (resolved.Kind == CustomEntryKind.Snippet && resolved.Language == SnippetLanguage.PowerShell)
         {

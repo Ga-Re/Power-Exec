@@ -55,7 +55,7 @@ public static class RemoteRunner
             ["ScriptPath"] = path,
             ["ScriptDirectory"] = Path.GetDirectoryName(path),
             ["ScriptFileName"] = Path.GetFileName(path),
-            ["Parameters"] = r.Parameters,
+            ["Parameters"] = Config.Placeholders.ApplyVariables(r.Parameters),
             ["UseCredential"] = useCredential,
             ["Engine"] = r.Engine.ToString(),
             ["CopyFolder"] = r.CopyFolder,

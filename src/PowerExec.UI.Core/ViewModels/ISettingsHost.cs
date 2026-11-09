@@ -26,4 +26,13 @@ public interface ISettingsHost
     Task<IReadOnlyList<string>> FindComputersAsync(string query);
     /// <summary>Distinguished Names von Domäne, OUs und dem Container „Computers“ (für die OU-Auswahl).</summary>
     Task<IReadOnlyList<string>> FindOrganizationalUnitsAsync() => AdSearch.FindOrganizationalUnitsAsync();
+
+    /// <summary>PowerShell-Befehl einer Variable ausführen (Ausgabe als Text; wirft bei Fehler).</summary>
+    string RunVariableCommand(string command) => VariableCommandRunner.Run(command, Settings.DefaultEngine);
+
+    /// <summary>Text-Datei aus dem Netz laden (Marktplatz).</summary>
+    Task<string> DownloadTextAsync(Uri uri) => MarketplaceClient.DownloadTextAsync(uri);
+
+    /// <summary>Ordner für Scripte aus dem Marktplatz.</summary>
+    string MarketplaceScriptFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Power-Exec", "Marktplatz");
 }

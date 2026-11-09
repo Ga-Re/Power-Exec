@@ -585,6 +585,8 @@ public sealed class SettingsViewModel : ObservableObject
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
+        VariablesPage = new VariablesViewModel(app, _s, text => app.Shell.SetClipboardText(text));
+        MarketplacePage = new MarketplaceViewModel(app, _s, OnMarketplaceInstalled);
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
@@ -607,7 +609,7 @@ public sealed class SettingsViewModel : ObservableObject
     private static readonly (string Section, string Page, string Segment)[] Pages =
     {
         ("general", "Allgemein", ""),
-        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("workspaces", "Arbeitsbereiche", "content"),
+        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("variables", "Variablen", "content"), ("marketplace", "Marktplatz", "content"), ("workspaces", "Arbeitsbereiche", "content"),
         ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
         ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
         ("samples", "Beispiele", "help"), ("diag", "Diagnose", "help")
@@ -635,6 +637,8 @@ public sealed class SettingsViewModel : ObservableObject
         new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
         new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
         new("tags", "Schlagworte", "Schlagworte verwalten", "tag umbenennen zusammenführen löschen farbe #"),
+        new("marketplace", "Marktplatz", "Einträge, Pakete, Designs und Scripte herunterladen", "marktplatz download herunterladen paket design script matrix42 google virustotal"),
+        new("variables", "Variablen", "Variablen verwalten", "variable platzhalter $ firmenname datum uhrzeit benutzer computer zwischenablage geheim token umgebungsvariable powershell arbeitsbereich"),
         new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
         new("workspaces", "Arbeitsbereiche", "Gruppen je Arbeitsbereich", "ausblenden sichtbar auswahl"),
         new("look", "Darstellung", "Design", "hell dunkel theme farbe"),
@@ -710,6 +714,7 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
+            if (value == "marketplace") _ = MarketplacePage.EnsureLoadedAsync();
         }
     }
 
@@ -856,6 +861,24 @@ public sealed class SettingsViewModel : ObservableObject
 
     /// <summary>Schlagwort-Verwaltung.</summary>
     public TagsViewModel TagList { get; }
+
+    // ---- Variablen ({{$Name}}) --------------------------------------------------
+
+    public VariablesViewModel VariablesPage { get; }
+
+    // ---- Marktplatz -------------------------------------------------------------
+
+    public MarketplaceViewModel MarketplacePage { get; }
+
+    /// <summary>Nach einer Installation: neue Gruppen, Variablen und Designs in den anderen Seiten zeigen.</summary>
+    private void OnMarketplaceInstalled()
+    {
+        RaisePresets();
+        MarketplaceChanged?.Invoke();
+    }
+
+    /// <summary>Marktplatz hat etwas installiert – das Fenster übernimmt die Einstellungen sofort.</summary>
+    public event Action? MarketplaceChanged;
 
     // ---- Rechnergruppen -------------------------------------------------------
 
@@ -1349,7 +1372,9 @@ public sealed class SettingsViewModel : ObservableObject
     });
 
     private string? _samplesStatus;
-    public string? SamplesStatus { get => _samplesStatus; private set => Set(ref _samplesStatus, value); }
+    public string? SamplesStatus { get => _samplesStatus; private set { if (Set(ref _samplesStatus, value)) OnPropertyChanged(nameof(SamplesSeverity)); } }
+    /// <summary>Art der Rückmeldung für die InfoBar: Success oder Error.</summary>
+    public string SamplesSeverity => _samplesStatus?.Contains("nicht", StringComparison.Ordinal) == true ? "Error" : "Success";
 
     private void AddCategory()
     {

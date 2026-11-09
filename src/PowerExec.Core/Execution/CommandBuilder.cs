@@ -72,7 +72,7 @@ public static class CommandBuilder
             {
                 var exe = EngineExe(r.Engine);
                 var flags = PowerShellFlags(r);
-                var command = ScriptInvocation(path, r.Parameters);
+                var command = ScriptInvocation(path, Config.Placeholders.ApplyVariables(r.Parameters));
                 var args = flags + " -EncodedCommand " + Encode(doneFile != null ? command + DoneSuffix(doneFile) : command);
                 return new LocalLaunchSpec
                 {
@@ -133,7 +133,7 @@ public static class CommandBuilder
         var targets = r.Targets.Count > 0 ? string.Join(",", r.Targets) : "<Rechner>";
         var opts = (r.Engine == PsEngine.PowerShell7 ? " -ConfigurationName PowerShell.7" : string.Empty) +
                    (r.Mode == ExecutionMode.OtherUser ? " -Credential $cred" : string.Empty);
-        var args = ParameterValueConverter.ToPowerShellArguments(r.Parameters);
+        var args = ParameterValueConverter.ToPowerShellArguments(Config.Placeholders.ApplyVariables(r.Parameters));
         if (r.CopyFolder)
         {
             var dir = Path.GetDirectoryName(r.EffectivePath) ?? string.Empty;

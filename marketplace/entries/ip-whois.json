@@ -1,0 +1,27 @@
+{
+  "Format": "Power-Exec-Einträge",
+  "Version": 1,
+  "Groups": [
+    "Security"
+  ],
+  "GroupIcons": {},
+  "Entries": [
+    {
+      "Entry": {
+        "Id": "mk-ip-whois",
+        "Name": "IP / Whois Lookup",
+        "Kind": "Url",
+        "Target": "https://ipinfo.io/{{IP_Adresse}}",
+        "Description": "Herkunft und ASN einer externen IP-Adresse nachschlagen.",
+        "Icon": "fluent:globe"
+      },
+      "Group": "Security",
+      "DisplayName": "",
+      "Notes": "",
+      "Tags": [
+        "marktplatz"
+      ],
+      "Profiles": []
+    }
+  ]
+}
