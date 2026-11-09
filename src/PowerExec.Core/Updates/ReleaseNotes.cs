@@ -7,6 +7,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 22, 3), "Feinschliff: Ausfahren, Auswahllisten, Einstellungen", new[]
+        {
+            "Panel fährt zügiger und gleichmäßiger aus; geparkt wird es ohne erneutes Platzieren gestartet",
+            "Auswahllisten zeigen kein überflüssiges Eingabefeld mehr; das Panel zeigt das Programmsymbol",
+            "Einstellungen: Panelfarbe und Hintergrund als Ausklappbereiche – darunter je nach Hintergrund Blur-Stärke, Sättigung, Milchglas und Deckkraft",
+            "Glas: Inhalt sitzt nach einem Wechsel des Hintergrunds wieder genau im Panel"
+        }),
         new ReleaseNote(new Version(0, 22, 2), "Ruhigeres Ausfahren, Details bei Rastergruppen", new[]
         {
             "Das Panel fährt sanfter aus: Fokus und Hintergrundprüfungen folgen erst nach der Bewegung, beim Gleiten wird nichts unnötig neu vermessen oder gezeichnet",
