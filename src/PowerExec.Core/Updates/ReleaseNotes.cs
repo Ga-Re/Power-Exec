@@ -7,6 +7,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 22, 2), "Ruhigeres Ausfahren, Details bei Rastergruppen", new[]
+        {
+            "Das Panel fährt sanfter aus: Fokus und Hintergrundprüfungen folgen erst nach der Bewegung, beim Gleiten wird nichts unnötig neu vermessen oder gezeichnet",
+            "Steht das Panel auf „Liste“ und eine Gruppe auf „Raster“, erscheinen die Details des ausgewählten Eintrags jetzt unten im Panel"
+        }),
         new ReleaseNote(new Version(0, 22, 1), "Fehlerbehebung beim Ausführen mit Glas", new[]
         {
             "Mit dem Hintergrund „Glas“ erschien beim Ausführen eines Scripts aus dem Panel die Meldung „Value cannot be null (defaultDestinationValue)“ – behoben",

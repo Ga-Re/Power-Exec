@@ -15,6 +15,10 @@ internal static class NativeMethods
     public static readonly IntPtr HWND_TOPMOST = new(-1);
     public static readonly IntPtr HWND_NOTOPMOST = new(-2);
     public const uint SWP_NOSIZE = 0x0001, SWP_NOMOVE = 0x0002;
+    /// <summary>Fensterinhalt beim Verschieben nicht kopieren (DWM setzt ohnehin neu zusammen).</summary>
+    public const uint SWP_NOCOPYBITS = 0x0100;
+    /// <summary>Kein WM_WINDOWPOSCHANGING (spart pro Bild einen Durchlauf durch WPF beim Gleiten).</summary>
+    public const uint SWP_NOSENDCHANGING = 0x0400;
 
     public const uint MOD_ALT = 0x0001;
     public const uint MOD_CONTROL = 0x0002;

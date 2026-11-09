@@ -822,7 +822,7 @@ public partial class AppController : IDisposable
     {
         GroupManager.SetLayout(Settings, groupPath, layout);
         SaveSettings();
-        foreach (var h in Hosts) foreach (var g in h.ViewModel.AllGroups) g.RefreshLayout();
+        foreach (var h in Hosts) h.ViewModel.GroupLayoutsChanged();
         SettingsChangedOutside?.Invoke();
     }
 

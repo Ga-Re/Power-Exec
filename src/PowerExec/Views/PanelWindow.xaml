@@ -1551,19 +1551,16 @@
                 </DockPanel>
             </Border>
 
-            <!-- Raster: Details des ausgewählten Eintrags -->
+            <!-- Raster: Details des ausgewählten Eintrags (Panel oder seine Gruppe als Raster) -->
             <Border Grid.Row="6" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="16,10,12,4" MaxHeight="320">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsGrid}" Value="True"/>
-                                    <Condition Binding="{Binding HasSelection}" Value="True"/>
-                                </MultiDataTrigger.Conditions>
+                            <!-- auch wenn nur die Gruppe des Eintrags auf „Raster“ steht -->
+                            <DataTrigger Binding="{Binding ShowTileDetails}" Value="True">
                                 <Setter Property="Visibility" Value="Visible"/>
-                            </MultiDataTrigger>
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>

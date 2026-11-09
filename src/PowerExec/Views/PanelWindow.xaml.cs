@@ -155,9 +155,12 @@ public partial class PanelWindow : Window
         }
         Place();
         var wasVisible = IsVisible;
-        if (!wasVisible) Show();
-        EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
-        Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen
+        if (!wasVisible)
+        {
+            Show();
+            EnsureTransparentBackground(); // die Zeichenfläche entsteht erst mit dem ersten Anzeigen
+            Place(); // WPF kann beim ersten Anzeigen die Größe zurücksetzen – nur dann ein zweites Mal
+        }
         if (!wasVisible && _contentHost is { IsDisposed: false })
         {
             // Glas: das Kindfenster erst fertig zeichnen lassen – sonst fällt das Zeichnen in den schnellen Anfang des Ausfahrens
@@ -169,23 +172,26 @@ public partial class PanelWindow : Window
         _poll.Start();
         if (!wasVisible && _contentHost is { IsDisposed: false } && !_skipNextAnimation)
         {
-            // Glas: Fokus, Aktivierung und erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach.
-            // Sonst fallen diese Arbeiten in die ersten (schnellsten) Bilder des Ausfahrens, und es ruckelt.
-            if (viaHotkey) FocusSearch();
+            // Glas: erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach
             Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => { if (IsOpen && !_hiding) Animate(show: true); });
             return;
         }
+        // Fokus (Vordergrund, Tastatur, Textauswahl) erst nach dem Ausfahren – siehe OnSlideInFinished
         Animate(show: true);
-        if (viaHotkey) FocusSearch();
     }
 
     /// <summary>
-    /// Nach dem Ausfahren: Hintergrundprüfungen (Erreichbarkeit der Einträge) erst jetzt starten – während des Gleitens
-    /// würden ihre Abfragen den UI-Thread belasten.
+    /// Nach dem Ausfahren: Hintergrundprüfungen (Erreichbarkeit der Einträge) und Fokus erst jetzt – während des Gleitens
+    /// würden sie den UI-Thread belasten.
     /// </summary>
     private void OnSlideInFinished()
     {
-        if (IsOpen && !_hiding) Vm.OnShown();
+        if (IsOpen && !_hiding)
+        {
+            Vm.OnShown();
+            // Per Tastenkürzel geöffnet: Fokus ins Suchfeld erst jetzt – während des Gleitens bleibt der UI-Thread frei
+            if (OpenedViaHotkey) FocusSearch();
+        }
     }
 
     private void FocusSearch()
@@ -635,8 +641,11 @@ public partial class PanelWindow : Window
         if (_systemWindow)
         {
             // Panelrahmen so groß wie das Fenster; die Lage beim Ein-/Ausfahren setzt ApplyReveal
-            PanelBorder.Width = _rect.Width / dpi.DpiScaleX;
-            PanelBorder.Height = _rect.Height / dpi.DpiScaleY;
+            // Nur bei echter Änderung setzen – sonst stößt jedes Zeigen einen neuen Layoutdurchlauf an
+            var targetW = _rect.Width / dpi.DpiScaleX;
+            var targetH = _rect.Height / dpi.DpiScaleY;
+            if (double.IsNaN(PanelBorder.Width) || Math.Abs(PanelBorder.Width - targetW) > 0.5) PanelBorder.Width = targetW;
+            if (double.IsNaN(PanelBorder.Height) || Math.Abs(PanelBorder.Height - targetH) > 0.5) PanelBorder.Height = targetH;
             PanelBorder.HorizontalAlignment = Cfg.Edge == ScreenEdge.Left ? HorizontalAlignment.Right : HorizontalAlignment.Left;
             PanelBorder.VerticalAlignment = Cfg.Edge == ScreenEdge.Top ? VerticalAlignment.Bottom : VerticalAlignment.Top;
             PrepareSlide();
@@ -737,7 +746,7 @@ public partial class PanelWindow : Window
         if (_monitor == null) return;
         _hidden = PanelSlide.Hidden(_rect, _monitor.WorkArea, Cfg.Edge);
         _clipSlide = PanelSlide.NeedsClip(_rect, _monitor.WorkArea, Cfg.Edge, ScreenService.GetMonitors().Select(m => m.Bounds));
-        _appliedSize = System.Drawing.Size.Empty; // Größe und Fensterbereich neu setzen (Panel kann größer/kleiner geworden sein)
+        if (_appliedSize != _rect.Size) _appliedSize = System.Drawing.Size.Empty; // Größe neu setzen nur, wenn sie sich geändert hat
         _regionApplied = false;
     }
 
@@ -756,7 +765,8 @@ public partial class PanelWindow : Window
         static long Area(System.Drawing.Rectangle? v, System.Drawing.Rectangle win) => v is { } x ? (long)x.Width * x.Height : (long)win.Width * win.Height;
         bool shrinking = !_regionApplied || Area(region, r) < Area(_region, r);
         if (shrinking) SetSlideRegion(region, r.Size);
-        uint flags = NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER;
+        uint flags = NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER
+                   | NativeMethods.SWP_NOCOPYBITS | NativeMethods.SWP_NOSENDCHANGING;
         if (r.Size == _appliedSize) flags |= NativeMethods.SWP_NOSIZE;
         NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X, r.Y, r.Width, r.Height, flags);
         _appliedSize = r.Size;
@@ -807,11 +817,13 @@ public partial class PanelWindow : Window
             else OnSlideInFinished();
             return;
         }
-        // Ausfahren mit EaseInOut: startet mit Geschwindigkeit 0 statt mit dem Dreifachen der mittleren Geschwindigkeit –
-        // der Kaltstart von Weichzeichner und Composition in den ersten Bildern bleibt so unsichtbar.
+        // Ausfahren mit sanftem Quadratic-EaseOut (natürlicher Start ohne Geschwindigkeitssprung in der Mitte),
+        // Einfahren wie bisher mit Cubic-EaseIn.
         var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? duration : TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7))
         {
-            EasingFunction = new CubicEase { EasingMode = show ? EasingMode.EaseInOut : EasingMode.EaseIn }
+            EasingFunction = show
+                ? new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                : new CubicEase { EasingMode = EasingMode.EaseIn }
         };
         if (!show) anim.Completed += (_, _) => { if (_hiding) FinishHide(); };
         else anim.Completed += (_, _) => OnSlideInFinished();
