@@ -1399,22 +1399,23 @@
                     </c:SettingsCard>
 
                     <TextBlock Text="Panel" Style="{StaticResource SettingsSection}"/>
-                    <!-- Panelfarbe wie die Akzentfarbe in den Windows-Einstellungen: Auswahl rechts, darunter Farbkacheln -->
-                    <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,0,0,4">
-                        <StackPanel>
-                            <DockPanel>
-                                <ComboBox DockPanel.Dock="Right" Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
-                                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Panelfarbe"/>
-                                <Border DockPanel.Dock="Right" Width="40" Height="32" CornerRadius="4" Margin="0,0,12,0" VerticalAlignment="Center"
+                    <!-- Panelfarbe wie die Akzentfarbe in den Windows-Einstellungen: Auswahl und Chevron rechts, darunter die Farbkacheln -->
+                    <c:SettingsExpander Icon="&#xE790;" Header="Panelfarbe" Description="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel."
+                                        IsExpanded="{Binding ColorsExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="40" Height="32" CornerRadius="4" Margin="0,0,12,0" VerticalAlignment="Center"
                                         Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                         BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
-                                <TextBlock DockPanel.Dock="Left" Text="&#xE790;" FontFamily="{StaticResource IconFont}" FontSize="18" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="Panelfarbe" Style="{StaticResource RowTitle}"/>
-                                    <TextBlock Text="Hintergrund des Panels. Bei hellen Farben wird die Schrift automatisch dunkel." Style="{StaticResource RowDesc}"/>
-                                </StackPanel>
-                            </DockPanel>
-                            <StackPanel Margin="34,14,0,0" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <ComboBox Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
+                                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Panelfarbe"/>
+                            </StackPanel>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <TextBlock Text="Das Panel nimmt die Fläche des hellen bzw. dunklen Designs. Für eine eigene Farbe oben „Manuell“ wählen."
+                                       Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,10"
+                                       Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                            <StackPanel Margin="0,8,0,4" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
                                 <StackPanel Visibility="{Binding HasRecentColors, Converter={StaticResource Vis}}">
                                     <TextBlock Text="Zuletzt verwendete Farben" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
                                     <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
@@ -1430,56 +1431,64 @@
                                     <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                 </ItemsControl>
                             </StackPanel>
-                            <Border Margin="-16,12,-16,-12" Padding="50,10,16,10" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}"
-                                    Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
-                                <DockPanel>
-                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Farben anzeigen" Command="{Binding PickColorCommand}"
-                                               ToolTip="Eigene Farbe im Farbwähler aussuchen"/>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="Benutzerdefinierte Farben" Style="{StaticResource RowTitle}"/>
-                                        <TextBlock Style="{StaticResource RowDesc}">
-                                            <Run Text="Aktuell:"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
-                                        </TextBlock>
-                                    </StackPanel>
-                                </DockPanel>
-                            </Border>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Farben anzeigen" Command="{Binding PickColorCommand}"
+                                           VerticalAlignment="Center" ToolTip="Eigene Farbe im Farbwähler aussuchen"/>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Benutzerdefinierte Farben"/>
+                                    <TextBlock Style="{StaticResource Caption}" FontSize="12">
+                                        <Run Text="Aktuell:"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DockPanel>
                         </StackPanel>
-                    </Border>
-                    <c:SettingsCard Icon="&#xE790;" Header="Hintergrund" Description="{Binding BackdropDescription}">
-                        <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}"
-                                  AutomationProperties.Name="Hintergrund"/>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE8B3;" Header="Blur-Stärke" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
-                                    Description="Wie stark der Desktop hinter dem Panel weichgezeichnet wird.">
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="180" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
-                                    Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="Blur-Stärke"/>
-                            <TextBlock Text="{Binding GlassBlur}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                    </c:SettingsExpander>
+                    <!-- Hintergrund: Auswahl und Chevron rechts, darunter die Regler der gewählten Variante -->
+                    <c:SettingsExpander Icon="&#xE81E;" Header="Hintergrund" Description="{Binding BackdropDescription}"
+                                        IsExpanded="{Binding BackdropExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <ComboBox Width="230" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}"
+                                      DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Hintergrund"/>
+                        </c:SettingsExpander.HeaderContent>
+                        <StackPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding GlassBlur}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="Blur-Stärke"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Blur-Stärke"/>
+                                    <TextBlock Text="Wie stark der Desktop hinter dem Panel weichgezeichnet wird." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="Sättigung"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Sättigung"/>
+                                    <TextBlock Text="Farbkraft des Desktops hinter dem Glas (100 % = unverändert)." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Frost, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="Milchglas"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Milchglas"/>
+                                    <TextBlock Text="{Binding FrostDescription}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                <Slider DockPanel.Dock="Right" Width="180" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                        Value="{Binding PanelOpacity}" VerticalAlignment="Center" AutomationProperties.Name="Deckkraft"/>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Deckkraft"/>
+                                    <TextBlock Text="{Binding OpacityDescription}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
                         </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE790;" Header="Sättigung" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}"
-                                    Description="Farbkraft des Desktops hinter dem Glas (100 % = unverändert).">
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="180" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True"
-                                    Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="Sättigung"/>
-                            <TextBlock Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xE7B3;" Header="Milchglas" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}"
-                                    Description="{Binding FrostDescription}">
-                        <StackPanel Orientation="Horizontal">
-                            <Slider Width="180" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
-                                    Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="Milchglas"/>
-                            <TextBlock Text="{Binding Frost, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </c:SettingsCard>
-                    <c:SettingsCard Icon="&#xEF1F;" Header="Deckkraft" Description="{Binding OpacityDescription}">
-                            <StackPanel Orientation="Horizontal">
-                                <Slider Width="180" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding PanelOpacity}" VerticalAlignment="Center"
-                                        AutomationProperties.Name="Deckkraft"/>
-                                <TextBlock Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
-                            </StackPanel>
-                    </c:SettingsCard>
+                    </c:SettingsExpander>
                     <c:SettingsCard Icon="&#xE8A0;" Header="Mini-Dock am Rand"
                                     Description="Schmale Leiste mit den Favoriten am gewählten Rand – ein Klick startet, „⋯“ öffnet das volle Panel. Ersetzt die Hover-Zone. Ausgeblendet, solange das Panel offen ist oder ein Vollbild-Programm läuft.">
                         <ui:ToggleSwitch IsChecked="{Binding ShowDock}" AutomationProperties.Name="Mini-Dock am Rand" />

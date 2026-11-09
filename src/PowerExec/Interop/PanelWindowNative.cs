@@ -62,7 +62,7 @@ internal static class PanelWindowNative
     public static void ClearRegion(IntPtr hwnd)
     {
         if (hwnd == IntPtr.Zero) return;
-        try { SetWindowRgn(hwnd, IntPtr.Zero, true); }
+        try { SetWindowRgn(hwnd, IntPtr.Zero, false); } // ohne synchrones Neuzeichnen
         catch (EntryPointNotFoundException) { }
     }
 

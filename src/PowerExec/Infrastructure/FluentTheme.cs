@@ -51,6 +51,9 @@ public static class FluentTheme
     private static void PinStyle(FrameworkElement e)
     {
         if (e.ReadLocalValue(FrameworkElement.StyleProperty) != DependencyProperty.UnsetValue) return;
+        // Teile einer Vorlage (z. B. das versteckte Eingabefeld und der Pfeil-Knopf einer Auswahlliste) gehören zu ihrem
+        // Steuerelement – sie bekämen sonst den eigenständigen Stil und würden sichtbar
+        if (e.TemplatedParent != null) return;
         if (!IsInFluentRoot(e)) return;
         if (e.TryFindResource(e.GetType()) is Style s) e.Style = s;
     }

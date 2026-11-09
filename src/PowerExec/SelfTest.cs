@@ -500,6 +500,56 @@ public sealed partial class SelfTestController : AppController
                 CreateHosts();
             }
 
+            Step("Angeheftet: Wechsel Glas ↔ Klarglas über die Einstellungen");
+            if (PanelBackdrops.Effective(PanelBackdrop.Glass, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast, ThemeService.TransparencyEffects()) == PanelBackdrop.Glass)
+            {
+                async Task<PanelHost> Switch(PanelBackdrop backdrop)
+                {
+                    var updated = SettingsStore.Clone(Settings);
+                    updated.Panels[0].Backdrop = backdrop;
+                    ApplySettings(updated);
+                    await Settle();
+                    await Task.Delay(400); // alte Fenster schließen verzögert
+                    return WpfHost(0);
+                }
+                void Check(PanelHost h, string what)
+                {
+                    var w = h.Window;
+                    var (client, content) = w.SizesForTest();
+                    var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(w);
+                    var border = ((int)Math.Round(w.PanelBorder.ActualWidth * dpi.DpiScaleX), (int)Math.Round(w.PanelBorder.ActualHeight * dpi.DpiScaleY));
+                    Step($"{what}: offen {w.IsOpen}, sichtbar {w.IsVisible}, Rahmen {border.Item1}×{border.Item2}, Inhalt {client.W}×{client.H}, Kindfenster {(content is { } c ? $"{c.W}×{c.H}" : "–")}, Einträge {h.ViewModel.AllItems.Count()}");
+                    if (!w.IsOpen || !w.IsVisible) Fail($"{what}: Panel nach dem Wechsel nicht offen");
+                    if (!w.PanelBorder.IsVisible || w.PanelBorder.ActualWidth < 100 || w.PanelBorder.Opacity < 0.99)
+                        Fail($"{what}: Panelinhalt nicht sichtbar (Rahmen {border.Item1}×{border.Item2}, Deckkraft {w.PanelBorder.Opacity:0.00})");
+                    if (content is { } cs && (Math.Abs(cs.W - client.W) > 1 || Math.Abs(cs.H - client.H) > 1))
+                        Fail($"{what}: Kindfenster {cs.W}×{cs.H} statt {client.W}×{client.H} – Inhalt verschoben");
+                    if (h.ViewModel.AllItems.Count() == 0) Fail($"{what}: keine Einträge im Panel");
+                }
+                var before = (Settings.Panels[0].Backdrop, Settings.Panels[0].Pinned);
+                var start = WpfHost(0);
+                start.Config.Pinned = true;
+                Settings.Panels[0].Pinned = true;
+                start.Window.ShowPanel(ScreenService.TriggerMonitors(start.Config)[0], viaHotkey: false);
+                await Settle();
+                var glassHost = await Switch(PanelBackdrop.Glass);
+                Check(glassHost, "Glas (fixiert)");
+                var clearHost = await Switch(PanelBackdrop.Clear);
+                Check(clearHost, "Klarglas nach Glas (fixiert)");
+                if (clearHost.Window.Content is FrameworkElement clearRoot) Screenshot(clearRoot, "wechsel-klarglas-nach-glas");
+                var againHost = await Switch(PanelBackdrop.Glass);
+                Check(againHost, "Glas nach Klarglas (fixiert)");
+                ScreenCaptureWindow(againHost.Window, "wechsel-glas-nach-klarglas");
+                againHost.Config.Pinned = before.Pinned;
+                var restore = SettingsStore.Clone(Settings);
+                restore.Panels[0].Backdrop = before.Backdrop;
+                restore.Panels[0].Pinned = before.Pinned;
+                ApplySettings(restore);
+                await Settle();
+                WpfHost(0).Window.HidePanel();
+                await Settle();
+            }
+
             Step("Angeheftet: Klick auf die Hover-Zone fährt ein und aus");
             {
                 var host = WpfHost(0);
@@ -1097,6 +1147,25 @@ public sealed partial class SelfTestController : AppController
             {
                 settingsVm.Section = "general";
                 await Settle();
+                // Auswahllisten: das innere (versteckte) Eingabefeld bleibt versteckt
+                var combos = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible && !c.IsEditable).ToList();
+                if (combos.Any(c => c.Template?.FindName("PART_EditableTextBox", c) is FrameworkElement { IsVisible: true }))
+                    Fail("Auswahllisten zeigen ein Eingabefeld (Fluent-Stil auf einem Vorlagenteil festgehalten)");
+                // Darstellung: Panelfarbe und Hintergrund als Ausklappbereiche mit den Reglern darunter
+                settingsVm.Section = "look";
+                settingsVm.Panel.ColorMode = "manual";
+                settingsVm.Panel.BackdropExpanded = true;
+                await Settle();
+                if (!settingsVm.Panel.ColorsExpanded) Fail("Panelfarbe: „Manuell“ klappt die Farben nicht auf");
+                var sliders = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.Slider>().Where(x => x.IsVisible)
+                    .Select(x => System.Windows.Automation.AutomationProperties.GetName(x)).ToList();
+                foreach (var name in new[] { "Deckkraft", "Milchglas" })
+                    if (!sliders.Contains(name)) Fail($"Hintergrund: Regler „{name}“ fehlt im Ausklappbereich");
+                if (settingsWindow.Content is FrameworkElement lookRoot) Screenshot(lookRoot, "settings-darstellung-ausgeklappt");
+                settingsVm.Panel.ColorMode = "design";
+                settingsVm.Panel.BackdropExpanded = false;
+                settingsVm.Section = "general";
+                await Settle();
                 static IEnumerable<DependencyObject> Tree(DependencyObject d)
                 {
                     for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++)
@@ -1326,6 +1395,14 @@ public sealed partial class SelfTestController : AppController
             Background = System.Windows.Media.Brushes.White, Content = new System.Windows.Controls.Border { Background = brush },
             Left = px.Left / scale - 40, Top = px.Top / scale - 40, Width = px.Width / scale + 80, Height = px.Height / scale + 80, Title = "Streifen"
         };
+    }
+
+    private void ScreenCaptureWindow(Window w, string name)
+    {
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(w).Handle;
+        if (hwnd == IntPtr.Zero) return;
+        Interop.NativeMethods.GetWindowRect(hwnd, out var r);
+        ScreenCapture(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top, name);
     }
 
     /// <summary>Bildschirmbereich als PNG speichern (mit allem, was Windows dort zusammensetzt).</summary>

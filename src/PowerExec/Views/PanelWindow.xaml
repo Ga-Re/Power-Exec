@@ -879,9 +879,8 @@
                     </ColumnDefinition>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Width="26" Height="26" CornerRadius="6" Background="{DynamicResource Accent}">
-                    <TextBlock Text="&#xE756;" Style="{StaticResource Icon}" Foreground="{DynamicResource OnAccent}" FontSize="14"/>
-                </Border>
+                <!-- Programmsymbol von Power-Exec (Auflösung passend zur Skalierung, siehe PanelWindow.xaml.cs) -->
+                <Image x:Name="HeaderLogo" Width="26" Height="26" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,8,0" TextTrimming="CharacterEllipsis">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
