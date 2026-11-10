@@ -149,7 +149,7 @@ public sealed class GroupViewModel : ObservableObject
     /// <summary>„panel“, „List“ oder „Grid“ (für die Haken im Menü).</summary>
     public string LayoutSetting => GroupPath != null && GroupManager.LayoutOf(_app.Settings, GroupPath) is { } l ? l.ToString() : "panel";
     public string LayoutGlyph => IsGrid ? "\uE8FD" : "\uE8A9";
-    public string LayoutToolTip => IsGrid ? L.T("Diese Gruppe als Liste anzeigen") : L.T("Diese Gruppe als Raster anzeigen");
+    public string LayoutToolTip => IsGrid ? L.T("Show this group as a list") : L.T("Show this group as a grid");
     public bool CanChangeLayout => GroupPath != null;
 
     /// <summary>Elementgröße dieser Gruppe: eigene Einstellung oder die des Panels.</summary>
@@ -195,8 +195,8 @@ public sealed class GroupViewModel : ObservableObject
             var list = PanelColors.AccentPresets
                 .Select(p => new GroupColorChoice(p.Name, p.Hex, own.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand))
                 .ToList();
-            list.Add(new GroupColorChoice(L.T("Eigene Farbe …"), string.Empty, false, CustomColorCommand) { Glyph = "\uE790", IsFirstAction = true });
-            if (own.Length > 0) list.Add(new GroupColorChoice(L.T("Farbe entfernen"), string.Empty, false, SetColorCommand) { Glyph = "\uE894" });
+            list.Add(new GroupColorChoice(L.T("Custom color …"), string.Empty, false, CustomColorCommand) { Glyph = "\uE790", IsFirstAction = true });
+            if (own.Length > 0) list.Add(new GroupColorChoice(L.T("Remove color"), string.Empty, false, SetColorCommand) { Glyph = "\uE894" });
             return list;
         }
     }
@@ -213,7 +213,7 @@ public sealed class GroupViewModel : ObservableObject
 
     /// <summary>Symbol im Gruppenkopf (Segoe Fluent Icons).</summary>
     /// <summary>Tooltip am Punkt der Sprungleiste.</summary>
-    public string RailToolTip => L.F("{0} ({1}) – Klick: aufklappen und hinspringen · erneuter Klick: zuklappen", Title, CountText);
+    public string RailToolTip => L.F("{0} ({1}) – click: expand and jump there · click again: collapse", Title, CountText);
 
     /// <summary>Gruppe eines abonnierten Team-Katalogs.</summary>
     public bool IsCatalog => GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.IsSameOrBelow(GroupPath, GroupManager.Normalize(c.Name)));

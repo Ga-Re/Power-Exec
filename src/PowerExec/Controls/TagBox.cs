@@ -216,7 +216,7 @@ public sealed class TagBox : Control
         Rebuild();
     }
 
-    private void UpdatePlaceholder() => _input.Tag = _tags.Count == 0 ? Placeholder : L.T("weiteres …");
+    private void UpdatePlaceholder() => _input.Tag = _tags.Count == 0 ? Placeholder : L.T("more …");
 
     private bool _rebuilding;
 
@@ -243,7 +243,7 @@ public sealed class TagBox : Control
         {
             Content = new TextBlock { Text = "", FontSize = 8, FontFamily = TryFindResource("IconFont") as FontFamily ?? new FontFamily("Segoe MDL2 Assets") },
             Width = 20, Height = 20, MinHeight = 20, Padding = new Thickness(0), Margin = new Thickness(0, 0, 2, 0),
-            ToolTip = L.T("Entfernen"), Focusable = false, Cursor = Cursors.Hand
+            ToolTip = L.T("Remove"), Focusable = false, Cursor = Cursors.Hand
         };
         remove.SetResourceReference(StyleProperty, "Btn.Icon");
         remove.Click += (_, _) => Remove(tag);

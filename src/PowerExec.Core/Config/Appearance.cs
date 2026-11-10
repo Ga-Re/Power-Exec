@@ -43,10 +43,10 @@ public static class Appearance
     /// </summary>
     public static readonly IReadOnlyList<DesignPreset> Presets = new[]
     {
-        new DesignPreset("fluent", "Fluent", L.T("Wie Windows: Design und Akzentfarbe vom System"), ThemeMode.System, string.Empty, 100, 0, true),
-        new DesignPreset("glass", L.T("Glas"), L.T("Weichgezeichneter Desktop hinter dem Panel (Windows 11)"), ThemeMode.Dark, string.Empty, 70, 20, true,
+        new DesignPreset("fluent", "Fluent", L.T("Like Windows: design and accent color from the system"), ThemeMode.System, string.Empty, 100, 0, true),
+        new DesignPreset("glass", L.T("Glass"), L.T("Blurred desktop behind the panel (Windows 11)"), ThemeMode.Dark, string.Empty, 70, 20, true,
             PanelBackdrop.Glass, GlassBlur: 60, GlassSaturation: 125),
-        new DesignPreset("oled", "OLED", L.T("Tiefschwarz und deckend, Akzentfarbe von Windows"), ThemeMode.Dark, "#000000", 100, 0, true, PanelBackdrop.Solid),
+        new DesignPreset("oled", "OLED", L.T("Deep black and opaque, Windows accent color"), ThemeMode.Dark, "#000000", 100, 0, true, PanelBackdrop.Solid),
     };
 
     /// <summary>Mitgelieferte und eigene Designs (eigene am Ende).</summary>
@@ -82,7 +82,7 @@ public static class Appearance
         panel.Frost, s.UseWindowsAccent, panel.EffectiveBackdropSetting, panel.GlassBlur, panel.GlassSaturation, panel.AccentColor, IsCustom: true);
 
     private static string DescribeCustom(PanelConfig p) =>
-        L.F("Eigenes Design · {0}", PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]) + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");
+        L.F("Custom design · {0}", PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]) + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");
 
     /// <summary>Passt das Panel zur Vorlage? (für die Markierung)</summary>
     public static bool Matches(AppSettings s, PanelConfig x, DesignPreset p) =>

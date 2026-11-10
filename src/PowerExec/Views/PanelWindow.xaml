@@ -42,71 +42,71 @@
         <!-- Menü einer Gruppe (Ordner/Favoriten) -->
         <!-- Ein Menü je Fenster für alle Gruppen: erst beim Öffnen an die Gruppe gebunden (früher je Gruppe zweimal erzeugt) -->
         <ContextMenu x:Key="GroupMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-            <MenuItem Header="{l:T 'Neue Untergruppe …'}" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'New subgroup …'}" Command="{Binding NewSubgroupCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Neuer Eintrag'}" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'New entry'}" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                <MenuItem Header="{l:T 'Neuer Eintrag …'}" Command="{Binding NewEntryCommand}">
+                <MenuItem Header="{l:T 'New entry …'}" Command="{Binding NewEntryCommand}">
                     <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="{l:T 'Webseite …'}" Command="{Binding NewEntryCommand}" CommandParameter="Url">
+                <MenuItem Header="{l:T 'Website …'}" Command="{Binding NewEntryCommand}" CommandParameter="Url">
                     <MenuItem.Icon><TextBlock Text="&#xE774;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Ordner …'}" Command="{Binding NewEntryCommand}" CommandParameter="Folder">
+                <MenuItem Header="{l:T 'Folder …'}" Command="{Binding NewEntryCommand}" CommandParameter="Folder">
                     <MenuItem.Icon><TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Remotedesktop …'}" Command="{Binding NewEntryCommand}" CommandParameter="Rdp">
+                <MenuItem Header="{l:T 'Remote Desktop …'}" Command="{Binding NewEntryCommand}" CommandParameter="Rdp">
                     <MenuItem.Icon><TextBlock Text="&#xE8AF;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'SSH-Verbindung …'}" Command="{Binding NewEntryCommand}" CommandParameter="Ssh">
+                <MenuItem Header="{l:T 'SSH connection …'}" Command="{Binding NewEntryCommand}" CommandParameter="Ssh">
                     <MenuItem.Icon><TextBlock Text="&#xE756;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'PowerShell-Snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="Snippet">
+                <MenuItem Header="{l:T 'PowerShell snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="Snippet">
                     <MenuItem.Icon><TextBlock Text="&#xE943;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Text-Snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet">
+                <MenuItem Header="{l:T 'Text snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet">
                     <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Windows-Werkzeug …'}" Command="{Binding NewEntryCommand}" CommandParameter="Tool">
+                <MenuItem Header="{l:T 'Windows tool …'}" Command="{Binding NewEntryCommand}" CommandParameter="Tool">
                     <MenuItem.Icon><TextBlock Text="&#xE90F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Befehl …'}" Command="{Binding NewEntryCommand}" CommandParameter="Command">
+                <MenuItem Header="{l:T 'Command …'}" Command="{Binding NewEntryCommand}" CommandParameter="Command">
                     <MenuItem.Icon><TextBlock Text="&#xE7C4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Dateien auswählen …'}" Command="{Binding AddFilesCommand}">
+                <MenuItem Header="{l:T 'Select files …'}" Command="{Binding AddFilesCommand}">
                     <MenuItem.Icon><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="{l:T 'Aus Vorlagen …'}" Command="{Binding AddFromCatalogCommand}">
+                <MenuItem Header="{l:T 'From templates …'}" Command="{Binding AddFromCatalogCommand}">
                     <MenuItem.Icon><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{l:T 'Aus Zwischenablage einfügen'}" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V">
+                <MenuItem Header="{l:T 'Paste from clipboard'}" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V">
                     <MenuItem.Icon><TextBlock Text="&#xE77F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="{l:T 'Darstellung'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Appearance'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8A9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Wie das Panel'}" Command="{Binding SetLayoutCommand}" CommandParameter="panel"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Like the panel'}" Command="{Binding SetLayoutCommand}" CommandParameter="panel"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Liste'}" Command="{Binding SetLayoutCommand}" CommandParameter="List"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'List'}" Command="{Binding SetLayoutCommand}" CommandParameter="List"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=List}"/>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Raster'}" Command="{Binding SetLayoutCommand}" CommandParameter="Grid"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Grid'}" Command="{Binding SetLayoutCommand}" CommandParameter="Grid"
                           IsChecked="{Binding LayoutSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Grid}"/>
             </MenuItem>
-            <MenuItem Header="{l:T 'Elementgröße'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Item size'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Wie das Panel'}" Command="{Binding SetItemSizeCommand}" CommandParameter="panel"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Like the panel'}" Command="{Binding SetItemSizeCommand}" CommandParameter="panel"
                           IsChecked="{Binding ItemSizeSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=panel}"/>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Klein'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Small'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small"
                           IsChecked="{Binding ItemSizeSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Small}"/>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Mittel'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Medium'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium"
                           IsChecked="{Binding ItemSizeSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Medium}"/>
-                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Groß'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large"
+                <MenuItem Style="{StaticResource Menu.ItemWithRule}" Header="{l:T 'Large'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large"
                           IsChecked="{Binding ItemSizeSetting, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Large}"/>
             </MenuItem>
-            <MenuItem Header="{l:T 'Farbe'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}" ItemsSource="{Binding ColorChoices}">
+            <MenuItem Header="{l:T 'Color'}" Visibility="{Binding CanChangeLayout, Converter={StaticResource Vis}}" ItemsSource="{Binding ColorChoices}">
                 <MenuItem.Icon><TextBlock Text="&#xE790;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
                     <Style TargetType="MenuItem" BasedOn="{StaticResource Menu.ItemWithRule}">
@@ -143,38 +143,38 @@
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
-            <MenuItem Header="{l:T 'Umbenennen …'}" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Rename …'}" Command="{Binding RenameCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Gruppe exportieren …'}" Command="{Binding ExportCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
-                      ToolTip="{l:T 'Eigene Einträge dieser Gruppe als Datei – z. B. für Kollegen'}">
+            <MenuItem Header="{l:T 'Export group …'}" Command="{Binding ExportCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
+                      ToolTip="{l:T 'Custom entries of this group as a file – e.g. for colleagues'}">
                 <MenuItem.Icon><TextBlock Text="&#xEDE1;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Einträge importieren …'}" Command="{Binding ImportCommand}" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Import entries …'}" Command="{Binding ImportCommand}" Visibility="{Binding IsUserGroupOrCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Gruppe löschen …'}" Command="{Binding DeleteCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Delete group …'}" Command="{Binding DeleteCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Im Explorer öffnen'}" Command="{Binding OpenInExplorerCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Open in Explorer'}" Command="{Binding OpenInExplorerCommand}" Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE838;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Neu einlesen'}" Command="{Binding RescanCommand}">
+            <MenuItem Header="{l:T 'Rescan'}" Command="{Binding RescanCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE72C;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Andere einklappen'}" Command="{Binding CollapseOthersCommand}"/>
-            <MenuItem Header="{l:T 'Alle einklappen'}" Command="{Binding CollapseAllCommand}"/>
-            <MenuItem Header="{l:T 'Alle ausklappen'}" Command="{Binding ExpandAllCommand}"/>
-            <MenuItem Header="{l:T 'Reihenfolge zurücksetzen (alphabetisch)'}" Command="{Binding ResetOrderCommand}"
+            <MenuItem Header="{l:T 'Collapse others'}" Command="{Binding CollapseOthersCommand}"/>
+            <MenuItem Header="{l:T 'Collapse all'}" Command="{Binding CollapseAllCommand}"/>
+            <MenuItem Header="{l:T 'Expand all'}" Command="{Binding ExpandAllCommand}"/>
+            <MenuItem Header="{l:T 'Reset order (alphabetical)'}" Command="{Binding ResetOrderCommand}"
                       Visibility="{Binding AllowReorder, Converter={StaticResource Vis}}"/>
             <Separator Visibility="{Binding IsFolder, Converter={StaticResource Vis}}"/>
-            <MenuItem Header="{l:T 'In diesem Arbeitsbereich ausblenden'}" Command="{Binding HideFolderCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
-                      ToolTip="{l:T 'Wieder einblenden: Einstellungen › Arbeitsbereiche'}">
+            <MenuItem Header="{l:T 'Hide in this workspace'}" Command="{Binding HideFolderCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}"
+                      ToolTip="{l:T 'Show again: Settings › Workspaces'}">
                 <MenuItem.Icon><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Gruppe konfigurieren …'}" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Configure group …'}" Command="{Binding FolderSettingsCommand}" Visibility="{Binding IsUserGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -185,42 +185,42 @@
             <MenuItem Header="{Binding RunHeader}" Command="{Binding RunCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE768;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'In die Zwischenablage kopieren'}" Command="{Binding CopySnippetCommand}" Visibility="{Binding IsSnippet, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Copy to clipboard'}" Command="{Binding CopySnippetCommand}" Visibility="{Binding IsSnippet, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Als Administrator'}" Command="{Binding RunAdminCommand}">
+            <MenuItem Header="{l:T 'As administrator'}" Command="{Binding RunAdminCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Als anderer Benutzer …'}" Command="{Binding RunAsUserCommand}">
+            <MenuItem Header="{l:T 'As different user …'}" Command="{Binding RunAsUserCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE77B;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="{l:T 'Remote …'}" Command="{Binding RunRemoteCommand}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Profile verwalten …'}" Command="{Binding ManageProfilesCommand}">
+            <MenuItem Header="{l:T 'Manage profiles …'}" Command="{Binding ManageProfilesCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Planen …'}" Command="{Binding ScheduleCommand}" ToolTip="{l:T 'Einmal, täglich oder im Intervall starten'}">
+            <MenuItem Header="{l:T 'Schedule …'}" Command="{Binding ScheduleCommand}" ToolTip="{l:T 'Run once, daily or at an interval'}">
                 <MenuItem.Icon><TextBlock Text="&#xE823;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Im Editor öffnen'}" Command="{Binding EditCommand}" Visibility="{Binding CanEdit, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Open in editor'}" Command="{Binding EditCommand}" Visibility="{Binding CanEdit, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Speicherort öffnen'}" Command="{Binding OpenLocationCommand}">
+            <MenuItem Header="{l:T 'Open storage location'}" Command="{Binding OpenLocationCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE838;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Pfad kopieren'}" Command="{Binding CopyPathCommand}">
+            <MenuItem Header="{l:T 'Copy path'}" Command="{Binding CopyPathCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Zu Favoriten hinzufügen'}" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}, ConverterParameter=invert}">
+            <MenuItem Header="{l:T 'Add to favorites'}" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}, ConverterParameter=invert}">
                 <MenuItem.Icon><TextBlock Text="&#xE734;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Aus Favoriten entfernen'}" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Remove from favorites'}" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'In Gruppe verschieben'}" ItemsSource="{Binding GroupChoices}" Visibility="{Binding HasGroupChoices, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Move to group'}" ItemsSource="{Binding GroupChoices}" Visibility="{Binding HasGroupChoices, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
                     <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
@@ -229,30 +229,30 @@
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
-            <MenuItem Header="{l:T 'In neue Gruppe …'}" Command="{Binding NewGroupWithItemCommand}">
+            <MenuItem Header="{l:T 'To new group …'}" Command="{Binding NewGroupWithItemCommand}">
                 <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Aus Gruppe nehmen'}" Command="{Binding RemoveFromGroupCommand}" Visibility="{Binding IsInGroup, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Remove from group'}" Command="{Binding RemoveFromGroupCommand}" Visibility="{Binding IsInGroup, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8E6;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Bearbeiten …'}" Command="{Binding EditCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Edit …'}" Command="{Binding EditCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Duplizieren …'}" Command="{Binding DuplicateCommand}" Visibility="{Binding CanDuplicate, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Duplicate …'}" Command="{Binding DuplicateCommand}" Visibility="{Binding CanDuplicate, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="{Binding SingleClickHeader}" Command="{Binding ToggleSingleClickCommand}" Visibility="{Binding CanToggleSingleClick, Converter={StaticResource Vis}}"
-                      ToolTip="{l:T 'Ein Klick im Panel startet sofort (Details dann über dieses Menü)'}">
+                      ToolTip="{l:T 'A click in the panel starts immediately (details then via this menu)'}">
                 <MenuItem.Icon><TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Details anzeigen'}" Command="{Binding OpenDetailsCommand}" Visibility="{Binding IsSingleClick, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Show details'}" Command="{Binding OpenDetailsCommand}" Visibility="{Binding IsSingleClick, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE946;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Entfernen …'}" Command="{Binding RemoveCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
+            <MenuItem Header="{l:T 'Remove …'}" Command="{Binding RemoveCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Ausblenden'}" Command="{Binding HideCommand}" ToolTip="{l:T 'Wird als Ausschluss beim Ordner gespeichert'}"
+            <MenuItem Header="{l:T 'Hide'}" Command="{Binding HideCommand}" ToolTip="{l:T 'Saved as an exclusion on the folder'}"
                       Visibility="{Binding CanHide, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xED1A;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
@@ -346,7 +346,7 @@
                     <TextBlock Text="{Binding ParseError}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                Visibility="{Binding HasParseError, Converter={StaticResource Vis}}"/>
                     <DockPanel Margin="0,0,0,8" Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}">
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Entsperren'}" Command="{Binding UnblockCommand}"
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Unblock'}" Command="{Binding UnblockCommand}"
                                 Height="26" MinHeight="26" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Top" />
                         <TextBlock Text="{Binding BlockedText}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap"/>
                     </DockPanel>
@@ -356,7 +356,7 @@
                     <Border Margin="0,0,0,8" Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
                             Visibility="{Binding HasInlineForm, Converter={StaticResource Vis}}">
                         <StackPanel DataContext="{Binding Inline}">
-                            <TextBlock Text="{l:T 'Parameter'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="{l:T 'Parameters'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <ItemsControl ItemsSource="{Binding Fields}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -370,7 +370,7 @@
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{Binding Name}"/>
                                             <CheckBox Content="{Binding Name}" IsChecked="{Binding IsChecked}" FontSize="12" ToolTip="{Binding Help}"
                                                       Visibility="{Binding IsSwitch, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Text="{l:T 'fragt das Script beim Start selbst (wird nie gespeichert)'}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"
+                                            <TextBlock Text="{l:T 'the script asks for it itself at launch (never saved)'}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"
                                                        Visibility="{Binding IsSecure, Converter={StaticResource Vis}}"/>
                                         </StackPanel>
                                         <DataTemplate.Triggers>
@@ -385,15 +385,15 @@
                                        Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
                             <StackPanel Orientation="Horizontal">
                                 <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" Height="28" MinHeight="28" Padding="10,0" FontSize="12"
-                                        ToolTip="{l:T 'Mit diesen Werten starten (Rechte und Ziel aus dem Standardprofil)'}">
+                                        ToolTip="{l:T 'Run with these values (rights and target from the default profile)'}">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
-                                        <TextBlock Text="{l:T 'Mit diesen Werten'}"/>
+                                        <TextBlock Text="{l:T 'With these values'}"/>
                                     </StackPanel>
                                 </ui:Button>
                                 <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding SaveSetCommand}" Height="28" MinHeight="28" Padding="8,0" Margin="6,0,0,0"
-                                        ToolTip="{l:T 'Als Parameter-Set speichern – erscheint als Startprofil am Ausführen-Knopf'}">
-                                    <TextBlock Text="{l:T 'Speichern als …'}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                                        ToolTip="{l:T 'Save as parameter set – appears as a launch profile on the Run button'}">
+                                    <TextBlock Text="{l:T 'Save as …'}" FontSize="12" Foreground="{DynamicResource Accent}"/>
                                 </ui:Button>
                             </StackPanel>
                         </StackPanel>
@@ -417,34 +417,34 @@
                                 </StackPanel>
                             </Button>
                             <Button Style="{StaticResource Btn.SplitRight}" Height="30" MinHeight="30" Width="30" Padding="0"
-                                    Click="ProfileMenuButton_Click" ToolTip="{l:T 'Anderes Startprofil ausführen'}"
-                                    AutomationProperties.Name="{l:T 'Startprofil wählen'}"
+                                    Click="ProfileMenuButton_Click" ToolTip="{l:T 'Run another launch profile'}"
+                                    AutomationProperties.Name="{l:T 'Choose launch profile'}"
                                     Visibility="{Binding HasProfileMenu, Converter={StaticResource Vis}}">
                                 <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="10"/>
                             </Button>
                         </StackPanel>
-                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="{l:T 'Als Administrator ausführen (UAC)'}"
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAdminCommand}" ToolTip="{l:T 'Run as administrator (UAC)'}"
                                 Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="{l:T 'Admin'}"/>
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="{l:T 'Als anderer Benutzer ausführen'}"
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunAsUserCommand}" ToolTip="{l:T 'Run as different user'}"
                                 Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
-                                <TextBlock Text="{l:T 'Als …'}"/>
+                                <TextBlock Text="{l:T 'As …'}"/>
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="{l:T 'Auf einem oder mehreren Remote-Rechnern ausführen'}"
+                        <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="{l:T 'Run on one or more remote computers'}"
                                 Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
                                 <TextBlock Text="{l:T 'Remote'}"/>
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="{l:T 'Weitere Aktionen'}"
+                        <ui:Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="{l:T 'More actions'}"
                                 ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
                             <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
                         </ui:Button>
@@ -555,10 +555,10 @@
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <!-- Läuft gerade (lokaler Start in der Aktivitäten-Leiste) -->
                                 <Border Margin="6,0,0,0" Padding="6,1,7,1" CornerRadius="8" Background="{DynamicResource Bg.Selected}" VerticalAlignment="Center"
-                                        Visibility="{Binding IsRunning, Converter={StaticResource Vis}}" ToolTip="{l:T 'Läuft gerade – Details unten in den Aktivitäten'}">
+                                        Visibility="{Binding IsRunning, Converter={StaticResource Vis}}" ToolTip="{l:T 'Running – details below in the activities'}">
                                     <StackPanel Orientation="Horizontal">
                                         <Ellipse x:Name="RunDot" Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                        <TextBlock Text="{l:T 'läuft'}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{l:T 'running'}" FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
                                 <!-- Zuletzt ausgeführt: wann -->
@@ -567,7 +567,7 @@
                                 <!-- Schnellstart-Taste (Favoriten) -->
                                 <Border VerticalAlignment="Center" Margin="6,0,0,0" Padding="5,1" CornerRadius="4" BorderThickness="1"
                                         BorderBrush="{DynamicResource Border.Control}" Visibility="{Binding HasQuickKey, Converter={StaticResource Vis}}"
-                                        ToolTip="{l:T 'Schnellstart mit dieser Taste – auch ohne den Eintrag auszuwählen'}">
+                                        ToolTip="{l:T 'Quick start with this key – even without selecting the entry'}">
                                     <TextBlock Text="{Binding QuickKeyText}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
                                 </Border>
                             </StackPanel>
@@ -585,7 +585,7 @@
                                 <DockPanel LastChildFill="False">
                                     <TextBlock x:Name="NameText" infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                                     <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Accent}"
-                                               Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="{l:T 'Favorit'}"/>
+                                               Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="{l:T 'Favorite'}"/>
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="10.5" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                Visibility="{Binding IsFromCatalog, Converter={StaticResource Vis}}" ToolTip="{Binding CatalogToolTip}"/>
                                     <Border Margin="6,0,0,0" Padding="5,0" CornerRadius="8" Background="{DynamicResource Bg.Chip}" VerticalAlignment="Center"
@@ -600,7 +600,7 @@
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Warning}"
                                                Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}" ToolTip="{Binding BlockedText}"/>
                                     <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
-                                               Visibility="{Binding RequiresAdmin, Converter={StaticResource Vis}}" ToolTip="{l:T 'Benötigt Administratorrechte (#Requires)'}"/>
+                                               Visibility="{Binding RequiresAdmin, Converter={StaticResource Vis}}" ToolTip="{l:T 'Requires administrator rights (#Requires)'}"/>
                                     <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                Visibility="{Binding HasNotes, Converter={StaticResource Vis}}" ToolTip="{Binding Notes}"/>
                                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Status.Error}"
@@ -711,7 +711,7 @@
                         </Grid.ColumnDefinitions>
                         <Button Style="{StaticResource GroupHeaderButton}" Command="{Binding ToggleCommand}" HorizontalContentAlignment="Stretch"
                                 Padding="8,0" Height="32" ContextMenu="{StaticResource GroupMenu}" Foreground="{DynamicResource Text.Secondary}"
-                                ToolTip="{l:T 'Klick: ein-/ausklappen · Rechtsklick: Menü'}" ToolTipService.InitialShowDelay="1200">
+                                ToolTip="{l:T 'Click: expand/collapse · Right-click: menu'}" ToolTipService.InitialShowDelay="1200">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -769,7 +769,7 @@
                                 <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="12"/>
                             </ui:Button>
                             <!-- Menü erst beim Darüberfahren (wie Liste/Raster) – ruhigerer Gruppenkopf -->
-                            <ui:Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="{l:T 'Menü'}"
+                            <ui:Button x:Name="GroupMenuButton" Style="{StaticResource Btn.Icon}" Width="32" Height="32" ToolTip="{l:T 'Menu'}"
                                     ContextMenu="{StaticResource GroupMenu}" Click="MenuButton_Click">
                                 <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="12"/>
                             </ui:Button>
@@ -815,7 +815,7 @@
                     <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
                             Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
                         <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Text.Tertiary}"
-                                   Text="{l:T 'Einträge hierher ziehen – auch Dateien, Ordner oder Links aus dem Explorer und Browser. Rechtsklick: neuer Eintrag.'}"/>
+                                   Text="{l:T 'Drag entries here – also files, folders or links from Explorer and the browser. Right-click: new entry.'}"/>
                     </Border>
                 </StackPanel>
                 </Border>
@@ -951,35 +951,35 @@
                 </TextBlock>
                 <ComboBox Grid.Column="2" x:Name="WorkspaceBox" Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" MinHeight="28" Height="28" Padding="10,0,8,0" VerticalContentAlignment="Center"
                           ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
-                          ToolTip="{l:T 'Arbeitsbereich wechseln'}" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
+                          ToolTip="{l:T 'Switch workspace'}" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
                         <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="15"/>
                     </ui:Button>
-                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="{l:T 'Elementgröße: Klein, Mittel, Groß'}">
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="{l:T 'Item size: small, medium, large'}">
                         <TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}" FontSize="15"/>
                         <Button.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="{l:T 'Klein'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small">
+                                <MenuItem Header="{l:T 'Small'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small">
                                     <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Small}"/></MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="{l:T 'Mittel'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium">
+                                <MenuItem Header="{l:T 'Medium'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium">
                                     <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Medium}"/></MenuItem.Icon>
                                 </MenuItem>
-                                <MenuItem Header="{l:T 'Groß'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large">
+                                <MenuItem Header="{l:T 'Large'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large">
                                     <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Large}"/></MenuItem.Icon>
                                 </MenuItem>
                             </ContextMenu>
                         </Button.ContextMenu>
                     </ui:Button>
-                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding ShowHistory}" ToolTip="{l:T 'Verlauf (Strg+H)'}"
-                                  AutomationProperties.Name="{l:T 'Verlauf'}">
+                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding ShowHistory}" ToolTip="{l:T 'History (Ctrl+H)'}"
+                                  AutomationProperties.Name="{l:T 'History'}">
                         <TextBlock Text="&#xE81C;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ToggleButton>
-                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsPinned}" ToolTip="{l:T 'Anheften: Panel bleibt offen'}">
+                    <ToggleButton Style="{StaticResource Toggle.Icon}" Width="32" IsChecked="{Binding IsPinned}" ToolTip="{l:T 'Pin: panel stays open'}">
                         <TextBlock Text="&#xE718;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ToggleButton>
-                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding SettingsCommand}" ToolTip="{l:T 'Einstellungen'}">
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding SettingsCommand}" ToolTip="{l:T 'Settings'}">
                         <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="15"/>
                     </ui:Button>
                 </StackPanel>
@@ -992,7 +992,7 @@
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding CatalogPending, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Übernehmen'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
                             Command="{Binding ApplyCatalogsCommand}" MinHeight="26" Height="26" Padding="8,0" />
                     <TextBlock Text="{Binding CatalogPending}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Info.Text}"/>
                 </DockPanel>
@@ -1002,7 +1002,7 @@
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" VerticalAlignment="Top" Command="{Binding DismissWhatsNewCommand}"
-                            ToolTip="{l:T 'Gelesen – nicht mehr anzeigen'}" AutomationProperties.Name="{l:T 'Neuerungen schließen'}">
+                            ToolTip="{l:T 'Read – don\'t show again'}" AutomationProperties.Name="{l:T 'Close release notes'}">
                         <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                     </ui:Button>
                     <TextBlock Text="&#xE789;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="16" VerticalAlignment="Top" Margin="0,1,10,0"/>
@@ -1015,7 +1015,7 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Alle Neuerungen'}" Command="{Binding ShowAllWhatsNewCommand}" HorizontalAlignment="Left"
+                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All release notes'}" Command="{Binding ShowAllWhatsNewCommand}" HorizontalAlignment="Left"
                                 Foreground="{DynamicResource Accent}" FontWeight="SemiBold" Padding="0" Margin="0,6,0,0" MinHeight="22" Height="22" />
                     </StackPanel>
                 </DockPanel>
@@ -1028,8 +1028,8 @@
                         <TextBlock Text="{Binding UpdateTitle}" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding UpdateSubtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Jetzt aktualisieren'}" Command="{Binding UpdateNowCommand}" Height="28" MinHeight="28" FontSize="12" />
-                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Später'}" Command="{Binding UpdateLaterCommand}" Height="28" MinHeight="28" FontSize="12" Margin="8,0,0,0" />
+                            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Update now'}" Command="{Binding UpdateNowCommand}" Height="28" MinHeight="28" FontSize="12" />
+                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Later'}" Command="{Binding UpdateLaterCommand}" Height="28" MinHeight="28" FontSize="12" Margin="8,0,0,0" />
                         </StackPanel>
                     </StackPanel>
                 </DockPanel>
@@ -1038,7 +1038,7 @@
                     BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding PendingText, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="14" Margin="0,0,10,0"/>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Prüfen'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Check'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
                             Command="{Binding ReviewPendingCommand}" MinHeight="26" Height="26" Padding="8,0" />
                     <TextBlock Text="{Binding PendingText}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
                 </DockPanel>
@@ -1048,11 +1048,11 @@
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
-                         Padding="30,0,8,0" Tag="{l:T 'Suchen …'}" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
+                         Padding="30,0,8,0" Tag="{l:T 'Search …'}" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
                          TextChanged="SearchBox_TextChanged" SelectionChanged="SearchBox_SelectionChanged" LostKeyboardFocus="SearchBox_LostKeyboardFocus"
                          PreviewMouseLeftButtonUp="SearchBox_PreviewMouseUp"
                          ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
-                         AutomationProperties.Name="{l:T 'Suchen'}" AutomationProperties.HelpText="{Binding SearchHelp}">
+                         AutomationProperties.Name="{l:T 'Search'}" AutomationProperties.HelpText="{Binding SearchHelp}">
                     <TextBox.Resources><CornerRadius x:Key="TextBox.CornerRadius">12</CornerRadius></TextBox.Resources>
                 </TextBox>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="11,0,0,0" IsHitTestVisible="False"
@@ -1130,11 +1130,11 @@
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
-                            <TextBlock FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}" Margin="8,4,8,2" Text="{l:T 'Enter oder Tab übernimmt · ↑ ↓ wählen · Esc schließt'}"/>
+                            <TextBlock FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}" Margin="8,4,8,2" Text="{l:T 'Enter or Tab accepts · ↑ ↓ select · Esc closes'}"/>
                         </StackPanel>
                     </Border>
                 </Popup>
-                <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,4,0" ToolTip="{l:T 'Suche leeren'}"
+                <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" HorizontalAlignment="Right" Margin="0,0,4,0" ToolTip="{l:T 'Clear search'}"
                         Command="{Binding ClearSearchCommand}" Visibility="{Binding IsSearching, Converter={StaticResource Vis}}">
                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11"/>
                 </ui:Button>
@@ -1155,7 +1155,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="ChipText" Text="{Binding Label}" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="20" Height="20" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
-                                        ToolTip="{l:T 'Filter entfernen'}" AutomationProperties.Name="{l:T 'Filter entfernen'}">
+                                        ToolTip="{l:T 'Remove filter'}" AutomationProperties.Name="{l:T 'Remove filter'}">
                                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
                                 </ui:Button>
                             </StackPanel>
@@ -1196,53 +1196,53 @@
                 </ScrollViewer.Style>
                 <ScrollViewer.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="{l:T 'Neue Gruppe …'}" Command="{Binding NewGroupCommand}">
+                        <MenuItem Header="{l:T 'New group …'}" Command="{Binding NewGroupCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="{l:T 'Neuer Eintrag'}">
+                        <MenuItem Header="{l:T 'New entry'}">
                             <MenuItem.Icon><TextBlock Text="&#xE710;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                            <MenuItem Header="{l:T 'Neuer Eintrag …'}" Command="{Binding NewEntryCommand}"/>
+                            <MenuItem Header="{l:T 'New entry …'}" Command="{Binding NewEntryCommand}"/>
                             <Separator/>
-                            <MenuItem Header="{l:T 'Webseite …'}" Command="{Binding NewEntryCommand}" CommandParameter="Url"/>
-                            <MenuItem Header="{l:T 'Ordner …'}" Command="{Binding NewEntryCommand}" CommandParameter="Folder"/>
-                            <MenuItem Header="{l:T 'Remotedesktop …'}" Command="{Binding NewEntryCommand}" CommandParameter="Rdp"/>
-                            <MenuItem Header="{l:T 'SSH-Verbindung …'}" Command="{Binding NewEntryCommand}" CommandParameter="Ssh"/>
-                            <MenuItem Header="{l:T 'PowerShell-Snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="Snippet"/>
-                            <MenuItem Header="{l:T 'Text-Snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet"/>
-                            <MenuItem Header="{l:T 'Windows-Werkzeug …'}" Command="{Binding NewEntryCommand}" CommandParameter="Tool"/>
-                            <MenuItem Header="{l:T 'Befehl …'}" Command="{Binding NewEntryCommand}" CommandParameter="Command"/>
-                            <MenuItem Header="{l:T 'Dateien auswählen …'}" Command="{Binding AddFilesCommand}"/>
+                            <MenuItem Header="{l:T 'Website …'}" Command="{Binding NewEntryCommand}" CommandParameter="Url"/>
+                            <MenuItem Header="{l:T 'Folder …'}" Command="{Binding NewEntryCommand}" CommandParameter="Folder"/>
+                            <MenuItem Header="{l:T 'Remote Desktop …'}" Command="{Binding NewEntryCommand}" CommandParameter="Rdp"/>
+                            <MenuItem Header="{l:T 'SSH connection …'}" Command="{Binding NewEntryCommand}" CommandParameter="Ssh"/>
+                            <MenuItem Header="{l:T 'PowerShell snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="Snippet"/>
+                            <MenuItem Header="{l:T 'Text snippet …'}" Command="{Binding NewEntryCommand}" CommandParameter="TextSnippet"/>
+                            <MenuItem Header="{l:T 'Windows tool …'}" Command="{Binding NewEntryCommand}" CommandParameter="Tool"/>
+                            <MenuItem Header="{l:T 'Command …'}" Command="{Binding NewEntryCommand}" CommandParameter="Command"/>
+                            <MenuItem Header="{l:T 'Select files …'}" Command="{Binding AddFilesCommand}"/>
                             <Separator/>
-                            <MenuItem Header="{l:T 'Aus Vorlagen …'}" Command="{Binding AddFromCatalogCommand}"/>
-                            <MenuItem Header="{l:T 'Aus Zwischenablage einfügen'}" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V"/>
+                            <MenuItem Header="{l:T 'From templates …'}" Command="{Binding AddFromCatalogCommand}"/>
+                            <MenuItem Header="{l:T 'Paste from clipboard'}" Command="{Binding AddFromClipboardCommand}" InputGestureText="Strg+V"/>
                         </MenuItem>
-                        <MenuItem Header="{l:T 'Einträge importieren …'}" Command="{Binding ImportEntriesCommand}">
+                        <MenuItem Header="{l:T 'Import entries …'}" Command="{Binding ImportEntriesCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                         </MenuItem>
                         <Separator/>
-                        <MenuItem Header="{l:T 'Raster'}" Command="{Binding ToggleGridCommand}">
+                        <MenuItem Header="{l:T 'Grid'}" Command="{Binding ToggleGridCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding IsGrid, Converter={StaticResource Vis}}"/></MenuItem.Icon>
                         </MenuItem>
-                        <MenuItem Header="{l:T 'Elementgröße'}">
+                        <MenuItem Header="{l:T 'Item size'}">
                             <MenuItem.Icon><TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-                            <MenuItem Header="{l:T 'Klein'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small"/>
-                            <MenuItem Header="{l:T 'Mittel'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium"/>
-                            <MenuItem Header="{l:T 'Groß'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large"/>
+                            <MenuItem Header="{l:T 'Small'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small"/>
+                            <MenuItem Header="{l:T 'Medium'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Medium"/>
+                            <MenuItem Header="{l:T 'Large'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Large"/>
                         </MenuItem>
-                        <MenuItem Header="{l:T 'Einstellungen …'}" Command="{Binding SettingsCommand}">
+                        <MenuItem Header="{l:T 'Settings …'}" Command="{Binding SettingsCommand}">
                             <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
                 </ScrollViewer.ContextMenu>
                 <StackPanel>
                     <StackPanel Visibility="{Binding HasNoFolders, Converter={StaticResource Vis}}" Margin="16,32,16,0">
-                        <TextBlock Text="{l:T 'Noch keine Gruppe mit Ordner.'}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{l:T 'Lege eine Gruppe an und wähle einen Ordner – sie zeigt dann dessen Scripte und Programme. Eigene Einträge legst du per Rechtsklick an.'}"
+                        <TextBlock Text="{l:T 'No group with a folder yet.'}" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{l:T 'Create a group and choose a folder – it then shows its scripts and programs. You create custom entries with a right-click.'}"
                                    Style="{StaticResource Caption}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,6,0,12"/>
-                        <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Neue Gruppe …'}" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center" />
+                        <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'New group …'}" Command="{Binding NewGroupCommand}" HorizontalAlignment="Center" />
                     </StackPanel>
                     <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center"
-                               Style="{StaticResource Caption}" Text="{l:T 'Keine Treffer. Gesucht wird in Name, Synopsis, Beschreibung, Notiz und Schlagworten. Filter (Schlagwort, Typ, Gruppe, Merkmal) bietet ein Klick ins Suchfeld an.'}"/>
+                               Style="{StaticResource Caption}" Text="{l:T 'No results. Searches name, synopsis, description, note and tags. Clicking into the search box offers filters (tag, type, group, property).'}"/>
 
                     <ItemsControl ItemsSource="{Binding Groups}" ItemTemplate="{StaticResource GroupTemplate}" Focusable="False"/>
                 </StackPanel>
@@ -1250,7 +1250,7 @@
 
             <!-- Größe per Ziehen: Griffe am Innenrand (Lage setzt PlaceGrips) -->
             <Thumb x:Name="WidthGrip" Grid.RowSpan="8" Width="6" HorizontalAlignment="Left" Cursor="SizeWE" Panel.ZIndex="10"
-                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="{l:T 'Breite ändern'}">
+                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="{l:T 'Change width'}">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
                         <Border x:Name="Line" Background="Transparent"/>
@@ -1262,7 +1262,7 @@
                 </Thumb.Template>
             </Thumb>
             <Thumb x:Name="HeightGrip" Grid.RowSpan="8" Height="6" VerticalAlignment="Bottom" Cursor="SizeNS" Panel.ZIndex="10"
-                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="{l:T 'Höhe ändern'}">
+                   DragStarted="Grip_DragStarted" DragDelta="Grip_DragDelta" DragCompleted="Grip_DragCompleted" ToolTip="{l:T 'Change height'}">
                 <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
                         <Border x:Name="Line" Background="Transparent"/>
@@ -1278,7 +1278,7 @@
                  auf die Karte der Gruppe (auch bei Untergruppen und Scrollbalken); Rahmen und Ecken wie die Karte, unten offen. -->
             <Button x:Name="StickyHeader" Grid.Row="5" VerticalAlignment="Top" Margin="8,0,20,0" Panel.ZIndex="10" Style="{StaticResource RowButton}"
                     DataContext="{Binding StickyGroup}" Command="{Binding DataContext.JumpToGroupCommand, RelativeSource={RelativeSource AncestorType=c:PanelRoot}}"
-                    CommandParameter="{Binding}" ToolTip="{l:T 'Zum Gruppenkopf springen'}"
+                    CommandParameter="{Binding}" ToolTip="{l:T 'Jump to group header'}"
                     Visibility="{Binding DataContext.HasStickyGroup, RelativeSource={RelativeSource AncestorType=c:PanelRoot}, Converter={StaticResource Vis}}">
                 <Border Background="{DynamicResource Bg.Panel}" BorderThickness="1,1,1,1">
                     <Border.Style>
@@ -1378,9 +1378,9 @@
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
                 <DockPanel>
-                    <TextBox x:Name="GroupJumpBox" DockPanel.Dock="Top" Height="34" Padding="8,0" Tag="{l:T 'Gruppe suchen … (Enter springt hin, Esc schließt)'}"
+                    <TextBox x:Name="GroupJumpBox" DockPanel.Dock="Top" Height="34" Padding="8,0" Tag="{l:T 'Find group … (Enter jumps there, Esc closes)'}"
                              Text="{Binding GroupJumpText, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="GroupJumpBox_PreviewKeyDown"
-                             AutomationProperties.Name="{l:T 'Gruppe suchen'}"/>
+                             AutomationProperties.Name="{l:T 'Find group'}"/>
                     <ListBox x:Name="GroupJumpList" ItemsSource="{Binding GroupJumpResults}" SelectedItem="{Binding GroupJumpSelected}" Margin="0,6,0,0"
                              MaxHeight="320" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              MouseUp="GroupJumpList_MouseUp">
@@ -1405,7 +1405,7 @@
                  Läuft in einem eigenen Fenster neben dem Panel (PeekWindow); die Karte zieht beim Start dorthin um. -->
             <Border x:Name="PeekCard" Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="29"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
-                    AutomationProperties.Name="{l:T 'Vorschau'}">
+                    AutomationProperties.Name="{l:T 'Preview'}">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
@@ -1413,7 +1413,7 @@
                     <!-- Kopf -->
                     <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
                         <ui:Button x:Name="PeekCloseButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28"
-                                ToolTip="{l:T 'Schließen (Leertaste oder Esc)'}" AutomationProperties.Name="{l:T 'Vorschau schließen'}">
+                                ToolTip="{l:T 'Close (Space or Esc)'}" AutomationProperties.Name="{l:T 'Close preview'}">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                         </ui:Button>
                         <Border DockPanel.Dock="Left" Style="{StaticResource Badge}" DataContext="{Binding Item}" Margin="0,0,10,0" VerticalAlignment="Center">
@@ -1421,15 +1421,15 @@
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Item.DisplayName}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="{l:T '↑ ↓ nächster Eintrag · Leertaste schließt'}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
+                            <TextBlock Text="{l:T '↑ ↓ next entry · Space closes'}" FontSize="10.5" Foreground="{DynamicResource Text.Tertiary}"/>
                         </StackPanel>
                     </DockPanel>
                     <!-- Aktionen -->
                     <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="12,8">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding Item.EditCommand}" Margin="0,0,8,0"
-                                    Visibility="{Binding Item.CanEdit, Converter={StaticResource Vis}}" ToolTip="{l:T 'Strg+E'}">
-                                <TextBlock Text="{l:T 'Im Editor öffnen'}"/>
+                                    Visibility="{Binding Item.CanEdit, Converter={StaticResource Vis}}" ToolTip="{l:T 'Ctrl+E'}">
+                                <TextBlock Text="{l:T 'Open in editor'}"/>
                             </ui:Button>
                             <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding Item.RunCommand}" ToolTip="{l:T 'Enter'}">
                                 <TextBlock Text="{Binding Item.RunLabel}"/>
@@ -1463,7 +1463,7 @@
                                        Visibility="{Binding Item.FolderInfo, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Secondary}"/>
                             <!-- Parameter -->
                             <StackPanel Margin="0,10,0,0" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}">
-                                <TextBlock Text="{l:T 'Parameter'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                <TextBlock Text="{l:T 'Parameters'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                 <ItemsControl ItemsSource="{Binding Parameters}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -1487,7 +1487,7 @@
                                         <TextBlock infra:CodeView.Segments="{Binding Code}" FontFamily="Cascadia Mono, Consolas" FontSize="11.5"
                                                    Foreground="{DynamicResource Text.Primary}"/>
                                     </ScrollViewer>
-                                    <TextBlock Text="{l:T '… gekürzt – vollständig im Editor'}" FontSize="10.5" Margin="0,6,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                    <TextBlock Text="{l:T '… truncated – complete in the editor'}" FontSize="10.5" Margin="0,6,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                Visibility="{Binding CodeTruncated, Converter={StaticResource Vis}}"/>
                                 </StackPanel>
                             </Border>
@@ -1499,30 +1499,30 @@
             <!-- Verlauf (Strg+H): alle Starts mit Ergebnis; erneut mit gleichen Werten -->
             <Border Grid.Row="2" Grid.RowSpan="4" Margin="10,0,10,10" Panel.ZIndex="28"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
-                    Visibility="{Binding ShowHistory, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Verlauf'}">
+                    Visibility="{Binding ShowHistory, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'History'}">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="14,10,6,6">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleHistoryCommand}"
-                                ToolTip="{l:T 'Schließen (Esc)'}" AutomationProperties.Name="{l:T 'Verlauf schließen'}">
+                                ToolTip="{l:T 'Close (Esc)'}" AutomationProperties.Name="{l:T 'Close history'}">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                         </ui:Button>
-                        <TextBlock Text="{l:T 'Verlauf'}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{l:T 'History'}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <StackPanel DockPanel.Dock="Top" Margin="12,0,12,6">
-                        <TextBox Height="32" Padding="8,0" Tag="{l:T 'Im Verlauf suchen (Name, Rechner, Parameter) …'}" Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.Name="{l:T 'Im Verlauf suchen'}"/>
+                        <TextBox Height="32" Padding="8,0" Tag="{l:T 'Search history (name, computer, parameters) …'}" Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{l:T 'Search history'}"/>
                         <WrapPanel Margin="0,8,0,0">
-                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Alle'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
-                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Heute'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=today}"/>
-                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Fehler'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=errors}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'All'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Today'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=today}"/>
+                            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Error'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=errors}"/>
                             <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Remote'}" GroupName="HistoryFilter" IsChecked="{Binding HistoryFilter, Converter={StaticResource Eq}, ConverterParameter=remote}"/>
                         </WrapPanel>
                     </StackPanel>
                     <Grid>
-                        <TextBlock Text="{l:T 'Noch keine passenden Starts.'}" Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,24,0,0"
+                        <TextBlock Text="{l:T 'No matching runs yet.'}" Style="{StaticResource Caption}" HorizontalAlignment="Center" Margin="0,24,0,0"
                                    Visibility="{Binding HistoryEmpty, Converter={StaticResource Vis}}"/>
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="8,0,8,8">
                             <ItemsControl ItemsSource="{Binding HistoryRows}" Focusable="False">
@@ -1542,15 +1542,15 @@
                                                                TextTrimming="CharacterEllipsis" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}"/>
                                                     <WrapPanel Margin="0,4,0,0">
                                                         <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding RunAgainCommand}" Padding="6,0" Height="24" MinHeight="24"
-                                                                ToolTip="{l:T 'Mit genau denselben Werten, Rechnern und Rechten erneut starten'}">
-                                                            <TextBlock Text="{l:T '↻ Gleiche Werte'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                                ToolTip="{l:T 'Run again with exactly the same values, computers and rights'}">
+                                                            <TextBlock Text="{l:T '↻ Same values'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                                         </ui:Button>
                                                         <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding RetryFailedCommand}" Padding="6,0" Height="24" MinHeight="24"
                                                                 Visibility="{Binding CanRetryFailed, Converter={StaticResource Vis}}">
                                                             <TextBlock Text="{Binding RetryText}" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
                                                         </ui:Button>
                                                         <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding OpenLogCommand}" Padding="6,0" Height="24" MinHeight="24"
-                                                                Visibility="{Binding HasLog, Converter={StaticResource Vis}}" ToolTip="{l:T 'Log-Datei im Explorer zeigen'}">
+                                                                Visibility="{Binding HasLog, Converter={StaticResource Vis}}" ToolTip="{l:T 'Show log file in Explorer'}">
                                                             <TextBlock Text="{l:T 'Log'}" FontSize="11.5" Foreground="{DynamicResource Accent}"/>
                                                         </ui:Button>
                                                     </WrapPanel>
@@ -1576,17 +1576,17 @@
             <Border Grid.Row="4" Grid.RowSpan="2" Margin="12,4,12,12" Panel.ZIndex="30" VerticalAlignment="Top"
                     Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="8"
                     Padding="14,10,6,12" Visibility="{Binding ShowShortcuts, Converter={StaticResource Vis}}"
-                    AutomationProperties.Name="{l:T 'Tastenkürzel'}">
+                    AutomationProperties.Name="{l:T 'Hotkey'}">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
                 </Border.Effect>
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleShortcutsCommand}"
-                                ToolTip="{l:T 'Schließen (Esc)'}" AutomationProperties.Name="{l:T 'Schließen'}">
+                                ToolTip="{l:T 'Close (Esc)'}" AutomationProperties.Name="{l:T 'Close'}">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                         </ui:Button>
-                        <TextBlock Text="{l:T 'Tastenkürzel'}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <TextBlock Text="{l:T 'Hotkey'}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="460">
                     <ItemsControl ItemsSource="{Binding Shortcuts}" Focusable="False" Margin="0,0,8,0">
@@ -1625,12 +1625,12 @@
                 </Border.Effect>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding DismissUndoCommand}"
-                            ToolTip="{l:T 'Hinweis schließen'}" AutomationProperties.Name="{l:T 'Hinweis schließen'}">
+                            ToolTip="{l:T 'Close hint'}" AutomationProperties.Name="{l:T 'Close hint'}">
                         <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                     </ui:Button>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="28" Padding="10,0" Margin="8,0,2,0"
-                            Command="{Binding UndoCommand}" ToolTip="{l:T 'Rückgängig (Strg+Z)'}">
-                        <TextBlock Text="{l:T 'Rückgängig'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                            Command="{Binding UndoCommand}" ToolTip="{l:T 'Undo (Ctrl+Z)'}">
+                        <TextBlock Text="{l:T 'Undo'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                     </ui:Button>
                     <TextBlock Text="{Binding UndoToast}" VerticalAlignment="Center" TextWrapping="Wrap" FontSize="12.5" MaxHeight="40"
                                TextTrimming="CharacterEllipsis"/>
@@ -1653,7 +1653,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel DataContext="{Binding SelectedItem}">
                         <DockPanel Margin="0,0,0,6">
-                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Auswahl aufheben'}" Click="ClearSelection_Click">
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Clear selection'}" Click="ClearSelection_Click">
                                 <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                             </ui:Button>
                             <TextBlock infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
@@ -1672,15 +1672,15 @@
                         Visibility="{Binding HasMultiSelection, Converter={StaticResource Vis}}">
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding ClearCheckedCommand}"
-                                ToolTip="{l:T 'Auswahl aufheben'}" AutomationProperties.Name="{l:T 'Auswahl aufheben'}">
+                                ToolTip="{l:T 'Clear selection'}" AutomationProperties.Name="{l:T 'Clear selection'}">
                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                         </ui:Button>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding RunCheckedCommand}" Height="26" MinHeight="26" Padding="10,0" FontSize="12" Margin="6,0,4,0"
-                                ToolTip="{l:T 'In der Reihenfolge der Auswahl starten; jeder wartet auf den vorigen, bei Fehler Abbruch'}">
-                            <TextBlock Text="{l:T '▶ Nacheinander'}"/>
+                                ToolTip="{l:T 'Start in the order of selection; each waits for the previous one, abort on error'}">
+                            <TextBlock Text="{l:T '▶ One after another'}"/>
                         </ui:Button>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding SaveCheckedAsWorkflowCommand}" Height="26" MinHeight="26" Padding="6,0">
-                            <TextBlock Text="{l:T 'Als Ablauf speichern'}" FontSize="12" Foreground="{DynamicResource Accent}"/>
+                            <TextBlock Text="{l:T 'Save as workflow'}" FontSize="12" Foreground="{DynamicResource Accent}"/>
                         </ui:Button>
                         <TextBlock Text="{Binding MultiSelectionText}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
@@ -1695,26 +1695,26 @@
                                 <Border x:Name="ActRow" CornerRadius="6" Padding="4,4,2,4" Background="Transparent">
                                     <DockPanel>
                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding CancelCommand}"
-                                                ToolTip="{l:T 'Abbrechen'}" AutomationProperties.Name="{l:T 'Abbrechen'}" Visibility="{Binding CanCancel, Converter={StaticResource Vis}}">
+                                                ToolTip="{l:T 'Cancel'}" AutomationProperties.Name="{l:T 'Cancel'}" Visibility="{Binding CanCancel, Converter={StaticResource Vis}}">
                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
                                         </ui:Button>
                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding DismissCommand}"
-                                                ToolTip="{l:T 'Aus der Liste entfernen'}" AutomationProperties.Name="{l:T 'Entfernen'}"
+                                                ToolTip="{l:T 'Remove from list'}" AutomationProperties.Name="{l:T 'Remove'}"
                                                 Visibility="{Binding IsRunning, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Text.Tertiary}"/>
                                         </ui:Button>
                                         <!-- Nach dem Ende: denselben Start wiederholen (gleiche Werte und gleiches Profil) -->
                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="6,0" Command="{Binding RestartCommand}"
-                                                Visibility="{Binding CanRestart, Converter={StaticResource Vis}}" ToolTip="{l:T 'Mit denselben Werten erneut starten'}"
-                                                AutomationProperties.Name="{l:T 'Erneut starten'}">
+                                                Visibility="{Binding CanRestart, Converter={StaticResource Vis}}" ToolTip="{l:T 'Run again with the same values'}"
+                                                AutomationProperties.Name="{l:T 'Run again'}">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Accent}" Margin="0,0,5,0"/>
-                                                <TextBlock Text="{l:T 'Erneut starten'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                <TextBlock Text="{l:T 'Run again'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                             </StackPanel>
                                         </ui:Button>
                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="Auto" Height="26" Padding="8,0" Command="{Binding OpenCommand}"
-                                                Visibility="{Binding CanOpen, Converter={StaticResource Vis}}" ToolTip="{l:T 'Ergebnisliste öffnen'}">
-                                            <TextBlock Text="{l:T 'Ausgabe'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                Visibility="{Binding CanOpen, Converter={StaticResource Vis}}" ToolTip="{l:T 'Open result list'}">
+                                            <TextBlock Text="{l:T 'Output'}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                         </ui:Button>
                                         <Grid Width="22" VerticalAlignment="Center" Margin="0,0,8,0">
                                             <TextBlock x:Name="ActGlyph" Text="{Binding StatusGlyph}" Style="{StaticResource Icon}" FontSize="13" HorizontalAlignment="Center"
@@ -1751,14 +1751,14 @@
                     </ItemsControl>
                 </StackPanel>
                 <DockPanel Margin="16,4,8,4">
-                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="{l:T 'Ordner neu einlesen'}">
+                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="{l:T 'Rescan folders'}">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="13"/>
                     </ui:Button>
-                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="{l:T 'Neue Gruppe'}">
+                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="{l:T 'New group'}">
                         <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="13"/>
                     </ui:Button>
                     <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"
-                               Margin="8,0,4,0" ToolTip="{l:T 'Laufende Oberfläche und Version; in Klammern die über den Installer installierte Version'}"/>
+                               Margin="8,0,4,0" ToolTip="{l:T 'Running UI and version; in parentheses the version installed by the installer'}"/>
                     <TextBlock Text="{Binding Footer}" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
                 </StackPanel>

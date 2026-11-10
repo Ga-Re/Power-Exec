@@ -100,8 +100,8 @@ public static class MachineList
         if (t.Date == now.Date) return "heute";
         if (t.Date == now.Date.AddDays(-1)) return "gestern";
         var days = (now.Date - t.Date).Days;
-        if (days < 7) return L.F("vor {0} Tagen", days);
-        if (days < 14) return L.T("letzte Woche");
+        if (days < 7) return L.F("{0} days ago", days);
+        if (days < 14) return L.T("last week");
         return t.ToString("dd.MM.yyyy");
     }
 }

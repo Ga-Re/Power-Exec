@@ -144,13 +144,13 @@ public partial class SettingsWindow : Window
     {
         (SaveIcon.Text, var brush, SaveHint.Text) = state switch
         {
-            SaveState.Pending => ("\uE895", "Text.Secondary", text ?? L.T("Speichert …")),
+            SaveState.Pending => ("\uE895", "Text.Secondary", text ?? L.T("Saving …")),
             SaveState.Warning => ("\uE7BA", "InfoBar.Warning.Icon", text ?? string.Empty),
             SaveState.Error => ("\uEA39", "InfoBar.Error.Icon", text ?? string.Empty),
-            _ => ("\uE73E", "InfoBar.Success.Icon", text ?? L.T("Alle Änderungen gespeichert"))
+            _ => ("\uE73E", "InfoBar.Success.Icon", text ?? L.T("All changes saved"))
         };
         SaveIcon.SetResourceReference(TextBlock.ForegroundProperty, brush);
-        SaveHint.ToolTip = state == SaveState.Saved ? L.F("Zuletzt gespeichert um {0:HH:mm:ss}", DateTime.Now) : null;
+        SaveHint.ToolTip = state == SaveState.Saved ? L.F("Last saved at {0:T}", DateTime.Now) : null;
     }
 
     private static string Fingerprint(AppSettings s) => System.Text.Json.JsonSerializer.Serialize(s);
@@ -176,13 +176,13 @@ public partial class SettingsWindow : Window
             _lastApplied = Fingerprint(_app.Settings);
             _vm.HotkeyError = hotkeyError;
             if (hotkeyError != null)
-                ShowSaveState(SaveState.Warning, L.T("Gespeichert – aber ein Tastenkürzel konnte nicht registriert werden (siehe Panel › Verhalten)."));
+                ShowSaveState(SaveState.Warning, L.T("Saved – but a hotkey couldn't be registered (see Panel › Behavior)."));
             else ShowSaveState(SaveState.Saved);
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Einstellungen konnten nicht übernommen werden"), ex);
-            ShowSaveState(SaveState.Error, L.T("Nicht gespeichert: ") + ex.Message);
+            AppLog.Error(L.T("Settings couldn't be applied"), ex);
+            ShowSaveState(SaveState.Error, L.T("Not saved: ") + ex.Message);
         }
     }
 
@@ -267,7 +267,7 @@ public partial class SettingsWindow : Window
     /// <summary>Alles auf den Stand beim Öffnen des Fensters zurücksetzen.</summary>
     private void Revert_Click(object sender, RoutedEventArgs e)
     {
-        if (!Services.MessageDialog.Confirm(this, L.T("Alle Änderungen seit dem Öffnen der Einstellungen verwerfen?"), L.T("Änderungen verwerfen"), destructive: true)) return;
+        if (!Services.MessageDialog.Confirm(this, L.T("Discard all changes since the settings were opened?"), L.T("Discard changes"), destructive: true)) return;
         _applyTimer.Stop();
         _reloading = true;
         var restored = SettingsStore.Clone(_snapshot);
@@ -281,7 +281,7 @@ public partial class SettingsWindow : Window
         _app.ApplySettings(restored);
         _reloading = false;
         Reload();
-        ShowSaveState(SaveState.Saved, L.T("Änderungen verworfen – alles gespeichert"));
+        ShowSaveState(SaveState.Saved, L.T("Changes discarded – everything saved"));
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

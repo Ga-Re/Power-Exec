@@ -65,7 +65,7 @@ public static class BrowserCatalog
         BrowserChoice.Edge => "Microsoft Edge",
         BrowserChoice.Chrome => "Google Chrome",
         BrowserChoice.Firefox => "Mozilla Firefox",
-        _ => L.T("Standardbrowser")
+        _ => L.T("Default browser")
     };
 
     /// <summary>Profile eines Browsers (leer beim Standardbrowser oder wenn nichts gefunden wird).</summary>
@@ -97,7 +97,7 @@ public static class BrowserCatalog
             }
             catch (Exception ex)
             {
-                AppLog.Info(L.F("Browserprofile von {0} nicht lesbar: {1}", DisplayName(b), ex.Message));
+                AppLog.Info(L.F("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
             }
             _profiles[b] = result;
             return result;

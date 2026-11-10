@@ -23,7 +23,7 @@ public sealed class DockSlot : ObservableObject
     {
         _item = item;
         Name = item.DisplayName;
-        ToolTip = L.F("{0} – Klick startet", item.DisplayName) + (number <= 9 ? $" (Alt+{number})" : string.Empty) + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
+        ToolTip = L.F("{0} – click to run", item.DisplayName) + (number <= 9 ? $" (Alt+{number})" : string.Empty) + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
         Command = item.RunCommand;
         item.PropertyChanged += (_, e) =>
         {
@@ -36,8 +36,8 @@ public sealed class DockSlot : ObservableObject
 
     public DockSlot(ICommand openPanel)
     {
-        Name = L.T("Panel öffnen");
-        ToolTip = L.T("Panel öffnen – auch beim Darüberfahren");
+        Name = L.T("Open panel");
+        ToolTip = L.T("Open panel – also when hovering");
         Command = openPanel;
         IsMore = true;
     }

@@ -17,9 +17,9 @@ public static class FixedGroups
 
     public static string Title(string key) => key switch
     {
-        Recent => L.T("Zuletzt ausgeführt"),
-        Favorites => L.T("Favoriten"),
-        Custom => L.T("Eigene Einträge"),
+        Recent => L.T("Recently run"),
+        Favorites => L.T("Favorites"),
+        Custom => L.T("Custom entries"),
         _ => key
     };
 
@@ -34,9 +34,9 @@ public static class FixedGroups
 
     public static string Description(string key) => key switch
     {
-        Recent => L.T("Die zuletzt gestarteten Einträge (je Arbeitsbereich)."),
-        Favorites => L.T("Mit ☆ markierte Einträge; Alt+1 … 9 startet sie."),
-        Custom => L.T("Eigene Einträge, die (noch) in keiner Gruppe liegen – nur sichtbar, wenn es solche gibt."),
+        Recent => L.T("The most recently launched entries (per workspace)."),
+        Favorites => L.T("Entries marked with ☆; Alt+1 … 9 runs them."),
+        Custom => L.T("Custom entries that aren't in any group (yet) – only visible if there are any."),
         _ => string.Empty
     };
 

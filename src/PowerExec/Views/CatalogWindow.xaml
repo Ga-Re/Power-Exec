@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
-        Title="{l:T 'Aus Vorlagen hinzufügen'}" Style="{StaticResource AppWindow}"
+        Title="{l:T 'Add from templates'}" Style="{StaticResource AppWindow}"
         Width="680" Height="640" MinWidth="480" MinHeight="420" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">
     <Window.Resources>
@@ -12,18 +12,18 @@
         <ResourceDictionary Source="/Themes/Fluent.xaml"/>
     </Window.Resources>
     <DockPanel Margin="20,16,20,16">
-        <TextBlock DockPanel.Dock="Top" Text="{l:T 'Aus Vorlagen hinzufügen'}" FontSize="18" FontWeight="SemiBold"/>
-        <TextBlock DockPanel.Dock="Top" Text="{l:T 'Häufige Admin-Werkzeuge, Systemsteuerung, Windows-Einstellungen und Beispiele mit Platzhaltern. Mehrere auswählen und übernehmen.'}"
+        <TextBlock DockPanel.Dock="Top" Text="{l:T 'Add from templates'}" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock DockPanel.Dock="Top" Text="{l:T 'Common admin tools, Control Panel, Windows settings and examples with placeholders. Select several and apply.'}"
                    Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
-            <TextBox x:Name="SearchBox" Padding="28,0,8,0" Tag="{l:T 'Suchen, z. B. dns, dienste, proxy'}" TextChanged="Search_Changed"/>
+            <TextBox x:Name="SearchBox" Padding="28,0,8,0" Tag="{l:T 'Search, e.g. dns, services, proxy'}" TextChanged="Search_Changed"/>
             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
         </Grid>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
             <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="90" />
-                <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Übernehmen'}" IsDefault="True" MinWidth="110" Margin="8,0,0,0" Click="Ok_Click" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="90" />
+                <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" IsDefault="True" MinWidth="110" Margin="8,0,0,0" Click="Ok_Click" />
             </StackPanel>
         </DockPanel>
         <Border BorderThickness="1" BorderBrush="{DynamicResource Border.Default}" CornerRadius="6">

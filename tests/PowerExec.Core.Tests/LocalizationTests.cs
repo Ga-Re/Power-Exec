@@ -5,7 +5,7 @@ using PowerExec.Core.Localization;
 
 namespace PowerExec.Core.Tests;
 
-/// <summary>Englische Oberfläche: jeder Text aus XAML ({l:T '…'}) und Code (L.T/L.F) hat eine Übersetzung mit denselben Platzhaltern.</summary>
+/// <summary>Übersetzung: Basis Englisch; jeder Text aus XAML ({l:T '…'}) und Code (L.T/L.F) steht in Translations/de.json – mit denselben Platzhaltern.</summary>
 public class LocalizationTests
 {
     private static string Root()
@@ -36,6 +36,15 @@ public class LocalizationTests
         foreach (var f in SourceFiles("*.xaml"))
             foreach (Match m in xaml.Matches(File.ReadAllText(f)))
                 yield return (Path.GetFileName(f), UnescapeXaml(m.Groups[1].Value));
+        // Emoji-Namen der Symbolauswahl werden zur Laufzeit übersetzt (Liste in IconLibrary.cs)
+        var icons = SourceFiles("IconLibrary.cs").FirstOrDefault();
+        if (icons != null)
+        {
+            var text = File.ReadAllText(icons);
+            var start = text.IndexOf("[] EmojiList", StringComparison.Ordinal);
+            foreach (Match m in new Regex(@"\(""[^""]+"", ""([^""]+)""\)").Matches(text[start..]))
+                yield return ("IconLibrary.cs", m.Groups[1].Value);
+        }
         var cs = new Regex(@"\bL\.[TF]\(""((?:[^""\\]|\\.)*)""");
         foreach (var f in SourceFiles("*.cs").Where(f => !Path.GetFileName(f).StartsWith("SelfTest")))
             foreach (Match m in cs.Matches(File.ReadAllText(f)))
@@ -43,12 +52,10 @@ public class LocalizationTests
     }
 
     [Fact]
-    public void EveryTextHasAnEnglishTranslation()
+    public void EveryTextHasAGermanTranslation()
     {
         var keys = Keys().ToList();
         Assert.True(keys.Count > 2000, $"Nur {keys.Count} Texte gefunden – stimmt die Suche noch?");
-        var missing = keys.Where(k => !L.EnglishTable.ContainsKey(k.Key)).Select(k => $"{k.File}: {k.Key}").Distinct().ToList();
-        Assert.True(missing.Count == 0, "Ohne englische Übersetzung (Translations/en.json):\n" + string.Join("\n", missing.Take(50)));
         var missingDe = keys.Where(k => !L.GermanTable.ContainsKey(k.Key)).Select(k => $"{k.File}: {k.Key}").Distinct().ToList();
         Assert.True(missingDe.Count == 0, "Fehlt in Translations/de.json:\n" + string.Join("\n", missingDe.Take(50)));
     }
@@ -57,11 +64,11 @@ public class LocalizationTests
     public void TranslationsKeepPlaceholders()
     {
         static string Holes(string s) => string.Join(",", Regex.Matches(s, @"(?<!\{)\{(\d+)[^{}]*\}(?!\})").Select(m => m.Groups[1].Value).Distinct().OrderBy(x => x));
-        var wrong = L.EnglishTable.Concat(L.GermanTable)
+        var wrong = L.GermanTable
             .Where(kv => Holes(kv.Key) != Holes(kv.Value))
             .Select(kv => $"{kv.Key} → {kv.Value}").ToList();
         Assert.True(wrong.Count == 0, "Platzhalter passen nicht:\n" + string.Join("\n", wrong.Take(30)));
-        foreach (var kv in L.EnglishTable.Concat(L.GermanTable).Where(kv => Regex.IsMatch(kv.Key, @"(?<!\{)\{\d")))
+        foreach (var kv in L.GermanTable.Where(kv => Regex.IsMatch(kv.Key, @"(?<!\{)\{\d")))
             _ = string.Format(CultureInfo.InvariantCulture, kv.Value, Enumerable.Range(0, 10).Select(_ => (object)new AnyFormat()).ToArray());
     }
 
@@ -69,7 +76,10 @@ public class LocalizationTests
     public void LanguageFollowsWindowsUnlessChosen()
     {
         Assert.Equal("de", L.Resolve("", new CultureInfo("de-AT")));
-        Assert.Equal("en", L.Resolve("", new CultureInfo("fr-FR")));
+        Assert.Equal("en", L.Resolve("", new CultureInfo("fr-FR"))); // keine französische Übersetzung → Englisch
+        Assert.Equal("en", L.Resolve("xx", new CultureInfo("fr-FR")));
+        Assert.Contains("de", L.Available);
+        Assert.Contains("en", L.Available);
         Assert.Equal("en", L.Resolve("en", new CultureInfo("de-DE")));
         Assert.Equal("de", L.Resolve("de", new CultureInfo("en-US")));
     }
@@ -78,5 +88,13 @@ public class LocalizationTests
     private sealed class AnyFormat : IFormattable
     {
         public string ToString(string? format, IFormatProvider? formatProvider) => "x";
+    }
+
+    [Fact]
+    public void TranslationFilesHaveNoStaleKeys()
+    {
+        var used = Keys().Select(k => k.Key).ToHashSet();
+        var stale = L.GermanTable.Keys.Where(k => !used.Contains(k)).ToList();
+        Assert.True(stale.Count == 0, "Nicht mehr verwendet (aus Translations/de.json entfernen):\n" + string.Join("\n", stale.Take(30)));
     }
 }

@@ -32,11 +32,11 @@ public partial class AppController
                 Name = Settings.FindEntry(i.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : i.DisplayName
             }).ToList()
         };
-        RememberForUndo(L.F("Ablauf „{0}“ angelegt", entry.Name));
+        RememberForUndo(L.F("Workflow “{0}” created", entry.Name));
         Settings.CustomEntries.Add(entry);
         if (group != null) GroupManager.Assign(Settings, entry.Key, group);
         CommitUserChange();
-        ShowUndoToast(L.F("Ablauf „{0}“ mit {1} Schritten angelegt", entry.Name, entry.Steps.Count));
+        ShowUndoToast(L.F("Workflow “{0}” with {1} steps created", entry.Name, entry.Steps.Count));
         return entry;
     }
 
@@ -46,7 +46,7 @@ public partial class AppController
         if (steps.Count == 0) return false;
         HidePanels();
         bool cancelled = false;
-        var activity = Activities.Add(new ActivityViewModel(name, L.F("Schritt 1 / {0}", steps.Count), "⇢", cancel: () => cancelled = true));
+        var activity = Activities.Add(new ActivityViewModel(name, L.F("Step 1 / {0}", steps.Count), "⇢", cancel: () => cancelled = true));
         activity.Progress = 0;
         HistoryEntry? summary = workflowItem != null
             ? BeginHistory(workflowItem, null, ExecutionMode.CurrentUser, PsEngine.WindowsPowerShell, null, null)
@@ -57,7 +57,7 @@ public partial class AppController
             for (int i = 0; i < steps.Count && !cancelled; i++)
             {
                 var step = steps[i];
-                activity.Detail = L.F("Schritt {0} / {1}: {2}", i + 1, steps.Count, (step.Name.Length > 0 ? step.Name : Path.GetFileName(step.Path)));
+                activity.Detail = L.F("Step {0} / {1}: {2}", i + 1, steps.Count, (step.Name.Length > 0 ? step.Name : Path.GetFileName(step.Path)));
                 activity.Progress = (double)i / steps.Count;
                 var result = await RunStepAsync(step, name, () => cancelled);
                 if (result is HistoryResult.Success or HistoryResult.Started) done++;
@@ -70,17 +70,17 @@ public partial class AppController
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.F("Ablauf {0} abgebrochen", name), ex);
+            AppLog.Error(L.F("Workflow {0} aborted", name), ex);
             failed++;
         }
-        var text = cancelled ? L.F("abgebrochen nach {0} von {1} Schritten", done, steps.Count)
-            : failed > 0 ? L.F("{0} von {1} Schritten erfolgreich", done, steps.Count)
-            : L.F("alle {0} Schritte erfolgreich", steps.Count);
+        var text = cancelled ? L.F("aborted after {0} of {1} steps", done, steps.Count)
+            : failed > 0 ? L.F("{0} of {1} steps succeeded", done, steps.Count)
+            : L.F("all {0} steps succeeded", steps.Count);
         var state = failed > 0 || cancelled ? (done > 0 ? ActivityState.Warning : ActivityState.Error) : ActivityState.Success;
         activity.Complete(state, text);
         if (summary != null)
             CompleteHistory(summary, state switch { ActivityState.Success => HistoryResult.Success, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Error }, text);
-        AppLog.Info(L.F("Ablauf {0}: {1}", name, text));
+        AppLog.Info(L.F("Workflow {0}: {1}", name, text));
         return failed == 0 && !cancelled;
     }
 
@@ -90,7 +90,7 @@ public partial class AppController
         var item = FindItem(step.Path);
         if (item == null)
         {
-            AppLog.Info(L.F("Ablauf {0}: Schritt {1} nicht gefunden ({2})", workflowName, step.Name, step.Path));
+            AppLog.Info(L.F("Workflow {0}: step {1} not found ({2})", workflowName, step.Name, step.Path));
             return HistoryResult.Error;
         }
         if (item.Source?.Kind == CustomEntryKind.Workflow) return HistoryResult.Error; // keine verschachtelten Abläufe
@@ -100,7 +100,7 @@ public partial class AppController
         profile.NoExit = false; // sonst bliebe die Konsole offen und der Ablauf stünde
 
         var startedAfter = DateTime.UtcNow.AddSeconds(-1);
-        HistoryOrigin = (originPrefix ?? L.T("Ablauf ")) + workflowName;
+        HistoryOrigin = (originPrefix ?? L.T("Workflow ")) + workflowName;
         try { RunProfile(item, profile); }
         finally { HistoryOrigin = string.Empty; }
 
@@ -130,7 +130,7 @@ public partial class AppController
     /// <summary>Vom Ablauf-Editor nach dem Speichern.</summary>
     public void OnWorkflowSaved(CustomEntry original, CustomEntry edited)
     {
-        RememberForUndo(L.F("Ablauf „{0}“ geändert", edited.Name));
+        RememberForUndo(L.F("Workflow “{0}” changed", edited.Name));
         var i = Settings.CustomEntries.FindIndex(c => c.Id == original.Id);
         if (i >= 0) Settings.CustomEntries[i] = edited;
         CommitUserChange();

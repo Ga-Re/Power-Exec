@@ -58,14 +58,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(L.F("Rechnergruppe @{0}: {1} Rechner aus dem AD", g.Name, names.Count));
+            AppLog.Info(L.F("Computer group @{0}: {1} computers from AD", g.Name, names.Count));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow; // nicht jede Minute erneut versuchen
-            AppLog.Info(L.F("Rechnergruppe @{0}: AD nicht erreichbar ({1})", g.Name, ex.Message));
+            AppLog.Info(L.F("Computer group @{0}: AD unreachable ({1})", g.Name, ex.Message));
             return null;
         }
     }
@@ -75,20 +75,20 @@ public partial class AppController
     {
         try
         {
-            if (q.Path.Trim().Length == 0) throw new InvalidOperationException(L.T("Keine Datei angegeben."));
+            if (q.Path.Trim().Length == 0) throw new InvalidOperationException(L.T("No file specified."));
             var text = await File.ReadAllTextAsync(q.Path.Trim());
             var names = MachineTable.Parse(text).Apply(q);
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(L.F("Rechnergruppe @{0}: {1} Rechner aus {2}", g.Name, names.Count, q.Path));
+            AppLog.Info(L.F("Computer group @{0}: {1} computers from {2}", g.Name, names.Count, q.Path));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow;
-            AppLog.Info(L.F("Rechnergruppe @{0}: Liste nicht lesbar ({1})", g.Name, ex.Message));
+            AppLog.Info(L.F("Computer group @{0}: list not readable ({1})", g.Name, ex.Message));
             return null;
         }
     }

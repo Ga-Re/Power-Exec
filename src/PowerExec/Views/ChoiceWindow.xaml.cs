@@ -25,7 +25,7 @@ public partial class ChoiceWindow : Window
         }
     }
 
-    internal static Window ForTest() => new ChoiceWindow(L.T("Ordner „Tools“ hinzufügen"), L.T("Wie soll der Ordner im Panel erscheinen?"), ChoiceOption.FolderDrop, L.T("Für alle gezogenen Ordner"));
+    internal static Window ForTest() => new ChoiceWindow(L.T("Add folder “Tools”"), L.T("How should the folder appear in the panel?"), ChoiceOption.FolderDrop, L.T("For all dragged folders"));
 
     /// <returns>Index der gewählten Möglichkeit (−1 = Abbruch) und ob sie für alle weiteren gelten soll.</returns>
     public static (int Choice, bool ForAll) Ask(string heading, string prompt, IReadOnlyList<ChoiceOption> options, string? forAllText = null)

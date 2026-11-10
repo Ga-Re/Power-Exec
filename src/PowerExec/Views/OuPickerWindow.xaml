@@ -13,22 +13,22 @@
     </Window.Resources>
     <DockPanel Margin="24,20,24,20">
         <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="{l:T 'OU auswählen'}" FontSize="18" FontWeight="SemiBold"/>
+            <TextBlock Text="{l:T 'Select OU'}" FontSize="18" FontWeight="SemiBold"/>
             <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,10" TextWrapping="Wrap"
-                       Text="{l:T 'Die Gruppe sucht ab dieser Organisationseinheit (mit allen Unter-OUs). Die Domäne ganz oben steht für „überall“.'}"/>
-            <TextBox x:Name="Filter" Tag="{l:T 'OUs filtern …'}" Margin="0,0,0,8" TextChanged="Filter_TextChanged" AutomationProperties.Name="{l:T 'OUs filtern'}"/>
+                       Text="{l:T 'The group searches from this organizational unit (with all sub-OUs). The domain at the top stands for “everywhere”.'}"/>
+            <TextBox x:Name="Filter" Tag="{l:T 'Filter OUs …'}" Margin="0,0,0,8" TextChanged="Filter_TextChanged" AutomationProperties.Name="{l:T 'Filter OUs'}"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom">
             <TextBlock x:Name="Selected" FontFamily="{StaticResource MonoFont}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
                        Foreground="{DynamicResource Text.Secondary}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>
-                <ui:Button x:Name="Ok" Style="{StaticResource Btn.Accent}" Content="{l:T 'Übernehmen'}" IsDefault="True" MinWidth="96" Click="Ok_Click" IsEnabled="False"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>
+                <ui:Button x:Name="Ok" Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" IsDefault="True" MinWidth="96" Click="Ok_Click" IsEnabled="False"/>
             </StackPanel>
         </StackPanel>
         <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Bg.Card}">
             <TreeView x:Name="Tree" BorderThickness="0" Background="Transparent" SelectedItemChanged="Tree_SelectedItemChanged"
-                      MouseDoubleClick="Tree_MouseDoubleClick" AutomationProperties.Name="{l:T 'OU-Baum'}">
+                      MouseDoubleClick="Tree_MouseDoubleClick" AutomationProperties.Name="{l:T 'OU tree'}">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type cfg:OuNode}" ItemsSource="{Binding Children}">
                         <StackPanel Orientation="Horizontal" Margin="0,2">

@@ -60,11 +60,11 @@ public static class Variables
     /// <summary>Eingebaute Variablen (ohne $) mit Beschreibung.</summary>
     public static readonly IReadOnlyList<(string Name, string Description)> Builtins = new[]
     {
-        ("Date", L.T("Heutiges Datum (Format einstellbar)")),
-        ("Time", L.T("Aktuelle Uhrzeit (Format einstellbar)")),
-        ("User", L.T("Angemeldeter Windows-Benutzer")),
-        ("Computer", L.T("Name dieses Rechners")),
-        ("Clipboard", L.T("Text in der Zwischenablage beim Start"))
+        ("Date", L.T("Today's date (format adjustable)")),
+        ("Time", L.T("Current time (format adjustable)")),
+        ("User", L.T("Signed-in Windows user")),
+        ("Computer", L.T("Name of this computer")),
+        ("Clipboard", L.T("Text on the clipboard at launch"))
     };
 
     private static readonly Regex NamePattern = new(@"^[\p{L}_][\p{L}\p{N}_]*$", RegexOptions.Compiled);
@@ -78,8 +78,8 @@ public static class Variables
     public static string? ValidateName(AppSettings s, string name, UserVariable? self = null)
     {
         var n = Normalize(name);
-        if (n.Length == 0) return L.T("Bitte einen Namen eingeben.");
-        if (!NamePattern.IsMatch(n)) return L.T("Nur Buchstaben, Ziffern und _ – ohne Leerzeichen, nicht mit einer Ziffer beginnend.");
+        if (n.Length == 0) return L.T("Please enter a name.");
+        if (!NamePattern.IsMatch(n)) return L.T("Only letters, digits and _ – no spaces, not starting with a digit.");
         if (IsBuiltin(n)) return $"${n} ist eine eingebaute Variable.";
         if (s.Variables.Any(v => !ReferenceEquals(v, self) && v.Name.Equals(n, StringComparison.CurrentCultureIgnoreCase)))
             return $"${n} gibt es schon.";
@@ -113,18 +113,18 @@ public static class Variables
 
     public static string Label(VariableKind k) => k switch
     {
-        VariableKind.Workspace => L.T("Je Arbeitsbereich"),
-        VariableKind.Secret => L.T("Geheim (verschlüsselt)"),
-        VariableKind.Environment => L.T("Umgebungsvariable"),
-        VariableKind.PowerShell => L.T("PowerShell-Befehl"),
-        _ => L.T("Fester Text")
+        VariableKind.Workspace => L.T("Per workspace"),
+        VariableKind.Secret => L.T("Secret (encrypted)"),
+        VariableKind.Environment => L.T("Environment variable"),
+        VariableKind.PowerShell => L.T("PowerShell command"),
+        _ => L.T("Fixed text")
     };
 
     public static string Label(VariableRefresh r) => r switch
     {
-        VariableRefresh.EveryUse => L.T("Bei jedem Start"),
-        VariableRefresh.Session => L.T("Einmal je Sitzung"),
-        _ => L.T("Zwischenspeichern")
+        VariableRefresh.EveryUse => L.T("At every launch"),
+        VariableRefresh.Session => L.T("Once per session"),
+        _ => L.T("Cache")
     };
 }
 
@@ -185,13 +185,13 @@ public sealed class VariableResolver
         var s = _settings();
         if (Variables.Find(s, name) is { } v)
         {
-            if (v.Kind == VariableKind.Secret) return v.Value.Length == 0 ? L.T("(leer)") : "••••••••";
+            if (v.Kind == VariableKind.Secret) return v.Value.Length == 0 ? L.T("(empty)") : "••••••••";
             if (v.Kind == VariableKind.PowerShell)
                 lock (_lock)
-                    return _cache.TryGetValue(v.Name, out var c) && c.Command == v.Value ? c.Value : L.T("(wird beim Start ermittelt)");
+                    return _cache.TryGetValue(v.Name, out var c) && c.Command == v.Value ? c.Value : L.T("(determined at launch)");
         }
-        try { return Resolve(name) ?? L.T("(unbekannt)"); }
-        catch (Exception ex) { return L.T("Fehler: ") + ex.Message; }
+        try { return Resolve(name) ?? L.T("(unknown)"); }
+        catch (Exception ex) { return L.T("Error: ") + ex.Message; }
     }
 
     /// <summary>PowerShell-Variablen mit Zwischenspeicher bzw. „je Sitzung“ im Voraus ermitteln (im Hintergrund).</summary>

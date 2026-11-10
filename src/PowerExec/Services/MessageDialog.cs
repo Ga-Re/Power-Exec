@@ -63,12 +63,12 @@ public static class MessageDialog
         Show(owner, message, title, MessageKind.Error, L.T("OK"));
 
     public static bool Confirm(object? owner, string message, string title, bool destructive = false, bool defaultNo = false) =>
-        Show(owner, message, title, destructive ? MessageKind.Warning : MessageKind.Question, L.T("Ja"), close: L.T("Nein"),
+        Show(owner, message, title, destructive ? MessageKind.Warning : MessageKind.Question, L.T("Yes"), close: L.T("No"),
             defaultButton: destructive || defaultNo ? ContentDialogButton.Close : ContentDialogButton.Primary, destructive: destructive)
         == ContentDialogResult.Primary;
 
     public static bool? ConfirmOrCancel(object? owner, string message, string title) =>
-        Show(owner, message, title, MessageKind.Question, L.T("Ja"), L.T("Nein"), L.T("Abbrechen"), ContentDialogButton.Close) switch
+        Show(owner, message, title, MessageKind.Question, L.T("Yes"), L.T("No"), L.T("Cancel"), ContentDialogButton.Close) switch
         {
             ContentDialogResult.Primary => true,
             ContentDialogResult.Secondary => false,

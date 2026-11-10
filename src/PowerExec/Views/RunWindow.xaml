@@ -29,7 +29,7 @@
             <Border x:Name="Bd" CornerRadius="4" Padding="8,3,4,3" MinHeight="38" Background="Transparent">
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding ToggleFavoriteCommand}"
-                            ToolTip="{l:T 'Favorit umschalten'}">
+                            ToolTip="{l:T 'Toggle favorite'}">
                         <Grid>
                             <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
                             <TextBlock Text="&#xE734;" Style="{StaticResource Icon}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
@@ -106,8 +106,8 @@
                     <Border Style="{StaticResource SectionCard}" Visibility="{Binding HasParameters, Converter={StaticResource Vis}}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="{l:T 'Parameter'}" Style="{StaticResource SectionTitle}"/>
-                                <TextBlock Text="{l:T 'aus param()-Block und .PARAMETER-Hilfe'}" Style="{StaticResource Caption}" Margin="8,2,0,0"/>
+                                <TextBlock Text="{l:T 'Parameters'}" Style="{StaticResource SectionTitle}"/>
+                                <TextBlock Text="{l:T 'from the param() block and .PARAMETER help'}" Style="{StaticResource Caption}" Margin="8,2,0,0"/>
                             </StackPanel>
                             <ItemsControl ItemsSource="{Binding Parameters}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
@@ -121,21 +121,21 @@
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"/>
                                                 <TextBlock Text="{Binding TypeLabel}" FontSize="12" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="6,0,0,0"/>
-                                                <TextBlock Text="{l:T 'Pflicht'}" FontSize="12" Foreground="{DynamicResource Status.Error}" Margin="6,0,0,0"
+                                                <TextBlock Text="{l:T 'Required'}" FontSize="12" Foreground="{DynamicResource Status.Error}" Margin="6,0,0,0"
                                                            Visibility="{Binding IsMandatory, Converter={StaticResource Vis}}"/>
-                                                <TextBlock Text="{l:T 'fest im Profil'}" FontSize="12" Foreground="{DynamicResource Accent}" Margin="6,0,0,0"
+                                                <TextBlock Text="{l:T 'fixed in the profile'}" FontSize="12" Foreground="{DynamicResource Accent}" Margin="6,0,0,0"
                                                            Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
                                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}" IsEnabled="{Binding IsEditable}"
                                                      Visibility="{Binding IsPlainText, Converter={StaticResource Vis}}"/>
                                             <ComboBox IsEditable="True" ItemsSource="{Binding Suggestions}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                      IsEnabled="{Binding IsEditable}" ToolTip="{l:T 'Zuletzt verwendete Werte über den Pfeil auswählen'}"
+                                                      IsEnabled="{Binding IsEditable}" ToolTip="{l:T 'Choose recently used values via the arrow'}"
                                                       Visibility="{Binding IsTextWithSuggestions, Converter={StaticResource Vis}}"/>
                                             <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}"/>
-                                            <CheckBox IsChecked="{Binding BoolValue}" Content="{l:T 'Aktivieren'}" Margin="0,6,0,0" IsEnabled="{Binding IsEditable}"
+                                            <CheckBox IsChecked="{Binding BoolValue}" Content="{l:T 'Enable'}" Margin="0,6,0,0" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsCheck, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Text="{l:T 'Wird nicht gespeichert oder übergeben – das Script fragt bei Bedarf selbst.'}" Style="{StaticResource Caption}"
+                                            <TextBlock Text="{l:T 'Not saved or passed – the script asks itself if needed.'}" Style="{StaticResource Caption}"
                                                        Visibility="{Binding IsSecure, Converter={StaticResource Vis}}"/>
                                             <TextBlock Text="{Binding HelpText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,4,0,0"
                                                        Visibility="{Binding HasHelp, Converter={StaticResource Vis}}"/>
@@ -151,14 +151,14 @@
                     <!-- Ausführen als -->
                     <Border Style="{StaticResource SectionCard}">
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Ausführen als'}" Style="{StaticResource SectionTitle}" Margin="0,0,0,12"/>
+                            <TextBlock Text="{l:T 'Run as'}" Style="{StaticResource SectionTitle}" Margin="0,0,0,12"/>
                             <Border Style="{StaticResource SegmentHost}">
                                 <UniformGrid Columns="3">
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="Mode" Content="{l:T 'Aktueller Benutzer'}"
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="Mode" Content="{l:T 'Current user'}"
                                                  IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=CurrentUser}"/>
                                     <RadioButton Style="{StaticResource Segment}" GroupName="Mode" Content="{l:T 'Administrator'}"
                                                  IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Administrator}"/>
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="Mode" Content="{l:T 'Anderer Benutzer'}"
+                                    <RadioButton Style="{StaticResource Segment}" GroupName="Mode" Content="{l:T 'Different user'}"
                                                  IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=OtherUser}"/>
                                 </UniformGrid>
                             </Border>
@@ -169,15 +169,15 @@
 
                             <WrapPanel Margin="0,14,0,0" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                                 <StackPanel Width="250" Margin="0,0,24,0">
-                                    <TextBlock Text="{l:T 'PowerShell-Version'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                    <TextBlock Text="{l:T 'PowerShell version'}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <ComboBox ItemsSource="{Binding Engines}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"/>
                                     <TextBlock Text="{Binding EngineWarning}" Style="{StaticResource Caption}" FontSize="11" Margin="0,4,0,0"
                                                Visibility="{Binding EngineWarning, Converter={StaticResource Vis}}"/>
                                 </StackPanel>
                                 <StackPanel VerticalAlignment="Bottom" Margin="0,8,0,0">
-                                    <CheckBox Content="{l:T 'Konsole nach Ende offen lassen'}" IsChecked="{Binding NoExit}" Margin="0,0,0,8"
+                                    <CheckBox Content="{l:T 'Keep console open after finishing'}" IsChecked="{Binding NoExit}" Margin="0,0,0,8"
                                               Visibility="{Binding IsLocal, Converter={StaticResource Vis}}"/>
-                                    <CheckBox Content="{l:T 'Ohne Profil starten (-NoProfile)'}" IsChecked="{Binding NoProfile}"
+                                    <CheckBox Content="{l:T 'Start without profile (-NoProfile)'}" IsChecked="{Binding NoProfile}"
                                               Visibility="{Binding IsLocal, Converter={StaticResource Vis}}"/>
                                 </StackPanel>
                             </WrapPanel>
@@ -190,21 +190,21 @@
             <Border Grid.Column="2" Style="{StaticResource SectionCard}" Margin="0,0,0,16">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="{l:T 'Ziel'}" Style="{StaticResource SectionTitle}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{l:T 'Target'}" Style="{StaticResource SectionTitle}" Margin="0,0,0,12"/>
                         <Border Style="{StaticResource SegmentHost}" IsEnabled="{Binding SupportsRemote}">
                             <UniformGrid Columns="2">
-                                <RadioButton Style="{StaticResource Segment}" GroupName="Target" Content="{l:T 'Dieser PC'}" IsChecked="{Binding IsLocal}"/>
+                                <RadioButton Style="{StaticResource Segment}" GroupName="Target" Content="{l:T 'This PC'}" IsChecked="{Binding IsLocal}"/>
                                 <RadioButton Style="{StaticResource Segment}" GroupName="Target" Content="{l:T 'Remote'}" IsChecked="{Binding IsRemote}"/>
                             </UniformGrid>
                         </Border>
                         <TextBlock Style="{StaticResource Caption}" Margin="0,12,0,0" Visibility="{Binding IsLocal, Converter={StaticResource Vis}}"
-                                   Text="{l:T 'Das Script läuft auf diesem PC. Für einen oder mehrere andere Rechner auf „Remote“ wechseln. Bei mehreren Rechnern läuft es parallel auf allen.'}"/>
+                                   Text="{l:T 'The script runs on this PC. Switch to “Remote” for one or more other computers. With several computers it runs in parallel on all of them.'}"/>
                     </StackPanel>
 
                     <DockPanel Visibility="{Binding IsRemote, Converter={StaticResource Vis}}" Margin="0,12,0,0">
                         <StackPanel DockPanel.Dock="Top">
                             <StackPanel Visibility="{Binding HasGroups, Converter={StaticResource Vis}}" Margin="0,0,0,6">
-                                <TextBlock Text="{l:T 'Gruppen'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+                                <TextBlock Text="{l:T 'Groups'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
                                 <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -234,7 +234,7 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}" FontSize="12" VerticalAlignment="Center"/>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
-                                                        ToolTip="{l:T 'Entfernen'}">
+                                                        ToolTip="{l:T 'Remove'}">
                                                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
                                                 </ui:Button>
                                             </StackPanel>
@@ -243,7 +243,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <DockPanel Margin="0,0,0,10">
-                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Hinzufügen'}" Margin="8,0,0,0" Command="{Binding AddMachineCommand}" />
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Add'}" Margin="8,0,0,0" Command="{Binding AddMachineCommand}" />
                                 <c:MachineBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
                                               Placeholder="Rechnername(n) oder @Gruppe, mit Komma getrennt – Enter fügt hinzu" KeyDown="MachineBox_KeyDown"/>
                             </DockPanel>
@@ -255,15 +255,15 @@
                                     </StackPanel>
                                 </ui:Button>
                                 <TextBlock Text="{Binding SslHint}" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"
-                                           ToolTip="{l:T 'Prüft WinRM, Anmeldung, PowerShell-Version und den Endpunkt PowerShell.7 für die ausgewählten Rechner. HTTPS stellst du unter Einstellungen › Ausführung ein.'}"/>
+                                           ToolTip="{l:T 'Checks WinRM, sign-in, PowerShell version and the PowerShell.7 endpoint for the selected computers. HTTPS is set under Settings › Execution.'}"/>
                             </DockPanel>
                             <Border Padding="10,8" CornerRadius="6" Background="{DynamicResource Bg.CardAlt}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" Margin="0,0,0,8">
                                 <StackPanel>
                                     <CheckBox IsChecked="{Binding CopyFolder}">
-                                        <TextBlock Text="{l:T 'Scriptordner mitsenden'}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{l:T 'Send script folder along'}" FontWeight="SemiBold"/>
                                     </CheckBox>
                                     <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="26,2,0,0"
-                                               Text="{l:T 'Kopiert Begleitdateien und Module über die Remote-Sitzung auf den Zielrechner und löscht sie danach. Der Zielrechner braucht keinen Zugriff auf die Freigabe.'}"/>
+                                               Text="{l:T 'Copies companion files and modules to the target computer via the remote session and deletes them afterwards. The target computer doesn\'t need access to the share.'}"/>
                                 </StackPanel>
                             </Border>
                             <TextBlock Text="{Binding ReadHostWarning}" FontSize="12" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,6"
@@ -273,11 +273,11 @@
                         </StackPanel>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
-                                <TextBlock Text="{l:T 'Favoriten'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,4,0,2"/>
-                                <TextBlock Text="{l:T 'Noch keine Favoriten – Stern bei einem Rechner setzen.'}" Style="{StaticResource Caption}" Margin="8,2,0,6"
+                                <TextBlock Text="{l:T 'Favorites'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,4,0,2"/>
+                                <TextBlock Text="{l:T 'No favorites yet – star a computer.'}" Style="{StaticResource Caption}" Margin="8,2,0,6"
                                            Visibility="{Binding FavoriteMachines.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                 <ItemsControl ItemsSource="{Binding FavoriteMachines}" ItemTemplate="{StaticResource MachineTemplate}" Focusable="False"/>
-                                <TextBlock Text="{l:T 'Zuletzt verwendet'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,10,0,2"/>
+                                <TextBlock Text="{l:T 'Recently used'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,10,0,2"/>
                                 <ItemsControl ItemsSource="{Binding RecentMachines}" ItemTemplate="{StaticResource MachineTemplate}" Focusable="False"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -302,7 +302,7 @@
                             <TextBlock Text="{Binding RunLabel}"/>
                         </StackPanel>
                     </ui:Button>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click" />
                     <TextBlock Text="{Binding FootNote}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                 </DockPanel>
             </StackPanel>

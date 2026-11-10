@@ -68,7 +68,7 @@ public partial class App : Application
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec");
             Directory.CreateDirectory(dir);
             File.AppendAllText(Path.Combine(dir, "error.log"), $"{DateTime.Now:u} {e.Exception}{Environment.NewLine}");
-            Services.AppLog.Error(L.T("Unerwarteter Fehler"), e.Exception);
+            Services.AppLog.Error(L.T("Unexpected error"), e.Exception);
         }
         catch { }
         e.Handled = true;
@@ -80,10 +80,10 @@ public partial class App : Application
             .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true);
         var where = frame != null ? $"{frame.DeclaringType!.Name}.{frame.Name}" : e.Exception.TargetSite?.Name ?? "unbekannt";
         var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "error.log");
-        var text = L.F("Ein unerwarteter Fehler ist aufgetreten:\n\n{0}\n\nOrt: {1} · Version {2}\n", e.Exception.Message, where, Services.UpdateService.CurrentVersionText) +
+        var text = L.F("An unexpected error occurred:\n\n{0}\n\nLocation: {1} · version {2}\n", e.Exception.Message, where, Services.UpdateService.CurrentVersionText) +
                    L.F("Details: {0}", log);
         // Fluent-Dialog; scheitert er (z. B. Fehler beim Aufbau von Fenstern), bleibt die einfache Windows-Meldung
-        try { Services.MessageDialog.Error(null, text, L.T("Unerwarteter Fehler")); }
+        try { Services.MessageDialog.Error(null, text, L.T("Unexpected error")); }
         catch { MessageBox.Show(text, "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Error); }
         e.Handled = true;
     }

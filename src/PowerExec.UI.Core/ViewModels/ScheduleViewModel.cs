@@ -71,7 +71,7 @@ public sealed class ScheduleViewModel : ObservableObject
         _dailyTime = _editing.TimeOfDay.ToString(@"hh\:mm");
         _interval = _editing.IntervalMinutes.ToString(CultureInfo.InvariantCulture);
         Days.Clear();
-        foreach (var (d, n) in new[] { (DayOfWeek.Monday, L.T("Mo")), (DayOfWeek.Tuesday, L.T("Di")), (DayOfWeek.Wednesday, L.T("Mi")), (DayOfWeek.Thursday, L.T("Do")), (DayOfWeek.Friday, L.T("Fr")), (DayOfWeek.Saturday, L.T("Sa")), (DayOfWeek.Sunday, L.T("So")) })
+        foreach (var (d, n) in new[] { (DayOfWeek.Monday, L.T("Mon")), (DayOfWeek.Tuesday, L.T("Tue")), (DayOfWeek.Wednesday, L.T("Wed")), (DayOfWeek.Thursday, L.T("Thu")), (DayOfWeek.Friday, L.T("Fri")), (DayOfWeek.Saturday, L.T("Sat")), (DayOfWeek.Sunday, L.T("Sun")) })
             Days.Add(new DayChoice(d, n, _editing.Days.Count == 0 || _editing.Days.Contains(d), UpdatePreview));
         foreach (var p in new[] { nameof(Kind), nameof(IsOnce), nameof(IsDaily), nameof(IsInterval), nameof(OnceDate), nameof(OnceTime), nameof(DailyTime), nameof(Interval),
                                   nameof(ProfileName), nameof(NotifyOnlyOnError), nameof(CatchUp), nameof(Enabled), nameof(SaveLabel) })
@@ -79,7 +79,7 @@ public sealed class ScheduleViewModel : ObservableObject
         UpdatePreview();
     }
 
-    public string SaveLabel => _app.Settings.Schedules.Any(s => s.Id == _editing.Id) ? L.T("Änderungen speichern") : L.T("Planen");
+    public string SaveLabel => _app.Settings.Schedules.Any(s => s.Id == _editing.Id) ? L.T("Save changes") : L.T("Schedule");
 
     public ScheduleKind Kind
     {
@@ -115,19 +115,19 @@ public sealed class ScheduleViewModel : ObservableObject
         {
             case ScheduleKind.Once:
                 if (!DateTime.TryParseExact($"{_onceDate.Trim()} {_onceTime.Trim()}", new[] { "dd.MM.yyyy HH:mm", "d.M.yyyy H:mm", "dd.MM.yy HH:mm" }, de, DateTimeStyles.None, out var at))
-                    return L.T("Datum als TT.MM.JJJJ und Uhrzeit als HH:MM eingeben.");
-                if (at <= DateTime.Now) return L.T("Der Zeitpunkt liegt in der Vergangenheit.");
+                    return L.T("Enter the date as DD.MM.YYYY and the time as HH:MM.");
+                if (at <= DateTime.Now) return L.T("The time is in the past.");
                 _editing.OnceAt = at;
                 break;
             case ScheduleKind.Daily:
-                if (!TimeSpan.TryParseExact(_dailyTime.Trim(), new[] { @"hh\:mm", @"h\:mm" }, de, out var t)) return L.T("Uhrzeit als HH:MM eingeben, z. B. 07:00.");
+                if (!TimeSpan.TryParseExact(_dailyTime.Trim(), new[] { @"hh\:mm", @"h\:mm" }, de, out var t)) return L.T("Enter the time as HH:MM, e.g. 07:00.");
                 _editing.TimeOfDay = t;
                 _editing.Days = Days.Where(d => d.IsChecked).Select(d => d.Day).ToList();
-                if (_editing.Days.Count == 0) return L.T("Mindestens einen Wochentag wählen.");
+                if (_editing.Days.Count == 0) return L.T("Choose at least one weekday.");
                 if (_editing.Days.Count == 7) _editing.Days.Clear();
                 break;
             default:
-                if (!int.TryParse(_interval.Trim(), out var m) || m < Schedules.MinIntervalMinutes) return L.F("Intervall in Minuten, mindestens {0}.", Schedules.MinIntervalMinutes);
+                if (!int.TryParse(_interval.Trim(), out var m) || m < Schedules.MinIntervalMinutes) return L.F("Interval in minutes, at least {0}.", Schedules.MinIntervalMinutes);
                 _editing.IntervalMinutes = m;
                 break;
         }
@@ -143,7 +143,7 @@ public sealed class ScheduleViewModel : ObservableObject
         _editing = old;
         Error = error;
         Preview = error != null ? string.Empty
-            : Schedules.Next(probe, DateTime.Now) is { } next ? L.F("{0} · nächster Start {1:ddd dd.MM. HH:mm}", Schedules.Describe(probe), next) : L.T("kein weiterer Termin");
+            : Schedules.Next(probe, DateTime.Now) is { } next ? L.F("{0} · next run {1:ddd g}", Schedules.Describe(probe), next) : L.T("no further run");
     }
 
     private void Save()
@@ -162,8 +162,8 @@ public sealed class ScheduleViewModel : ObservableObject
         foreach (var s in Schedules.For(_app.Settings, Item.FullPath))
         {
             var copy = s;
-            Existing.Add(new ScheduleRow(s, Schedules.Describe(s) + (s.Enabled ? string.Empty : L.T(" · pausiert")),
-                s.NextRunLocal is { } n && s.Enabled ? L.F("nächster Start {0:ddd dd.MM. HH:mm}", n) : s.LastRunLocal is { } l ? L.F("zuletzt {0:dd.MM. HH:mm}", l) : string.Empty,
+            Existing.Add(new ScheduleRow(s, Schedules.Describe(s) + (s.Enabled ? string.Empty : L.T(" · paused")),
+                s.NextRunLocal is { } n && s.Enabled ? L.F("next run {0:ddd g}", n) : s.LastRunLocal is { } l ? L.F("last {0:g}", l) : string.Empty,
                 new RelayCommand(() => { _editing = copy.Clone(); LoadFields(); }),
                 new RelayCommand(() => { _app.RemoveSchedule(copy); RefreshRows(); })));
         }

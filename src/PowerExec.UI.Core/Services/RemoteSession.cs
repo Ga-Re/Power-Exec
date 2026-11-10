@@ -108,7 +108,7 @@ public sealed class RemoteSession : IDisposable
         string? error = null;
         if (!_done)
         {
-            lock (_stderr) error = _stderr.Length > 0 ? _stderr.ToString().Trim() : L.T("Der Remote-Runner wurde unerwartet beendet.");
+            lock (_stderr) error = _stderr.Length > 0 ? _stderr.ToString().Trim() : L.T("The remote runner ended unexpectedly.");
         }
         // Mit niedriger Priorität, damit noch wartende Ergebnisse vorher verarbeitet werden.
         _dispatcher.Post(() => Completed?.Invoke(error));

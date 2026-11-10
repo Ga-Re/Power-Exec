@@ -43,13 +43,13 @@ public static class RemoteTestService
                 if (r != null) results.Add(r);
             }
             await p.WaitForExitAsync();
-            AppLog.Info(L.T("Verbindungstest: ") + string.Join("; ", results.Select(r => $"{r.Computer}: {r.Summary}")));
+            AppLog.Info(L.T("Connection test: ") + string.Join("; ", results.Select(r => $"{r.Computer}: {r.Summary}")));
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Verbindungstest fehlgeschlagen"), ex);
+            AppLog.Error(L.T("Connection test failed"), ex);
             foreach (var t in targets.Where(t => results.All(r => !r.Computer.Equals(t, StringComparison.OrdinalIgnoreCase))))
-                results.Add(new RemoteTestResult { Computer = t, Error = L.T("Test konnte nicht gestartet werden: ") + ex.Message });
+                results.Add(new RemoteTestResult { Computer = t, Error = L.T("Test couldn't be started: ") + ex.Message });
         }
         finally
         {

@@ -34,14 +34,14 @@ public static class ParameterSets
     public static string? Save(AppSettings s, LaunchItem item, string name, IReadOnlyDictionary<string, string?> values, LaunchProfile defaultProfile)
     {
         name = (name ?? string.Empty).Trim();
-        if (name.Length == 0) return L.T("Bitte einen Namen eingeben.");
+        if (name.Length == 0) return L.T("Please enter a name.");
         var entry = s.FindEntry(item.FullPath);
         if (entry == null)
         {
             entry = new EntryConfig { Path = item.FullPath };
             s.Entries.Add(entry);
         }
-        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) return L.F("Ein Startprofil „{0}“ gibt es schon.", name);
+        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) return L.F("A launch profile “{0}” already exists.", name);
         if (entry.Profiles.Count == 0)
         {
             var standard = defaultProfile.Clone();

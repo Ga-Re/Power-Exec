@@ -8,185 +8,193 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
-        new ReleaseNote(new Version(0, 29, 0), L.T("Marktplatz als eigener Bereich, Fluent-Meldungen"), new[]
+        new ReleaseNote(new Version(0, 30, 0), L.T("Clearer dialogs, three base designs, translations based on English"), new[]
         {
-            L.T("Marktplatz ist ein eigener Bereich in den Einstellungen mit Einträge, Scripte, Designs, Installiert und Quellen; im Repository liegen Kategorien als Ordner, darunter die Gruppen"),
-            L.T("Heruntergeladene Einträge landen jetzt zuverlässig in der gewählten Gruppe"),
-            L.T("Vorschau: Designs zeigen ein Mini-Panel in ihren Farben, Einträge und Scripte klappen Ziel bzw. Code und benötigte Variablen auf"),
-            L.T("Benötigte Variablen bringen ihre Art mit (Text, geheim, Umgebungsvariable, PowerShell …) und werden im Variablen-Dialog angelegt"),
-            L.T("Meldungen und Rückfragen erscheinen als Fluent-Dialog statt als Windows-Meldungsfenster"),
-            L.T("Hintergründe heißen jetzt „Glas (Blur)“ und „Transparent“; die Übersetzungen liegen im Repository unter Translations (de.json, en.json)")
+            L.T("Buttons like “Apply” are clearly readable again in the variable and group dialogs; the variable description has several lines"),
+            L.T("When downloading from the marketplace you choose an existing group from a list or create a new one"),
+            L.T("Three base designs (Fluent, Glass, OLED); Fluent Clean, Nordic Frost, Espresso, Graphite, Paper and Midnight are now in the marketplace. Design tiles have the same size, the delete button sits inside the tile"),
+            L.T("The type of an existing entry can no longer be changed – only while creating it"),
+            L.T("Translations are based on English: every other language is a file under Translations (e.g. de.json) and is offered automatically")
         }),
-        new ReleaseNote(new Version(0, 28, 0), L.T("Englische Oberfläche"), new[]
+        new ReleaseNote(new Version(0, 29, 0), L.T("Marketplace as its own area, Fluent messages"), new[]
         {
-            L.T("Power-Exec gibt es jetzt auch auf Englisch: die Sprache folgt Windows (Deutsch bei deutschem Windows, sonst Englisch) und lässt sich unter Einstellungen › Allgemein › Sprache umstellen"),
-            L.T("Alle Fenster, Meldungen, Werkzeug-Vorlagen und Versionshinweise sind übersetzt; die Suche versteht englische Filter wie type:, group: und is: – die deutschen gehen weiter"),
-            L.T("Nach dem Umstellen der Sprache startet Power-Exec auf Knopfdruck neu")
+            L.T("The marketplace is its own area in the settings with Entries, Scripts, Designs, Installed and Sources; in the repository, categories are folders with the groups below them"),
+            L.T("Downloaded entries now reliably end up in the chosen group"),
+            L.T("Preview: designs show a mini panel in their colors, entries and scripts expand their target or code and required variables"),
+            L.T("Required variables come with their type (text, secret, environment variable, PowerShell …) and are created in the variable dialog"),
+            L.T("Messages and confirmations appear as a Fluent dialog instead of a Windows message box"),
+            L.T("Backgrounds are now called “Glass (blur)” and “Transparent”; the translations are in the repository under Translations (de.json, en.json)")
         }),
-        new ReleaseNote(new Version(0, 27, 0), L.T("Marktplatz aus Git-Ordnern, Variablen-Tabelle, Snackbars"), new[]
+        new ReleaseNote(new Version(0, 28, 0), L.T("English user interface"), new[]
         {
-            L.T("Marktplatz: statt Paketen Ordner aus dem Git-Repository – aufklappbar, mit Tabs Einträge · Scripte · Designs · Installiert und kompakter Liste"),
-            L.T("Ganze Ordner oder einzelne Dateien per Häkchen herunterladen oder deinstallieren; Einträge und Scripte landen in den eigenen Einträgen in der Gruppe deiner Wahl (vorgeschlagen: der Ordnername)"),
-            L.T("Deinstallieren entfernt Einträge, Designs und Script-Dateien wieder; selbst geänderte Einträge nur nach Rückfrage. Updates bleiben in ihrer Gruppe"),
-            L.T("Variablen als kompakte Tabelle mit Suche, Häkchen und eigenem Bearbeiten-Dialog; eingebaute Variablen heißen jetzt {{$Date}}, {{$Time}}, {{$User}}, {{$Computer}} und {{$Clipboard}}"),
-            L.T("Erfolgsmeldungen erscheinen kurz als Snackbar und verschwinden wieder; Fehler bleiben stehen"),
-            L.T("Der Favoriten-Stern folgt der Akzentfarbe")
+            L.T("Power-Exec is now also available in English: the language follows Windows (German on German Windows, otherwise English) and can be changed under Settings › General › Language"),
+            L.T("All windows, messages, tool templates and release notes are translated; the search understands English filters like type:, group: and is: – the German ones still work"),
+            L.T("After changing the language, Power-Exec restarts at the push of a button")
         }),
-        new ReleaseNote(new Version(0, 26, 0), L.T("Eigene Marktplatz-Quellen"), new[]
+        new ReleaseNote(new Version(0, 27, 0), L.T("Marketplace from Git folders, variables table, snackbars"), new[]
         {
-            L.T("Marktplatz › Quellen: weitere Marktplätze einfach per Repository-URL hinzufügen (GitHub oder GitLab, auch Unterordner) – z. B. den Katalog deines Teams"),
-            L.T("Fremde Quellen werden vor der ersten Installation einmal als vertrauenswürdig bestätigt; danach zeigt die Liste ihren Stand, der Quellenfilter grenzt die Elemente ein"),
-            L.T("Eine nicht erreichbare Quelle hält die anderen nicht auf; Entfernen einer Quelle lässt bereits Installiertes stehen")
+            L.T("Marketplace: folders from the Git repository instead of packages – expandable, with tabs Entries · Scripts · Designs · Installed and a compact list"),
+            L.T("Check whole folders or individual files to download or uninstall them; entries and scripts end up in your custom entries in the group of your choice (suggested: the folder name)"),
+            L.T("Uninstalling removes entries, designs and script files again; entries you changed only after confirmation. Updates stay in their group"),
+            L.T("Variables as a compact table with search, checkboxes and their own edit dialog; built-in variables are now called {{$Date}}, {{$Time}}, {{$User}}, {{$Computer}} and {{$Clipboard}}"),
+            L.T("Success messages briefly appear as a snackbar and disappear again; errors stay"),
+            L.T("The favorites star follows the accent color")
         }),
-        new ReleaseNote(new Version(0, 25, 0), L.T("Variablen, Marktplatz und aufgeräumte Einstellungen"), new[]
+        new ReleaseNote(new Version(0, 26, 0), L.T("Custom marketplace sources"), new[]
         {
-            L.T("Neu: Marktplatz (Inhalte › Marktplatz) – Pakete (z. B. Matrix42, Recherche), Links (Google, Microsoft Learn, VirusTotal, IP-Whois, GitHub/GitLab-Issues), Designs und die Beispielscripte mit einem Klick installieren; vorher zeigt eine Vorschau den Inhalt, benötigte Variablen werden abgefragt, Änderungen erscheinen als „Update verfügbar“"),
-            L.T("Neu: Variablen (Inhalte › Variablen). {{$CompanyName}} wird in Texten, Links, Befehlen, Zielen, PowerShell-Code und Script-Parametern ohne Rückfrage eingesetzt – als fester Text, je Arbeitsbereich, geheim (verschlüsselt), aus einer Umgebungsvariable oder als Ergebnis eines PowerShell-Befehls (mit Zwischenspeicher)"),
-            L.T("{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}} und {{$Zwischenablage}} sind eingebaut, das Datums- und Uhrzeitformat ist einstellbar; normale {{Platzhalter}} werden weiter vor dem Start abgefragt"),
-            L.T("Im Eintrags-Editor: Vorschläge beim Tippen von {{$, Einfügen per Klick und ein Hinweis bei Variablen, die es nicht gibt; die Vorschau im Panel zeigt die eingesetzten Werte"),
-            L.T("Einstellungen: einheitliche Karten, kompakte Typ-Filter unter „Eigene Einträge“, farbige Rückmeldungen (InfoBar), Akzentbalken in der Navigation und „Alle Änderungen gespeichert“ in der Fußzeile")
+            L.T("Marketplace › Sources: simply add more marketplaces by repository URL (GitHub or GitLab, subfolders too) – e.g. your team's catalog"),
+            L.T("Third-party sources are confirmed as trusted once before the first installation; then the list shows their status and the source filter narrows the items"),
+            L.T("An unreachable source doesn't hold up the others; removing a source keeps what's already installed")
         }),
-        new ReleaseNote(new Version(0, 24, 0), L.T("Neue Designs, Vollton und ruhigere Gruppen"), new[]
+        new ReleaseNote(new Version(0, 25, 0), L.T("Variables, marketplace and tidier settings"), new[]
         {
-            L.T("Designvorlagen einklappbar und erweitert: Glas schaltet jetzt den echten Weichzeichner ein (Blur 60, Sättigung 125 %), neu sind OLED, Nordic Frost, Fluent Clean und Espresso – und eigene Designs lassen sich speichern"),
-            L.T("Neuer Hintergrund „Vollton“ (deckend, ohne Transparenz); unter Panelfarbe wählst du, ob Hover-Zone, Auswahl und Knöpfe der Windows-Akzentfarbe, einer eigenen Akzentfarbe oder der Panelfarbe folgen"),
-            L.T("Gruppen-Stil „Akzentstreifen“: ruhige, halbtransparente Karten mit Farbstreifen; Kacheln schweben dezent, Typ-Kürzel als Pillen; Elementgröße je Gruppe im Gruppenmenü; der fixierte Gruppenkopf sitzt genau auf der Gruppe"),
-            L.T("Einstellungen aufgeräumt: Mini-Dock, Hover-Zone und Panel-Abmessungen als Ausklappbereiche, Scrollbalken nur beim Scrollen; ein angeheftetes, per Klick eingefahrenes Panel fährt beim Darüberfahren wieder aus")
+            L.T("New: marketplace (Content › Marketplace) – install packages (e.g. Matrix42, research), links (Google, Microsoft Learn, VirusTotal, IP Whois, GitHub/GitLab issues), designs and the sample scripts with one click; a preview shows the content first, required variables are asked for, changes appear as “Update available”"),
+            L.T("New: variables (Content › Variables). {{$CompanyName}} is filled into texts, links, commands, targets, PowerShell code and script parameters without asking – as fixed text, per workspace, secret (encrypted), from an environment variable or as the result of a PowerShell command (with cache)"),
+            L.T("Date, time, user, computer and clipboard are built in, the date and time format is adjustable; normal {{placeholders}} are still asked for before launch"),
+            L.T("In the entry editor: suggestions when typing {{$, insert by click and a notice for variables that don't exist; the preview in the panel shows the filled-in values"),
+            L.T("Settings: consistent cards, compact type filters under “Custom entries”, colored feedback (InfoBar), accent bar in the navigation and “All changes saved” in the footer")
         }),
-        new ReleaseNote(new Version(0, 23, 0), L.T("Rechnergruppen aus Listen, OU-Auswahl und Export"), new[]
+        new ReleaseNote(new Version(0, 24, 0), L.T("New designs, solid background and calmer groups"), new[]
         {
-            L.T("Rechnergruppen: Quelle „Dynamisch aus Liste“ – eine Namensliste nach Namen oder eine CSV nach beliebigen Spalten filtern; die Liste wird beim Synchronisieren neu gelesen. „Gruppe aus Liste importieren …“ legt so eine Gruppe direkt an"),
-            L.T("Jede Rechnergruppe hat in der Kopfzeile Synchronisieren und Exportieren (CSV oder Text)"),
-            L.T("Dynamisch aus AD: „OU wählen …“ zeigt den ganzen OU-Baum mit Suche und setzt die gewählte OU in „Ab OU“ ein"),
-            L.T("Beispielscripte anlegen findest du jetzt unter Hilfe › Beispiele; das Panel sitzt beim Ausfahren genauer und prüft das Auto-Einfahren nur noch, wenn der Mauszeiger das Panel verlassen hat")
+            L.T("Design templates collapsible and extended: Glass now turns on the real blur (blur 60, saturation 125 %), new are OLED, Nordic Frost, Fluent Clean and Espresso – and you can save your own designs"),
+            L.T("New background “Solid” (opaque, without transparency); under panel color you choose whether the hover zone, selection and buttons follow the Windows accent color, a custom accent color or the panel color"),
+            L.T("Group style “Accent stripe”: calm, semi-transparent cards with a color stripe; tiles float subtly, type abbreviations as pills; item size per group in the group menu; the pinned group header sits exactly on the group"),
+            L.T("Settings tidied up: mini dock, hover zone and panel dimensions as expandable sections, scroll bars only while scrolling; a pinned panel collapsed by click slides out again on hover")
         }),
-        new ReleaseNote(new Version(0, 22, 3), L.T("Feinschliff: Ausfahren, Auswahllisten, Einstellungen"), new[]
+        new ReleaseNote(new Version(0, 23, 0), L.T("Computer groups from lists, OU picker and export"), new[]
         {
-            L.T("Panel fährt zügiger und gleichmäßiger aus; geparkt wird es ohne erneutes Platzieren gestartet"),
-            L.T("Auswahllisten zeigen kein überflüssiges Eingabefeld mehr; das Panel zeigt das Programmsymbol"),
-            L.T("Einstellungen: Panelfarbe und Hintergrund als Ausklappbereiche – darunter je nach Hintergrund Blur-Stärke, Sättigung, Milchglas und Deckkraft"),
-            L.T("Glas: Inhalt sitzt nach einem Wechsel des Hintergrunds wieder genau im Panel")
+            L.T("Computer groups: source “Dynamic from list” – filter a name list by name or a CSV by any columns; the list is re-read when syncing. “Import group from list …” creates such a group directly"),
+            L.T("Each computer group has Sync and Export (CSV or text) in its header"),
+            L.T("Dynamic from AD: “Choose OU …” shows the whole OU tree with search and puts the chosen OU into “From OU”"),
+            L.T("Create sample scripts is now under Help › Examples; the panel sits more precisely when sliding out and only checks auto-collapse once the mouse pointer has left the panel")
         }),
-        new ReleaseNote(new Version(0, 22, 2), L.T("Ruhigeres Ausfahren, Details bei Rastergruppen"), new[]
+        new ReleaseNote(new Version(0, 22, 3), L.T("Polish: sliding out, drop-downs, settings"), new[]
         {
-            L.T("Das Panel fährt sanfter aus: Fokus und Hintergrundprüfungen folgen erst nach der Bewegung, beim Gleiten wird nichts unnötig neu vermessen oder gezeichnet"),
-            L.T("Steht das Panel auf „Liste“ und eine Gruppe auf „Raster“, erscheinen die Details des ausgewählten Eintrags jetzt unten im Panel")
+            L.T("The panel slides out faster and more evenly; when parked it starts without being placed again"),
+            L.T("Drop-downs no longer show a superfluous input field; the panel shows the program icon"),
+            L.T("Settings: panel color and background as expandable sections – below them, depending on the background, blur strength, saturation, frosted glass and opacity"),
+            L.T("Glass: content sits exactly in the panel again after switching the background")
         }),
-        new ReleaseNote(new Version(0, 22, 1), L.T("Fehlerbehebung beim Ausführen mit Glas"), new[]
+        new ReleaseNote(new Version(0, 22, 2), L.T("Calmer sliding out, details for grid groups"), new[]
         {
-            L.T("Mit dem Hintergrund „Glas“ erschien beim Ausführen eines Scripts aus dem Panel die Meldung „Value cannot be null (defaultDestinationValue)“ – behoben"),
-            L.T("Ersteinrichtung: Beispielscripte lassen sich zusätzlich zum eigenen Ordner anlegen (Gruppe „Beispiele“)")
+            L.T("The panel slides out more smoothly: focus and background checks only follow after the movement, nothing is needlessly re-measured or redrawn while gliding"),
+            L.T("If the panel is set to “List” and a group to “Grid”, the details of the selected entry now appear at the bottom of the panel")
         }),
-        new ReleaseNote(new Version(0, 22, 0), L.T("Flüssiger: Panel passt sich direkt an, Glas gleitet ruhig"), new[]
+        new ReleaseNote(new Version(0, 22, 1), L.T("Fix when running with Glass"), new[]
         {
-            L.T("Geänderte Einstellungen wirken sofort im offenen Panel – ohne Flackern und ohne Neuaufbau (nur beim Wechsel des Designs oder zwischen Klarglas und Glas wird es neu erzeugt)"),
-            L.T("Glas: das Panel fährt sanft an und bleibt eingefahren hinter dem Rand bereit – kein Ruckeln mehr beim Ausfahren"),
-            L.T("Einstellungen: Bereiche klappen weich auf und zu, der Auswahlbalken gleitet zum neuen Menüpunkt"),
-            L.T("Acht Beispielscripte (Systeminfo, Netzwerktest, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter, Speicherplatz) – unter Inhalte › Gruppen mit „Beispielscripte anlegen“")
+            L.T("With the “Glass” background, running a script from the panel showed the message “Value cannot be null (defaultDestinationValue)” – fixed"),
+            L.T("Setup: sample scripts can be created in addition to your own folder (group “Examples”)")
         }),
-        new ReleaseNote(new Version(0, 21, 0), L.T("Glas mit eigenem Weichzeichner, neue Einstellungen"), new[]
+        new ReleaseNote(new Version(0, 22, 0), L.T("Smoother: the panel adapts directly, Glass glides calmly"), new[]
         {
-            L.T("Neuer Hintergrund „Glas“ (Windows 11): der Desktop hinter dem Panel wird weichgezeichnet und mit der Panelfarbe getönt – Blur-Stärke und Sättigung einstellbar. Aero-Blur, Acrylic und Mica sind entfallen, Klarglas bekommt ein ruhigeres Milchglas"),
-            L.T("Einstellungen mit Navigationsleiste: einklappbarer Rand, einklappbare Bereiche und Zurück; die Panelfarbe wählst du wie die Akzentfarbe in Windows"),
-            L.T("Vorschau (Leertaste) in einem eigenen Fenster neben dem Panel – sie folgt dem ausgewählten Eintrag"),
-            L.T("Angeheftetes Panel per Klick auf die Hover-Zone ein- und ausfahren; Ordner als Gruppe ablegen öffnet gleich den Gruppendialog mit Farbe und Darstellung"),
-            L.T("Beim Ändern von Einstellungen bleibt das Panel sichtbar und behält seine Größe; das Tastenkürzel (Strg+Alt+Leertaste) lässt sich schon bei der Einrichtung festlegen; der Installer folgt hell/dunkel von Windows")
+            L.T("Changed settings take effect immediately in the open panel – without flicker and without a rebuild (it's only recreated when switching the design or between clear glass and glass)"),
+            L.T("Glass: the panel starts smoothly and waits collapsed behind the edge – no more stutter when sliding out"),
+            L.T("Settings: sections expand and collapse smoothly, the selection bar glides to the new menu item"),
+            L.T("Eight sample scripts (system info, network test, large files, installed programs, error log, temp cleanup, passwords, disk space) – under Content › Groups with “Create sample scripts”")
         }),
-        new ReleaseNote(new Version(0, 20, 0), L.T("Neues Aussehen im Stil von Windows 11"), new[]
+        new ReleaseNote(new Version(0, 21, 0), L.T("Glass with its own blur, new settings"), new[]
         {
-            L.T("Schaltflächen, Schalter, Eingabefelder, Auswahllisten, Menüs und Bildlaufleisten im Fluent-Design – in den Einstellungen, allen Dialogen, im Panel, in der Spotlight-Suche und im Mini-Dock"),
-            L.T("Hell, Dunkel, Kontrastdesign und Akzentfarbe gelten für alle Bedienelemente und wechseln auch bei offenen Fenstern mit; im Panel richten sie sich nach der Panelfarbe"),
-            L.T("Unten im Panel steht, welche Version läuft und ob sie installiert oder portabel ist")
+            L.T("New background “Glass” (Windows 11): the desktop behind the panel is blurred and tinted with the panel color – blur strength and saturation adjustable. Aero blur, Acrylic and Mica were removed, clear glass gets a calmer frosted glass"),
+            L.T("Settings with a navigation bar: collapsible pane, collapsible sections and Back; you choose the panel color like the accent color in Windows"),
+            L.T("Preview (Space) in its own window next to the panel – it follows the selected entry"),
+            L.T("Collapse and expand a pinned panel by clicking the hover zone; dropping a folder as a group opens the group dialog with color and appearance right away"),
+            L.T("When changing settings, the panel stays visible and keeps its size; the hotkey (Ctrl+Alt+Space) can already be set during setup; the installer follows Windows light/dark")
         }),
-        new ReleaseNote(new Version(0, 19, 5), L.T("Weichzeichner auch an Taskleiste und zweitem Monitor flüssig, .NET 10"), new[]
+        new ReleaseNote(new Version(0, 20, 0), L.T("New look in the style of Windows 11"), new[]
         {
-            L.T("Liegt die Taskleiste oder ein weiterer Monitor an der Panelkante, gleitet das Panel jetzt ebenfalls als Ganzes herein und wird am Rand des Arbeitsbereichs abgeschnitten – kein Wachsen mehr, kein Ruckeln, nicht mehr über der Taskleiste"),
-            L.T("Läuft jetzt auf .NET 10 (Langzeitsupport bis 2028) und PowerShell 7.6")
+            L.T("Buttons, toggles, input fields, drop-downs, menus and scroll bars in Fluent design – in the settings, all dialogs, the panel, the Spotlight search and the mini dock"),
+            L.T("Light, dark, contrast theme and accent color apply to all controls and also switch in open windows; in the panel they follow the panel color"),
+            L.T("The bottom of the panel shows which version is running and whether it's installed or portable")
         }),
-        new ReleaseNote(new Version(0, 19, 4), L.T("Flüssiger mit Weichzeichner"), new[]
+        new ReleaseNote(new Version(0, 19, 5), L.T("Blur smooth at the taskbar and on a second monitor too, .NET 10"), new[]
         {
-            L.T("Mit Aero-Blur, Acrylic oder Mica wird das Panel beim Ein- und Ausfahren als Ganzes verschoben statt neu vermessen – deutlich flüssiger (bei einem weiteren Bildschirm hinter dem Rand wächst es wie bisher)")
+            L.T("If the taskbar or another monitor is at the panel edge, the panel now also glides in as a whole and is clipped at the edge of the work area – no more growing, no stutter, no longer over the taskbar"),
+            L.T("Now runs on .NET 10 (long-term support until 2028) and PowerShell 7.6")
         }),
-        new ReleaseNote(new Version(0, 19, 3), L.T("Weichzeichner fährt mit dem Panel"), new[]
+        new ReleaseNote(new Version(0, 19, 4), L.T("Smoother with blur"), new[]
         {
-            L.T("Aero-Blur, Acrylic und Mica fahren genau mit dem Panel ein und aus – kein Hintergrund mehr vor oder nach dem Panel")
+            L.T("With Aero blur, Acrylic or Mica the panel is moved as a whole when sliding in and out instead of being re-measured – much smoother (with another screen behind the edge it grows as before)")
         }),
-        new ReleaseNote(new Version(0, 19, 2), L.T("Weichzeichner repariert"), new[]
+        new ReleaseNote(new Version(0, 19, 3), L.T("Blur moves with the panel"), new[]
         {
-            L.T("Aero-Blur bleibt nach dem Einfahren erhalten; kein unscharfer Streifen mehr neben dem Panel"),
-            L.T("Kein Schließen-Knopf von Windows mehr am Panel"),
-            L.T("Deckkraft steht direkt bei Hintergrund und Milchglas, jetzt ab 20 %; mit Weichzeichner wird sie auf 70 % gesetzt, wenn sie auf 100 % stand")
+            L.T("Aero blur, Acrylic and Mica slide in and out exactly with the panel – no more background before or after the panel")
         }),
-        new ReleaseNote(new Version(0, 19, 1), L.T("Hintergrund wählen: Aero, Acrylic, Mica oder Klarglas"), new[]
+        new ReleaseNote(new Version(0, 19, 2), L.T("Blur fixed"), new[]
         {
-            L.T("Hintergrund hinter dem Panel wählbar: Klarglas, Aero-Blur, Acrylic oder Mica – Ecken rundet Windows 11 jetzt selbst und glatt"),
-            L.T("Milchglas-Regler statt Stufen; Windows 10 bekommt bei Acrylic und Mica automatisch Aero-Blur"),
-            L.T("„Nach Profil fragen“ greift jetzt auch beim Start aus dem Panel, mit Alt+1 … 9 und im Spotlight"),
-            L.T("Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge) lassen sich auch im Panel verschieben"),
-            L.T("Liste ↔ Raster je Gruppe ändert die Höhe weich; Schieberegler bei „Zuletzt ausgeführt“ wieder bedienbar")
+            L.T("Aero blur stays after collapsing; no more blurry strip next to the panel"),
+            L.T("No more Windows close button on the panel"),
+            L.T("Opacity sits right next to background and frosted glass, now from 20 %; with blur it's set to 70 % if it was at 100 %")
         }),
-        new ReleaseNote(new Version(0, 19, 0), L.T("Dynamische Rechnergruppen, feste Gruppen frei anordnen"), new[]
+        new ReleaseNote(new Version(0, 19, 1), L.T("Choose background: Aero, Acrylic, Mica or clear glass"), new[]
         {
-            L.T("Rechnergruppen dynamisch aus dem AD: Regeln wie „Betriebssystem enthält Server“, in Blöcken mit UND/ODER kombiniert; Aktualisierung beim Start und regelmäßig"),
-            L.T("Zuletzt ausgeführt, Favoriten und Eigene Einträge stehen mit Schloss in der Gruppenliste, lassen sich verschieben und je Arbeitsbereich ein- oder ausblenden"),
-            L.T("Laufende Scripte: Ende wird erkannt, auch wenn das Fenster offen bleibt; „Erneut starten“ nach dem Ende; „läuft“ direkt am Eintrag"),
-            L.T("Beim Start nach dem Profil fragen (global oder je Eintrag) – im selben Fenster wie die Werte für {{Platzhalter}}"),
-            L.T("Gruppen klappen weich auf und zu, Knöpfe im Gruppenkopf blenden ein, „Zuletzt ausgeführt“ zeigt die Zeit"),
-            L.T("Stärke des Weichzeichners einstellbar, Deckkraft wieder genau wie eingestellt; angeheftetes Panel überdeckt die Einstellungen nicht mehr"),
-            L.T("Ordner ins Panel ziehen: als Gruppe oder als Link; Schlagworte mit eigener Farbe und einzeln von Einträgen entfernbar")
+            L.T("Background behind the panel selectable: clear glass, Aero blur, Acrylic or Mica – Windows 11 now rounds the corners itself and smoothly"),
+            L.T("Frosted glass slider instead of levels; Windows 10 automatically gets Aero blur with Acrylic and Mica"),
+            L.T("“Ask for profile” now also applies when launching from the panel, with Alt+1 … 9 and in Spotlight"),
+            L.T("Fixed groups (Recently run, Favorites, Custom entries) can also be moved in the panel"),
+            L.T("List ↔ grid per group changes the height smoothly; the slider for “Recently run” works again")
         }),
-        new ReleaseNote(new Version(0, 18, 0), L.T("Filtern aus dem Suchfeld, besser lesbar in Hell"), new[]
+        new ReleaseNote(new Version(0, 19, 0), L.T("Dynamic computer groups, arrange fixed groups freely"), new[]
         {
-            L.T("Klick ins Suchfeld zeigt die Filterarten (Schlagwort, Typ, Gruppe, Merkmal) – die Auswahl listet die vorhandenen Werte; die Filterknöpfe unter der Suche entfallen"),
-            L.T("Helles Design: offene Fenster wechseln sofort mit, Gruppenfarben und Symbole mit mehr Kontrast, helle Panels kaum noch durchscheinend"),
-            L.T("Gruppenmenü aufgeräumt: „Neue Untergruppe“ oben, „Eigene Farbe“ und „Farbe entfernen“ im Untermenü Farbe, ohne „Nach oben/unten“"),
-            L.T("Suchfeld runder")
+            L.T("Computer groups dynamically from AD: rules like “Operating system contains Server”, combined in blocks with AND/OR; refreshed at startup and regularly"),
+            L.T("Recently run, Favorites and Custom entries appear with a lock in the group list, can be moved and shown or hidden per workspace"),
+            L.T("Running scripts: the end is detected even if the window stays open; “Run again” after the end; “running” right on the entry"),
+            L.T("Ask for the profile at launch (globally or per entry) – in the same window as the values for {{placeholders}}"),
+            L.T("Groups expand and collapse smoothly, buttons in the group header fade in, “Recently run” shows the time"),
+            L.T("Blur strength adjustable, opacity exactly as set again; a pinned panel no longer covers the settings"),
+            L.T("Drag folders into the panel: as a group or as a link; tags with their own color and removable from entries individually")
         }),
-        new ReleaseNote(new Version(0, 17, 2), L.T("Gruppen anlegen und ordnen"), new[]
+        new ReleaseNote(new Version(0, 18, 0), L.T("Filtering from the search box, more readable in light mode"), new[]
         {
-            L.T("Neue Gruppe mit Symbol oder Bild, Farbe, Darstellung und optional einem Ordner (wird zur smarten Gruppe) in einem Dialog"),
-            L.T("Rechtsklick auf eine Gruppe legt eine Untergruppe an, auf freie Fläche eine neue Gruppe unten"),
-            L.T("Einstellungen › Gruppen: Untergruppen im Rahmen ihrer Gruppe, Verschieben und Verschachteln wie im Panel"),
-            L.T("Panel: Menü-Knopf im Gruppenkopf erst beim Darüberfahren; beim Hineinziehen leuchtet der Gruppenrahmen")
+            L.T("Clicking into the search box shows the filter types (tag, type, group, property) – the choice lists the existing values; the filter buttons below the search are gone"),
+            L.T("Light design: open windows switch immediately, group colors and icons with more contrast, light panels barely see-through"),
+            L.T("Group menu tidied up: “New subgroup” at the top, “Custom color” and “Remove color” in the Color submenu, without “Move up/down”"),
+            L.T("Rounder search box")
         }),
-        new ReleaseNote(new Version(0, 17, 1), L.T("Gruppen verschieben: sehen, wo sie landen"), new[]
+        new ReleaseNote(new Version(0, 17, 2), L.T("Create and arrange groups"), new[]
         {
-            L.T("Beim Ziehen einer Gruppe öffnet sich an der Zielstelle eine Lücke mit Platzhalter – im Panel und in den Einstellungen"),
-            L.T("Zwischen zwei Gruppen wählt seitliches Ziehen die Ebene: nach rechts tiefer, nach links höher"),
-            L.T("Ziehbild am Mauszeiger mit Name, Farbe und Zahl der Untergruppen"),
-            L.T("Unter Panel › Verhalten einstellbar: Ziehbild, weiche Bewegung, Inhalte zuklappen, Begründung an ungültigen Stellen")
+            L.T("New group with icon or image, color, appearance and optionally a folder (becomes a smart group) in one dialog"),
+            L.T("Right-clicking a group creates a subgroup, an empty area creates a new group at the bottom"),
+            L.T("Settings › Groups: subgroups inside their group's frame, moving and nesting like in the panel"),
+            L.T("Panel: menu button in the group header only on hover; the group frame lights up when dragging in")
         }),
-        new ReleaseNote(new Version(0, 17, 0), L.T("Spürbar schneller beim Tippen"), new[]
+        new ReleaseNote(new Version(0, 17, 1), L.T("Moving groups: see where they land"), new[]
         {
-            L.T("Suche im Panel im Mittel drei- bis fünfmal schneller (gemessen mit 500 Einträgen)"),
-            L.T("Filter wechseln und Weitertippen bauen die Liste nicht mehr komplett neu auf"),
-            L.T("Kontextmenüs entstehen erst beim Öffnen – weniger Speicher, schnelleres Einblenden"),
-            L.T("Auswahl, Haken der Mehrfachauswahl und Gruppenkopf bleiben beim Tippen stehen")
+            L.T("When dragging a group, a gap with a placeholder opens at the target – in the panel and in the settings"),
+            L.T("Between two groups, dragging sideways chooses the level: right goes deeper, left goes higher"),
+            L.T("Drag image at the mouse pointer with name, color and number of subgroups"),
+            L.T("Adjustable under Panel › Behavior: drag image, smooth movement, collapse contents, reason at invalid places")
         }),
-        new ReleaseNote(new Version(0, 16, 2), L.T("Acrylic passt sich dem Panel an"), new[]
+        new ReleaseNote(new Version(0, 17, 0), L.T("Noticeably faster while typing"), new[]
         {
-            L.T("Weichgezeichneter Hintergrund mit abgerundeten Ecken wie das Panel"),
-            L.T("Hintergrund fährt beim Ein- und Ausfahren mit dem Panel mit")
+            L.T("Search in the panel three to five times faster on average (measured with 500 entries)"),
+            L.T("Switching filters and typing on no longer rebuilds the whole list"),
+            L.T("Context menus are only built when opened – less memory, faster to show"),
+            L.T("Selection, multi-select checkboxes and group header stay put while typing")
         }),
-        new ReleaseNote(new Version(0, 16, 1), L.T("Feinschliff nach den ersten Rückmeldungen"), new[]
+        new ReleaseNote(new Version(0, 16, 2), L.T("Acrylic adapts to the panel"), new[]
         {
-            L.T("Vorschläge beim Tippen: #schlagwort, typ:, gruppe:, ist: – nur Vorhandenes, mit Anzahl"),
-            L.T("Farbwähler für Gruppen- und Panelfarbe; Farbmenü zeigt wieder alle Farben"),
-            L.T("Gruppen in den Einstellungen per Drag & Drop sortieren"),
-            L.T("Sprungleiste: zweiter Klick klappt zu; Sprungleiste und Scrollbalken abschaltbar"),
-            L.T("Mini-Dock ersetzt die Hover-Zone, Anzahl der Favoriten einstellbar"),
-            L.T("Dateiendungen mit Semikolon getrennt")
+            L.T("Blurred background with rounded corners like the panel"),
+            L.T("The background moves with the panel when sliding in and out")
         }),
-        new ReleaseNote(new Version(0, 16, 0), L.T("Schneller finden, sehen was läuft"), new[]
+        new ReleaseNote(new Version(0, 16, 1), L.T("Polish after the first feedback"), new[]
         {
-            L.T("Unscharfe Suche mit Hervorhebung, „Beste Treffer“ und Filtern wie typ:ps1, gruppe:, ist:fav"),
-            L.T("Rückgängig (Strg+Z) nach Ausblenden, Entfernen und Verschieben"),
-            L.T("Tastatur: Strg+Enter als Admin, Alt+1…9 für Favoriten, F1 zeigt alle Kürzel"),
-            L.T("Fixierter Gruppenkopf, Sprungleiste und Strg+K für Gruppen"),
-            L.T("Aktivitäten-Leiste mit Fortschritt; Kachelkarte für Remote-Läufe"),
-            L.T("Vorschau mit der Leertaste: Code, Parameter, Signatur"),
-            L.T("Designvorlagen, Windows-Akzentfarbe, Mica und Schriftgröße"),
-            L.T("Einführungs-Assistent und optionales Mini-Dock am Bildschirmrand")
+            L.T("Suggestions while typing: #tag, type:, group:, is: – only what exists, with counts"),
+            L.T("Color picker for group and panel color; the color menu shows all colors again"),
+            L.T("Sort groups in the settings by drag & drop"),
+            L.T("Jump bar: a second click collapses; jump bar and scroll bars can be turned off"),
+            L.T("Mini dock replaces the hover zone, number of favorites adjustable"),
+            L.T("File extensions separated by semicolons")
+        }),
+        new ReleaseNote(new Version(0, 16, 0), L.T("Find faster, see what's running"), new[]
+        {
+            L.T("Fuzzy search with highlighting, “Best matches” and filters like type:ps1, group:, is:fav"),
+            L.T("Undo (Ctrl+Z) after hiding, removing and moving"),
+            L.T("Keyboard: Ctrl+Enter as admin, Alt+1…9 for favorites, F1 shows all shortcuts"),
+            L.T("Pinned group header, jump bar and Ctrl+K for groups"),
+            L.T("Activity bar with progress; tile map for remote runs"),
+            L.T("Preview with Space: code, parameters, signature"),
+            L.T("Design templates, Windows accent color, Mica and font size"),
+            L.T("Setup assistant and optional mini dock at the screen edge")
         }),
     };
 

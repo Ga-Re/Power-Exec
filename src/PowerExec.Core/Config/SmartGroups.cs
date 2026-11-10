@@ -26,7 +26,7 @@ public static class SmartGroups
                 continue;
             }
             var name = GroupManager.CleanName(LeafName(f.Path));
-            if (name.Length == 0) name = L.T("Ordner");
+            if (name.Length == 0) name = L.T("Folder");
             var candidate = name;
             for (int i = 2; GroupManager.Exists(s, candidate) || s.Folders.Any(o => !ReferenceEquals(o, f) && o.Group.Equals(candidate, StringComparison.CurrentCultureIgnoreCase)); i++)
                 candidate = $"{name} {i}";

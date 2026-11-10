@@ -16,7 +16,7 @@ public sealed class WindowsMetadata : IPlatformMetadata
         if (!string.IsNullOrEmpty(description))
             item.DisplayName = description;
         var version = info.ProductVersion?.Trim();
-        item.Synopsis = string.IsNullOrEmpty(version) ? item.FileName : L.F("{0} · Version {1}", item.FileName, version);
+        item.Synopsis = string.IsNullOrEmpty(version) ? item.FileName : L.F("{0} · version {1}", item.FileName, version);
         if (!string.IsNullOrWhiteSpace(info.CompanyName))
             item.Description = info.CompanyName.Trim();
     }
@@ -65,7 +65,7 @@ public sealed class WindowsMetadata : IPlatformMetadata
             string desc = link.Description ?? string.Empty;
             string workDir = link.WorkingDirectory ?? string.Empty;
             item.Shortcut = new ShortcutTarget(target, args, workDir);
-            item.Synopsis = desc.Length > 0 ? desc : (target.Length > 0 ? L.T("Ziel: ") + Path.GetFileName(target) : L.T("Verknüpfung"));
+            item.Synopsis = desc.Length > 0 ? desc : (target.Length > 0 ? L.T("Target: ") + Path.GetFileName(target) : L.T("Shortcut"));
             if (target.Length > 0) item.Description = (target + " " + args).Trim();
         }
         finally

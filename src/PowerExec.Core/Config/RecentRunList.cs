@@ -17,10 +17,10 @@ public static class RecentRunList
     public static string Ago(DateTime utc, DateTime? nowUtc = null)
     {
         var span = (nowUtc ?? DateTime.UtcNow) - utc;
-        if (span.TotalMinutes < 1) return L.T("gerade eben");
-        if (span.TotalMinutes < 60) return L.F("vor {0} Min.", (int)span.TotalMinutes);
-        if (span.TotalHours < 24) return L.F("vor {0} Std.", (int)span.TotalHours);
+        if (span.TotalMinutes < 1) return L.T("just now");
+        if (span.TotalMinutes < 60) return L.F("{0} min ago", (int)span.TotalMinutes);
+        if (span.TotalHours < 24) return L.F("{0} h ago", (int)span.TotalHours);
         if (span.TotalDays < 2) return "gestern";
-        return L.F("vor {0} Tagen", (int)span.TotalDays);
+        return L.F("{0} days ago", (int)span.TotalDays);
     }
 }

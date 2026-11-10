@@ -5,7 +5,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         xmlns:infra="clr-namespace:PowerExec.Infrastructure"
-        Title="{l:T 'Power-Exec Suche'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="{l:T 'Power-Exec search'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" SizeToContent="Height" Width="640">
     <Window.Resources>
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
@@ -17,9 +17,9 @@
         </Border.Effect>
         <StackPanel>
             <Grid>
-                <TextBox x:Name="SearchBox" Height="44" FontSize="16" Padding="38,0,10,0" Tag="{l:T 'Suchen …'}"
+                <TextBox x:Name="SearchBox" Height="44" FontSize="16" Padding="38,0,10,0" Tag="{l:T 'Search …'}"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="SearchBox_PreviewKeyDown"
-                         AutomationProperties.Name="{l:T 'Suchen'}"/>
+                         AutomationProperties.Name="{l:T 'Search'}"/>
                 <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="16" HorizontalAlignment="Left" Margin="13,0,0,0" IsHitTestVisible="False"
                            Foreground="{DynamicResource Text.Secondary}"/>
             </Grid>
@@ -62,12 +62,12 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <WrapPanel Margin="6,8,0,0" TextElement.FontSize="11" TextElement.Foreground="{DynamicResource Text.Tertiary}">
-                <TextBlock Text="{l:T '↵ Starten'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Strg+↵ Admin'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Strg+Umschalt+↵ Anderer Benutzer'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Strg+R Remote'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Tab Volles Panel'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Esc Schließen'}"/>
+                <TextBlock Text="{l:T '↵ Run'}" Margin="0,0,14,0"/>
+                <TextBlock Text="{l:T 'Ctrl+↵ Admin'}" Margin="0,0,14,0"/>
+                <TextBlock Text="{l:T 'Ctrl+Shift+↵ Different user'}" Margin="0,0,14,0"/>
+                <TextBlock Text="{l:T 'Ctrl+R Remote'}" Margin="0,0,14,0"/>
+                <TextBlock Text="{l:T 'Tab Full panel'}" Margin="0,0,14,0"/>
+                <TextBlock Text="{l:T 'Esc Close'}"/>
             </WrapPanel>
         </StackPanel>
     </Border>

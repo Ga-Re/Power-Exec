@@ -73,8 +73,8 @@ public static class PanelBackdrops
 
     public static string Label(PanelBackdrop b) => b switch
     {
-        PanelBackdrop.Glass => L.T("Glas (Blur)"),
-        PanelBackdrop.Solid => L.T("Vollton (deckend)"),
+        PanelBackdrop.Glass => L.T("Glass (blur)"),
+        PanelBackdrop.Solid => L.T("Solid (opaque)"),
         _ => L.T("Transparent")
     };
 

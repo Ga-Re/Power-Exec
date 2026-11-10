@@ -3,7 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="{l:T 'Ablauf bearbeiten'}" Style="{StaticResource AppWindow}"
+        Title="{l:T 'Edit workflow'}" Style="{StaticResource AppWindow}"
         Width="560" Height="520" MinWidth="440" MinHeight="360" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
@@ -11,17 +11,17 @@
     </Window.Resources>
     <DockPanel Margin="24,20,24,16">
         <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="{l:T 'Ablauf'}" FontSize="20" FontWeight="SemiBold"/>
-            <TextBlock Text="{l:T 'Die Schritte starten nacheinander; jeder wartet, bis der vorige fertig ist. Lokale Scripte laufen dafür ohne -NoExit.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,12"/>
+            <TextBlock Text="{l:T 'Workflow'}" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="{l:T 'The steps start one after another; each waits until the previous one finishes. Local scripts run without -NoExit for this.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,12"/>
             <TextBlock Text="{l:T 'Name'}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Height="32" Padding="8,0" AutomationProperties.Name="{l:T 'Name des Ablaufs'}"/>
-            <CheckBox Content="{l:T 'Bei einem Fehler die restlichen Schritte nicht starten'}" IsChecked="{Binding StopOnError}" Margin="0,12,0,12"/>
-            <TextBlock Text="{l:T 'Schritte'}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Height="32" Padding="8,0" AutomationProperties.Name="{l:T 'Workflow name'}"/>
+            <CheckBox Content="{l:T 'On error, don\'t start the remaining steps'}" IsChecked="{Binding StopOnError}" Margin="0,12,0,12"/>
+            <TextBlock Text="{l:T 'Steps'}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" Click="Cancel_Click" />
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Speichern und starten'}" Command="{Binding RunCommand}" Margin="8,0,0,0" />
-            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Speichern'}" Command="{Binding SaveCommand}" MinWidth="96" Margin="8,0,0,0" IsDefault="True" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Click="Cancel_Click" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Save and run'}" Command="{Binding RunCommand}" Margin="8,0,0,0" />
+            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Save'}" Command="{Binding SaveCommand}" MinWidth="96" Margin="8,0,0,0" IsDefault="True" />
         </StackPanel>
         <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -32,16 +32,16 @@
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                         <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding ProfileName}" Width="130" Height="28" Margin="0,0,6,0"
-                                                  Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}" ToolTip="{l:T 'Startprofil dieses Schritts'}"/>
-                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Nach oben'}"
+                                                  Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}" ToolTip="{l:T 'Launch profile of this step'}"/>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Move up'}"
                                                 Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                                             <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
                                         </ui:Button>
-                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Nach unten'}"
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Move down'}"
                                                 Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                                             <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
                                         </ui:Button>
-                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Schritt entfernen'}"
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Remove step'}"
                                                 Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                                             <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="11"/>
                                         </ui:Button>

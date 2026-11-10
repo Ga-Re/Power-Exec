@@ -63,7 +63,7 @@ public sealed class MachineBox : Control
         _popup = new Popup { Child = border, PlacementTarget = _input, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
 
         // Fluent-Schaltfläche: „Btn.Standard“ ist in allen Fenstern ein Stil für Wpf.Ui.Controls.Button
-        _button = new Wpf.Ui.Controls.Button { Content = L.T("Gruppe einfügen ▾"), Margin = new Thickness(6, 0, 0, 0), ToolTip = L.T("Rechnergruppe einfügen (wird beim Start aufgelöst)") };
+        _button = new Wpf.Ui.Controls.Button { Content = L.T("Insert group ▾"), Margin = new Thickness(6, 0, 0, 0), ToolTip = L.T("Insert computer group (resolved at launch)") };
         _button.SetResourceReference(StyleProperty, "Btn.Standard");
         _button.Click += (_, _) => OpenGroupMenu();
 
@@ -91,12 +91,12 @@ public sealed class MachineBox : Control
 
     private static IReadOnlyList<MachineGroup> Groups => GroupSource?.Invoke() ?? Array.Empty<MachineGroup>();
 
-    private static string Label(MachineGroup g) => L.F("@{0}  ·  {1} Rechner", g.Name, g.Machines.Count);
+    private static string Label(MachineGroup g) => L.F("@{0}  ·  {1} computers", g.Name, g.Machines.Count);
 
     private void OpenGroupMenu()
     {
         var menu = new ContextMenu { PlacementTarget = _button, Placement = PlacementMode.Bottom };
-        if (Groups.Count == 0) menu.Items.Add(new MenuItem { Header = L.T("Noch keine Rechnergruppen (Einstellungen › Rechnergruppen)"), IsEnabled = false });
+        if (Groups.Count == 0) menu.Items.Add(new MenuItem { Header = L.T("No computer groups yet (Settings › Computer groups)"), IsEnabled = false });
         foreach (var g in Groups)
         {
             var item = new MenuItem { Header = Label(g), ToolTip = string.Join(", ", g.Machines.Take(20)) + (g.Machines.Count > 20 ? " …" : string.Empty) };

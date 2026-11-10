@@ -29,7 +29,7 @@ public static class SecretProtector
         if (stored.Length == 0) return string.Empty;
         if (stored.StartsWith(DpapiPrefix, StringComparison.Ordinal))
         {
-            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException(L.T("Geheime Werte lassen sich nur unter Windows lesen."));
+            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException(L.T("Secret values can only be read on Windows."));
             return Encoding.UTF8.GetString(Dpapi(Convert.FromBase64String(stored[DpapiPrefix.Length..]), protect: false));
         }
         if (stored.StartsWith(PlainPrefix, StringComparison.Ordinal)) return Encoding.UTF8.GetString(Convert.FromBase64String(stored[PlainPrefix.Length..]));
@@ -59,8 +59,8 @@ public static class SecretProtector
             bool ok = protect
                 ? CryptProtectData(ref input, "Power-Exec", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output)
                 : CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output);
-            if (!ok) throw new InvalidOperationException(L.T("Der geheime Wert ließ sich nicht ") + (protect ? L.T("verschlüsseln") : L.T("entschlüsseln")) +
-                                                         L.F(" (Fehler {0}). Bitte neu eingeben.", Marshal.GetLastWin32Error()));
+            if (!ok) throw new InvalidOperationException(L.T("The secret value couldn't be ") + (protect ? L.T("encrypted") : L.T("decrypted")) +
+                                                         L.F(" (error {0}). Please enter it again.", Marshal.GetLastWin32Error()));
             var result = new byte[output.Size];
             Marshal.Copy(output.Data, result, 0, output.Size);
             return result;
@@ -89,17 +89,17 @@ public static class VariableCommandRunner
             UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
         };
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException(L.T("PowerShell ließ sich nicht starten."));
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException(L.T("PowerShell couldn't be started."));
         var stdout = p.StandardOutput.ReadToEndAsync();
         var stderr = p.StandardError.ReadToEndAsync();
         if (!p.WaitForExit((int)Timeout.TotalMilliseconds))
         {
             try { p.Kill(entireProcessTree: true); } catch { }
-            throw new TimeoutException(L.F("Der Befehl hat nach {0:0} s nicht geantwortet.", Timeout.TotalSeconds));
+            throw new TimeoutException(L.F("The command didn't respond after {0:0} s.", Timeout.TotalSeconds));
         }
         var error = CleanError(stderr.Result);
         if (p.ExitCode != 0 || error.Length > 0 && stdout.Result.Trim().Length == 0)
-            throw new InvalidOperationException(error.Length > 0 ? error : L.F("PowerShell endete mit Code {0}.", p.ExitCode));
+            throw new InvalidOperationException(error.Length > 0 ? error : L.F("PowerShell exited with code {0}.", p.ExitCode));
         return stdout.Result.Trim();
     }
 

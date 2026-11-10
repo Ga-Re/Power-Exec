@@ -59,7 +59,7 @@ public partial class GroupPickerWindow : Window
         var value = ExistingOption.IsChecked == true ? GroupBox.SelectedItem as string ?? string.Empty : GroupManager.Normalize(NewBox.Text);
         if (value.Length == 0)
         {
-            ErrorText.Text = ExistingOption.IsChecked == true ? L.T("Bitte eine Gruppe auswählen.") : L.T("Bitte eine Gruppe angeben.");
+            ErrorText.Text = ExistingOption.IsChecked == true ? L.T("Please choose a group.") : L.T("Please enter a group.");
             ErrorText.Visibility = Visibility.Visible;
             return;
         }

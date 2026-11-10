@@ -148,15 +148,15 @@ public static class IconLibrary
 
     private static readonly (string Char, string Name)[] EmojiList =
     {
-        ("🖥️", "Computer"), ("💻", "Laptop"), ("🖧", "Netzwerk"), ("🌐", "Web Globus"), ("🔗", "Link"), ("📁", "Ordner"), ("📂", "Ordner offen"),
-        ("📄", "Dokument"), ("📝", "Notiz"), ("📋", "Zwischenablage"), ("📊", "Diagramm"), ("📈", "Statistik"), ("🗄️", "Archiv"),
-        ("🛠️", "Werkzeug"), ("🔧", "Schraubenschlüssel"), ("⚙️", "Einstellungen"), ("🔒", "Schloss"), ("🔑", "Schlüssel"), ("🛡️", "Schild"),
-        ("👤", "Benutzer"), ("👥", "Benutzer Gruppe"), ("🏢", "Firma Gebäude"), ("🏠", "Zuhause"), ("☁️", "Cloud"), ("🗃️", "Kartei"),
-        ("💾", "Speichern Diskette"), ("🖨️", "Drucker"), ("📞", "Telefon"), ("✉️", "Mail"), ("📅", "Kalender"), ("⏰", "Wecker Uhr"),
-        ("🚀", "Rakete Start"), ("⚡", "Blitz"), ("🔥", "Feuer"), ("⭐", "Stern"), ("❤️", "Herz"), ("✅", "Erledigt"), ("❌", "Fehler"),
-        ("⚠️", "Warnung"), ("ℹ️", "Info"), ("❓", "Frage"), ("🔍", "Suchen Lupe"), ("🧪", "Test Labor"), ("🐞", "Fehler Bug"),
-        ("📦", "Paket"), ("🧩", "Puzzle"), ("🎯", "Ziel"), ("🏷️", "Etikett"), ("📌", "Pin"), ("🗑️", "Papierkorb"), ("🔄", "Aktualisieren"),
-        ("▶️", "Start"), ("⏹️", "Stopp"), ("🎮", "Spiel"), ("🎵", "Musik"), ("📷", "Kamera"), ("🎬", "Video"), ("🧰", "Werkzeugkasten"),
-        ("🐧", "Linux"), ("🪟", "Windows Fenster"), ("🐳", "Docker"), ("🧑‍💻", "Entwickler"), ("📡", "Antenne"), ("🔌", "Stecker"),
+        ("🖥️", "Computer"), ("💻", "Laptop"), ("🖧", "Network"), ("🌐", "Web globe"), ("🔗", "Link"), ("📁", "Folder"), ("📂", "Folder open"),
+        ("📄", "Document"), ("📝", "Note"), ("📋", "Clipboard"), ("📊", "Chart"), ("📈", "Statistics"), ("🗄️", "Archive"),
+        ("🛠️", "Tool"), ("🔧", "Wrench"), ("⚙️", "Settings"), ("🔒", "Lock"), ("🔑", "Key"), ("🛡️", "Shield"),
+        ("👤", "User"), ("👥", "User group"), ("🏢", "Company building"), ("🏠", "Home"), ("☁️", "Cloud"), ("🗃️", "Card index"),
+        ("💾", "Save floppy disk"), ("🖨️", "Printer"), ("📞", "Phone"), ("✉️", "Mail"), ("📅", "Calendar"), ("⏰", "Alarm clock"),
+        ("🚀", "Rocket launch"), ("⚡", "Lightning"), ("🔥", "Fire"), ("⭐", "Star"), ("❤️", "Heart"), ("✅", "Done"), ("❌", "Error"),
+        ("⚠️", "Warning"), ("ℹ️", "Info"), ("❓", "Question"), ("🔍", "Search magnifier"), ("🧪", "Test lab"), ("🐞", "Bug"),
+        ("📦", "Package"), ("🧩", "Puzzle"), ("🎯", "Target"), ("🏷️", "Label"), ("📌", "Pin"), ("🗑️", "Recycle bin"), ("🔄", "Refresh"),
+        ("▶️", "Start"), ("⏹️", "Stop"), ("🎮", "Game"), ("🎵", "Music"), ("📷", "Camera"), ("🎬", "Video"), ("🧰", "Toolbox"),
+        ("🐧", "Linux"), ("🪟", "Windows window"), ("🐳", "Docker"), ("🧑‍💻", "Developer"), ("📡", "Antenna"), ("🔌", "Plug"),
     };
 }

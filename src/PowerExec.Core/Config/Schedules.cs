@@ -87,23 +87,23 @@ public static class Schedules
         if (s.Kind == ScheduleKind.Once && s.NextRunLocal == null && ran) s.Enabled = false;
     }
 
-    private static readonly string[] DayNames = { L.T("So"), L.T("Mo"), L.T("Di"), L.T("Mi"), L.T("Do"), L.T("Fr"), L.T("Sa") };
+    private static readonly string[] DayNames = { L.T("Sun"), L.T("Mon"), L.T("Tue"), L.T("Wed"), L.T("Thu"), L.T("Fri"), L.T("Sat") };
 
     /// <summary>Kurzform für das Panel, z. B. „tägl. 07:00“, „Mo–Fr 07:00“, „alle 30 min“, „einmal 05.11. 09:00“.</summary>
     public static string Describe(Schedule s) => s.Kind switch
     {
-        ScheduleKind.Once => L.F("einmal {0:dd.MM. HH:mm}", s.OnceAt),
+        ScheduleKind.Once => L.F("once {0:g}", s.OnceAt),
         ScheduleKind.Interval => s.IntervalMinutes % 60 == 0 && s.IntervalMinutes >= 60
-            ? L.F("alle {0} Std.", s.IntervalMinutes / 60)
-            : L.F("alle {0} min", Math.Max(MinIntervalMinutes, s.IntervalMinutes)),
+            ? L.F("every {0} h", s.IntervalMinutes / 60)
+            : L.F("every {0} min", Math.Max(MinIntervalMinutes, s.IntervalMinutes)),
         _ => $"{DaysText(s.Days)} {s.TimeOfDay:hh\\:mm}"
     };
 
     public static string DaysText(IReadOnlyCollection<DayOfWeek> days)
     {
-        if (days.Count == 0 || days.Count == 7) return L.T("tägl.");
+        if (days.Count == 0 || days.Count == 7) return L.T("daily");
         var workdays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
-        if (days.Count == 5 && workdays.All(days.Contains)) return L.T("Mo–Fr");
+        if (days.Count == 5 && workdays.All(days.Contains)) return L.T("Mon–Fri");
         return string.Join(", ", days.OrderBy(d => ((int)d + 6) % 7).Select(d => DayNames[(int)d]));
     }
 

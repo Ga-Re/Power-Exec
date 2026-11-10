@@ -12,7 +12,7 @@ public static class MarketplaceClient
     {
         using var response = await Http.GetAsync(uri).ConfigureAwait(false);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            throw new InvalidOperationException(L.F("Nicht gefunden: {0} – ist das Repository öffentlich und der Pfad richtig?", uri));
+            throw new InvalidOperationException(L.F("Not found: {0} – is the repository public and the path correct?", uri));
         response.EnsureSuccessStatusCode();
         var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
         return System.Text.Encoding.UTF8.GetString(bytes).TrimStart('﻿');

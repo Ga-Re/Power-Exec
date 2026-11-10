@@ -27,7 +27,7 @@ public static class SettingsTransfer
         var env = JsonSerializer.Deserialize<ExportFile>(json, Options);
         if (env?.Settings != null) return SettingsStore.Normalize(env.Settings);
         // Auch eine nackte settings.json akzeptieren
-        var s = JsonSerializer.Deserialize<AppSettings>(json, Options) ?? throw new InvalidDataException(L.T("Die Datei enthält keine Power-Exec-Einstellungen."));
+        var s = JsonSerializer.Deserialize<AppSettings>(json, Options) ?? throw new InvalidDataException(L.T("The file contains no Power-Exec settings."));
         return SettingsStore.Normalize(s);
     }
 
@@ -80,7 +80,7 @@ public static class SettingsTransfer
 
     private sealed class ExportFile
     {
-        public string Format { get; set; } = L.T("Power-Exec-Einstellungen");
+        public string Format { get; set; } = L.T("Power-Exec settings");
         public int Version { get; set; }
         public DateTime ExportedUtc { get; set; }
         public AppSettings? Settings { get; set; }

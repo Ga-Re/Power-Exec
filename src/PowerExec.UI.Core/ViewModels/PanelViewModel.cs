@@ -142,7 +142,7 @@ public sealed class PanelViewModel : ObservableObject
 
     public bool IsCompact => ItemSize == ItemSize.Small;
     public bool IsLarge => ItemSize == ItemSize.Large;
-    public string ItemSizeText => ItemSize switch { ItemSize.Small => L.T("Klein"), ItemSize.Large => L.T("Groß"), _ => L.T("Mittel") };
+    public string ItemSizeText => ItemSize switch { ItemSize.Small => L.T("Small"), ItemSize.Large => L.T("Large"), _ => L.T("Medium") };
     public ICommand SetItemSizeCommand => new RelayCommand(p => { if (Enum.TryParse<ItemSize>(p?.ToString(), out var size)) ItemSize = size; });
 
     public bool IsGrid
@@ -155,7 +155,7 @@ public sealed class PanelViewModel : ObservableObject
 
     /// <summary>Symbol des Umschalters Liste/Raster im Panel-Kopf (zeigt die aktuelle Darstellung).</summary>
     public string LayoutGlyph => IsGrid ? "\uE8A9" : "\uE8FD";
-    public string LayoutToolTip => IsGrid ? L.T("Raster – klicken für Liste") : L.T("Liste – klicken für Raster");
+    public string LayoutToolTip => IsGrid ? L.T("Grid – click for list") : L.T("List – click for grid");
 
     public ICommand SetLayoutCommand { get; }
     public ICommand ToggleGridCommand => new RelayCommand(() => IsGrid = !IsGrid);
@@ -191,7 +191,7 @@ public sealed class PanelViewModel : ObservableObject
     public string VersionText => _app.VersionText;
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
-    public string EmptyHint => L.T("Noch keine Gruppen. Lege eine Gruppe an – mit einem Ordner zeigt sie dessen Scripte und Programme – oder füge eigene Einträge hinzu.");
+    public string EmptyHint => L.T("No groups yet. Create a group – with a folder it shows its scripts and programs – or add custom entries.");
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
@@ -441,24 +441,24 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Einträge des Spickzettels (Taste, Wirkung).</summary>
     public IReadOnlyList<ShortcutInfo> Shortcuts { get; } = new ShortcutInfo[]
     {
-        new("↑ ↓", L.T("Eintrag auswählen")),
-        new("Enter", L.T("Starten (Standardprofil)")),
-        new(L.T("Strg+Enter"), L.T("Als Administrator starten")),
-        new(L.T("Strg+Umschalt+Enter"), L.T("Als anderer Benutzer starten")),
-        new(L.T("Strg+R"), L.T("Remote ausführen …")),
-        new("→ / Tab", L.T("Alle Aktionen des Eintrags")),
-        new("Alt+1 … 9", L.T("Favorit 1 … 9 starten")),
-        new(L.T("Strg+D"), L.T("Favorit an/aus")),
-        new("F2", L.T("Eintrag bearbeiten / Startprofile")),
-        new(L.T("Leertaste"), L.T("Vorschau: Code, Parameter, Signatur")),
-        new(L.T("Strg+E"), L.T("Im Editor öffnen")),
-        new(L.T("Strg+Umschalt+C"), L.T("Pfad kopieren")),
-        new(L.T("Strg+H"), L.T("Verlauf: erneut ausführen, nur Fehlgeschlagene")),
-        new(L.T("Strg+Klick"), L.T("Mehrere auswählen: nacheinander starten, als Ablauf speichern")),
-        new(L.T("Strg+Z"), L.T("Letzte Änderung rückgängig")),
-        new(L.T("Strg+V"), L.T("Eintrag aus Zwischenablage")),
-        new("Esc", L.T("Suche leeren / Panel schließen")),
-        new(L.T("F1 oder ?"), L.T("Diese Übersicht")),
+        new("↑ ↓", L.T("Select entry")),
+        new("Enter", L.T("Run (default profile)")),
+        new(L.T("Ctrl+Enter"), L.T("Run as administrator")),
+        new(L.T("Ctrl+Shift+Enter"), L.T("Run as different user")),
+        new(L.T("Ctrl+R"), L.T("Run remotely …")),
+        new("→ / Tab", L.T("All actions of the entry")),
+        new("Alt+1 … 9", L.T("Run favorite 1 … 9")),
+        new(L.T("Ctrl+D"), L.T("Favorite on/off")),
+        new("F2", L.T("Edit entry / launch profiles")),
+        new(L.T("Space"), L.T("Preview: code, parameters, signature")),
+        new(L.T("Ctrl+E"), L.T("Open in editor")),
+        new(L.T("Ctrl+Shift+C"), L.T("Copy path")),
+        new(L.T("Ctrl+H"), L.T("History: run again, failed only")),
+        new(L.T("Ctrl+click"), L.T("Select several: run one after another, save as workflow")),
+        new(L.T("Ctrl+Z"), L.T("Undo last change")),
+        new(L.T("Ctrl+V"), L.T("Entry from clipboard")),
+        new("Esc", L.T("Clear search / close panel")),
+        new(L.T("F1 or ?"), L.T("This overview")),
     };
 
     // ---- Navigation: fixierter Gruppenkopf, Sprungleiste, Strg+K ------------------
@@ -585,7 +585,7 @@ public sealed class PanelViewModel : ObservableObject
         .Select(p => AllItems.FirstOrDefault(i => i.Item.FullPath.Equals(p, StringComparison.OrdinalIgnoreCase))?.Item ?? _app.FindItem(p))
         .Where(i => i != null).Cast<LaunchItem>().ToList();
     public bool HasMultiSelection => _checked.Count > 0;
-    public string MultiSelectionText => _checked.Count == 1 ? L.T("1 ausgewählt") : L.F("{0} ausgewählt", _checked.Count);
+    public string MultiSelectionText => _checked.Count == 1 ? L.T("1 selected") : L.F("{0} selected", _checked.Count);
 
     public void ToggleChecked(ItemViewModel item)
     {
@@ -616,15 +616,15 @@ public sealed class PanelViewModel : ObservableObject
         if (items.Count == 0) return;
         var steps = items.Select(i => new WorkflowStep { Path = i.FullPath, Name = i.DisplayName }).ToList();
         ClearChecked();
-        _ = _app.RunWorkflowAsync(L.F("{0} Einträge nacheinander", steps.Count), steps, stopOnError: true);
+        _ = _app.RunWorkflowAsync(L.F("{0} entries one after another", steps.Count), steps, stopOnError: true);
     });
     public ICommand SaveCheckedAsWorkflowCommand => _saveWorkflowCommand ??= new RelayCommand(() =>
     {
         var items = CheckedItems;
         if (items.Count == 0) return;
-        var name = _app.Dialogs.Ask(L.T("Als Ablauf speichern"),
-            L.F("{0} Schritte: {1}. Der Ablauf erscheint als eigener Eintrag – auch in Suche, Favoriten und Mini-Dock.", items.Count, string.Join(" → ", items.Select(i => i.DisplayName))),
-            L.T("Neuer Ablauf"), L.T("Speichern"), n => n.Trim().Length == 0 ? L.T("Bitte einen Namen eingeben.") : null);
+        var name = _app.Dialogs.Ask(L.T("Save as workflow"),
+            L.F("{0} steps: {1}. The workflow appears as its own entry – also in search, favorites and the mini dock.", items.Count, string.Join(" → ", items.Select(i => i.DisplayName))),
+            L.T("New workflow"), L.T("Save"), n => n.Trim().Length == 0 ? L.T("Please enter a name.") : null);
         if (name == null) return;
         ClearChecked();
         _app.CreateWorkflow(name, items, GroupOfItem(items[0]) is { Length: > 0 } g && GroupManager.Exists(_app.Settings, g) ? g : null);
@@ -691,7 +691,7 @@ public sealed class PanelViewModel : ObservableObject
 
     /// <summary>Gemeldete, noch nicht übernommene Katalog-Änderungen.</summary>
     public string? CatalogPending => _app.Settings.Catalogs.Where(c => c.PendingSummary.Length > 0)
-        .Select(c => L.F("Team-Katalog „{0}“: {1}", c.Name, c.PendingSummary)).FirstOrDefault();
+        .Select(c => L.F("Team catalog “{0}”: {1}", c.Name, c.PendingSummary)).FirstOrDefault();
     public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _ = _app.ApplyPendingCatalogsAsync());
     private ICommand? _applyCatalogsCommand;
     public void RefreshCatalogs() => OnPropertyChanged(nameof(CatalogPending));
@@ -699,7 +699,7 @@ public sealed class PanelViewModel : ObservableObject
     // ---- Neu in dieser Version -----------------------------------------------------
 
     public bool WhatsNewVisible => _app.WhatsNew != null;
-    public string WhatsNewTitle => _app.WhatsNew is { } n ? L.F("Neu in {0}: {1}", n.Version.ToString(2), n.Title) : string.Empty;
+    public string WhatsNewTitle => _app.WhatsNew is { } n ? L.F("New in {0}: {1}", n.Version.ToString(2), n.Title) : string.Empty;
     /// <summary>Die ersten Neuerungen (alle über „Alle Neuerungen“).</summary>
     public IReadOnlyList<string> WhatsNewItems => _app.WhatsNew?.Highlights.Take(4).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
     public ICommand DismissWhatsNewCommand => _dismissWhatsNewCommand ??= new RelayCommand(() => _app.DismissWhatsNew());
@@ -720,7 +720,7 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Laufende und gerade beendete Starts (für alle Panels gleich).</summary>
     public System.Collections.ObjectModel.ObservableCollection<ActivityViewModel> Activities => _app.Activities.Items;
     public bool HasActivities => _app.Activities.Items.Count > 0;
-    public string ActivitiesHeader => _app.Activities.RunningCount is var n and > 0 ? L.F("Läuft · {0}", n) : L.T("Zuletzt beendet");
+    public string ActivitiesHeader => _app.Activities.RunningCount is var n and > 0 ? L.F("Running · {0}", n) : L.T("Last finished");
 
     public void RefreshActivities()
     {
@@ -779,13 +779,13 @@ public sealed class PanelViewModel : ObservableObject
     {
         var chips = query.Operators
             .Select(t => new SearchChip(t.Label, t.Kind == SearchTokenKind.Invalid,
-                t.Kind == SearchTokenKind.Invalid ? SearchQuery.Help : L.T("Filter entfernen"),
+                t.Kind == SearchTokenKind.Invalid ? SearchQuery.Help : L.T("Remove filter"),
                 new RelayCommand(() => SearchText = SearchQuery.Remove(_searchText, t))))
             .ToList();
         // Voreingestellter Filter des Panels (Einstellungen): als Chip sichtbar und mit ✕ für dieses Öffnen aufhebbar
         if (_filter != TypeFilter.All)
-            chips.Insert(0, new SearchChip(_filter switch { TypeFilter.Scripts => L.T("Scripte"), TypeFilter.Programs => L.T("Programme"), _ => L.T("Favoriten") },
-                false, L.T("Voreingestellter Filter dieses Panels – entfernen"), new RelayCommand(() => Filter = TypeFilter.All)));
+            chips.Insert(0, new SearchChip(_filter switch { TypeFilter.Scripts => L.T("Scripts"), TypeFilter.Programs => L.T("Programs"), _ => L.T("Favorites") },
+                false, L.T("Preset filter of this panel – remove"), new RelayCommand(() => Filter = TypeFilter.All)));
         SearchChips = chips; // immer neu: die Befehle verweisen auf die aktuelle Position im Text
     }
 
@@ -908,7 +908,7 @@ public sealed class PanelViewModel : ObservableObject
         if (query.HasTerms && pool.Count > BestHitsCount)
             groups.Add(new GroupSpec
             {
-                Key = "best", Title = L.T("Beste Treffer"), Kind = "best", Expanded = true, AllowReorder = false,
+                Key = "best", Title = L.T("Best matches"), Kind = "best", Expanded = true, AllowReorder = false,
                 Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
             });
         // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
@@ -929,20 +929,20 @@ public sealed class PanelViewModel : ObservableObject
                         var profile = ProfileResolver.GetProfiles(settings, item)
                             .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
                         // Zeit rechts in der Zeile; darunter das Profil (falls gewählt), sonst die normale Info-Zeile
-                        var subtitle = profile.IsImplicit ? null : L.T("Profil ") + profile.Name;
+                        var subtitle = profile.IsImplicit ? null : L.T("Profile ") + profile.Name;
                         return new ItemViewModel(_app, this, item, "recent", profile, subtitle, RecentRunList.Ago(r.TimeUtc));
                     })
                     .ToList();
                 if (recent.Count > 0)
                     fixedSpecs[FixedGroups.Recent] = new GroupSpec
                     {
-                        Key = "recent", Title = L.T("Zuletzt ausgeführt"), Kind = "recent", Expanded = !collapsed.Contains("recent"),
+                        Key = "recent", Title = L.T("Recently run"), Kind = "recent", Expanded = !collapsed.Contains("recent"),
                         AllowReorder = false, Items = recent
                     };
             }
 
             var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
-            if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", L.T("Favoriten"), "fav", null, favs);
+            if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", L.T("Favorites"), "fav", null, favs);
         }
 
         // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
@@ -995,7 +995,7 @@ public sealed class PanelViewModel : ObservableObject
         // Eigene Einträge ohne Gruppe (bei der Suche immer, damit Treffer nicht verschwinden)
         var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
         if (rest.Count > 0 && (searching || ShowsGroup(FixedGroups.Custom)))
-            fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, L.T("Eigene Einträge"), "custom", null, rest);
+            fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, L.T("Custom entries"), "custom", null, rest);
 
         // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
         var topByPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
@@ -1058,11 +1058,11 @@ public sealed class PanelViewModel : ObservableObject
         var errors = repo.FolderStatuses.Where(s => s.Error != null).ToList();
         FolderWarning = errors.Count == 0 ? null
             : errors.Count == 1 ? $"{errors[0].Path}: {errors[0].Error}"
-            : L.F("{0} Ordner nicht erreichbar", errors.Count);
+            : L.F("{0} folders unreachable", errors.Count);
 
-        if (repo.IsScanning && repo.Items.Count == 0) Footer = L.T("Ordner werden eingelesen …");
-        else if (searching) Footer = L.F("{0} Treffer für „{1}“", pool.Count, _searchText.Trim());
-        else Footer = L.F("{0} Einträge · eingelesen {1:HH:mm}", visible.Count, repo.LastScan) + (HasWorkspaces ? $" · {settings.ActiveWorkspace}" : string.Empty);
+        if (repo.IsScanning && repo.Items.Count == 0) Footer = L.T("Scanning folders …");
+        else if (searching) Footer = L.F("{0} matches for “{1}”", pool.Count, _searchText.Trim());
+        else Footer = L.F("{0} entries · scanned {1:t}", visible.Count, repo.LastScan) + (HasWorkspaces ? $" · {settings.ActiveWorkspace}" : string.Empty);
 
         OnPropertyChanged(nameof(HasNoFolders));
         OnPropertyChanged(nameof(IsEmpty));
@@ -1093,8 +1093,8 @@ public sealed class PanelViewModel : ObservableObject
         _pendingFolder = pending.Keys.FirstOrDefault();
         PendingText = total == 0 ? null
             : pending.Count == 1
-                ? (total == 1 ? L.F("1 neuer Eintrag in {0} wartet auf Freigabe", _pendingFolder) : L.F("{0} neue Einträge in {1} warten auf Freigabe", total, _pendingFolder))
-                : L.F("{0} neue Einträge in {1} Ordnern warten auf Freigabe", total, pending.Count);
+                ? (total == 1 ? L.F("1 new entry in {0} is waiting for approval", _pendingFolder) : L.F("{0} new entries in {1} are waiting for approval", total, _pendingFolder))
+                : L.F("{0} new entries in {1} folders are waiting for approval", total, pending.Count);
     }
 
     /// <summary>Alle Gruppen einschließlich Untergruppen.</summary>
@@ -1108,11 +1108,11 @@ public sealed class PanelViewModel : ObservableObject
         var group = AllGroups.FirstOrDefault(g => g.Items.Contains(dragged));
         if (group == null || !group.AllowReorder || !group.Items.Contains(target) || ReferenceEquals(dragged, target)) return;
         var current = group.Items.Select(i => i.Item.FullPath).ToList();
-        _app.RememberForUndo(L.T("Reihenfolge geändert"));
+        _app.RememberForUndo(L.T("Order changed"));
         _app.Settings.CustomOrder[group.Key] = ItemOrdering.Move(current, dragged.Item.FullPath, target.Item.FullPath, after);
         _app.SaveSettings();
         Rebuild();
-        _app.ShowUndoToast(L.F("„{0}“ verschoben", dragged.DisplayName));
+        _app.ShowUndoToast(L.F("“{0}” moved", dragged.DisplayName));
     }
 
     /// <summary>
@@ -1180,7 +1180,7 @@ public sealed class PanelViewModel : ObservableObject
         if (!group.CanDrag) return;
         _dragGroup = group;
         var sub = group.SelfAndDescendants.Count() - 1;
-        DragLabel = group.Title + (sub > 0 ? (sub == 1 ? L.T("  + 1 Untergruppe") : L.F("  + {0} Untergruppen", sub)) : string.Empty);
+        DragLabel = group.Title + (sub > 0 ? (sub == 1 ? L.T("  + 1 subgroup") : L.F("  + {0} subgroups", sub)) : string.Empty);
         DragColor = group.AccentColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         group.IsDragSource = true;
@@ -1210,7 +1210,7 @@ public sealed class PanelViewModel : ObservableObject
         _topDrop = null;
         if (_dragGroup.GroupPath is not { } dragged) return null;
         var plan = !hovered.IsUserGroup || hovered.GroupPath == null
-            ? new GroupDropPlan { IsValid = false, Reason = L.T("Gruppen lassen sich nur zwischen eigenen Gruppen ablegen.") }
+            ? new GroupDropPlan { IsValid = false, Reason = L.T("Groups can only be dropped between your own groups.") }
             : GroupDropPlanner.Plan(VisibleUserGroupOrder(), dragged, hovered.GroupPath, zone, levelOffset, siblingsOnly: false,
                 path => GroupManager.Exists(_app.Settings, path));
         _dropPlan = plan;
@@ -1244,11 +1244,11 @@ public sealed class PanelViewModel : ObservableObject
         GroupDropPlan plan;
         GroupDropSlot slot = GroupDropSlot.None;
         if (anchor.Kind == "best" || TopKeyOf(anchor) is not { } anchorKey)
-            plan = new GroupDropPlan { IsValid = false, Reason = L.T("Hier lässt sich nichts ablegen.") };
+            plan = new GroupDropPlan { IsValid = false, Reason = L.T("Nothing can be dropped here.") };
         else if (ReferenceEquals(anchor, dragged))
             plan = new GroupDropPlan { IsValid = true, IsNoOp = true, Target = anchorKey };
         else if (zone == GroupDropZone.Into && dragged.FixedKey != null && anchor.FixedKey == null)
-            plan = new GroupDropPlan { IsValid = false, Reason = L.T("Feste Gruppen bleiben auf oberster Ebene – vor oder hinter eine Gruppe ziehen.") };
+            plan = new GroupDropPlan { IsValid = false, Reason = L.T("Fixed groups stay at the top level – drag them before or after a group.") };
         else
         {
             var after = zone != GroupDropZone.Before;

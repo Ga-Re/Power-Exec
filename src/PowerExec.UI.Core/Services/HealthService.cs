@@ -79,7 +79,7 @@ public sealed class HealthService
         {
             case CustomEntryKind.Url:
                 if (!Uri.TryCreate(target, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
-                    return new HealthResult(true, L.T("Wird von Windows geöffnet"), now);
+                    return new HealthResult(true, L.T("Opened by Windows"), now);
                 try
                 {
                     using var req = new HttpRequestMessage(HttpMethod.Head, uri);
@@ -92,23 +92,23 @@ public sealed class HealthService
                     }
                     // 401/403: Seite antwortet, verlangt aber Anmeldung – gilt als erreichbar
                     return code < 400 || code is 401 or 403
-                        ? new HealthResult(true, L.F("Erreichbar (HTTP {0})", code), now)
-                        : new HealthResult(false, L.F("Seite antwortet mit HTTP {0}", code), now);
+                        ? new HealthResult(true, L.F("Reachable (HTTP {0})", code), now)
+                        : new HealthResult(false, L.F("Page responds with HTTP {0}", code), now);
                 }
-                catch (TaskCanceledException) { return new HealthResult(false, L.T("Keine Antwort (Zeitüberschreitung)"), now); }
-                catch (HttpRequestException ex) { return new HealthResult(false, L.T("Nicht erreichbar: ") + ex.Message, now); }
+                catch (TaskCanceledException) { return new HealthResult(false, L.T("No response (timeout)"), now); }
+                catch (HttpRequestException ex) { return new HealthResult(false, L.T("Unreachable: ") + ex.Message, now); }
             case CustomEntryKind.Folder:
                 return await WithTimeout(() => Directory.Exists(target), 5000)
-                    ? new HealthResult(true, L.T("Ordner vorhanden"), now)
-                    : new HealthResult(false, L.T("Ordner nicht gefunden oder nicht erreichbar"), now);
+                    ? new HealthResult(true, L.T("Folder exists"), now)
+                    : new HealthResult(false, L.T("Folder not found or not reachable"), now);
             case CustomEntryKind.File:
                 return await WithTimeout(() => File.Exists(target), 5000)
-                    ? new HealthResult(true, L.T("Datei vorhanden"), now)
-                    : new HealthResult(false, L.T("Datei nicht gefunden"), now);
+                    ? new HealthResult(true, L.T("File exists"), now)
+                    : new HealthResult(false, L.T("File not found"), now);
             case CustomEntryKind.Rdp when e.UsesRdpFile:
                 return await WithTimeout(() => File.Exists(e.RdpFile.Trim()), 5000)
-                    ? new HealthResult(true, L.T(".rdp-Datei vorhanden"), now)
-                    : new HealthResult(false, L.T(".rdp-Datei nicht gefunden"), now);
+                    ? new HealthResult(true, L.T(".rdp file exists"), now)
+                    : new HealthResult(false, L.T(".rdp file not found"), now);
             case CustomEntryKind.Rdp:
             case CustomEntryKind.Ssh:
             {
@@ -119,17 +119,17 @@ public sealed class HealthService
                 using var tcp = new TcpClient();
                 var connect = tcp.ConnectAsync(host, port);
                 var done = await Task.WhenAny(connect, Task.Delay(3000));
-                if (done == connect && !connect.IsFaulted && tcp.Connected) return new HealthResult(true, L.F("Port {0} erreichbar", port), now);
+                if (done == connect && !connect.IsFaulted && tcp.Connected) return new HealthResult(true, L.F("Port {0} reachable", port), now);
                 return new HealthResult(false, connect.IsFaulted
-                    ? L.F("{0}:{1} nicht erreichbar ({2})", host, port, connect.Exception?.GetBaseException().Message)
-                    : L.F("{0}:{1} antwortet nicht", host, port), now);
+                    ? L.F("{0}:{1} unreachable ({2})", host, port, connect.Exception?.GetBaseException().Message)
+                    : L.F("{0}:{1} doesn't respond", host, port), now);
             }
             case CustomEntryKind.Command:
             case CustomEntryKind.Tool:
-                if (target.Contains(':') && !Path.IsPathRooted(target)) return new HealthResult(true, L.T("Wird von Windows geöffnet"), now);
+                if (target.Contains(':') && !Path.IsPathRooted(target)) return new HealthResult(true, L.T("Opened by Windows"), now);
                 var exe = ProgramResolver.Resolve(target) ?? (target.EndsWith(".msc", StringComparison.OrdinalIgnoreCase)
                     ? ProgramResolver.Resolve(Path.Combine(Environment.SystemDirectory, target)) : null);
-                return exe != null ? new HealthResult(true, exe, now) : new HealthResult(false, L.F("{0} wurde nicht gefunden (nicht installiert?)", target), now);
+                return exe != null ? new HealthResult(true, exe, now) : new HealthResult(false, L.F("{0} wasn't found (not installed?)", target), now);
             default:
                 return new HealthResult(true, string.Empty, now);
         }
@@ -163,7 +163,7 @@ public static class FolderStats
         try
         {
             var dir = new DirectoryInfo(path);
-            if (!dir.Exists) return L.T("Ordner nicht gefunden oder nicht erreichbar");
+            if (!dir.Exists) return L.T("Folder not found or not reachable");
             var watch = System.Diagnostics.Stopwatch.StartNew();
             long files = 0, dirs = 0, bytes = 0;
             bool partial = false;
@@ -174,14 +174,14 @@ public static class FolderStats
                 else dirs++;
                 if (files >= maxFiles || (files % 500 == 0 && watch.Elapsed > limit)) { partial = true; break; }
             }
-            var text = L.F("{0:N0} Dateien · {1:N0} Unterordner · {2}", files, dirs, Size(bytes));
-            if (partial) text = L.T("mindestens ") + text + L.T(" (Zählung abgebrochen)");
-            text += L.F(" · geändert {0:dd.MM.yyyy HH:mm}", dir.LastWriteTime);
+            var text = L.F("{0:N0} files · {1:N0} subfolders · {2}", files, dirs, Size(bytes));
+            if (partial) text = L.T("at least ") + text + L.T(" (count aborted)");
+            text += L.F(" · modified {0:g}", dir.LastWriteTime);
             return text;
         }
         catch (Exception ex)
         {
-            return L.T("Ordnerinfo nicht verfügbar: ") + ex.Message;
+            return L.T("Folder info not available: ") + ex.Message;
         }
     }
 

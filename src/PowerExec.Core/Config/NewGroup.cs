@@ -31,7 +31,7 @@ public static class NewGroup
     {
         if (string.IsNullOrWhiteSpace(folder)) return null;
         var f = folders.FirstOrDefault(x => x.Path.Trim().TrimEnd('\\', '/').Equals(folder.Trim().TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
-        return f == null ? null : L.F("Dieser Ordner gehört bereits zur Gruppe „{0}“.", GroupManager.LeafOf(f.Group));
+        return f == null ? null : L.F("This folder already belongs to group “{0}”.", GroupManager.LeafOf(f.Group));
     }
 
     /// <summary>Vorschlag für den Namen aus dem Ordner („C:\Scripte\AD“ → „AD“).</summary>

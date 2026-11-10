@@ -56,24 +56,24 @@ public partial class AppController
             var item = FindItem(s.Path);
             if (item == null)
             {
-                Ui.Notify(L.T("Geplanter Start nicht möglich"), L.F("{0} wurde nicht gefunden.", s.Name), warning: true);
+                Ui.Notify(L.T("Scheduled launch not possible"), L.F("{0} wasn't found.", s.Name), warning: true);
                 return;
             }
-            AppLog.Info(L.F("Zeitplan: {0} ({1})", s.Name, Schedules.Describe(s)));
+            AppLog.Info(L.F("Schedule: {0} ({1})", s.Name, Schedules.Describe(s)));
             HistoryResult result;
             if (item.Source is { Kind: CustomEntryKind.Workflow } wf)
                 result = await RunWorkflowAsync(item.DisplayName, wf.Steps.ToList(), wf.StopOnError, item) ? HistoryResult.Success : HistoryResult.Error;
             else
-                result = await RunStepAsync(new WorkflowStep { Path = s.Path, Name = s.Name, ProfileName = s.ProfileName }, s.Name, () => false, L.T("Zeitplan · "));
+                result = await RunStepAsync(new WorkflowStep { Path = s.Path, Name = s.Name, ProfileName = s.ProfileName }, s.Name, () => false, L.T("Schedule · "));
             bool problem = result is HistoryResult.Error or HistoryResult.Warning or HistoryResult.Cancelled;
             if (problem || !s.NotifyOnlyOnError)
-                Ui.Notify(problem ? L.F("Geplanter Start: {0} mit Problemen", s.Name) : L.F("Geplanter Start: {0} fertig", s.Name),
+                Ui.Notify(problem ? L.F("Scheduled launch: {0} with problems", s.Name) : L.F("Scheduled launch: {0} finished", s.Name),
                     History.Entries.FirstOrDefault(h => h.Path.Equals(s.Path, StringComparison.OrdinalIgnoreCase))?.Summary ?? string.Empty,
                     () => ShowHistoryInPanel(), warning: problem);
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.F("Zeitplan {0} fehlgeschlagen", s.Name), ex);
+            AppLog.Error(L.F("Schedule {0} failed", s.Name), ex);
         }
         finally
         {
@@ -103,11 +103,11 @@ public partial class AppController
 
     public void RemoveSchedule(Schedule s)
     {
-        RememberForUndo(L.F("Zeitplan „{0}“ entfernt", s.Name));
+        RememberForUndo(L.F("Schedule “{0}” removed", s.Name));
         Settings.Schedules.RemoveAll(x => x.Id == s.Id);
         CommitUserChange();
         SchedulesChanged?.Invoke();
-        ShowUndoToast(L.F("Zeitplan für „{0}“ entfernt", s.Name));
+        ShowUndoToast(L.F("Schedule for “{0}” removed", s.Name));
     }
 
     /// <summary>Planen-Dialog für einen Eintrag.</summary>

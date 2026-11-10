@@ -37,7 +37,7 @@ public static class ParameterValueConverter
 
             if (string.IsNullOrEmpty(raw))
             {
-                if (p.IsMandatory) errors.Add(L.F("{0} ist ein Pflichtfeld.", p.Name));
+                if (p.IsMandatory) errors.Add(L.F("{0} is a required field.", p.Name));
                 continue;
             }
 
@@ -48,7 +48,7 @@ public static class ParameterValueConverter
                     break;
                 case ParameterKind.Number:
                     if (TryParseNumber(raw, p.NormalizedType, out var num)) values[p.Name] = num;
-                    else errors.Add(L.F("{0}: \"{1}\" ist keine gültige Zahl.", p.Name, raw));
+                    else errors.Add(L.F("{0}: \"{1}\" is not a valid number.", p.Name, raw));
                     break;
                 case ParameterKind.List:
                     var items = raw.Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -59,7 +59,7 @@ public static class ParameterValueConverter
                         foreach (var it in items)
                         {
                             if (TryParseNumber(it, elementType, out var n)) nums.Add(n);
-                            else errors.Add(L.F("{0}: \"{1}\" ist keine gültige Zahl.", p.Name, it));
+                            else errors.Add(L.F("{0}: \"{1}\" is not a valid number.", p.Name, it));
                         }
                         values[p.Name] = nums.ToArray();
                     }
@@ -70,7 +70,7 @@ public static class ParameterValueConverter
                     break;
                 case ParameterKind.Choice:
                     if (p.ValidValues.Count > 0 && !p.ValidValues.Contains(raw, StringComparer.OrdinalIgnoreCase))
-                        errors.Add(L.F("{0}: \"{1}\" ist kein erlaubter Wert.", p.Name, raw));
+                        errors.Add(L.F("{0}: \"{1}\" is not an allowed value.", p.Name, raw));
                     else values[p.Name] = raw;
                     break;
                 default:

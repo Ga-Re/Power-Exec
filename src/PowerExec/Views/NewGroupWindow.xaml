@@ -12,35 +12,35 @@
         <ResourceDictionary Source="/Themes/Fluent.xaml"/>
     </Window.Resources>
     <StackPanel Margin="24,20,24,20">
-        <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold" Text="{l:T 'Neue Gruppe'}"/>
+        <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold" Text="{l:T 'New group'}"/>
         <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,16" TextWrapping="Wrap"
-                   Text="{l:T 'Einträge ziehst du anschließend per Drag &amp; Drop hinein – auch Dateien, Ordner und Links aus dem Explorer oder Browser.'}"/>
+                   Text="{l:T 'You then drag entries in with drag &amp; drop – also files, folders and links from Explorer or the browser.'}"/>
 
         <!-- Symbol und Name -->
-        <TextBlock Text="{l:T 'Name und Symbol'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <TextBlock Text="{l:T 'Name and icon'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
         <DockPanel>
             <ui:Button x:Name="IconButton" DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Width="40" Height="34" MinHeight="34" Padding="0" Margin="0,0,8,0"
-                    Click="Icon_Click" ToolTip="{l:T 'Symbol oder Bild wählen'}" AutomationProperties.Name="{l:T 'Symbol oder Bild wählen'}">
+                    Click="Icon_Click" ToolTip="{l:T 'Choose icon or image'}" AutomationProperties.Name="{l:T 'Choose icon or image'}">
                 <Grid>
                     <c:IconPresenter x:Name="IconPreview" Size="18" Foreground="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
                     <TextBlock x:Name="IconPlaceholder" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="14" Foreground="{DynamicResource Text.Tertiary}"/>
                 </Grid>
             </ui:Button>
-            <TextBox x:Name="NameBox" Tag="{l:T 'Name der Gruppe'}" AutomationProperties.Name="{l:T 'Name der Gruppe'}" TextChanged="NameBox_TextChanged"/>
+            <TextBox x:Name="NameBox" Tag="{l:T 'Group name'}" AutomationProperties.Name="{l:T 'Group name'}" TextChanged="NameBox_TextChanged"/>
         </DockPanel>
 
         <!-- Ordner: macht daraus eine smarte Gruppe -->
-        <TextBlock Text="{l:T 'Ordner (optional)'}" FontWeight="SemiBold" Margin="0,16,0,6"/>
+        <TextBlock Text="{l:T 'Folder (optional)'}" FontWeight="SemiBold" Margin="0,16,0,6"/>
         <DockPanel>
-            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Margin="8,0,0,0" Click="Browse_Click" />
+            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Margin="8,0,0,0" Click="Browse_Click" />
             <ui:Button x:Name="ClearFolderButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0"
-                    Click="ClearFolder_Click" ToolTip="{l:T 'Ordner entfernen'}" Visibility="Collapsed" AutomationProperties.Name="{l:T 'Ordner entfernen'}">
+                    Click="ClearFolder_Click" ToolTip="{l:T 'Remove folder'}" Visibility="Collapsed" AutomationProperties.Name="{l:T 'Remove folder'}">
                 <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11"/>
             </ui:Button>
-            <TextBox x:Name="FolderBox" IsReadOnly="True" Tag="{l:T 'Kein Ordner'}" AutomationProperties.Name="{l:T 'Ordner'}"/>
+            <TextBox x:Name="FolderBox" IsReadOnly="True" Tag="{l:T 'No folder'}" AutomationProperties.Name="{l:T 'Folder'}"/>
         </DockPanel>
         <TextBlock x:Name="FolderHint" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
-                   Text="{l:T 'Mit Ordner zeigt die Gruppe automatisch dessen Scripte und Programme – neue Dateien erscheinen von selbst.'}"/>
+                   Text="{l:T 'With a folder, the group automatically shows its scripts and programs – new files appear by themselves.'}"/>
 
         <!-- Farbe und Darstellung -->
         <Grid Margin="0,16,0,0">
@@ -50,13 +50,13 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="{l:T 'Farbe'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Text="{l:T 'Color'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0" Click="CustomColor_Click"
-                            ToolTip="{l:T 'Eigene Farbe im Farbwähler aussuchen'}" AutomationProperties.Name="{l:T 'Eigene Farbe'}">
+                            ToolTip="{l:T 'Pick your own color in the color picker'}" AutomationProperties.Name="{l:T 'Custom color'}">
                         <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
                     </ui:Button>
-                    <ComboBox x:Name="ColorBox" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Farbe'}">
+                    <ComboBox x:Name="ColorBox" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Color'}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
@@ -70,15 +70,15 @@
                 </DockPanel>
             </StackPanel>
             <StackPanel Grid.Column="2">
-                <TextBlock Text="{l:T 'Darstellung'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                <ComboBox x:Name="LayoutBox" DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Darstellung'}"/>
+                <TextBlock Text="{l:T 'Appearance'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <ComboBox x:Name="LayoutBox" DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Appearance'}"/>
             </StackPanel>
         </Grid>
 
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,12,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" />
-            <ui:Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="{l:T 'Anlegen'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" />
+            <ui:Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="{l:T 'Create'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
         </StackPanel>
     </StackPanel>
 </Window>

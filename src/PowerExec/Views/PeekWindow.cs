@@ -28,7 +28,7 @@ internal sealed class PeekWindow : Window
         ShowActivated = false;
         Topmost = true;
         ResizeMode = ResizeMode.NoResize;
-        Title = L.T("Vorschau");
+        Title = L.T("Preview");
         Resources = resources;
         SetBinding(FontFamilyProperty, new Binding(nameof(FontFamily)) { Source = fontSource });
         SetBinding(FontSizeProperty, new Binding(nameof(FontSize)) { Source = fontSource });

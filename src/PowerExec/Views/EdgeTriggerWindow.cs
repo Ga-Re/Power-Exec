@@ -37,7 +37,7 @@ public sealed class EdgeTriggerWindow : Window
         Focusable = false;
         // Fast transparent, damit die Maus erkannt wird
         Background = new SolidColorBrush(Color.FromArgb(1, 0, 0, 0));
-        Title = L.T("Power-Exec Hover-Zone");
+        Title = L.T("Power-Exec hover zone");
 
         // Die sichtbare Leiste füllt die ganze Hover-Zone: mit „Akzentfarbe von Windows“ in der Windows-Akzentfarbe,
         // sonst in der eigenen Akzentfarbe bzw. der Panelfarbe (ohne beides: Akzentfarbe des Designs).

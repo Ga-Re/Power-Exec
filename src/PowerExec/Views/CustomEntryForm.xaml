@@ -40,7 +40,7 @@
         <!-- Chips zum Einfügen eingebauter Variablen -->
         <DataTemplate x:Key="BuiltinChip">
             <ui:Button Style="{StaticResource Btn.Subtle}" Content="{Binding}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
-                    Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{Binding}" ToolTip="{l:T 'An der Cursorposition einfügen'}" />
+                    Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{Binding}" ToolTip="{l:T 'Insert at cursor position'}" />
         </DataTemplate>
       </ResourceDictionary>
     </UserControl.Resources>
@@ -49,8 +49,8 @@
         <!-- Kopf des Abschnitts: Art + Testen -->
         <DockPanel Margin="0,0,0,2" Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" VerticalAlignment="Center"
-                    ToolTip="{l:T 'Ohne Speichern einmal starten (mit dem eingestellten Standardverhalten; nicht bei abzufragenden Platzhaltern)'}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Testen'}"/></StackPanel>
+                    ToolTip="{l:T 'Run once without saving (with the configured default behavior; not with placeholders that need input)'}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Test'}"/></StackPanel>
             </ui:Button>
             <TextBlock Text="{Binding KindGlyph}" Style="{StaticResource Icon}" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource Accent}"/>
             <TextBlock Text="{Binding KindLabel}" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"/>
@@ -59,12 +59,12 @@
         <!-- ===== Webseite ===== -->
         <StackPanel Visibility="{Binding IsUrl, Converter={StaticResource Vis}}">
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Adresse'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Address'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Titel abrufen'}" Command="{Binding FetchTitleCommand}" Margin="6,0,0,0"
-                            ToolTip="{l:T 'Seitentitel als Anzeigename übernehmen'}" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Fetch title'}" Command="{Binding FetchTitleCommand}" Margin="6,0,0,0"
+                            ToolTip="{l:T 'Use page title as display name'}" />
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="6,0,0,0" FontFamily="{StaticResource MonoFont}"
-                            Click="InsertPlaceholder_Click" ToolTip="{l:T 'Platzhalter einfügen – wird beim Start abgefragt, z. B. https://ticket/\{\{Nummer\}\}'}" />
+                            Click="InsertPlaceholder_Click" ToolTip="{l:T 'Insert placeholder – asked at launch, e.g. https://ticket/\{\{Number\}\}'}" />
                     <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -74,15 +74,15 @@
             </StackPanel>
 
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Browser und Profil'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Browser and profile'}" Style="{StaticResource FieldLabel}"/>
                 <WrapPanel>
                     <ComboBox Style="{StaticResource Combo}" ItemsSource="{Binding BrowserList}" SelectedValue="{Binding Browser}" Margin="0,0,16,6"/>
-                    <CheckBox Content="{l:T 'Privates Fenster'}" IsChecked="{Binding Private}" VerticalAlignment="Center" Margin="0,0,16,6"
+                    <CheckBox Content="{l:T 'Private window'}" IsChecked="{Binding Private}" VerticalAlignment="Center" Margin="0,0,16,6"
                               Visibility="{Binding HasBrowserOptions, Converter={StaticResource Vis}}"/>
                     <ComboBox Style="{StaticResource Combo}" Width="260" ItemsSource="{Binding BrowserProfileList}" SelectedValue="{Binding BrowserProfile}" Margin="0,0,0,6"
-                              ToolTip="{l:T 'Gefundene Profile des Browsers'}" Visibility="{Binding HasBrowserProfiles, Converter={StaticResource Vis}}"/>
+                              ToolTip="{l:T 'Profiles found for the browser'}" Visibility="{Binding HasBrowserProfiles, Converter={StaticResource Vis}}"/>
                 </WrapPanel>
-                <CheckBox Content="{l:T 'Als App-Fenster öffnen (ohne Tabs und Adressleiste)'}" IsChecked="{Binding AppWindow}" Margin="0,4,0,0"/>
+                <CheckBox Content="{l:T 'Open as app window (without tabs and address bar)'}" IsChecked="{Binding AppWindow}" Margin="0,4,0,0"/>
                 <TextBlock Text="{Binding AppWindowHint}" Style="{StaticResource Hint}" Visibility="{Binding AppWindowHint, Converter={StaticResource Vis}}"/>
             </StackPanel>
         </StackPanel>
@@ -90,9 +90,9 @@
         <!-- ===== Ordner ===== -->
         <StackPanel Visibility="{Binding IsFolder, Converter={StaticResource Vis}}">
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Pfad'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Path'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -100,19 +100,19 @@
             </StackPanel>
 
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Öffnen mit'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Open with'}" Style="{StaticResource FieldLabel}"/>
                 <Border Style="{StaticResource SegHost}">
                     <StackPanel Orientation="Horizontal">
                         <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Explorer'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=Explorer}"/>
-                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Neues Fenster'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=NewWindow}"/>
-                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Programm'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=Program}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'New window'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=NewWindow}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Program'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=Program}"/>
                         <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Terminal'}" Width="110" IsChecked="{Binding OpenWith, Converter={StaticResource Eq}, ConverterParameter=Terminal}"/>
                     </StackPanel>
                 </Border>
                 <StackPanel Visibility="{Binding IsOpenWithProgram, Converter={StaticResource Vis}}" Margin="0,8,0,0">
                     <DockPanel>
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseOpenWithCommand}" Margin="6,0,0,0" />
-                        <TextBox Text="{Binding OpenWithProgram, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'z. B. C:\\Program Files\\totalcmd\\TOTALCMD64.EXE'}" FontFamily="{StaticResource MonoFont}"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseOpenWithCommand}" Margin="6,0,0,0" />
+                        <TextBox Text="{Binding OpenWithProgram, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. C:\\Program Files\\totalcmd\\TOTALCMD64.EXE'}" FontFamily="{StaticResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding OpenWithProgramError}" Style="{StaticResource FieldError}" Visibility="{Binding OpenWithProgramError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
@@ -124,8 +124,8 @@
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <Border Style="{StaticResource SegHost}" Margin="0,10,0,0">
                     <StackPanel Orientation="Horizontal">
-                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Verbindung angeben'}" Width="170" IsChecked="{Binding UseRdpFields}"/>
-                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Vorhandene .rdp-Datei'}" Width="170" IsChecked="{Binding UseRdpFile}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Specify connection'}" Width="170" IsChecked="{Binding UseRdpFields}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Existing .rdp file'}" Width="170" IsChecked="{Binding UseRdpFile}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -138,7 +138,7 @@
                             <ColumnDefinition Width="110"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Rechner'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'Computer'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
@@ -157,21 +157,21 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="{l:T 'Benutzer (optional)'}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding User, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'FIRMA\\admin – nur vorbelegt, ohne Kennwort'}"/>
+                            <TextBlock Text="{l:T 'User (optional)'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Text="{Binding User, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'COMPANY\\admin – only prefilled, without password'}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="{l:T 'RD-Gateway (optional)'}" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{l:T 'RD Gateway (optional)'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Gateway, UpdateSourceTrigger=PropertyChanged}" Tag="gateway.firma.de"/>
                         </StackPanel>
                     </Grid>
-                    <TextBlock Text="{l:T 'Anzeige'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{l:T 'Display'}" Style="{StaticResource FieldLabel}"/>
                     <WrapPanel>
                         <Border Style="{StaticResource SegHost}" Margin="0,0,12,6">
                             <StackPanel Orientation="Horizontal">
-                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Standard'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Default}"/>
-                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Vollbild'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Fullscreen}"/>
-                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Fenster'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Window}"/>
+                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Default'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Default}"/>
+                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Full screen'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Fullscreen}"/>
+                                <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Window'}" Width="100" IsChecked="{Binding Screen, Converter={StaticResource Eq}, ConverterParameter=Window}"/>
                             </StackPanel>
                         </Border>
                         <StackPanel Orientation="Horizontal" Margin="0,0,12,6" Visibility="{Binding IsRdpWindow, Converter={StaticResource Vis}}">
@@ -179,24 +179,24 @@
                             <TextBlock Text="×" VerticalAlignment="Center" Margin="6,0"/>
                             <TextBox Width="80" Text="{Binding ScreenHeightText, UpdateSourceTrigger=PropertyChanged}" Tag="900"/>
                         </StackPanel>
-                        <CheckBox Content="{l:T 'Alle Monitore verwenden'}" IsChecked="{Binding AllMonitors}" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                        <CheckBox Content="{l:T 'Use all monitors'}" IsChecked="{Binding AllMonitors}" VerticalAlignment="Center" Margin="0,0,0,6"/>
                     </WrapPanel>
                     <TextBlock Text="{Binding ScreenSizeError}" Style="{StaticResource FieldError}" Visibility="{Binding ScreenSizeError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <StackPanel Visibility="{Binding UseRdpFile, Converter={StaticResource Vis}}">
-                    <TextBlock Text="{l:T '.rdp-Datei'}" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock Text="{l:T '.rdp file'}" Style="{StaticResource FieldLabel}"/>
                     <DockPanel>
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseRdpFileCommand}" Margin="6,0,0,0" />
-                        <TextBox Text="{Binding RdpFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '\\\\server\\verbindungen\\Server A.rdp'}" FontFamily="{StaticResource MonoFont}"/>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseRdpFileCommand}" Margin="6,0,0,0" />
+                        <TextBox Text="{Binding RdpFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '\\\\server\\connections\\Server A.rdp'}" FontFamily="{StaticResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding RdpFileError}" Style="{StaticResource FieldError}" Visibility="{Binding RdpFileError, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{l:T 'Alle Einstellungen (Rechner, Anzeige, Gateway …) kommen aus der Datei.'}" Style="{StaticResource Hint}"/>
+                    <TextBlock Text="{l:T 'All settings (computer, display, gateway …) come from the file.'}" Style="{StaticResource Hint}"/>
                 </StackPanel>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <CheckBox Content="{l:T 'Admin-Sitzung (/admin, Konsolensitzung)'}" IsChecked="{Binding AdminSession}" Margin="0,10,0,0"/>
+                <CheckBox Content="{l:T 'Admin session (/admin, console session)'}" IsChecked="{Binding AdminSession}" Margin="0,10,0,0"/>
                 <TextBlock Text="{Binding RdpHint}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
             </StackPanel>
         </StackPanel>
@@ -211,7 +211,7 @@
                         <ColumnDefinition Width="100"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{l:T 'Rechner'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{l:T 'Computer'}" Style="{StaticResource FieldLabel}"/>
                         <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
@@ -223,13 +223,13 @@
                 <TextBlock Text="{Binding PortError}" Style="{StaticResource FieldError}" Visibility="{Binding PortError, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Benutzer'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'User'}" Style="{StaticResource FieldLabel}"/>
                 <TextBox Text="{Binding User, UpdateSourceTrigger=PropertyChanged}" Tag="root" Width="260" HorizontalAlignment="Left"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Schlüsseldatei (optional)'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Key file (optional)'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseKeyCommand}" Margin="6,0,0,0" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseKeyCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding KeyFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '%USERPROFILE%\\.ssh\\id_ed25519'}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>
@@ -241,16 +241,16 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{l:T 'Öffnen in'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{l:T 'Open in'}" Style="{StaticResource FieldLabel}"/>
                         <ComboBox Style="{StaticResource Combo}" Width="220" ItemsSource="{Binding ClientList}" SelectedValue="{Binding Client}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Visibility="{Binding IsTerminalClient, Converter={StaticResource Vis}}">
-                        <TextBlock Text="{l:T 'Windows-Terminal-Profil (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding TerminalProfile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'z. B. „Produktion“ – eigenes Farbschema'}"/>
+                        <TextBlock Text="{l:T 'Windows Terminal profile (optional)'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding TerminalProfile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. “Production” – own color scheme'}"/>
                     </StackPanel>
                 </Grid>
-                <TextBlock Text="{l:T 'Befehl nach dem Login (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding RemoteCommand, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'z. B. sudo -i  oder  tail -f /var/log/syslog'}" FontFamily="{StaticResource MonoFont}"/>
+                <TextBlock Text="{l:T 'Command after login (optional)'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding RemoteCommand, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. sudo -i  or  tail -f /var/log/syslog'}" FontFamily="{StaticResource MonoFont}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -258,22 +258,22 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{l:T 'Sprungserver (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding JumpHost, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'admin@bastion.firma.de'}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBlock Text="{l:T 'Jump server (optional)'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding JumpHost, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'admin@bastion.company.com'}" FontFamily="{StaticResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="{l:T 'Port-Weiterleitung (optional)'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{l:T 'Port forwarding (optional)'}" Style="{StaticResource FieldLabel}"/>
                         <TextBox Text="{Binding PortForward, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '8080:localhost:80; 5432:db:5432'}" FontFamily="{StaticResource MonoFont}"/>
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding PortForwardError}" Style="{StaticResource FieldError}" Visibility="{Binding PortForwardError, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Weitere Argumente (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'z. B. -o ServerAliveInterval=30'}" FontFamily="{StaticResource MonoFont}"/>
+                <TextBlock Text="{l:T 'Additional arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. -o ServerAliveInterval=30'}" FontFamily="{StaticResource MonoFont}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Kennwörter werden nicht gespeichert – SSH fragt sie beim Verbinden ab.'}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
+                <TextBlock Text="{l:T 'Passwords are not saved – SSH asks for them when connecting.'}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
             </StackPanel>
         </StackPanel>
 
@@ -295,7 +295,7 @@
                                  FontFamily="{StaticResource MonoFont}" FontSize="13" MinHeight="220" MaxHeight="420" TextWrapping="NoWrap"
                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="6"
                                  BorderThickness="0" Background="Transparent" ScrollViewer.ScrollChanged="CodeBox_ScrollChanged"
-                                 Tag="{l:T 'param([string]$Rechner = \'localhost\')&#x0a;Test-Connection $Rechner -Count 1'}"/>
+                                 Tag="{l:T 'param([string]$Computer = \'localhost\')&#x0a;Test-Connection $Computer -Count 1'}"/>
                     </Grid>
                 </Border>
                 <TextBlock Text="{Binding CodeError}" Style="{StaticResource FieldError}" Visibility="{Binding CodeError, Converter={StaticResource Vis}}"/>
@@ -309,11 +309,11 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <TextBlock Text="{Binding ParameterPreview}" Style="{StaticResource Hint}" Margin="0,6,0,0"/>
-                <TextBlock Text="{l:T 'Eingebaute Variablen'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Built-in variables'}" Style="{StaticResource FieldLabel}"/>
                 <ItemsControl ItemsSource="{Binding Builtins}" ItemTemplate="{StaticResource BuiltinChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
                 <TextBlock Text="{Binding VariableWarning}" Style="{StaticResource FieldError}" Visibility="{Binding HasVariableWarning, Converter={StaticResource Vis}}"/>
-                <CheckBox Content="{l:T 'Beim Klick nur in die Zwischenablage kopieren (statt ausführen)'}" IsChecked="{Binding CopyInsteadOfRun}" Margin="0,10,0,0"/>
+                <CheckBox Content="{l:T 'On click, only copy to the clipboard (instead of running)'}" IsChecked="{Binding CopyInsteadOfRun}" Margin="0,10,0,0"/>
             </StackPanel>
         </StackPanel>
 
@@ -323,23 +323,23 @@
                 <TextBlock Text="{l:T 'Text'}" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="TextCodeBox" Text="{Binding Code, UpdateSourceTrigger=PropertyChanged, Delay=200}" AcceptsReturn="True" AcceptsTab="True"
                          MinHeight="180" MaxHeight="380" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
-                         Tag="{l:T 'Viele Grüße&#x0a;\{\{$User\}\}'}"/>
+                         Tag="{l:T 'Best regards&#x0a;\{\{$User\}\}'}"/>
                 <TextBlock Text="{Binding CodeError}" Style="{StaticResource FieldError}" Visibility="{Binding CodeError, Converter={StaticResource Vis}}"/>
-                <TextBlock Text="{l:T 'Variablen einfügen'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Insert variables'}" Style="{StaticResource FieldLabel}"/>
                 <WrapPanel>
                     <ItemsControl ItemsSource="{Binding Builtins}" ItemTemplate="{StaticResource BuiltinChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
-                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T '\{\{Abfrage\}\}'}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
-                            Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{l:T '\{\{Name\}\}'}" ToolTip="{l:T 'Platzhalter, der beim Kopieren abgefragt wird'}" />
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T '\{\{Query\}\}'}" FontFamily="{StaticResource MonoFont}" FontSize="11" Padding="6,0" Height="24" MinHeight="24"
+                            Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{l:T '\{\{Name\}\}'}" ToolTip="{l:T 'Placeholder asked when copying'}" />
                 </WrapPanel>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
                 <TextBlock Text="{Binding VariableWarning}" Style="{StaticResource FieldError}" Visibility="{Binding HasVariableWarning, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
-                <CheckBox Content="{l:T 'Als formatierten Text (HTML) kopieren – z. B. für Outlook-Signaturen'}" IsChecked="{Binding CopyAsHtml}" Margin="0,12,0,0"/>
-                <TextBlock Text="{l:T 'Der Text ist dann HTML (&lt;b&gt;fett&lt;/b&gt;, &lt;br&gt; …). Zusätzlich liegt er als reiner Text in der Zwischenablage.'}" Style="{StaticResource Hint}" Margin="26,2,0,0"
+                <CheckBox Content="{l:T 'Copy as formatted text (HTML) – e.g. for Outlook signatures'}" IsChecked="{Binding CopyAsHtml}" Margin="0,12,0,0"/>
+                <TextBlock Text="{l:T 'The text is then HTML (&lt;b&gt;bold&lt;/b&gt;, &lt;br&gt; …). It is also put on the clipboard as plain text.'}" Style="{StaticResource Hint}" Margin="26,2,0,0"
                            Visibility="{Binding CopyAsHtml, Converter={StaticResource Vis}}"/>
-                <CheckBox Content="{l:T 'Nach dem Kopieren direkt in das vorher aktive Fenster einfügen'}" IsChecked="{Binding PasteAfterCopy}" Margin="0,8,0,0"/>
-                <TextBlock Text="{l:T 'Bei Fenstern, die mit Administratorrechten laufen, blockiert Windows das Einfügen – dann bleibt der Text nur kopiert.'}" Style="{StaticResource Hint}" Margin="26,2,0,0"
+                <CheckBox Content="{l:T 'After copying, paste directly into the previously active window'}" IsChecked="{Binding PasteAfterCopy}" Margin="0,8,0,0"/>
+                <TextBlock Text="{l:T 'For windows running with administrator rights, Windows blocks pasting – the text then stays copied only.'}" Style="{StaticResource Hint}" Margin="26,2,0,0"
                            Visibility="{Binding PasteAfterCopy, Converter={StaticResource Vis}}"/>
             </StackPanel>
         </StackPanel>
@@ -347,9 +347,9 @@
         <!-- ===== Windows-Werkzeug ===== -->
         <StackPanel Visibility="{Binding IsTool, Converter={StaticResource Vis}}">
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Werkzeug auswählen'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Choose tool'}" Style="{StaticResource FieldLabel}"/>
                 <Grid>
-                    <TextBox Text="{Binding ToolSearch, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Suchen: Dienste, DNS, Firewall, ms-settings …'}"/>
+                    <TextBox Text="{Binding ToolSearch, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search: services, DNS, firewall, ms-settings …'}"/>
                     <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="12" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
                 </Grid>
                 <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4" Margin="0,6,0,0">
@@ -375,12 +375,12 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{l:T 'Werkzeug'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBlock Text="{l:T 'Tool'}" Style="{StaticResource FieldLabel}"/>
                         <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="{l:T 'Argumente (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'z. B. /computer=SRV-01'}"/>
+                        <TextBlock Text="{l:T 'Arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'e.g. /computer=SRV-01'}"/>
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -390,15 +390,15 @@
         <!-- ===== Befehl ===== -->
         <StackPanel Visibility="{Binding IsCommand, Converter={StaticResource Vis}}">
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Programm'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Program'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TargetStatus}" Style="{StaticResource Hint}" Visibility="{Binding TargetStatus, Converter={StaticResource Vis}}"/>
-                <TextBlock Text="{l:T 'Argumente (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'z. B. /k ipconfig /all  oder  \{\{Rechner\}\}'}"/>
+                <TextBlock Text="{l:T 'Arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'e.g. /k ipconfig /all  or  \{\{Computer\}\}'}"/>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
                 <TextBlock Text="{Binding VariableWarning}" Style="{StaticResource FieldError}" Visibility="{Binding HasVariableWarning, Converter={StaticResource Vis}}"/>
             </StackPanel>
@@ -407,14 +407,14 @@
         <!-- ===== Datei ===== -->
         <StackPanel Visibility="{Binding IsFile, Converter={StaticResource Vis}}">
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Datei'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'File'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Durchsuchen …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                     <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TargetStatus}" Style="{StaticResource Hint}" Visibility="{Binding TargetStatus, Converter={StaticResource Vis}}"/>
-                <TextBlock Text="{l:T 'Scripte verhalten sich wie gefundene Dateien: Parameter-Dialog, Remote, Startprofile.'}" Style="{StaticResource Hint}"/>
+                <TextBlock Text="{l:T 'Scripts behave like found files: parameter dialog, remote, launch profiles.'}" Style="{StaticResource Hint}"/>
             </StackPanel>
         </StackPanel>
 
@@ -427,14 +427,14 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="{l:T 'Arbeitsordner (optional)'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Working folder (optional)'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="…" Command="{Binding BrowseWorkDirCommand}" Margin="6,0,0,0" Width="34" ToolTip="{l:T 'Ordner wählen'}" />
-                    <TextBox Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'leer = automatisch'}" FontFamily="{StaticResource MonoFont}"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="…" Command="{Binding BrowseWorkDirCommand}" Margin="6,0,0,0" Width="34" ToolTip="{l:T 'Choose folder'}" />
+                    <TextBox Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'empty = automatic'}" FontFamily="{StaticResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>
             <StackPanel Grid.Column="2">
-                <TextBlock Text="{l:T 'Fenster'}" Style="{StaticResource FieldLabel}"/>
+                <TextBlock Text="{l:T 'Window'}" Style="{StaticResource FieldLabel}"/>
                 <ComboBox Style="{StaticResource Combo}" Width="160" ItemsSource="{Binding WindowStateList}" SelectedValue="{Binding WindowState}"/>
             </StackPanel>
         </Grid>

@@ -10,7 +10,7 @@ namespace PowerExec.Services;
 public sealed record MonitorInfo(int Index, Rectangle Bounds, Rectangle WorkArea, bool IsPrimary)
 {
     public double Scale => NativeMethods.ScaleForPoint(Bounds.Left + Bounds.Width / 2, Bounds.Top + Bounds.Height / 2);
-    public string DisplayName => IsPrimary ? L.F("Monitor {0} (Hauptmonitor)", Index + 1) : L.F("Monitor {0}", Index + 1);
+    public string DisplayName => IsPrimary ? L.F("Monitor {0} (primary)", Index + 1) : L.F("Monitor {0}", Index + 1);
 }
 
 /// <summary>Berechnet Position von Hover-Zone und Panel in physischen Pixeln.</summary>

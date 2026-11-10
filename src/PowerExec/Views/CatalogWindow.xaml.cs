@@ -56,7 +56,7 @@ public partial class CatalogWindow : Window
     private void UpdateCount()
     {
         var n = _rows.Count(r => r.IsChecked);
-        CountText.Text = n == 0 ? L.T("Nichts ausgewählt") : n == 1 ? L.T("1 Vorlage ausgewählt") : L.F("{0} Vorlagen ausgewählt", n);
+        CountText.Text = n == 0 ? L.T("Nothing selected") : n == 1 ? L.T("1 template selected") : L.F("{0} templates selected", n);
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e) => DialogResult = true;

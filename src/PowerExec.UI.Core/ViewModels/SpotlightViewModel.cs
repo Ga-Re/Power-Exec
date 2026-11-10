@@ -35,10 +35,10 @@ public sealed class SpotlightViewModel : ObservableObject
 
     public IReadOnlyList<ItemViewModel> Results { get => _results; private set { if (Set(ref _results, value)) { OnPropertyChanged(nameof(IsEmpty)); OnPropertyChanged(nameof(Heading)); } } }
     public bool IsEmpty => _results.Count == 0;
-    public string Heading => _searchText.Trim().Length == 0 ? L.T("Häufig verwendet und Favoriten") : L.F("{0} beste Treffer", _results.Count);
+    public string Heading => _searchText.Trim().Length == 0 ? L.T("Frequently used and favorites") : L.F("{0} best matches", _results.Count);
     public string EmptyText => _searchText.Trim().Length == 0
-        ? L.T("Noch nichts gestartet. Tippe einen Namen – oder Tab für das volle Panel.")
-        : L.T("Keine Treffer. Tab öffnet das volle Panel mit allen Einträgen.");
+        ? L.T("Nothing launched yet. Type a name – or Tab for the full panel.")
+        : L.T("No matches. Tab opens the full panel with all entries.");
 
     public int SelectedIndex
     {

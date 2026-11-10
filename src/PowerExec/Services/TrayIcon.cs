@@ -21,28 +21,28 @@ public sealed class TrayIcon : IDisposable
 
         _app = app;
         var menu = new Forms.ContextMenuStrip();
-        _panels = new Forms.ToolStripMenuItem(L.T("Panel öffnen"), null, (_, _) => app.ShowPanelFromHotkey());
-        _favorites = new Forms.ToolStripMenuItem(L.T("Favoriten"));
-        _recent = new Forms.ToolStripMenuItem(L.T("Zuletzt ausgeführt"));
-        _workspaces = new Forms.ToolStripMenuItem(L.T("Arbeitsbereich"));
+        _panels = new Forms.ToolStripMenuItem(L.T("Open panel"), null, (_, _) => app.ShowPanelFromHotkey());
+        _favorites = new Forms.ToolStripMenuItem(L.T("Favorites"));
+        _recent = new Forms.ToolStripMenuItem(L.T("Recently run"));
+        _workspaces = new Forms.ToolStripMenuItem(L.T("Workspace"));
         menu.Items.Add(_panels);
         menu.Items.Add(_favorites);
         menu.Items.Add(_recent);
         menu.Items.Add(_workspaces);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Opening += (_, _) => RebuildQuickMenus();
-        menu.Items.Add(L.T("Ordner neu einlesen"), null, (_, _) => _ = app.Repository.ScanAsync());
-        menu.Items.Add(L.T("Einstellungen"), null, (_, _) => app.ShowSettings());
-        menu.Items.Add(L.T("Nach Updates suchen"), null, async (_, _) =>
+        menu.Items.Add(L.T("Rescan folders"), null, (_, _) => _ = app.Repository.ScanAsync());
+        menu.Items.Add(L.T("Settings"), null, (_, _) => app.ShowSettings());
+        menu.Items.Add(L.T("Check for updates"), null, async (_, _) =>
         {
             var r = await app.CheckUpdatesAsync(manual: true, includePrereleases: app.Settings.IncludePrereleases);
             if (r == null)
-                ShowBalloon(L.T("Keine Updates"), app.Updates.LastError != null
-                    ? L.T("Prüfung fehlgeschlagen: ") + app.Updates.LastError
-                    : L.F("Version {0} ist aktuell.", UpdateService.CurrentVersionText));
+                ShowBalloon(L.T("No updates"), app.Updates.LastError != null
+                    ? L.T("Check failed: ") + app.Updates.LastError
+                    : L.F("Version {0} is up to date.", UpdateService.CurrentVersionText));
         });
         menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add(L.T("Beenden"), null, (_, _) => app.Exit());
+        menu.Items.Add(L.T("Exit"), null, (_, _) => app.Exit());
         _icon.ContextMenuStrip = menu;
         _icon.BalloonTipClicked += (_, _) =>
         {

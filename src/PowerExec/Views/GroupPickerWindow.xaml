@@ -14,17 +14,17 @@
         <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold"/>
         <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,14" TextWrapping="Wrap"/>
         <!-- Vorhandene Gruppe -->
-        <RadioButton x:Name="ExistingOption" GroupName="Kind" Content="{l:T 'Vorhandene Gruppe'}" Checked="Option_Changed" Margin="0,0,0,6"/>
-        <ComboBox x:Name="GroupBox" Margin="28,0,0,12" IsEditable="False" AutomationProperties.Name="{l:T 'Vorhandene Gruppe'}"
+        <RadioButton x:Name="ExistingOption" GroupName="Kind" Content="{l:T 'Existing group'}" Checked="Option_Changed" Margin="0,0,0,6"/>
+        <ComboBox x:Name="GroupBox" Margin="28,0,0,12" IsEditable="False" AutomationProperties.Name="{l:T 'Existing group'}"
                   SelectionChanged="GroupBox_SelectionChanged"/>
         <!-- Neue Gruppe -->
-        <RadioButton x:Name="NewOption" GroupName="Kind" Content="{l:T 'Neue Gruppe'}" Checked="Option_Changed" Margin="0,0,0,6"/>
-        <TextBox x:Name="NewBox" Margin="28,0,0,0" Tag="{l:T 'Name der neuen Gruppe (Untergruppen mit /)'}" GotFocus="NewBox_GotFocus"
-                 AutomationProperties.Name="{l:T 'Neue Gruppe'}"/>
+        <RadioButton x:Name="NewOption" GroupName="Kind" Content="{l:T 'New group'}" Checked="Option_Changed" Margin="0,0,0,6"/>
+        <TextBox x:Name="NewBox" Margin="28,0,0,0" Tag="{l:T 'Name of the new group (subgroups with /)'}" GotFocus="NewBox_GotFocus"
+                 AutomationProperties.Name="{l:T 'New group'}"/>
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="28,8,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" />
-            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Übernehmen'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" />
+            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
         </StackPanel>
     </StackPanel>
 </Window>

@@ -52,8 +52,8 @@ public sealed class ItemViewModel : ObservableObject
     public bool IsSnippet => Item.CustomKind == CustomEntryKind.Snippet;
     public bool CanDuplicate => Item.IsCustom && Item.CustomKind != CustomEntryKind.File;
     public bool CanToggleSingleClick => true;
-    public string SingleClickHeader => IsSingleClick ? L.T("Mit einem Klick starten ✓") : L.T("Mit einem Klick starten");
-    public string RunHeader => Item.Source?.CopiesToClipboard == true ? L.T("In die Zwischenablage kopieren") : L.T("Ausführen");
+    public string SingleClickHeader => IsSingleClick ? L.T("Start with one click ✓") : L.T("Start with one click");
+    public string RunHeader => Item.Source?.CopiesToClipboard == true ? L.T("Copy to clipboard") : L.T("Run");
 
     private readonly Services.HealthResult? _health;
     public bool HasHealthProblem => _health is { Ok: false };
@@ -72,7 +72,7 @@ public sealed class ItemViewModel : ObservableObject
         if (Item.CustomKind != CustomEntryKind.Folder || _folderInfo != null || Item.Source == null) return;
         var path = Item.Source.Target.Trim();
         if (Item.Source.Placeholders.Count > 0) return;
-        FolderInfo = Services.FolderStats.Cached(path) ?? L.T("Ordner wird ausgewertet …");
+        FolderInfo = Services.FolderStats.Cached(path) ?? L.T("Evaluating folder …");
         FolderInfo = await Services.FolderStats.GetAsync(path);
     }
 
@@ -122,7 +122,7 @@ public sealed class ItemViewModel : ObservableObject
     /// <summary>Aus einem abonnierten Team-Katalog: schreibgeschützt (Duplizieren legt eine eigene Kopie an).</summary>
     public bool IsFromCatalog => Item.Source?.IsFromCatalog == true;
     public string CatalogToolTip => _app.CatalogOf(Item.Source) is { } c
-        ? L.F("Aus dem Team-Katalog „{0}“ – schreibgeschützt. Duplizieren legt eine eigene, änderbare Kopie an.", c.Name)
+        ? L.F("From the team catalog “{0}” – read-only. Duplicate creates your own editable copy.", c.Name)
         : string.Empty;
 
     // ---- Zeitplan --------------------------------------------------------------
@@ -133,7 +133,7 @@ public sealed class ItemViewModel : ObservableObject
     public bool HasSchedule => SchedulesOf.Count > 0;
     /// <summary>Chip am Eintrag, z. B. „Mo–Fr 07:00“ (bei mehreren: „+1“).</summary>
     public string ScheduleText => SchedulesOf is { Count: > 0 } list ? Schedules.Describe(list[0]) + (list.Count > 1 ? $" +{list.Count - 1}" : string.Empty) : string.Empty;
-    public string ScheduleToolTip => string.Join("\n", SchedulesOf.Select(s => L.T("Geplant: ") + Schedules.Describe(s) + (s.NextRunLocal is { } n ? L.F(" · nächster Start {0:ddd dd.MM. HH:mm}", n) : string.Empty)));
+    public string ScheduleToolTip => string.Join("\n", SchedulesOf.Select(s => L.T("Scheduled: ") + Schedules.Describe(s) + (s.NextRunLocal is { } n ? L.F(" · next run {0:ddd g}", n) : string.Empty)));
 
     private bool _isChecked;
     /// <summary>In der Mehrfachauswahl (Strg+Klick).</summary>
@@ -233,8 +233,8 @@ public sealed class ItemViewModel : ObservableObject
             if (Item.Source is { } src && src.Kind != CustomEntryKind.File) return CustomMeta(src);
             if (!Item.IsPowerShell) return Item.FullPath;
             var parts = new List<string> { Item.FullPath };
-            parts.Add(Item.HasParameters ? L.F("{0} Parameter", Item.Parameters.Count) : L.T("keine Parameter"));
-            if (Item.RequiredModules.Count > 0) parts.Add(L.T("benötigt ") + string.Join(", ", Item.RequiredModules));
+            parts.Add(Item.HasParameters ? L.F("{0} parameters", Item.Parameters.Count) : L.T("no parameters"));
+            if (Item.RequiredModules.Count > 0) parts.Add(L.T("requires ") + string.Join(", ", Item.RequiredModules));
             return string.Join(" · ", parts);
         }
     }
@@ -247,7 +247,7 @@ public sealed class ItemViewModel : ObservableObject
         {
             case CustomEntryKind.Url when src.Browser != BrowserChoice.Default:
                 parts.Add(src.Browser switch { BrowserChoice.Chrome => "Chrome", BrowserChoice.Firefox => "Firefox", _ => "Edge" } +
-                          (src.Private ? L.T(" · privat") : string.Empty) + (src.BrowserProfile.Length > 0 ? L.T(" · Profil ") + src.BrowserProfile : string.Empty));
+                          (src.Private ? L.T(" · private") : string.Empty) + (src.BrowserProfile.Length > 0 ? L.T(" · profile ") + src.BrowserProfile : string.Empty));
                 break;
             case CustomEntryKind.Folder:
                 if (_folderInfo != null) parts.Add(_folderInfo);
@@ -264,24 +264,24 @@ public sealed class ItemViewModel : ObservableObject
                 if (!cmd.Equals(Synopsis, StringComparison.OrdinalIgnoreCase)) parts.Add(cmd);
                 break;
         }
-        if (src.Placeholders.Count > 0) parts.Add(L.T("Fragt beim Start: ") + string.Join(", ", src.Placeholders.Select(p => p.Name)));
+        if (src.Placeholders.Count > 0) parts.Add(L.T("Asks at launch: ") + string.Join(", ", src.Placeholders.Select(p => p.Name)));
         return string.Join("\n", parts);
     }
 
     public bool HasMeta => Meta.Length > 0;
 
     /// <summary>Text für den Ausführen-Knopf: Scripte mit Parametern öffnen den Dialog.</summary>
-    public string RunLabel => Item.Source?.CopiesToClipboard == true ? L.T("Kopieren") : L.T("Ausführen");
+    public string RunLabel => Item.Source?.CopiesToClipboard == true ? L.T("Copy") : L.T("Run");
 
     public string RunToolTip
     {
         get
         {
             var dialog = Item.IsPowerShell && ProfileResolver.NeedsDialog(DefaultProfile, Item);
-            var what = dialog ? L.T("öffnet den Ausführen-Dialog") : L.T("startet sofort");
+            var what = dialog ? L.T("opens the Run dialog") : L.T("starts immediately");
             return DefaultProfile.IsImplicit
-                ? L.F("Ausführen – {0} (auch per Doppelklick)", what)
-                : L.F("Standardprofil „{0}“ – {1} (auch per Doppelklick)", DefaultProfile.Name, ProfileResolver.Summary(DefaultProfile, Item));
+                ? L.F("Run – {0} (also by double-click)", what)
+                : L.F("Default profile “{0}” – {1} (also by double-click)", DefaultProfile.Name, ProfileResolver.Summary(DefaultProfile, Item));
         }
     }
 
@@ -375,22 +375,22 @@ public sealed class ItemViewModel : ObservableObject
         if (_requirementsText != null || !Item.IsPowerShell) return;
         var parts = new List<string>();
         bool warn = false;
-        if (Item.RequiresAdmin) parts.Add(L.T("#Requires -RunAsAdministrator: startet lokal automatisch als Administrator."));
+        if (Item.RequiresAdmin) parts.Add(L.T("#Requires -RunAsAdministrator: runs locally as administrator automatically."));
         if (Item.RequiredPsVersion.Length > 0)
         {
             if (Requirements.NeedsPowerShell7(Item))
             {
-                if (_app.Shell.IsPwshInstalled) parts.Add(L.F("Benötigt PowerShell {0}: wird mit pwsh.exe gestartet.", Item.RequiredPsVersion));
-                else { parts.Add(L.F("Benötigt PowerShell {0}, aber PowerShell 7 ist nicht installiert.", Item.RequiredPsVersion)); warn = true; }
+                if (_app.Shell.IsPwshInstalled) parts.Add(L.F("Requires PowerShell {0}: runs with pwsh.exe.", Item.RequiredPsVersion));
+                else { parts.Add(L.F("Requires PowerShell {0}, but PowerShell 7 isn't installed.", Item.RequiredPsVersion)); warn = true; }
             }
-            else parts.Add(L.F("Benötigt PowerShell {0}.", Item.RequiredPsVersion));
+            else parts.Add(L.F("Requires PowerShell {0}.", Item.RequiredPsVersion));
         }
         if (Item.RequiredModules.Count > 0)
         {
             var missing = await Task.Run(() => Core.Metadata.ModuleLocator.FindMissing(Item.RequiredModules,
                 Core.Metadata.ModuleLocator.DefaultSearchPaths(), Item.Directory));
-            if (missing.Count > 0) { parts.Add(L.T("Lokal nicht gefunden: ") + string.Join(", ", missing) + L.T(" (remote wird vor dem Start geprüft).")); warn = true; }
-            else parts.Add(L.T("Module vorhanden: ") + string.Join(", ", Item.RequiredModules) + ".");
+            if (missing.Count > 0) { parts.Add(L.T("Not found locally: ") + string.Join(", ", missing) + L.T(" (checked before launch for remote).")); warn = true; }
+            else parts.Add(L.T("Modules available: ") + string.Join(", ", Item.RequiredModules) + ".");
         }
         RequirementsWarn = warn;
         RequirementsText = parts.Count > 0 ? string.Join("\n", parts) : string.Empty;
@@ -426,7 +426,7 @@ public sealed class ItemViewModel : ObservableObject
     // ---- Sicherheit: Zonen-Kennung und Signatur ---------------------------
 
     public bool IsBlocked => Item.IsBlocked;
-    public string BlockedText => L.F("Blockiert: {0}. Je nach Execution Policy startet das Script nicht.", Core.Metadata.ZoneIdentifier.Describe(Item.ZoneId));
+    public string BlockedText => L.F("Blocked: {0}. Depending on the execution policy, the script won't run.", Core.Metadata.ZoneIdentifier.Describe(Item.ZoneId));
 
     private string? _signatureText;
     private bool _signatureValid;
@@ -438,7 +438,7 @@ public sealed class ItemViewModel : ObservableObject
     private async void LoadSignature()
     {
         if (_signatureText != null || (Item.IsCustom && Item.CustomKind != CustomEntryKind.File) || Item.Type is not (ItemType.PowerShell or ItemType.Executable)) return;
-        SignatureText = L.T("Signatur wird geprüft …");
+        SignatureText = L.T("Checking signature …");
         var (text, valid) = await Task.Run(() => Services.SignatureService.Check(Item.FullPath));
         SignatureValid = valid;
         SignatureText = text;

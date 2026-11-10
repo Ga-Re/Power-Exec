@@ -75,8 +75,8 @@ public interface IDialogs
     /// null = abgebrochen. Ohne eigene Oberfläche: Texteingabe.
     /// </summary>
     string? PickGroup(string heading, string prompt, IReadOnlyList<string> groups, string suggestion, object? owner = null) =>
-        Ask(heading, prompt, suggestion, PowerExec.Core.Localization.L.T("Übernehmen"),
-            g => PowerExec.Core.Config.GroupManager.Normalize(g).Length == 0 ? PowerExec.Core.Localization.L.T("Bitte eine Gruppe angeben.") : null);
+        Ask(heading, prompt, suggestion, PowerExec.Core.Localization.L.T("Apply"),
+            g => PowerExec.Core.Config.GroupManager.Normalize(g).Length == 0 ? PowerExec.Core.Localization.L.T("Please enter a group.") : null);
 
     /// <summary>Variable im Dialog bearbeiten (DataContext ist die Zeile). true = übernehmen.</summary>
     bool EditVariable(object row, object? owner = null) => true;
@@ -116,8 +116,8 @@ public sealed record ChoiceOption(string Glyph, string Title, string Description
     /// <summary>Möglichkeiten beim Ziehen eines Ordners ins Panel.</summary>
     public static readonly IReadOnlyList<ChoiceOption> FolderDrop = new[]
     {
-        new ChoiceOption("\uE8B7", L.T("Als Gruppe"), L.T("Smarte Gruppe: Scripte und Programme im Ordner erscheinen als Einträge und bleiben aktuell.")),
-        new ChoiceOption("\uE71B", L.T("Als Link"), L.T("Ein Eintrag, der den Ordner im Explorer öffnet."))
+        new ChoiceOption("\uE8B7", L.T("As group"), L.T("Smart group: scripts and programs in the folder appear as entries and stay up to date.")),
+        new ChoiceOption("\uE71B", L.T("As link"), L.T("An entry that opens the folder in Explorer."))
     };
 }
 

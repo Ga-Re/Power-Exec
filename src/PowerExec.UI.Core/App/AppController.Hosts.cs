@@ -71,8 +71,8 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
     private static string BuildVersionText()
     {
         var running = $"Version {UpdateService.CurrentVersionText}";
-        if (UpdateService.IsInstalledViaSetup) return running + L.T(" · installiert");
-        return InstalledVersion.Read() is { } v ? L.F("{0} · portabel (installiert: {1})", running, v) : running + L.T(" · portabel");
+        if (UpdateService.IsInstalledViaSetup) return running + L.T(" · installed");
+        return InstalledVersion.Read() is { } v ? L.F("{0} · portable (installed: {1})", running, v) : running + L.T(" · portable");
     }
 
     IItemSource IPanelHost.Repository => Repository;

@@ -76,7 +76,7 @@ public partial class AppController
     public void SaveHistory()
     {
         try { _history?.Save(HistoryPath); }
-        catch (Exception ex) { AppLog.Error(L.T("Verlauf konnte nicht gespeichert werden"), ex); }
+        catch (Exception ex) { AppLog.Error(L.T("History couldn't be saved"), ex); }
     }
 
     /// <summary>Lauf mit denselben Werten wiederholen (bei Remote wahlweise nur die fehlgeschlagenen Rechner).</summary>
@@ -85,7 +85,7 @@ public partial class AppController
         var item = FindItem(entry.Path);
         if (item == null)
         {
-            Ui.Notify(L.T("Nicht mehr vorhanden"), L.F("{0} wurde nicht gefunden (umbenannt, gelöscht oder ausgeblendet).", entry.Name), warning: true);
+            Ui.Notify(L.T("No longer available"), L.F("{0} wasn't found (renamed, deleted or hidden).", entry.Name), warning: true);
             return false;
         }
         if (onlyFailed && entry.FailedTargets.Count == 0) return false;

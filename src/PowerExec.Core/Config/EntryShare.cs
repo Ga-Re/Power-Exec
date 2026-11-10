@@ -28,7 +28,7 @@ public static class EntryShare
 
     public sealed class SharedFile
     {
-        public string Format { get; set; } = L.T("Power-Exec-Einträge");
+        public string Format { get; set; } = L.T("Power-Exec entries");
         public int Version { get; set; } = 1;
         public DateTime ExportedUtc { get; set; } = DateTime.UtcNow;
         public List<string> Groups { get; set; } = new();
@@ -65,7 +65,7 @@ public static class EntryShare
     public static SharedFile Parse(string json)
     {
         var f = JsonSerializer.Deserialize<SharedFile>(json, Options);
-        if (f == null || f.Entries == null) throw new InvalidDataException(L.T("Die Datei enthält keine Power-Exec-Einträge."));
+        if (f == null || f.Entries == null) throw new InvalidDataException(L.T("The file contains no Power-Exec entries."));
         return f;
     }
 

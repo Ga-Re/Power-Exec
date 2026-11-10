@@ -58,7 +58,7 @@ public sealed class ItemLoader
         }
 
         if (string.IsNullOrWhiteSpace(item.Synopsis) && item.Type == ItemType.PowerShell && item.ParseError != null)
-            item.Synopsis = L.T("Script enthält Fehler: ") + item.ParseError;
+            item.Synopsis = L.T("Script contains errors: ") + item.ParseError;
         return item;
     }
 }

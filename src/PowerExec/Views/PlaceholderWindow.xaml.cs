@@ -72,7 +72,7 @@ public partial class PlaceholderWindow : Window
     private void ShowProfiles(IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected)
     {
         ProfileRow.Visibility = Visibility.Visible;
-        SubHeading.Text = _fields.Count > 0 ? L.T("Profil wählen und Werte für diesen Start eingeben.") : L.T("Mit welchem Profil starten?");
+        SubHeading.Text = _fields.Count > 0 ? L.T("Choose a profile and enter values for this launch.") : L.T("Run with which profile?");
         ProfileBox.ItemsSource = profiles;
         ProfileBox.SelectedItem = selected;
         ProfileBox.SelectionChanged += (_, _) => UpdateProfileHint();
@@ -85,8 +85,8 @@ public partial class PlaceholderWindow : Window
         var p = ProfileBox.SelectedItem as LaunchProfile;
         var parts = new List<string>();
         if (p == null) { ProfileHint.Text = string.Empty; return; }
-        if (p.IsDefault) parts.Add(L.T("Standardprofil"));
-        if (p.RunAsAdmin) parts.Add(L.T("als Administrator"));
+        if (p.IsDefault) parts.Add(L.T("Default profile"));
+        if (p.RunAsAdmin) parts.Add(L.T("as administrator"));
         if (p.Machines.Count > 0) parts.Add(string.Join(", ", p.Machines.Take(4)) + (p.Machines.Count > 4 ? " …" : string.Empty));
         ProfileHint.Text = string.Join(" · ", parts);
         ProfileHint.Visibility = parts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

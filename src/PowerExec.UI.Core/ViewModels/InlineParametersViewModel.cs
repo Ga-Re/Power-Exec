@@ -32,7 +32,7 @@ public sealed class InlineParameterViewModel : ObservableObject
     public bool IsChoice => Parameter.Kind == ParameterKind.Choice;
     public bool IsSecure => Parameter.Kind == ParameterKind.Secure;
     public bool IsText => !IsSwitch && !IsChoice && !IsSecure;
-    public string Placeholder => Parameter.Kind == ParameterKind.List ? L.T("Werte mit Komma trennen") : Parameter.TypeName;
+    public string Placeholder => Parameter.Kind == ParameterKind.List ? L.T("Separate values with commas") : Parameter.TypeName;
 
     public string Text { get => _text; set { if (Set(ref _text, value ?? string.Empty)) HasError = false; } }
     public bool IsChecked { get => _isChecked; set => Set(ref _isChecked, value); }
@@ -74,7 +74,7 @@ public sealed class InlineParametersViewModel : ObservableObject
     {
         var missing = Fields.Where(f => f.Parameter.IsMandatory && f.IsText && string.IsNullOrWhiteSpace(f.Text)).ToList();
         foreach (var f in missing) f.HasError = true;
-        Error = missing.Count == 0 ? null : L.F("Bitte ausfüllen: {0}", string.Join(", ", missing.Select(f => f.Name)));
+        Error = missing.Count == 0 ? null : L.F("Please fill in: {0}", string.Join(", ", missing.Select(f => f.Name)));
         return missing.Count == 0;
     }
 
@@ -89,9 +89,9 @@ public sealed class InlineParametersViewModel : ObservableObject
         if (!Validate()) return;
         var values = Values();
         string? error = null;
-        var name = _app.Dialogs.Ask(L.T("Als Parameter-Set speichern"),
-            L.T("Erscheint als Startprofil am Ausführen-Knopf (Pfeil rechts) und im Profil-Dialog. Kennwörter werden nicht gespeichert."),
-            string.Empty, L.T("Speichern"), n =>
+        var name = _app.Dialogs.Ask(L.T("Save as parameter set"),
+            L.T("Appears as a launch profile on the Run button (arrow on the right) and in the profile dialog. Passwords are not saved."),
+            string.Empty, L.T("Save"), n =>
             {
                 var probe = Core.Config.SettingsStore.Clone(_app.Settings);
                 return ParameterSets.Save(probe, _item.Item, n, values, _item.DefaultProfile);
