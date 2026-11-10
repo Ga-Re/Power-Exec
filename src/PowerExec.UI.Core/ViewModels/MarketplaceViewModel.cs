@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -80,23 +81,23 @@ public sealed class MarketplaceViewModel : ObservableObject
 
     public string SourceFilter { get => _sourceFilter; set { if (_sourceFilter == value) return; _sourceFilter = value ?? "*"; OnPropertyChanged(); Rebuild(); } }
     public IReadOnlyList<KeyValuePair<string, string>> SourceChoices =>
-        new[] { new KeyValuePair<string, string>("*", "Alle Quellen") }
+        new[] { new KeyValuePair<string, string>("*", L.T("Alle Quellen")) }
             .Concat(Marketplace.Sources(_s).Select(s => new KeyValuePair<string, string>(s.Url, SourceName(s.Url)))).ToList();
     public bool HasSeveralSources => Marketplace.Sources(_s).Count > 1;
 
-    public string EntryTabText => $"Einträge ({Count(MarketplaceItemType.Entry)})";
-    public string ScriptTabText => $"Scripte ({Count(MarketplaceItemType.Script)})";
-    public string DesignTabText => $"Designs ({Count(MarketplaceItemType.Design)})";
-    public string InstalledTabText => $"Installiert ({AllFiles().Count(f => Marketplace.FindInstall(_s, f.Source, f.File.Path) != null)})"
-                                      + (UpdateCount > 0 ? $" · {UpdateCount} Updates" : string.Empty);
+    public string EntryTabText => L.F("Einträge ({0})", Count(MarketplaceItemType.Entry));
+    public string ScriptTabText => L.F("Scripte ({0})", Count(MarketplaceItemType.Script));
+    public string DesignTabText => L.F("Designs ({0})", Count(MarketplaceItemType.Design));
+    public string InstalledTabText => L.F("Installiert ({0})", AllFiles().Count(f => Marketplace.FindInstall(_s, f.Source, f.File.Path) != null))
+                                      + (UpdateCount > 0 ? L.F(" · {0} Updates", UpdateCount) : string.Empty);
     private int UpdateCount => AllFiles().Count(f => Marketplace.HasUpdate(_s, f.Source, f.File));
     private int Count(MarketplaceItemType t) => AllFiles().Count(f => f.File.Type == t);
 
     public int CheckedCount => CheckedItems().Count();
     public bool HasSelection => CheckedCount > 0;
-    public string SelectionText => CheckedCount == 1 ? "1 ausgewählt" : $"{CheckedCount} ausgewählt";
-    public string InstallSelectedText => $"Herunterladen ({CheckedItems().Count(i => !i.IsInstalled || i.HasUpdate)})";
-    public string UninstallSelectedText => $"Deinstallieren ({CheckedItems().Count(i => i.IsInstalled)})";
+    public string SelectionText => CheckedCount == 1 ? L.T("1 ausgewählt") : L.F("{0} ausgewählt", CheckedCount);
+    public string InstallSelectedText => L.F("Herunterladen ({0})", CheckedItems().Count(i => !i.IsInstalled || i.HasUpdate));
+    public string UninstallSelectedText => L.F("Deinstallieren ({0})", CheckedItems().Count(i => i.IsInstalled));
 
     private readonly List<MarketplaceItemRow> _items = new();
     internal IEnumerable<MarketplaceItemRow> AllItems => _items;
@@ -169,7 +170,7 @@ public sealed class MarketplaceViewModel : ObservableObject
         {
             // Abruflimit oder Netzwerkfehler: letzten Stand weiter zeigen
             var old = Trees.TryGetValue(key, out var o) ? o.Files : Array.Empty<MarketplaceFile>();
-            Trees[key] = (repo, old, DateTime.UtcNow, ex.Message.Contains("403") ? "Abruflimit von GitHub erreicht – bitte später erneut laden." : ex.Message);
+            Trees[key] = (repo, old, DateTime.UtcNow, ex.Message.Contains("403") ? L.T("Abruflimit von GitHub erreicht – bitte später erneut laden.") : ex.Message);
         }
     }
 
@@ -274,10 +275,9 @@ public sealed class MarketplaceViewModel : ObservableObject
 
     private async Task AddSourceAsync()
     {
-        var url = _app.Dialogs.Ask("Quelle hinzufügen",
-            "Adresse eines öffentlichen Repositorys (GitHub oder GitLab), z. B. https://github.com/firma/px-katalog\n" +
-            "Ein Unterordner geht auch: …/tree/main/marktplatz. Aufbau siehe marketplace/README.md im Power-Exec-Repository.",
-            string.Empty, "Hinzufügen", u => Marketplace.ValidateSource(_s, u));
+        var url = _app.Dialogs.Ask(L.T("Quelle hinzufügen"),
+            L.T("Adresse eines öffentlichen Repositorys (GitHub oder GitLab), z. B. https://github.com/firma/px-katalog\nEin Unterordner geht auch: …/tree/main/marktplatz. Aufbau siehe marketplace/README.md im Power-Exec-Repository."),
+            string.Empty, L.T("Hinzufügen"), u => Marketplace.ValidateSource(_s, u));
         if (url == null) return;
         url = Key(url);
         IsLoading = true;
@@ -285,10 +285,10 @@ public sealed class MarketplaceViewModel : ObservableObject
         {
             await LoadTreeAsync(url, force: true);
             var t = Trees[url];
-            if (t.Error != null) { Error = "Quelle nicht hinzugefügt: " + t.Error; Trees.Remove(url); return; }
+            if (t.Error != null) { Error = L.T("Quelle nicht hinzugefügt: ") + t.Error; Trees.Remove(url); return; }
             _s.MarketplaceSources.Add(new MarketplaceSource { Url = url, Name = Marketplace.NameFromUrl(url), AddedUtc = DateTime.UtcNow });
             Error = null;
-            Snackbar.Show($"Quelle „{Marketplace.NameFromUrl(url)}“ mit {t.Files.Count} Dateien hinzugefügt. Vor der ersten Installation fragt Power-Exec, ob du ihr vertraust.");
+            Snackbar.Show(L.F("Quelle „{0}“ mit {1} Dateien hinzugefügt. Vor der ersten Installation fragt Power-Exec, ob du ihr vertraust.", Marketplace.NameFromUrl(url), t.Files.Count));
             _changed();
         }
         finally
@@ -303,14 +303,14 @@ public sealed class MarketplaceViewModel : ObservableObject
     internal void RemoveSource(MarketplaceSourceViewModel source)
     {
         if (source.IsDefault) return;
-        if (!_app.Dialogs.Confirm($"Quelle „{source.Name}“ entfernen? Bereits installierte Einträge, Designs und Scripte bleiben erhalten.",
-                "Quelle entfernen", owner: _app.SettingsDialogOwner)) return;
+        if (!_app.Dialogs.Confirm(L.F("Quelle „{0}“ entfernen? Bereits installierte Einträge, Designs und Scripte bleiben erhalten.", source.Name),
+                L.T("Quelle entfernen"), owner: _app.SettingsDialogOwner)) return;
         _s.MarketplaceSources.RemoveAll(x => Marketplace.SameSource(x.Url, source.Url));
         Trees.Remove(Key(source.Url));
         if (Marketplace.SameSource(_sourceFilter, source.Url)) _sourceFilter = "*";
         RebuildSources();
         Rebuild();
-        Snackbar.Show($"Quelle „{source.Name}“ entfernt.");
+        Snackbar.Show(L.F("Quelle „{0}“ entfernt.", source.Name));
         _changed();
     }
 
@@ -322,10 +322,9 @@ public sealed class MarketplaceViewModel : ObservableObject
         foreach (var src in sources.Distinct(StringComparer.OrdinalIgnoreCase).Where(x => !Marketplace.IsTrusted(_s, x)))
         {
             if (!_app.Dialogs.Confirm(
-                    $"„{SourceName(src)}“ ist eine fremde Quelle:\n{src}\n\n" +
-                    "Einträge, Befehle und Scripte daraus können auf diesem PC Programme starten und Code ausführen. " +
-                    "Vertraue nur Quellen, die du oder dein Team kontrolliert.\n\nDieser Quelle vertrauen?",
-                    "Quelle vertrauen?", destructive: true, owner: _app.SettingsDialogOwner, defaultNo: true))
+                    L.F("„{0}“ ist eine fremde Quelle:\n{1}\n\n", SourceName(src), src) +
+                    L.T("Einträge, Befehle und Scripte daraus können auf diesem PC Programme starten und Code ausführen. Vertraue nur Quellen, die du oder dein Team kontrolliert.\n\nDieser Quelle vertrauen?"),
+                    L.T("Quelle vertrauen?"), destructive: true, owner: _app.SettingsDialogOwner, defaultNo: true))
                 return false;
             foreach (var s in _s.MarketplaceSources.Where(x => Marketplace.SameSource(x.Url, src))) s.Trusted = true;
         }
@@ -348,21 +347,21 @@ public sealed class MarketplaceViewModel : ObservableObject
             foreach (var r in rows)
             {
                 var p = await LoadPayloadAsync(r.Source, r.Repo, r.File);
-                if (p == null) { Error = $"„{r.Name}“ ließ sich nicht laden."; return; }
+                if (p == null) { Error = L.F("„{0}“ ließ sich nicht laden.", r.Name); return; }
                 loaded.Add((r, p.Value.Payload, p.Value.Details));
             }
             var preview = string.Join("\n\n", loaded.Take(8).Select(l => $"• {l.Details.Name} ({l.Row.TypeText}, {SourceName(l.Row.Source)})\n  {l.Details.Preview.Replace("\n", "\n  ")}"))
                           + (loaded.Count > 8 ? $"\n\n… und {loaded.Count - 8} weitere" : string.Empty);
             if (preview.Length > 2500) preview = preview[..2500] + "\n…";
-            var heading = loaded.Count == 1 ? $"„{loaded[0].Details.Name}“ herunterladen?" : $"{loaded.Count} Elemente herunterladen?";
-            if (!_app.Dialogs.Confirm($"{heading}\n\n{preview}", "Marktplatz – Vorschau", owner: _app.SettingsDialogOwner)) return;
+            var heading = loaded.Count == 1 ? L.F("„{0}“ herunterladen?", loaded[0].Details.Name) : L.F("{0} Elemente herunterladen?", loaded.Count);
+            if (!_app.Dialogs.Confirm($"{heading}\n\n{preview}", L.T("Marktplatz – Vorschau"), owner: _app.SettingsDialogOwner)) return;
 
             foreach (var v in Marketplace.MissingVariables(_s, loaded.SelectMany(l => l.Details.Variables)))
             {
                 var name = Variables.Normalize(v.Name);
-                var value = _app.Dialogs.Ask($"Variable {{{{${name}}}}}",
-                    (v.Description.Length > 0 ? v.Description : $"Wert für {{{{${name}}}}}") + (v.Example.Length > 0 ? $"\nz. B. {v.Example}" : string.Empty),
-                    v.Example, "Übernehmen");
+                var value = _app.Dialogs.Ask(L.F("Variable {{{{${0}}}}}", name),
+                    (v.Description.Length > 0 ? v.Description : L.F("Wert für {{{{${0}}}}}", name)) + (v.Example.Length > 0 ? $"\nz. B. {v.Example}" : string.Empty),
+                    v.Example, L.T("Übernehmen"));
                 if (value == null) return;
                 _s.Variables.Add(new UserVariable { Name = name, Value = value.Trim(), Description = v.Description });
             }
@@ -372,12 +371,12 @@ public sealed class MarketplaceViewModel : ObservableObject
             foreach (var folder in loaded.Where(l => l.Row.File.Type != MarketplaceItemType.Design && !l.Row.IsInstalled)
                          .Select(l => l.Row.File.Folder).Distinct(StringComparer.OrdinalIgnoreCase))
             {
-                var suggestion = folder.Length > 0 ? folder.Split('/')[^1] : "Marktplatz";
+                var suggestion = folder.Length > 0 ? folder.Split('/')[^1] : L.T("Marktplatz");
                 var count = loaded.Count(l => l.Row.File.Folder == folder && l.Row.File.Type != MarketplaceItemType.Design);
-                var group = _app.Dialogs.Ask("In welche Gruppe?",
-                    $"{(count == 1 ? "1 Eintrag" : $"{count} Einträge")} aus „{(folder.Length > 0 ? folder : "oberste Ebene")}“ kommen zu den eigenen Einträgen in diese Gruppe " +
-                    "(vorhandene oder neue, Untergruppen mit /):", suggestion, "Übernehmen",
-                    g => GroupManager.Normalize(g).Length == 0 ? "Bitte eine Gruppe angeben." : null);
+                var group = _app.Dialogs.Ask(L.T("In welche Gruppe?"),
+                    $"{(count == 1 ? "1 Eintrag" : L.F("{0} Einträge", count))} aus „{(folder.Length > 0 ? folder : "oberste Ebene")}“ kommen zu den eigenen Einträgen in diese Gruppe " +
+                    L.T("(vorhandene oder neue, Untergruppen mit /):"), suggestion, L.T("Übernehmen"),
+                    g => GroupManager.Normalize(g).Length == 0 ? L.T("Bitte eine Gruppe angeben.") : null);
                 if (group == null) return;
                 groups[folder] = group;
             }
@@ -396,18 +395,18 @@ public sealed class MarketplaceViewModel : ObservableObject
                 }
             }
             Error = null;
-            Snackbar.Show("Heruntergeladen: " + string.Join(", ", new[]
+            Snackbar.Show(L.T("Heruntergeladen: ") + string.Join(", ", new[]
             {
-                entries > 0 ? (entries == 1 ? "1 Eintrag" : $"{entries} Einträge") : null,
-                scripts > 0 ? (scripts == 1 ? "1 Script" : $"{scripts} Scripte") : null,
-                designs > 0 ? (designs == 1 ? "1 Design (unter Designvorlagen)" : $"{designs} Designs (unter Designvorlagen)") : null
-            }.OfType<string>()) + (entries + scripts > 0 ? " – zu finden unter Eigene Einträge." : "."));
+                entries > 0 ? (entries == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", entries)) : null,
+                scripts > 0 ? (scripts == 1 ? L.T("1 Script") : L.F("{0} Scripte", scripts)) : null,
+                designs > 0 ? (designs == 1 ? L.T("1 Design (unter Designvorlagen)") : L.F("{0} Designs (unter Designvorlagen)", designs)) : null
+            }.OfType<string>()) + (entries + scripts > 0 ? L.T(" – zu finden unter Eigene Einträge.") : "."));
             foreach (var i in _items) i.SetChecked(false);
             _changed();
         }
         catch (Exception ex)
         {
-            Error = "Herunterladen fehlgeschlagen: " + ex.Message;
+            Error = L.T("Herunterladen fehlgeschlagen: ") + ex.Message;
         }
         finally
         {
@@ -421,14 +420,14 @@ public sealed class MarketplaceViewModel : ObservableObject
     {
         rows = rows.Where(r => r.IsInstalled).ToList();
         if (rows.Count == 0) return;
-        if (!_app.Dialogs.Confirm(rows.Count == 1 ? $"„{rows[0].Name}“ deinstallieren?" : $"{rows.Count} Elemente deinstallieren?",
-                "Marktplatz – deinstallieren", destructive: true, owner: _app.SettingsDialogOwner)) return;
+        if (!_app.Dialogs.Confirm(rows.Count == 1 ? L.F("„{0}“ deinstallieren?", rows[0].Name) : L.F("{0} Elemente deinstallieren?", rows.Count),
+                L.T("Marktplatz – deinstallieren"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         int removed = 0, kept = 0;
         foreach (var row in rows)
         {
             if (Marketplace.FindInstall(_s, row.Source, row.File.Path) is not { } record) continue;
             if (Marketplace.IsModified(_s, record) &&
-                !_app.Dialogs.Confirm($"„{row.Name}“ wurde nach dem Herunterladen geändert. Trotzdem entfernen?", "Geänderter Eintrag",
+                !_app.Dialogs.Confirm(L.F("„{0}“ wurde nach dem Herunterladen geändert. Trotzdem entfernen?", row.Name), L.T("Geänderter Eintrag"),
                     destructive: true, owner: _app.SettingsDialogOwner, defaultNo: true))
             {
                 kept++;
@@ -438,7 +437,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             removed++;
         }
         foreach (var i in _items) i.SetChecked(false);
-        if (removed > 0) Snackbar.Show((removed == 1 ? "1 Element" : $"{removed} Elemente") + " deinstalliert" + (kept > 0 ? $", {kept} geänderte behalten." : "."));
+        if (removed > 0) Snackbar.Show((removed == 1 ? L.T("1 Element") : L.F("{0} Elemente", removed)) + L.T(" deinstalliert") + (kept > 0 ? L.F(", {0} geänderte behalten.", kept) : "."));
         Rebuild();
         if (removed > 0) _changed();
     }
@@ -492,7 +491,7 @@ public sealed class MarketplaceFolderRow : MarketplaceRow
         {
             var items = AllItems().ToList();
             var installed = items.Count(i => i.IsInstalled);
-            return items.Count + (items.Count == 1 ? " Datei" : " Dateien") + (installed > 0 ? $" · {installed} installiert" : string.Empty);
+            return items.Count + (items.Count == 1 ? L.T(" Datei") : L.T(" Dateien")) + (installed > 0 ? L.F(" · {0} installiert", installed) : string.Empty);
         }
     }
 
@@ -559,15 +558,15 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public override bool IsFolder => false;
     public override string Name => _details?.Name ?? File.DefaultName;
     public string Description => _details?.Description ?? string.Empty;
-    public string TypeText => File.Type switch { MarketplaceItemType.Script => "Script", MarketplaceItemType.Design => "Design", _ => "Eintrag" };
+    public string TypeText => File.Type switch { MarketplaceItemType.Script => L.T("Script"), MarketplaceItemType.Design => L.T("Design"), _ => L.T("Eintrag") };
     public string Glyph => File.Type switch { MarketplaceItemType.Script => "", MarketplaceItemType.Design => "", _ => "" };
-    public string Needs => _details?.Variables.Count > 0 ? "braucht " + string.Join(", ", _details.Variables.Select(v => "{{$" + Variables.Normalize(v.Name) + "}}")) : string.Empty;
+    public string Needs => _details?.Variables.Count > 0 ? L.T("braucht ") + string.Join(", ", _details.Variables.Select(v => "{{$" + Variables.Normalize(v.Name) + "}}")) : string.Empty;
     internal string SearchText => $"{Name} {Description} {File.Path} {TypeText}";
 
     public bool IsInstalled => Marketplace.FindInstall(_page.Settings, Source, File.Path) != null;
     public bool HasUpdate => Marketplace.HasUpdate(_page.Settings, Source, File);
-    public string StateText => HasUpdate ? "Update verfügbar" : IsInstalled ? "✓ Installiert" : string.Empty;
-    public string InstallText => HasUpdate ? "Aktualisieren" : "Herunterladen";
+    public string StateText => HasUpdate ? L.T("Update verfügbar") : IsInstalled ? L.T("✓ Installiert") : string.Empty;
+    public string InstallText => HasUpdate ? L.T("Aktualisieren") : L.T("Herunterladen");
     public bool CanInstall => !IsInstalled || HasUpdate;
 
     public ICommand InstallCommand { get; }
@@ -598,9 +597,9 @@ public sealed class MarketplaceSourceViewModel
         Name = name;
         IsDefault = Marketplace.IsDefault(source.Url);
         Trusted = source.Trusted || IsDefault;
-        Summary = error != null ? "Nicht erreichbar: " + error
-            : (IsDefault ? "Mitgeliefert" : Trusted ? "Vertrauenswürdig" : "Noch nicht bestätigt – vor der ersten Installation wird gefragt")
-              + (count > 0 ? $" · {count} Dateien" : string.Empty);
+        Summary = error != null ? L.T("Nicht erreichbar: ") + error
+            : (IsDefault ? L.T("Mitgeliefert") : Trusted ? L.T("Vertrauenswürdig") : L.T("Noch nicht bestätigt – vor der ersten Installation wird gefragt"))
+              + (count > 0 ? L.F(" · {0} Dateien", count) : string.Empty);
         HasError = error != null;
         RemoveCommand = new RelayCommand(() => page.RemoveSource(this), () => !IsDefault);
     }

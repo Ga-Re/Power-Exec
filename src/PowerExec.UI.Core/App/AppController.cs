@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -82,7 +83,7 @@ public partial class AppController : IDisposable
 
         Ui.CreateTray();
 
-        AppLog.Info($"Power-Exec {UpdateService.CurrentVersionText} gestartet ({Settings.Folders.Count} Ordner)");
+        AppLog.Info(L.F("Power-Exec {0} gestartet ({1} Ordner)", UpdateService.CurrentVersionText, Settings.Folders.Count));
         Repository.LoadCache();
         Repository.SetupWatchers();
         _ = Repository.ScanAsync();
@@ -101,12 +102,12 @@ public partial class AppController : IDisposable
         }
         else if (Settings.Folders.Count == 0)
         {
-            Ui.Notify("Power-Exec läuft", "Lege in den Einstellungen fest, welche Ordner durchsucht werden.");
+            Ui.Notify(L.T("Power-Exec läuft"), L.T("Lege in den Einstellungen fest, welche Ordner durchsucht werden."));
             ShowSettings(section: "groups");
         }
         else if (hotkeyError != null)
         {
-            Ui.Notify("Tastenkürzel nicht verfügbar", hotkeyError);
+            Ui.Notify(L.T("Tastenkürzel nicht verfügbar"), hotkeyError);
         }
 
         if (Settings.CheckUpdatesOnStart)
@@ -118,7 +119,7 @@ public partial class AppController : IDisposable
         try { Store.Save(Settings); }
         catch (Exception ex)
         {
-            Dialogs.Warn("Die Einstellungen konnten nicht gespeichert werden:\n" + ex.Message, "Power-Exec");
+            Dialogs.Warn(L.T("Die Einstellungen konnten nicht gespeichert werden:\n") + ex.Message, "Power-Exec");
         }
     }
 
@@ -337,7 +338,7 @@ public partial class AppController : IDisposable
         if (!WorkspaceManager.Switch(Settings, name)) return;
         ClearUndo();
         SaveSettings();
-        AppLog.Info($"Arbeitsbereich gewechselt: {Settings.ActiveWorkspace}");
+        AppLog.Info(L.F("Arbeitsbereich gewechselt: {0}", Settings.ActiveWorkspace));
         Repository.UpdateSettings(Settings);
         RebuildPanels();
         _settingsWindow?.Close(); // Einstellungen zeigen sonst noch den alten Arbeitsbereich
@@ -407,7 +408,7 @@ public partial class AppController : IDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Snippet konnte nicht vorbereitet werden", ex);
+            AppLog.Error(L.T("Snippet konnte nicht vorbereitet werden"), ex);
             return item;
         }
     }
@@ -456,8 +457,7 @@ public partial class AppController : IDisposable
         var unknown = Variables.Unknown(Settings, entry.Target, entry.Arguments, entry.Code, entry.User, entry.RemoteCommand, entry.WorkingDirectory);
         if (unknown.Count > 0)
         {
-            Dialogs.Warn($"„{item.DisplayName}“ verwendet {string.Join(", ", unknown.Select(n => "{{" + n + "}}"))} – diese Variable gibt es nicht. " +
-                         "Bitte unter Einstellungen › Inhalte › Variablen anlegen oder den Eintrag korrigieren.", "Variable fehlt");
+            Dialogs.Warn($"„{item.DisplayName}“ verwendet {string.Join(", ", unknown.Select(n => "{{" + n + "}}"))} – diese Variable gibt es nicht. Bitte unter Einstellungen › Inhalte › Variablen anlegen oder den Eintrag korrigieren.", "Variable fehlt");
             return null;
         }
         IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
@@ -471,7 +471,7 @@ public partial class AppController : IDisposable
         try { resolved = entry.WithValues(values); }
         catch (Exception ex)
         {
-            Dialogs.Warn($"Eine Variable von „{item.DisplayName}“ ließ sich nicht ermitteln: {ex.Message}", "Variable");
+            Dialogs.Warn(L.F("Eine Variable von „{0}“ ließ sich nicht ermitteln: {1}", item.DisplayName, ex.Message), L.T("Variable"));
             return null;
         }
         LaunchItem result;
@@ -506,18 +506,18 @@ public partial class AppController : IDisposable
             if (record) RecordRun(item, ProfileResolver.GetDefault(Settings, item));
             HidePanels();
             if (resolved.Source.PasteAfterCopy) _ = PasteAsync(item.DisplayName);
-            else Ui.Notify("In die Zwischenablage kopiert", item.DisplayName);
+            else Ui.Notify(L.T("In die Zwischenablage kopiert"), item.DisplayName);
         }
         catch (Exception ex)
         {
-            Dialogs.Warn("Die Zwischenablage ist gerade belegt: " + ex.Message, "Power-Exec");
+            Dialogs.Warn(L.T("Die Zwischenablage ist gerade belegt: ") + ex.Message, "Power-Exec");
         }
     }
 
     private async Task PasteAsync(string name)
     {
         if (!await Ui.PasteIntoPreviousAsync())
-            Ui.Notify("In die Zwischenablage kopiert", $"{name}: Kein Zielfenster gefunden – mit Strg+V einfügen.");
+            Ui.Notify(L.T("In die Zwischenablage kopiert"), L.F("{0}: Kein Zielfenster gefunden – mit Strg+V einfügen.", name));
     }
 
     // ---- Eigene Gruppen ---------------------------------------------------
@@ -546,7 +546,7 @@ public partial class AppController : IDisposable
         var clean = GroupManager.CleanName(name);
         var path = parent == null ? clean : parent + GroupManager.Separator + clean;
         return GroupManager.Exists(Settings, path) && !path.Equals(exceptPath, StringComparison.CurrentCultureIgnoreCase)
-            ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null;
+            ? L.T("Eine Gruppe mit diesem Namen gibt es hier schon.") : null;
     }
 
     /// <param name="parent">Pfad der übergeordneten Gruppe (Untergruppe) oder null.</param>
@@ -557,8 +557,8 @@ public partial class AppController : IDisposable
     /// </summary>
     public string? CreateGroup(string? parent = null)
     {
-        var heading = parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“";
-        var spec = WithDialog(() => Dialogs.AskNewGroup(heading, parent == null ? "Neue Gruppe" : "Neue Untergruppe",
+        var heading = parent == null ? L.T("Neue Gruppe") : L.F("Neue Untergruppe in „{0}“", GroupManager.LeafOf(parent));
+        var spec = WithDialog(() => Dialogs.AskNewGroup(heading, parent == null ? L.T("Neue Gruppe") : L.T("Neue Untergruppe"),
             n => GroupNameError(n, parent), f => NewGroup.FolderError(Settings.Folders, f)));
         if (spec == null) return null;
         var path = NewGroup.Create(Settings, spec, parent);
@@ -572,14 +572,14 @@ public partial class AppController : IDisposable
     public void RenameGroup(string path)
     {
         var parent = GroupManager.ParentOf(path);
-        var newName = WithDialog(() => Dialogs.Ask("Gruppe umbenennen", string.Empty, GroupManager.LeafOf(path), "Umbenennen", n => GroupNameError(n, parent, path)));
+        var newName = WithDialog(() => Dialogs.Ask(L.T("Gruppe umbenennen"), string.Empty, GroupManager.LeafOf(path), L.T("Umbenennen"), n => GroupNameError(n, parent, path)));
         if (newName == null || newName == GroupManager.LeafOf(path)) return;
         var before = SettingsStore.Clone(Settings);
         if (GroupManager.Rename(Settings, path, newName))
         {
-            _undo.Push(before, "Gruppe umbenannt");
+            _undo.Push(before, L.T("Gruppe umbenannt"));
             CommitUserChange();
-            ShowUndoToast($"Gruppe in „{GroupManager.CleanName(newName)}“ umbenannt");
+            ShowUndoToast(L.F("Gruppe in „{0}“ umbenannt", GroupManager.CleanName(newName)));
         }
     }
 
@@ -592,16 +592,16 @@ public partial class AppController : IDisposable
                    (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
                    (count > 0 && folders.Count == 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“." : string.Empty);
         // Mit Rückgängig statt Rückfrage; nur bei Untergruppen oder Ordnern zusätzlich nachfragen
-        if ((subs > 0 || folders.Count > 0) && !Confirm(text, "Gruppe löschen")) return;
-        RememberForUndo($"Gruppe „{name}“ gelöscht");
+        if ((subs > 0 || folders.Count > 0) && !Confirm(text, L.T("Gruppe löschen"))) return;
+        RememberForUndo(L.F("Gruppe „{0}“ gelöscht", name));
         GroupManager.Delete(Settings, path);
         CommitUserChange();
-        ShowUndoToast($"Gruppe „{name}“ gelöscht");
+        ShowUndoToast(L.F("Gruppe „{0}“ gelöscht", name));
     }
 
     public void MoveGroup(string path, int delta)
     {
-        RememberForUndo("Gruppe verschoben");
+        RememberForUndo(L.T("Gruppe verschoben"));
         GroupManager.Move(Settings, path, delta);
         CommitUserChange();
     }
@@ -613,16 +613,16 @@ public partial class AppController : IDisposable
         var result = GroupManager.MoveGroup(Settings, path, target, position);
         if (result == null)
         {
-            Ui.Notify("Verschieben nicht möglich", "Am Ziel gibt es bereits eine Gruppe mit diesem Namen, oder die Gruppe würde in ihre eigene Untergruppe verschoben.");
+            Ui.Notify(L.T("Verschieben nicht möglich"), L.T("Am Ziel gibt es bereits eine Gruppe mit diesem Namen, oder die Gruppe würde in ihre eigene Untergruppe verschoben."));
             return;
         }
         if (position == GroupDropPosition.Into)
             Settings.CollapsedGroups.RemoveAll(k => k.Equals(GroupManager.GroupKey(target), StringComparison.OrdinalIgnoreCase));
-        _undo.Push(before, "Gruppe verschoben");
+        _undo.Push(before, L.T("Gruppe verschoben"));
         CommitUserChange();
         ShowUndoToast(position == GroupDropPosition.Into
-            ? $"„{GroupManager.LeafOf(path)}“ nach „{GroupManager.LeafOf(target)}“ verschoben"
-            : $"„{GroupManager.LeafOf(path)}“ verschoben");
+            ? L.F("„{0}“ nach „{1}“ verschoben", GroupManager.LeafOf(path), GroupManager.LeafOf(target))
+            : L.F("„{0}“ verschoben", GroupManager.LeafOf(path)));
     }
 
     /// <summary>Oberste Ebene umordnen – auch feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge).</summary>
@@ -630,25 +630,25 @@ public partial class AppController : IDisposable
     {
         var before = SettingsStore.Clone(Settings);
         if (FixedGroups.MoveTopLevel(Settings, key, anchor, after) is not { } moved) return false;
-        _undo.Push(before, "Gruppe verschoben");
+        _undo.Push(before, L.T("Gruppe verschoben"));
         CommitUserChange();
-        ShowUndoToast($"„{(FixedGroups.IsFixed(moved) ? FixedGroups.Title(moved) : GroupManager.LeafOf(moved))}“ verschoben");
+        ShowUndoToast(L.F("„{0}“ verschoben", (FixedGroups.IsFixed(moved) ? FixedGroups.Title(moved) : GroupManager.LeafOf(moved))));
         return true;
     }
 
     /// <summary>Gruppe im aktiven Arbeitsbereich ausblenden (wieder einblenden: Einstellungen › Arbeitsbereiche).</summary>
     public void HideGroupInWorkspace(string groupPath)
     {
-        RememberForUndo("Gruppe ausgeblendet");
+        RememberForUndo(L.T("Gruppe ausgeblendet"));
         WorkspaceManager.SetGroupHidden(WorkspaceManager.Active(Settings), groupPath, true);
         CommitUserChange();
-        ShowUndoToast($"„{GroupManager.LeafOf(groupPath)}“ im Arbeitsbereich „{Settings.ActiveWorkspace}“ ausgeblendet");
+        ShowUndoToast(L.F("„{0}“ im Arbeitsbereich „{1}“ ausgeblendet", GroupManager.LeafOf(groupPath), Settings.ActiveWorkspace));
     }
 
     /// <summary>Eintrag in eine Gruppe schieben (leer = aus der Gruppe nehmen), optional vor/hinter einen anderen Eintrag.</summary>
     public void AssignGroup(string path, string? group, string? targetKey = null, string? beforeOrAfterPath = null, bool after = false, IReadOnlyList<string>? targetOrder = null)
     {
-        RememberForUndo("Eintrag verschoben");
+        RememberForUndo(L.T("Eintrag verschoben"));
         GroupManager.Assign(Settings, path, group);
         if (targetKey != null && beforeOrAfterPath != null && targetOrder != null)
         {
@@ -656,8 +656,8 @@ public partial class AppController : IDisposable
             Settings.CustomOrder[targetKey] = ItemOrdering.Move(order, path, beforeOrAfterPath, after);
         }
         CommitUserChange();
-        var label = FindItem(path) is { } moved ? DisplayNameOf(moved) : "Eintrag";
-        ShowUndoToast(group == null ? $"„{label}“ aus der Gruppe genommen" : $"„{label}“ nach „{GroupManager.LeafOf(group)}“ verschoben");
+        var label = FindItem(path) is { } moved ? DisplayNameOf(moved) : L.T("Eintrag");
+        ShowUndoToast(group == null ? L.F("„{0}“ aus der Gruppe genommen", label) : L.F("„{0}“ nach „{1}“ verschoben", label, GroupManager.LeafOf(group)));
     }
 
     /// <summary>Aus dem Explorer oder Browser gezogene Ziele übernehmen.</summary>
@@ -687,13 +687,13 @@ public partial class AppController : IDisposable
         CommitUserChange();
         AppLog.Info($"Per Drag & Drop hinzugefügt{(group != null ? " (Gruppe " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
         if (group == null && keys.Count > 0 && Hosts.Any(h => !h.Config.ShowsFolder(PanelConfig.CustomEntriesKey)))
-            Ui.Notify("Hinzugefügt", "Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist.");
+            Ui.Notify(L.T("Hinzugefügt"), L.T("Die Einträge stehen unter „Eigene Einträge“. Panels mit eigener Inhaltsauswahl zeigen sie nur, wenn „Eigene Einträge“ angehakt ist."));
     }
 
     private int AskFolderDrop(DroppedTarget folder, bool several, out bool forAll)
     {
-        var (choice, all) = WithDialog(() => Dialogs.Choose($"Ordner „{folder.Name}“ hinzufügen", "Wie soll der Ordner im Panel erscheinen?",
-            ChoiceOption.FolderDrop, several ? "Für alle gezogenen Ordner übernehmen" : null));
+        var (choice, all) = WithDialog(() => Dialogs.Choose(L.F("Ordner „{0}“ hinzufügen", folder.Name), L.T("Wie soll der Ordner im Panel erscheinen?"),
+            ChoiceOption.FolderDrop, several ? L.T("Für alle gezogenen Ordner übernehmen") : null));
         forAll = all;
         return choice;
     }
@@ -706,23 +706,23 @@ public partial class AppController : IDisposable
     {
         if (NewGroup.FolderError(Settings.Folders, folderPath) is { } error)
         {
-            Ui.Notify("Ordner schon vorhanden", error, warning: true);
+            Ui.Notify(L.T("Ordner schon vorhanden"), error, warning: true);
             return;
         }
         parent = string.IsNullOrEmpty(parent) ? null : parent;
         var name = NewGroup.NameFromFolder(folderPath);
         for (int i = 2; GroupManager.Exists(Settings, parent == null ? name : parent + GroupManager.Separator + name); i++) name = $"{NewGroup.NameFromFolder(folderPath)} {i}";
-        var heading = parent == null ? "Ordner als Gruppe hinzufügen" : $"Ordner als Untergruppe in „{GroupManager.LeafOf(parent)}“";
+        var heading = parent == null ? L.T("Ordner als Gruppe hinzufügen") : L.F("Ordner als Untergruppe in „{0}“", GroupManager.LeafOf(parent));
         var spec = WithDialog(() => Dialogs.AskNewGroup(heading, name, n => GroupNameError(n, parent),
             f => NewGroup.FolderError(Settings.Folders, f), folderPath));
         if (spec == null) return;
-        RememberForUndo("Ordner als Gruppe hinzugefügt");
+        RememberForUndo(L.T("Ordner als Gruppe hinzugefügt"));
         var path = NewGroup.Create(Settings, spec, parent);
         SaveSettings();
         Repository.UpdateSettings(Settings);
         CommitUserChange();
-        ShowUndoToast($"Ordner als Gruppe „{GroupManager.LeafOf(path)}“ hinzugefügt");
-        AppLog.Info($"Ordner per Drag & Drop als smarte Gruppe: {folderPath} → {path}");
+        ShowUndoToast(L.F("Ordner als Gruppe „{0}“ hinzugefügt", GroupManager.LeafOf(path)));
+        AppLog.Info(L.F("Ordner per Drag & Drop als smarte Gruppe: {0} → {1}", folderPath, path));
     }
 
     /// <summary>Neuer Eintrag aus einem Menü: Art-Schlüssel („Url“, „TextSnippet“ …) oder null = Art im Dialog wählen.</summary>
@@ -757,8 +757,8 @@ public partial class AppController : IDisposable
     public void AddFilesDialog(string? group)
     {
         var files = WithDialog(() => Dialogs.OpenFiles(
-            "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*",
-            group != null ? $"Dateien zur Gruppe „{GroupManager.LeafOf(group)}“ hinzufügen" : "Dateien hinzufügen"));
+            L.T("Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"),
+            group != null ? L.F("Dateien zur Gruppe „{0}“ hinzufügen", GroupManager.LeafOf(group)) : L.T("Dateien hinzufügen")));
         if (files.Count > 0)
             AddDropped(files.Select(f => new DroppedTarget(CustomEntryKind.File, f, Path.GetFileName(f))).ToList(), group);
     }
@@ -768,7 +768,7 @@ public partial class AppController : IDisposable
     {
         if (Settings.Folders.FirstOrDefault(f => f.Path.Equals(folderPath, StringComparison.OrdinalIgnoreCase)) is { } existing)
         {
-            Dialogs.Inform($"Dieser Ordner gehört bereits zur Gruppe „{existing.Group}“.", "Smarte Gruppe");
+            Dialogs.Inform(L.F("Dieser Ordner gehört bereits zur Gruppe „{0}“.", existing.Group), L.T("Smarte Gruppe"));
             return;
         }
         SmartGroups.Add(Settings, folderPath, null, string.IsNullOrEmpty(parent) ? null : parent);
@@ -837,7 +837,7 @@ public partial class AppController : IDisposable
         catch { }
         if (string.IsNullOrWhiteSpace(text))
         {
-            Ui.Notify("Zwischenablage leer", "Kopiere eine Adresse, einen Pfad, einen Rechnernamen oder Code und versuche es erneut.");
+            Ui.Notify(L.T("Zwischenablage leer"), L.T("Kopiere eine Adresse, einen Pfad, einen Rechnernamen oder Code und versuche es erneut."));
             return;
         }
         NewCustomEntry(ClipboardClassifier.Suggest(text, Directory.Exists, File.Exists), group);
@@ -887,14 +887,14 @@ public partial class AppController : IDisposable
     public void PickGroupColor(string groupPath)
     {
         var current = GroupManager.OwnColorOf(Settings, groupPath);
-        var text = WithDialog(() => Dialogs.PickColor($"Farbe für „{GroupManager.LeafOf(groupPath)}“", current));
+        var text = WithDialog(() => Dialogs.PickColor(L.F("Farbe für „{0}“", GroupManager.LeafOf(groupPath)), current));
         if (text != null) SetGroupColor(groupPath, text);
     }
 
     public void ChooseGroupIcon(string groupPath)
     {
         var current = GroupManager.IconOf(Settings, groupPath);
-        var picked = WithDialog(() => Dialogs.PickIcon(current, $"Symbol für „{GroupManager.LeafOf(groupPath)}“"));
+        var picked = WithDialog(() => Dialogs.PickIcon(current, L.F("Symbol für „{0}“", GroupManager.LeafOf(groupPath))));
         if (picked == null) return;
         GroupManager.SetIcon(Settings, groupPath, picked.Value);
         CommitUserChange();
@@ -905,21 +905,21 @@ public partial class AppController : IDisposable
     {
         if (entries.Count == 0)
         {
-            Dialogs.Inform("Es sind keine eigenen Einträge ausgewählt.", "Exportieren", owner);
+            Dialogs.Inform(L.T("Es sind keine eigenen Einträge ausgewählt."), L.T("Exportieren"), owner);
             return;
         }
         var fileName = WithDialog(() => Dialogs.SaveFile(EntryShare.FileFilter,
-            (rootGroup != null ? GroupManager.LeafOf(rootGroup) : "Eigene Einträge") + ".pxentries.json", owner: owner));
+            (rootGroup != null ? GroupManager.LeafOf(rootGroup) : L.T("Eigene Einträge")) + ".pxentries.json", owner: owner));
         if (fileName == null) return;
         try
         {
             File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
-            AppLog.Info($"{entries.Count} eigene Einträge exportiert: {fileName}");
-            Ui.Notify("Exportiert", $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
+            AppLog.Info(L.F("{0} eigene Einträge exportiert: {1}", entries.Count, fileName));
+            Ui.Notify(L.T("Exportiert"), $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
         }
         catch (Exception ex)
         {
-            Dialogs.Warn(ex.Message, "Exportieren", owner);
+            Dialogs.Warn(ex.Message, L.T("Exportieren"), owner);
         }
     }
 
@@ -929,20 +929,20 @@ public partial class AppController : IDisposable
     /// <returns>true, wenn etwas importiert wurde.</returns>
     public bool ImportEntries(string? intoGroup = null, object? owner = null)
     {
-        var fileName = WithDialog(() => Dialogs.OpenFile(EntryShare.FileFilter + "|Alle Dateien (*.*)|*.*", owner: owner));
+        var fileName = WithDialog(() => Dialogs.OpenFile(EntryShare.FileFilter + L.T("|Alle Dateien (*.*)|*.*"), owner: owner));
         if (fileName == null) return false;
         try
         {
             var file = EntryShare.Parse(File.ReadAllText(fileName));
             var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
             CommitUserChange();
-            AppLog.Info($"Eigene Einträge importiert ({added} neu, {updated} aktualisiert): {fileName}");
-            Dialogs.Inform($"{added} neue und {updated} aktualisierte Einträge übernommen.", "Importieren", owner);
+            AppLog.Info(L.F("Eigene Einträge importiert ({0} neu, {1} aktualisiert): {2}", added, updated, fileName));
+            Dialogs.Inform(L.F("{0} neue und {1} aktualisierte Einträge übernommen.", added, updated), L.T("Importieren"), owner);
             return added + updated > 0;
         }
         catch (Exception ex)
         {
-            Dialogs.Warn("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren", owner);
+            Dialogs.Warn(L.T("Die Datei konnte nicht gelesen werden:\n") + ex.Message, L.T("Importieren"), owner);
             return false;
         }
     }
@@ -953,14 +953,14 @@ public partial class AppController : IDisposable
         if (entry == null) return;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
         // Keine Rückfrage mehr: der Hinweis bietet „Rückgängig“
-        RememberForUndo($"„{name}“ entfernt");
+        RememberForUndo(L.F("„{0}“ entfernt", name));
         Settings.CustomEntries.Remove(entry);
         Settings.Entries.RemoveAll(e => e.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.Favorites.RemoveAll(p => p.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         Settings.RecentRuns.RemoveAll(r => r.Path.Equals(entry.Key, StringComparison.OrdinalIgnoreCase));
         RunStats.Remove(Settings, entry.Key);
         CommitUserChange();
-        ShowUndoToast($"„{name}“ entfernt" + (entry.Kind is CustomEntryKind.File or CustomEntryKind.Folder ? " (Datei bzw. Ordner bleibt erhalten)" : string.Empty));
+        ShowUndoToast(L.F("„{0}“ entfernt", name) + (entry.Kind is CustomEntryKind.File or CustomEntryKind.Folder ? L.T(" (Datei bzw. Ordner bleibt erhalten)") : string.Empty));
     }
 
     public bool IsFavorite(string path) => Settings.Favorites.Contains(path, StringComparer.OrdinalIgnoreCase);
@@ -970,13 +970,13 @@ public partial class AppController : IDisposable
         var wasFavorite = IsFavorite(item.FullPath);
         if (wasFavorite)
         {
-            RememberForUndo("Favorit entfernt");
+            RememberForUndo(L.T("Favorit entfernt"));
             Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         }
         else
             Settings.Favorites.Add(item.FullPath);
         CommitUserChange();
-        if (wasFavorite) ShowUndoToast($"„{DisplayNameOf(item)}“ ist kein Favorit mehr");
+        if (wasFavorite) ShowUndoToast(L.F("„{0}“ ist kein Favorit mehr", DisplayNameOf(item)));
     }
 
     public FolderConfig? FolderOf(LaunchItem item) =>
@@ -987,11 +987,11 @@ public partial class AppController : IDisposable
     {
         var folder = FolderOf(item);
         if (folder == null) return;
-        RememberForUndo($"„{item.FileName}“ ausgeblendet");
+        RememberForUndo(L.F("„{0}“ ausgeblendet", item.FileName));
         FolderVisibility.SetVisible(folder, FolderVisibility.RelativePath(folder, item.FullPath), false);
         Settings.Favorites.RemoveAll(p => p.Equals(item.FullPath, StringComparison.OrdinalIgnoreCase));
         CommitUserChange();
-        ShowUndoToast($"„{DisplayNameOf(item)}“ ausgeblendet");
+        ShowUndoToast(L.F("„{0}“ ausgeblendet", DisplayNameOf(item)));
     }
 
     /// <summary>
@@ -1062,21 +1062,21 @@ public partial class AppController : IDisposable
             {
                 PathMigration.Apply(Settings, m);
                 History.Rename(m.OldPath, m.NewPath);
-                AppLog.Info($"Umbenannt/verschoben erkannt: {m.OldPath} → {m.NewPath} (Profile und Favorit übernommen)");
+                AppLog.Info(L.F("Umbenannt/verschoben erkannt: {0} → {1} (Profile und Favorit übernommen)", m.OldPath, m.NewPath));
             }
             Settings.Fingerprints = snapshot.Fingerprints;
             SaveSettings();
             if (moves.Count > 0)
             {
                 RebuildPanels();
-                Ui.Notify("Datei wiedergefunden", moves.Count == 1
-                    ? $"{Path.GetFileName(moves[0].OldPath)} heißt jetzt {Path.GetFileName(moves[0].NewPath)}. Profile und Favorit wurden übernommen."
-                    : $"{moves.Count} umbenannte oder verschobene Dateien erkannt. Profile und Favoriten wurden übernommen.");
+                Ui.Notify(L.T("Datei wiedergefunden"), moves.Count == 1
+                    ? L.F("{0} heißt jetzt {1}. Profile und Favorit wurden übernommen.", Path.GetFileName(moves[0].OldPath), Path.GetFileName(moves[0].NewPath))
+                    : L.F("{0} umbenannte oder verschobene Dateien erkannt. Profile und Favoriten wurden übernommen.", moves.Count));
             }
         }
         catch (Exception ex)
         {
-            AppLog.Error("Abgleich umbenannter Dateien fehlgeschlagen", ex);
+            AppLog.Error(L.T("Abgleich umbenannter Dateien fehlgeschlagen"), ex);
         }
         finally
         {
@@ -1166,7 +1166,7 @@ public partial class AppController : IDisposable
         if (!ConfirmRun(item, profile, 0, null)) return;
         HidePanels();
         try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
-        catch (Exception ex) { AppLog.Error("Start vorbereiten fehlgeschlagen", ex); }
+        catch (Exception ex) { AppLog.Error(L.T("Start vorbereiten fehlgeschlagen"), ex); }
         var plainOrigin = HistoryOrigin;
         if (StartLocalTracked(item, BuildRequest(item, profile, mode, new Dictionary<string, object>()),
                 () => BeginHistory(item, profile, mode, PsEngine.WindowsPowerShell, null, null, plainOrigin), null))
@@ -1194,9 +1194,9 @@ public partial class AppController : IDisposable
         if (!profile.ConfirmBeforeRun) return true;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
         var where = targetCount > 0 ? $" auf {targetCount} {(targetCount == 1 ? "Rechner" : "Rechnern")}" : string.Empty;
-        var text = $"„{name}“ mit dem Profil „{profile.Name}“{where} wirklich ausführen?" +
+        var text = L.F("„{0}“ mit dem Profil „{1}“{2} wirklich ausführen?", name, profile.Name, where) +
                    (profile.RunAsAdmin ? "\n\nDer Start erfolgt mit Administratorrechten." : string.Empty);
-        return Dialogs.Confirm(text, "Ausführen bestätigen", owner: owner, defaultNo: true);
+        return Dialogs.Confirm(text, L.T("Ausführen bestätigen"), owner: owner, defaultNo: true);
     }
 
     /// <summary>Entfernt die Zonen-Kennung („aus dem Internet“) einer Datei.</summary>
@@ -1204,13 +1204,13 @@ public partial class AppController : IDisposable
     {
         if (WindowsMetadata.Unblock(item.FullPath))
         {
-            AppLog.Info($"Entsperrt: {item.FullPath}");
+            AppLog.Info(L.F("Entsperrt: {0}", item.FullPath));
             Repository.Reload(item);
             _ = Repository.ScanAsync();
         }
         else
         {
-            Dialogs.Warn($"{item.FileName} konnte nicht entsperrt werden (fehlende Schreibrechte?).", "Entsperren");
+            Dialogs.Warn(L.F("{0} konnte nicht entsperrt werden (fehlende Schreibrechte?).", item.FileName), L.T("Entsperren"));
         }
     }
 
@@ -1298,8 +1298,8 @@ public partial class AppController : IDisposable
         {
             if (!Settings.NotifyOnFinish || w?.IsActive == true) return;
             bool problems = vm.ErrorCount + vm.UnreachableCount > 0 || vm.RunnerError != null;
-            Ui.Notify($"{request.Item.DisplayName} ist fertig",
-                vm.RunnerError ?? $"{vm.SuccessCount} erfolgreich · {vm.ErrorCount} Fehler · {vm.UnreachableCount} nicht erreichbar",
+            Ui.Notify(L.F("{0} ist fertig", request.Item.DisplayName),
+                vm.RunnerError ?? L.F("{0} erfolgreich · {1} Fehler · {2} nicht erreichbar", vm.SuccessCount, vm.ErrorCount, vm.UnreachableCount),
                 () =>
                 {
                     if (w?.IsOpen == true) w.BringToFront();
@@ -1335,10 +1335,10 @@ public partial class AppController : IDisposable
         var r = await Updates.CheckAsync(includePrereleases);
         if (r != null)
         {
-            Update.Title = $"Version {r.Version.ToString(3)} ist verfügbar";
-            Update.Subtitle = $"Installiert: {UpdateService.CurrentVersionText} · aus GitHub Releases";
+            Update.Title = L.F("Version {0} ist verfügbar", r.Version.ToString(3));
+            Update.Subtitle = L.F("Installiert: {0} · aus GitHub Releases", UpdateService.CurrentVersionText);
             Update.Available = true;
-            if (!manual) Ui.Notify("Update verfügbar", $"Power-Exec {r.Version.ToString(3)} kann installiert werden. Öffne das Panel.");
+            if (!manual) Ui.Notify(L.T("Update verfügbar"), L.F("Power-Exec {0} kann installiert werden. Öffne das Panel.", r.Version.ToString(3)));
         }
         return r;
     }
@@ -1348,11 +1348,11 @@ public partial class AppController : IDisposable
         var r = Updates.Available;
         if (r == null) return;
         Update.Busy = true;
-        Update.Subtitle = "Wird heruntergeladen …";
+        Update.Subtitle = L.T("Wird heruntergeladen …");
         string? error;
         try
         {
-            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(q => Update.Subtitle = $"Wird heruntergeladen … {q:P0}"));
+            error = await Updates.DownloadAndPrepareAsync(r, new Progress<double>(q => Update.Subtitle = L.F("Wird heruntergeladen … {0:P0}", q)));
         }
         catch (Exception ex)
         {
@@ -1364,7 +1364,7 @@ public partial class AppController : IDisposable
             Exit();
             return;
         }
-        Update.Subtitle = "Update fehlgeschlagen";
+        Update.Subtitle = L.T("Update fehlgeschlagen");
         if (Dialogs.Confirm(error + "\n\nRelease-Seite im Browser öffnen?", "Update"))
             Shell.OpenUrl(r.HtmlUrl);
     }

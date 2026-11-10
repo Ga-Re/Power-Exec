@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -51,7 +52,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         {
             var edge = Edges.First(e => e.Key == _c.Edge).Value;
             var mon = Monitors.FirstOrDefault(m => m.Key == MonitorChoice).Value ?? "Monitor";
-            var hk = string.IsNullOrWhiteSpace(_c.Hotkey) ? "kein Tastenkürzel" : DisplayText.Hotkey(_c.Hotkey);
+            var hk = string.IsNullOrWhiteSpace(_c.Hotkey) ? L.T("kein Tastenkürzel") : DisplayText.Hotkey(_c.Hotkey);
             return $"{edge} · {mon} · {hk}";
         }
     }
@@ -61,10 +62,10 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public ScreenEdge Edge { get => _c.Edge; set { _c.Edge = value; OnPropertyChanged(); OnPropertyChanged(nameof(Summary)); } }
     public static IReadOnlyList<KeyValuePair<ScreenEdge, string>> Edges { get; } = new[]
     {
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Right, "Rechts"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Left, "Links"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Top, "Oben"),
-        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Bottom, "Unten")
+        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Right, L.T("Rechts")),
+        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Left, L.T("Links")),
+        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Top, L.T("Oben")),
+        new KeyValuePair<ScreenEdge, string>(ScreenEdge.Bottom, L.T("Unten"))
     };
     public IReadOnlyList<KeyValuePair<ScreenEdge, string>> EdgeList => Edges;
 
@@ -88,9 +89,9 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public int HotZoneLength { get => _c.HotZoneLength; set { _c.HotZoneLength = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<HotZoneMode, string>> HotZones { get; } = new[]
     {
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, "Mitte · eigene Länge"),
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.FirstHalf, "Erste Hälfte (oben bzw. links)"),
-        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Full, "Ganze Kante")
+        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, L.T("Mitte · eigene Länge")),
+        new KeyValuePair<HotZoneMode, string>(HotZoneMode.FirstHalf, L.T("Erste Hälfte (oben bzw. links)")),
+        new KeyValuePair<HotZoneMode, string>(HotZoneMode.Full, L.T("Ganze Kante"))
     };
 
     // ---- Größe ------------------------------------------------------------
@@ -105,23 +106,23 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public PanelAlignment PanelAlignment { get => _c.PanelAlignment; set { _c.PanelAlignment = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<PanelAlignment, string>> PanelAlignments { get; } = new[]
     {
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.HotZone, "An der Hover-Zone"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Start, "Oben bzw. links"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Center, "Mittig"),
-        new KeyValuePair<PanelAlignment, string>(PanelAlignment.End, "Unten bzw. rechts")
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.HotZone, L.T("An der Hover-Zone")),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Start, L.T("Oben bzw. links")),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.Center, L.T("Mittig")),
+        new KeyValuePair<PanelAlignment, string>(PanelAlignment.End, L.T("Unten bzw. rechts"))
     };
     public ItemLayout Layout { get => _c.Layout; set { _c.Layout = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<ItemLayout, string>> Layouts { get; } = new[]
     {
-        new KeyValuePair<ItemLayout, string>(ItemLayout.List, "Liste"),
-        new KeyValuePair<ItemLayout, string>(ItemLayout.Grid, "Raster (Kacheln)")
+        new KeyValuePair<ItemLayout, string>(ItemLayout.List, L.T("Liste")),
+        new KeyValuePair<ItemLayout, string>(ItemLayout.Grid, L.T("Raster (Kacheln)"))
     };
     public ItemSize ItemSize { get => _c.ItemSize; set { _c.ItemSize = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<ItemSize, string>> ItemSizes { get; } = new[]
     {
-        new KeyValuePair<ItemSize, string>(ItemSize.Small, "Klein"),
-        new KeyValuePair<ItemSize, string>(ItemSize.Medium, "Mittel"),
-        new KeyValuePair<ItemSize, string>(ItemSize.Large, "Groß")
+        new KeyValuePair<ItemSize, string>(ItemSize.Small, L.T("Klein")),
+        new KeyValuePair<ItemSize, string>(ItemSize.Medium, L.T("Mittel")),
+        new KeyValuePair<ItemSize, string>(ItemSize.Large, L.T("Groß"))
     };
     public bool ShowRecent { get => _c.ShowRecent; set { _c.ShowRecent = value; OnPropertyChanged(); } }
     public bool ShowFavorites { get => _c.ShowFavorites; set { _c.ShowFavorites = value; OnPropertyChanged(); } }
@@ -133,7 +134,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         get => _c.Hotkey;
         set { _c.Hotkey = value ?? string.Empty; OnPropertyChanged(); OnPropertyChanged(nameof(HotkeyDisplay)); OnPropertyChanged(nameof(Summary)); }
     }
-    public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? "Kein Tastenkürzel" : DisplayText.Hotkey(_c.Hotkey);
+    public string HotkeyDisplay => string.IsNullOrWhiteSpace(_c.Hotkey) ? L.T("Kein Tastenkürzel") : DisplayText.Hotkey(_c.Hotkey);
     public ICommand ClearHotkeyCommand { get; }
 
     // ---- Farbe ------------------------------------------------------------
@@ -153,8 +154,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public static IReadOnlyList<KeyValuePair<string, string>> ColorModes { get; } = new[]
     {
-        new KeyValuePair<string, string>("design", "Wie das Design"),
-        new KeyValuePair<string, string>("manual", "Manuell")
+        new KeyValuePair<string, string>("design", L.T("Wie das Design")),
+        new KeyValuePair<string, string>("manual", L.T("Manuell"))
     };
 
     public IReadOnlyList<KeyValuePair<string, string>> ColorModeList => ColorModes;
@@ -244,7 +245,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
     /// <summary>Eigene Panelfarbe im Farbwähler aussuchen.</summary>
     public System.Windows.Input.ICommand PickColorCommand => _pickColor ??= new RelayCommand(() =>
     {
-        var picked = _app.Dialogs.PickColor("Panelfarbe", _c.PanelColor, _app.SettingsDialogOwner);
+        var picked = _app.Dialogs.PickColor(L.T("Panelfarbe"), _c.PanelColor, _app.SettingsDialogOwner);
         if (picked == null) return;
         PanelColor = picked;
         RememberColor(_c.PanelColor); // benutzerdefinierte Farben landen unter „Zuletzt verwendet“
@@ -269,8 +270,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public ArgbColor? PreviewColor => ArgbColor.FromHex(_c.PanelColor, (byte)(255 * _c.EffectiveOpacity / 100));
 
     public string PreviewText => PanelColors.TryParse(_c.PanelColor, out var c)
-        ? (PanelColors.IsLight(c) ? "Helle Fläche – dunkle Schrift" : "Dunkle Fläche – helle Schrift")
-        : "Farbe des Designs";
+        ? (PanelColors.IsLight(c) ? L.T("Helle Fläche – dunkle Schrift") : L.T("Dunkle Fläche – helle Schrift"))
+        : L.T("Farbe des Designs");
 
     /// <summary>Hintergrund hinter dem Panel: Klarglas (WPF) oder Glas mit eigenem Weichzeichner (Windows 11).</summary>
     public PanelBackdrop Backdrop
@@ -298,14 +299,14 @@ public sealed class PanelSettingsViewModel : ObservableObject
         get
         {
             if (_c.EffectiveBackdropSetting == PanelBackdrop.Solid)
-                return "Vollton: das Panel ist deckend in seiner Farbe – ohne Transparenz, Milchglas oder Weichzeichner.";
+                return L.T("Vollton: das Panel ist deckend in seiner Farbe – ohne Transparenz, Milchglas oder Weichzeichner.");
             if (_c.EffectiveBackdropSetting != PanelBackdrop.Glass)
-                return "Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.";
+                return L.T("Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.");
             if (EffectiveBackdrop == PanelBackdrop.Glass)
-                return "Windows zeichnet den Desktop hinter dem Panel weich, das Panel tönt ihn mit seiner Farbe. Nur Windows 11.";
-            if (_app.Theme.IsHighContrast) return "Im Kontrastdesign läuft Klarglas (deckend).";
-            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return "Erst ab Windows 11 – hier läuft Klarglas.";
-            return "Die Windows-Transparenzeffekte sind aus – es läuft Klarglas.";
+                return L.T("Windows zeichnet den Desktop hinter dem Panel weich, das Panel tönt ihn mit seiner Farbe. Nur Windows 11.");
+            if (_app.Theme.IsHighContrast) return L.T("Im Kontrastdesign läuft Klarglas (deckend).");
+            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return L.T("Erst ab Windows 11 – hier läuft Klarglas.");
+            return L.T("Die Windows-Transparenzeffekte sind aus – es läuft Klarglas.");
         }
     }
 
@@ -321,16 +322,16 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     /// <summary>Hinweis zur Deckkraft.</summary>
     public string OpacityDescription => EffectiveBackdrop == PanelBackdrop.Glass
-        ? "Stärke der Tönung mit der Panelfarbe über dem weichgezeichneten Desktop. Schrift bleibt voll deckend."
-        : "Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.";
+        ? L.T("Stärke der Tönung mit der Panelfarbe über dem weichgezeichneten Desktop. Schrift bleibt voll deckend.")
+        : L.T("Unter 100 % scheint der Desktop durch; Milchglas hellt ihn auf bzw. dunkelt ihn ab. Schrift bleibt voll deckend.");
 
     /// <summary>Was das Milchglas macht – und warum es im Kontrastdesign fehlt.</summary>
     public string FrostDescription => _app.Theme.IsHighContrast
-        ? "Im Kontrastdesign ist das Panel deckend, Milchglas entfällt."
+        ? L.T("Im Kontrastdesign ist das Panel deckend, Milchglas entfällt.")
         : EffectiveBackdrop == PanelBackdrop.Glass
-            ? "Helligkeitsschicht über dem Weichzeichner (dunkle Panels abgedunkelt, helle aufgehellt) – Schrift bleibt gut lesbar."
-            : "Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) – "
-              + "der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.";
+            ? L.T("Helligkeitsschicht über dem Weichzeichner (dunkle Panels abgedunkelt, helle aufgehellt) – Schrift bleibt gut lesbar.")
+            : L.T("Helligkeitsschicht unter der Panelfarbe (dunkle Panels abgedunkelt, helle aufgehellt) – ")
+              + L.T("der Desktop dahinter wird ruhiger, Schrift bleibt gut lesbar. Wirkt nur unter 100 % Deckkraft.");
 
     public bool ShowFrost => PanelBackdrops.SupportsFrost(EffectiveBackdrop);
 
@@ -377,11 +378,11 @@ public sealed class PanelSettingsViewModel : ObservableObject
 
     public bool HasAccentColor => _c.AccentColor.Length > 0;
     public ArgbColor? AccentPreview => ArgbColor.FromHex(_c.AccentColor, 255) ?? ArgbColor.FromHex(_c.PanelColor, 255);
-    public string AccentText => HasAccentColor ? _c.AccentColor : "Aus der Panelfarbe";
+    public string AccentText => HasAccentColor ? _c.AccentColor : L.T("Aus der Panelfarbe");
 
     public System.Windows.Input.ICommand PickAccentCommand => _pickAccent ??= new RelayCommand(() =>
     {
-        var picked = _app.Dialogs.PickColor("Akzentfarbe", _c.AccentColor.Length > 0 ? _c.AccentColor : _c.PanelColor, _app.SettingsDialogOwner);
+        var picked = _app.Dialogs.PickColor(L.T("Akzentfarbe"), _c.AccentColor.Length > 0 ? _c.AccentColor : _c.PanelColor, _app.SettingsDialogOwner);
         if (picked != null) AccentColor = picked;
     });
     public System.Windows.Input.ICommand ResetAccentCommand => _resetAccent ??= new RelayCommand(() => AccentColor = string.Empty);
@@ -410,8 +411,8 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public GroupCardStyle GroupStyle { get => _c.GroupStyle; set { _c.GroupStyle = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<GroupCardStyle, string>> GroupStyles { get; } = new[]
     {
-        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Accent, "Akzentstreifen (Fluent-Karten)"),
-        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Tinted, "Farbige Karten")
+        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Accent, L.T("Akzentstreifen (Fluent-Karten)")),
+        new KeyValuePair<GroupCardStyle, string>(GroupCardStyle.Tinted, L.T("Farbige Karten"))
     };
     public bool ShowScrollBar { get => _c.ShowScrollBar; set { _c.ShowScrollBar = value; OnPropertyChanged(); } }
 
@@ -447,7 +448,7 @@ public sealed class ColorPresetViewModel : ObservableObject
     public string Hex { get; }
     /// <summary>Farbpunkt; null = Farbe des Designs (die Oberfläche zeigt dann die Panelfarbe des Designs).</summary>
     public ArgbColor? SwatchColor { get; }
-    public string ToolTip => Hex.Length == 0 ? "Farbe des Designs (hell/dunkel)" : Name == Hex ? Hex : $"{Name} ({Hex})";
+    public string ToolTip => Hex.Length == 0 ? L.T("Farbe des Designs (hell/dunkel)") : Name == Hex ? Hex : $"{Name} ({Hex})";
     public bool IsSelected => string.Equals(_owner.PanelColor, Hex, StringComparison.OrdinalIgnoreCase);
     public ICommand SelectCommand { get; }
     public void Refresh() => OnPropertyChanged(nameof(IsSelected));

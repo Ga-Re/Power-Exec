@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Globalization;
 
 namespace PowerExec.Core.Config;
@@ -15,17 +16,17 @@ public static class PanelColors
     /// <summary>Vorlagen; ein leerer Wert steht für die Farbe des Designs.</summary>
     public static readonly IReadOnlyList<ColorPreset> Presets =
     [
-        new("Design", ""),
-        new("Anthrazit", "#1E1E1E"),
-        new("Mitternachtsblau", "#1B2A3D"),
-        new("Petrol", "#123A40"),
-        new("Tannengrün", "#1E3328"),
-        new("Aubergine", "#2E2140"),
-        new("Bordeaux", "#3A1E26"),
-        new("Schiefer", "#3B4252"),
-        new("Hellgrau", "#F3F3F3"),
-        new("Sand", "#F2EBDD"),
-        new("Eisblau", "#E3EEF7")
+        new(L.T("Design"), ""),
+        new(L.T("Anthrazit"), "#1E1E1E"),
+        new(L.T("Mitternachtsblau"), "#1B2A3D"),
+        new(L.T("Petrol"), "#123A40"),
+        new(L.T("Tannengrün"), "#1E3328"),
+        new(L.T("Aubergine"), "#2E2140"),
+        new(L.T("Bordeaux"), "#3A1E26"),
+        new(L.T("Schiefer"), "#3B4252"),
+        new(L.T("Hellgrau"), "#F3F3F3"),
+        new(L.T("Sand"), "#F2EBDD"),
+        new(L.T("Eisblau"), "#E3EEF7")
     ];
 
     /// <summary>Farben wie in den Windows-Einstellungen (Personalisierung › Farben), zeilenweise.</summary>
@@ -57,18 +58,18 @@ public static class PanelColors
     /// <summary>Gruppen- und Schlagwortfarben: kräftig genug für Symbole, lesbar in hell und dunkel.</summary>
     public static readonly IReadOnlyList<ColorPreset> AccentPresets =
     [
-        new("Blau", "#3B82F6"),
-        new("Himmel", "#0EA5E9"),
-        new("Türkis", "#14B8A6"),
-        new("Grün", "#22C55E"),
-        new("Limette", "#84CC16"),
-        new("Gelb", "#EAB308"),
-        new("Orange", "#F97316"),
-        new("Rot", "#EF4444"),
-        new("Pink", "#EC4899"),
-        new("Violett", "#8B5CF6"),
-        new("Indigo", "#6366F1"),
-        new("Grau", "#94A3B8")
+        new(L.T("Blau"), "#3B82F6"),
+        new(L.T("Himmel"), "#0EA5E9"),
+        new(L.T("Türkis"), "#14B8A6"),
+        new(L.T("Grün"), "#22C55E"),
+        new(L.T("Limette"), "#84CC16"),
+        new(L.T("Gelb"), "#EAB308"),
+        new(L.T("Orange"), "#F97316"),
+        new(L.T("Rot"), "#EF4444"),
+        new(L.T("Pink"), "#EC4899"),
+        new(L.T("Violett"), "#8B5CF6"),
+        new(L.T("Indigo"), "#6366F1"),
+        new(L.T("Grau"), "#94A3B8")
     ];
 
     /// <summary>Liest "#RRGGBB", "RRGGBB" oder "#RGB".</summary>
