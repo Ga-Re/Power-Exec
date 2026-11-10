@@ -131,7 +131,7 @@ public sealed partial class SelfTestController : AppController
             Settings.Variables.Add(new UserVariable { Name = "CompanyName", Value = "Med360°" });
             Settings.Variables.Add(new UserVariable { Name = "Kundendomain", Kind = VariableKind.Workspace, Value = "firma.local" });
             Settings.Variables.Add(new UserVariable { Name = "Ps", Kind = VariableKind.PowerShell, Value = "'aus ' + 'PowerShell'", Refresh = VariableRefresh.Session });
-            Settings.CustomEntries.Add(new CustomEntry { Name = "Firmengruß", Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Grüße von {{$CompanyName}} am {{$Datum}}" });
+            Settings.CustomEntries.Add(new CustomEntry { Name = "Firmengruß", Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Grüße von {{$CompanyName}} am {{$Date}}" });
             Settings.Panels.Add(new PanelConfig { Name = "Hauptpanel", PanelOpacity = 90, Frost = 30 });
             WorkspaceManager.EnsureInitialized(Settings);
             SmartGroups.EnsureFolderGroups(Settings);
@@ -652,6 +652,9 @@ public sealed partial class SelfTestController : AppController
                 if (!secret.StartsWith("dpapi:") || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
                 var gruss = Settings.CustomEntries.First(e => e.Name == "Firmengruß").WithValues(new Dictionary<string, string>());
                 if (!gruss.Code.StartsWith("Grüße von Med360° am ")) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
+                // Bearbeiten-Dialog einer Variable (je Art andere Felder)
+                var varPage = new VariablesViewModel(this, SettingsStore.Clone(Settings));
+                foreach (var row in varPage.Items) await ShowAndClose(VariableWindow.ForTest(row));
             }
 
             Step("Darstellung: Windows-Akzentfarbe und Größe");
@@ -1357,7 +1360,7 @@ public sealed partial class SelfTestController : AppController
                 ["Rdp"] = new() { Kind = CustomEntryKind.Rdp, Target = "SRV-01", User = @"FIRMAdmin", Screen = RdpScreen.Window, ScreenWidth = 1600, ScreenHeight = 900 },
                 ["Ssh"] = new() { Kind = CustomEntryKind.Ssh, Target = "srv", User = "root", JumpHost = "bastion", PortForward = "8080:localhost:80" },
                 ["Snippet"] = new() { Kind = CustomEntryKind.Snippet, Code = "param([string]$Ziel = 'localhost', [switch]$Lang)\nTest-Connection $Ziel -Count 1" },
-                ["TextSnippet"] = new() { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Viele Grüße\n{{$Benutzer}}", CopyAsHtml = true },
+                ["TextSnippet"] = new() { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Viele Grüße\n{{$User}}", CopyAsHtml = true },
                 ["Tool"] = new() { Kind = CustomEntryKind.Tool, Target = "services.msc" },
                 ["Command"] = new() { Kind = CustomEntryKind.Command, Target = "cmd.exe", WorkingDirectory = @"C:\" },
                 ["File"] = new() { Kind = CustomEntryKind.File, Target = script }

@@ -30,7 +30,7 @@
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding ToggleFavoriteCommand}"
                             ToolTip="Favorit umschalten">
                         <Grid>
-                            <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Star}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
+                            <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
                             <TextBlock Text="&#xE734;" Style="{StaticResource Icon}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                         </Grid>
                     </ui:Button>

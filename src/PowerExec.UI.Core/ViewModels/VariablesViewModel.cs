@@ -20,6 +20,13 @@ public sealed class VariablesViewModel : ObservableObject
         Resolver = new VariableResolver(() => _s, app.RunVariableCommand, SecretProtector.Unprotect, () => string.Empty);
         foreach (var v in _s.Variables) Items.Add(new VariableRowViewModel(this, v));
         AddCommand = new RelayCommand(Add);
+        SelectAllCommand = new RelayCommand(() =>
+        {
+            var all = VisibleItems.All(i => i.IsSelected);
+            foreach (var i in VisibleItems) i.IsSelected = !all;
+        });
+        RemoveSelectedCommand = new RelayCommand(RemoveSelected, () => Items.Any(i => i.IsSelected));
+        Refilter();
         Builtins = Variables.Builtins.Select(b => new BuiltinVariableRow("{{$" + b.Name + "}}", b.Description, () => Resolver.Preview(b.Name))).ToList();
     }
 
@@ -30,8 +37,44 @@ public sealed class VariablesViewModel : ObservableObject
 
     public IReadOnlyList<BuiltinVariableRow> Builtins { get; }
     public ObservableCollection<VariableRowViewModel> Items { get; } = new();
+    /// <summary>Nach Suche gefilterte Zeilen der Tabelle.</summary>
+    public ObservableCollection<VariableRowViewModel> VisibleItems { get; } = new();
     public bool HasNoItems => Items.Count == 0;
     public ICommand AddCommand { get; }
+    public ICommand SelectAllCommand { get; }
+    public ICommand RemoveSelectedCommand { get; }
+
+    private string _query = string.Empty;
+    public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Refilter(); } }
+
+    public int SelectedCount => Items.Count(i => i.IsSelected);
+    public bool HasSelection => SelectedCount > 0;
+    public string SelectionText => SelectedCount == 1 ? "1 Variable ausgewählt" : $"{SelectedCount} Variablen ausgewählt";
+    public string SummaryText => Items.Count == VisibleItems.Count ? (Items.Count == 1 ? "1 Variable" : $"{Items.Count} Variablen") : $"{VisibleItems.Count} von {Items.Count}";
+
+    internal void Refilter()
+    {
+        var terms = _query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        VisibleItems.Clear();
+        foreach (var i in Items.Where(i => terms.All(t => i.SearchText.Contains(t, StringComparison.CurrentCultureIgnoreCase))))
+            VisibleItems.Add(i);
+        foreach (var p in new[] { nameof(SummaryText), nameof(HasNoItems) }) OnPropertyChanged(p);
+        SelectionChanged();
+    }
+
+    internal void SelectionChanged()
+    {
+        foreach (var p in new[] { nameof(SelectedCount), nameof(HasSelection), nameof(SelectionText) }) OnPropertyChanged(p);
+        CommandRequery.Invalidate();
+    }
+
+    private void RemoveSelected()
+    {
+        var rows = Items.Where(i => i.IsSelected).ToList();
+        if (rows.Count == 0 || !_app.Dialogs.Confirm(rows.Count == 1 ? $"Variable {rows[0].Token} löschen?" : $"{rows.Count} Variablen löschen?",
+                "Variablen löschen", destructive: true, owner: _app.SettingsDialogOwner)) return;
+        foreach (var r in rows) Remove(r);
+    }
 
     public string DateFormat
     {
@@ -59,9 +102,11 @@ public sealed class VariablesViewModel : ObservableObject
         for (int i = 2; Variables.Find(_s, name) != null; i++) name = "NeueVariable" + i;
         var v = new UserVariable { Name = name };
         _s.Variables.Add(v);
-        var row = new VariableRowViewModel(this, v) { IsExpanded = true };
+        var row = new VariableRowViewModel(this, v);
         Items.Add(row);
-        OnPropertyChanged(nameof(HasNoItems));
+        Refilter();
+        // Neue Variable gleich im Dialog bearbeiten; Abbrechen verwirft sie wieder
+        if (!row.Edit(isNew: true)) Remove(row);
     }
 
     internal void Remove(VariableRowViewModel row)
@@ -69,7 +114,7 @@ public sealed class VariablesViewModel : ObservableObject
         _s.Variables.Remove(row.Model);
         Items.Remove(row);
         Resolver.Invalidate(row.Model.Name);
-        OnPropertyChanged(nameof(HasNoItems));
+        Refilter();
     }
 
     /// <summary>Namen der Arbeitsbereiche (für Werte je Arbeitsbereich).</summary>
@@ -114,6 +159,7 @@ public sealed class VariableRowViewModel : ObservableObject
                     destructive: true, owner: _page.App.SettingsDialogOwner))
                 _page.Remove(this);
         });
+        EditCommand = new RelayCommand(() => Edit(isNew: false));
         TestCommand = new RelayCommand(async () => await TestAsync(), () => !_testing);
         CopyTokenCommand = new RelayCommand(() => { _page.CopyText(Token); Status = Token + " in die Zwischenablage kopiert."; });
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
@@ -121,6 +167,44 @@ public sealed class VariableRowViewModel : ObservableObject
     }
 
     internal UserVariable Model { get; }
+
+    private bool _selected;
+    /// <summary>Häkchen in der Tabelle (Mehrfachauswahl).</summary>
+    public bool IsSelected { get => _selected; set { if (Set(ref _selected, value)) _page.SelectionChanged(); } }
+
+    internal string SearchText => $"{Model.Name} {Model.Description} {KindText} {(IsSecret ? string.Empty : Model.Value)}";
+
+    public ICommand EditCommand { get; }
+    public bool IsNew { get; private set; }
+
+    /// <summary>Im Dialog bearbeiten; Abbrechen stellt den Stand vor dem Öffnen wieder her.</summary>
+    internal bool Edit(bool isNew)
+    {
+        IsNew = isNew;
+        var before = Model.Clone();
+        if (_page.App.Dialogs.EditVariable(this, _page.App.SettingsDialogOwner))
+        {
+            _page.Refilter();
+            RaiseAll();
+            return true;
+        }
+        Model.Name = before.Name; Model.Kind = before.Kind; Model.Value = before.Value; Model.Description = before.Description;
+        Model.Refresh = before.Refresh; Model.CacheMinutes = before.CacheMinutes; Model.WorkspaceValues = before.WorkspaceValues;
+        _name = Model.Name;
+        _nameError = null;
+        _page.Resolver.Invalidate(Model.Name);
+        RaiseAll();
+        return false;
+    }
+
+    private void RaiseAll()
+    {
+        OnPropertyChanged(string.Empty);
+        foreach (var w in WorkspaceValues) w.Raise();
+    }
+
+    /// <summary>Dialog darf schließen: Name gültig.</summary>
+    public bool CanSave => _nameError == null && Model.Name.Length > 0;
 
     public string Name
     {
@@ -134,7 +218,7 @@ public sealed class VariableRowViewModel : ObservableObject
                 _page.Resolver.Invalidate(Model.Name);
                 Model.Name = _name;
             }
-            foreach (var p in new[] { nameof(Name), nameof(NameError), nameof(HasNameError), nameof(Token) }) OnPropertyChanged(p);
+            foreach (var p in new[] { nameof(Name), nameof(NameError), nameof(HasNameError), nameof(Token), nameof(CanSave) }) OnPropertyChanged(p);
             RefreshPreview();
         }
     }
@@ -274,6 +358,7 @@ public sealed class WorkspaceValueRow : ObservableObject
         Workspace = workspace;
     }
     public string Workspace { get; }
+    internal void Raise() => OnPropertyChanged(nameof(Value));
     public string Value
     {
         get => VariableResolver.WorkspaceValue(_row.Model, Workspace) ?? string.Empty;

@@ -88,6 +88,9 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
     public string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) =>
         OuPickerWindow.Pick(roots, current, owner as Window);
 
+    public bool EditVariable(object row, object? owner = null) =>
+        row is ViewModels.VariableRowViewModel r && VariableWindow.Edit(r, owner as Window);
+
     public string? PickFolder(string? title = null, object? owner = null)
     {
         var dlg = new Microsoft.Win32.OpenFolderDialog();

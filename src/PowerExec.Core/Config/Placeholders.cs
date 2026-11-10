@@ -22,7 +22,7 @@ public static class Placeholders
             foreach (Match m in Pattern.Matches(text))
             {
                 var name = m.Groups[1].Value.Trim();
-                if (IsBuiltin(name)) continue; // {{$Datum}} usw. werden nicht abgefragt
+                if (IsBuiltin(name)) continue; // {{$Date}} usw. werden nicht abgefragt
                 if (name.Length == 0 || result.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) continue;
                 result.Add(new Placeholder(name, m.Groups[2].Success ? m.Groups[2].Value : string.Empty));
             }
@@ -30,7 +30,7 @@ public static class Placeholders
         return result;
     }
 
-    /// <summary>Eingebaute Variablen ohne Abfrage: {{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}}.</summary>
+    /// <summary>Eingebaute Variablen ohne Abfrage: {{$Date}}, {{$Time}}, {{$User}}, {{$Computer}}, {{$Clipboard}}.</summary>
     public static readonly IReadOnlyList<string> BuiltinNames = Variables.Builtins.Select(b => "$" + b.Name).ToList();
 
     /// <summary>Liefert den Text der Zwischenablage (setzt die App).</summary>
@@ -60,11 +60,11 @@ public static class Placeholders
         var t = now ?? DateTime.Now;
         return Variables.Normalize(name).ToLowerInvariant() switch
         {
-            "datum" => t.ToString(Variables.DefaultDateFormat),
-            "uhrzeit" => t.ToString(Variables.DefaultTimeFormat),
-            "benutzer" => Environment.UserName,
+            "date" => t.ToString(Variables.DefaultDateFormat),
+            "time" => t.ToString(Variables.DefaultTimeFormat),
+            "user" => Environment.UserName,
             "computer" => Environment.MachineName,
-            "zwischenablage" => ClipboardText?.Invoke() ?? string.Empty,
+            "clipboard" => ClipboardText?.Invoke() ?? string.Empty,
             _ => null
         };
     }

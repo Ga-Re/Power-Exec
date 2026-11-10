@@ -212,15 +212,7 @@ public partial class SettingsWindow : Window
         }
     }
 
-    /// <summary>Geheimer Variablenwert: beim Verlassen verschlüsselt übernehmen, das Feld wird wieder leer.</summary>
-    private void SecretBox_LostFocus(object sender, RoutedEventArgs e)
-    {
-        if (sender is not PasswordBox box || box.Password.Length == 0 || box.DataContext is not VariableRowViewModel row) return;
-        row.SecretValue = box.Password;
-        box.Clear();
-    }
-
-        private ScrollViewer? FindScroll()
+    private ScrollViewer? FindScroll()
     {
         static ScrollViewer? Find(DependencyObject d)
         {

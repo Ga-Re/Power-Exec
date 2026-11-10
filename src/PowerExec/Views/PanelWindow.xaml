@@ -217,7 +217,7 @@
                 <MenuItem.Icon><TextBlock Text="&#xE734;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="Aus Favoriten entfernen" Command="{Binding ToggleFavoriteCommand}" Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Star}"/></MenuItem.Icon>
+                <MenuItem.Icon><TextBlock Text="&#xE735;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="In Gruppe verschieben" ItemsSource="{Binding GroupChoices}" Visibility="{Binding HasGroupChoices, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8EC;" Style="{StaticResource Icon}"/></MenuItem.Icon>
@@ -484,7 +484,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,0,0">
                             <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Status.Error}" Margin="0,0,2,0"
                                        Visibility="{Binding HasHealthProblem, Converter={StaticResource Vis}}" ToolTip="{Binding HealthText}"/>
-                            <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Star}"
+                            <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="9" Foreground="{DynamicResource Accent}"
                                        Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
                         </StackPanel>
                         <TextBlock x:Name="TileName" Grid.Row="1" infra:Highlight.Parts="{Binding NameParts}" FontSize="11" TextAlignment="Center" TextWrapping="Wrap"
@@ -583,7 +583,7 @@
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                 <DockPanel LastChildFill="False">
                                     <TextBlock x:Name="NameText" infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
-                                    <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Star}"
+                                    <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource Accent}"
                                                Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}" ToolTip="Favorit"/>
                                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="10.5" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                Visibility="{Binding IsFromCatalog, Converter={StaticResource Vis}}" ToolTip="{Binding CatalogToolTip}"/>
@@ -745,7 +745,7 @@
                                             <Style TargetType="TextBlock" BasedOn="{StaticResource Icon}">
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsFavorites}" Value="True">
-                                                        <Setter Property="Foreground" Value="{DynamicResource Star}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding HasColor}" Value="True">
                                                         <Setter Property="Foreground" Value="{Binding AccentColor, Converter={StaticResource ArgbBrush}}"/>

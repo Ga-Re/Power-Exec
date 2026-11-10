@@ -36,21 +36,21 @@ public class VariablesTests : IDisposable
         Assert.Equal("standard.local", _resolver.Resolve("Domain"));
         Assert.Equal("geheim", _resolver.Resolve("Token"));
         Assert.Equal(@"C:\Daten", _resolver.Resolve("Pfad"));
-        Assert.Equal("aus der Ablage", _resolver.Resolve("Zwischenablage"));
+        Assert.Equal("aus der Ablage", _resolver.Resolve("Clipboard"));
         Assert.Null(_resolver.Resolve("Gibtsnicht"));
     }
 
     [Fact]
     public void DateAndTimeUseConfiguredFormat()
     {
-        Assert.Equal("09.11.2026", _resolver.Resolve("Datum"));
-        Assert.Equal("14:05", _resolver.Resolve("Uhrzeit"));
+        Assert.Equal("09.11.2026", _resolver.Resolve("Date"));
+        Assert.Equal("14:05", _resolver.Resolve("Time"));
         _s.DateFormat = "yyyy-MM-dd";
         _s.TimeFormat = "HH.mm.ss";
-        Assert.Equal("2026-11-09", _resolver.Resolve("$Datum"));
-        Assert.Equal("14.05.00", _resolver.Resolve("$Uhrzeit"));
+        Assert.Equal("2026-11-09", _resolver.Resolve("$Date"));
+        Assert.Equal("14.05.00", _resolver.Resolve("$Time"));
         _s.DateFormat = "%"; // ungültig: Standardformat
-        Assert.Equal("09.11.2026", _resolver.Resolve("$Datum"));
+        Assert.Equal("09.11.2026", _resolver.Resolve("$Date"));
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class VariablesTests : IDisposable
     [Fact]
     public void UnknownVariablesAreReportedAndKept()
     {
-        Assert.Equal(new[] { "$Tippfehler" }, Variables.Unknown(_s, "{{$CompanyName}} {{$Tippfehler}} {{Frage}} {{$Datum}}"));
+        Assert.Equal(new[] { "$Tippfehler" }, Variables.Unknown(_s, "{{$CompanyName}} {{$Tippfehler}} {{Frage}} {{$Date}}"));
         Assert.Equal("x {{$Tippfehler}}", Placeholders.Apply("x {{$Tippfehler}}", new Dictionary<string, string>()));
     }
 
@@ -105,13 +105,13 @@ public class VariablesTests : IDisposable
     public void NamesAreValidated()
     {
         Assert.Null(Variables.ValidateName(_s, "$NeueVar"));
-        Assert.NotNull(Variables.ValidateName(_s, "Datum"));
+        Assert.NotNull(Variables.ValidateName(_s, "Date"));
         Assert.NotNull(Variables.ValidateName(_s, "companyname"));
         Assert.NotNull(Variables.ValidateName(_s, "mit leer"));
         Assert.NotNull(Variables.ValidateName(_s, "1abc"));
         Assert.Null(Variables.ValidateName(_s, "CompanyName", Variables.Find(_s, "CompanyName")));
         Assert.Contains("{{$CompanyName}}", Variables.Tokens(_s));
-        Assert.Equal("{{$Datum}}", Variables.Tokens(_s)[0]);
+        Assert.Equal("{{$Date}}", Variables.Tokens(_s)[0]);
     }
 
     [Fact]

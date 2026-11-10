@@ -59,11 +59,11 @@ public static class Variables
     /// <summary>Eingebaute Variablen (ohne $) mit Beschreibung.</summary>
     public static readonly IReadOnlyList<(string Name, string Description)> Builtins = new[]
     {
-        ("Datum", "Heutiges Datum (Format einstellbar)"),
-        ("Uhrzeit", "Aktuelle Uhrzeit (Format einstellbar)"),
-        ("Benutzer", "Angemeldeter Windows-Benutzer"),
+        ("Date", "Heutiges Datum (Format einstellbar)"),
+        ("Time", "Aktuelle Uhrzeit (Format einstellbar)"),
+        ("User", "Angemeldeter Windows-Benutzer"),
         ("Computer", "Name dieses Rechners"),
-        ("Zwischenablage", "Text in der Zwischenablage beim Start")
+        ("Clipboard", "Text in der Zwischenablage beim Start")
     };
 
     private static readonly Regex NamePattern = new(@"^[\p{L}_][\p{L}\p{N}_]*$", RegexOptions.Compiled);
@@ -94,7 +94,7 @@ public static class Variables
     /// <summary>Gibt es die Variable (eingebaut oder eigen)?</summary>
     public static bool Exists(AppSettings s, string name) => IsBuiltin(name) || Find(s, name) != null;
 
-    /// <summary>Alle Variablen als Text zum Einfügen: {{$Datum}} …, dann die eigenen.</summary>
+    /// <summary>Alle Variablen als Text zum Einfügen: {{$Date}} …, dann die eigenen.</summary>
     public static IReadOnlyList<string> Tokens(AppSettings s) =>
         Builtins.Select(b => "{{$" + b.Name + "}}").Concat(s.Variables.Select(v => "{{$" + v.Name + "}}")).ToList();
 
@@ -161,11 +161,11 @@ public sealed class VariableResolver
         var now = _now();
         switch (n.ToLowerInvariant())
         {
-            case "datum": return Format(now, s.DateFormat, Variables.DefaultDateFormat);
-            case "uhrzeit": return Format(now, s.TimeFormat, Variables.DefaultTimeFormat);
-            case "benutzer": return Environment.UserName;
+            case "date": return Format(now, s.DateFormat, Variables.DefaultDateFormat);
+            case "time": return Format(now, s.TimeFormat, Variables.DefaultTimeFormat);
+            case "user": return Environment.UserName;
             case "computer": return Environment.MachineName;
-            case "zwischenablage": return _clipboard();
+            case "clipboard": return _clipboard();
         }
         if (Variables.Find(s, n) is not { } v) return null;
         return v.Kind switch
