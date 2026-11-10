@@ -13,6 +13,46 @@
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
         <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
 
+        <!-- Löschen-Kreuz auf Design-Kacheln: beim Darüberfahren sanft rot -->
+        <Style x:Key="DeleteDesignButton" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="12" Background="{DynamicResource Bg.CardAlt}" BorderThickness="1" BorderBrush="Transparent">
+                            <TextBlock x:Name="Glyph" Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Text.Secondary}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#33E81123" Duration="0:0:0.18"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#80E81123" Duration="0:0:0.18"/>
+                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#E81123" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard FillBehavior="Stop">
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
+                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="RowTitle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14"/>
         </Style>
@@ -1242,22 +1282,9 @@
                                                                Visibility="{Binding Needs, Converter={StaticResource Vis}}"/>
                                                 </StackPanel>
                                             </DockPanel>
-                                            <!-- Design: Mini-Panel mit Fläche, Akzent und Schrift -->
-                                            <Border Grid.Column="3" Width="132" Height="54" CornerRadius="6" Margin="0,2,12,2" ClipToBounds="True"
-                                                    Background="{Binding DesignPanelColor, Converter={StaticResource HexBrush}}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
-                                                    Visibility="{Binding HasDesign, Converter={StaticResource Vis}}" ToolTip="{Binding DesignBackdropText}">
-                                                <Grid Margin="8,6">
-                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                                    <TextBlock Text="Power-Exec" FontSize="9" FontWeight="SemiBold" Foreground="{Binding DesignTextColor, Converter={StaticResource HexBrush}}"/>
-                                                    <Border Grid.Row="1" Height="12" CornerRadius="3" Margin="0,4,0,0" Background="{Binding DesignSubtleColor, Converter={StaticResource HexBrush}}">
-                                                        <Border Width="3" HorizontalAlignment="Left" CornerRadius="2" Background="{Binding DesignAccentColor, Converter={StaticResource HexBrush}}"/>
-                                                    </Border>
-                                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
-                                                        <Border Width="34" Height="8" CornerRadius="2" Background="{Binding DesignAccentColor, Converter={StaticResource HexBrush}}"/>
-                                                        <Border Width="50" Height="8" CornerRadius="2" Margin="4,0,0,0" Background="{Binding DesignSubtleColor, Converter={StaticResource HexBrush}}"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
+                                            <!-- Design: dieselbe Vorschau wie unter Darstellung -->
+                                            <c:DesignPreview Grid.Column="3" Width="150" Height="84" Margin="0,2,12,2" Design="{Binding DesignPreset}"
+                                                             Visibility="{Binding HasDesign, Converter={StaticResource Vis}}" ToolTip="{Binding DesignBackdropText}"/>
                                             <TextBlock x:Name="State" Grid.Column="4" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                             <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding TogglePreviewCommand}" ToolTip="{l:T 'Preview'}"
@@ -1735,6 +1762,9 @@
                     <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Hintergrund, Deckkraft, Milchglas und Akzent; eingeklappt nur die aktuelle -->
                     <c:SettingsExpander Icon="&#xE771;" Header="{l:T 'Design templates'}" Description="{Binding CurrentPresetText}"
                                         IsExpanded="{Binding PresetsExpanded, Mode=TwoWay}">
+                        <c:SettingsExpander.HeaderContent>
+                            <c:DesignPreview Width="132" Height="70" Design="{Binding CurrentDesign}" ToolTip="{Binding CurrentPresetText}"/>
+                        </c:SettingsExpander.HeaderContent>
                         <StackPanel Margin="0,10,0,4">
                             <TextBlock Text="{l:T 'Sets design, panel color, background, opacity, frosted glass and accent color at once – adjustable individually afterwards.'}"
                                        Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
@@ -1745,7 +1775,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <!-- Feste Kachelgröße; das Löschen-Kreuz liegt innerhalb der Kachel oben rechts -->
-                                        <Grid Width="150" Height="150" Margin="0,0,8,8">
+                                        <Grid Width="168" Height="176" Margin="0,0,8,8">
                                         <Button Command="{Binding ApplyCommand}" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
                                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                                 AutomationProperties.Name="{Binding Name}">
@@ -1753,14 +1783,7 @@
                                                 <ControlTemplate TargetType="Button">
                                                     <Border x:Name="Card" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                                         <StackPanel>
-                                                            <Border Height="44" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}" Padding="8,6">
-                                                                <StackPanel>
-                                                                    <Border Height="5" Width="54" HorizontalAlignment="Left" CornerRadius="2"
-                                                                            Background="{Binding AccentSwatch, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
-                                                                    <Border Height="4" Width="80" HorizontalAlignment="Left" CornerRadius="2" Margin="0,6,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.5"/>
-                                                                    <Border Height="4" Width="64" HorizontalAlignment="Left" CornerRadius="2" Margin="0,4,0,0" Background="{Binding InkColor, Converter={StaticResource ArgbBrush}}" Opacity="0.3"/>
-                                                                </StackPanel>
-                                                            </Border>
+                                                            <c:DesignPreview Height="84" Design="{Binding Preset}"/>
                                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock Text="{Binding BackdropText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
@@ -1781,12 +1804,9 @@
                                             </Button.Template>
                                         </Button>
                                         <!-- Eigene Designs: löschen -->
-                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="24" Height="24" MinHeight="24" MinWidth="24" Padding="0" Margin="0,12,12,0"
-                                                   HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding DeleteCommand}" Background="{DynamicResource Bg.CardAlt}"
-                                                   ToolTip="{l:T 'Delete custom design'}" AutomationProperties.Name="{l:T 'Delete custom design'}"
-                                                   Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
-                                            <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>
-                                        </ui:Button>
+                                        <Button Style="{StaticResource DeleteDesignButton}" Margin="0,12,12,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                Command="{Binding DeleteCommand}" ToolTip="{l:T 'Delete custom design'}" AutomationProperties.Name="{l:T 'Delete custom design'}"
+                                                Visibility="{Binding IsCustom, Converter={StaticResource Vis}}"/>
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

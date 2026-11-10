@@ -250,4 +250,22 @@ public class MarketplaceViewModelTests
         vm.MarketplacePage.Uninstall(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
         Assert.Empty(vm.Build().CustomEntries);
     }
+
+    [Fact]
+    public async Task DeletingDesignUnderAppearanceMarksItNotInstalled()
+    {
+        var host = Host();
+        var vm = new SettingsViewModel(host, focusFolder: null);
+        await vm.MarketplacePage.LoadAsync(force: false);
+        vm.MarketplacePage.Tab = "Design";
+        await vm.MarketplacePage.InstallAsync(vm.MarketplacePage.AllItems.ToList());
+        Assert.True(vm.MarketplacePage.AllItems.Single().IsInstalled);
+
+        // unter Darstellung löschen → im Marktplatz wieder „nicht installiert“
+        vm.DesignPresets.Single(p => p.IsCustom).DeleteCommand!.Execute(null);
+        Assert.Empty(vm.Build().CustomDesigns);
+        Assert.False(vm.MarketplacePage.AllItems.Single().IsInstalled);
+        Assert.Empty(vm.Build().MarketplaceInstalls);
+        vm.MarketplacePage.Tab = "Entry";
+    }
 }

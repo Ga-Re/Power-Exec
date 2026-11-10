@@ -615,7 +615,7 @@ public sealed class MarketplaceItemRow : MarketplaceRow
         _details = details;
         foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(EntryKindText), nameof(VariablesText),
                      nameof(HasVariables), nameof(DesignPanelColor), nameof(DesignAccentColor), nameof(DesignTextColor), nameof(DesignSubtleColor),
-                     nameof(DesignBackdropText), nameof(HasDesign) })
+                     nameof(DesignBackdropText), nameof(HasDesign), nameof(DesignPreset) })
             OnPropertyChanged(p);
     }
 
@@ -640,6 +640,8 @@ public sealed class MarketplaceItemRow : MarketplaceRow
 
     // Design: Panelfläche, Akzent, Schrift – als #RRGGBB für die Mini-Vorschau
     public bool HasDesign => _details?.Design != null;
+    /// <summary>Design für die gemeinsame Vorschau (wie unter Darstellung).</summary>
+    public DesignPreset? DesignPreset => _details?.Design;
     private bool DesignIsLight => _details?.Design is { } d &&
         (d.PanelColor.Length > 0 ? ArgbColor.FromHex(d.PanelColor, 255) is { } c && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) > 150 : d.Theme == ThemeMode.Light);
     public string DesignPanelColor => _details?.Design is { } d

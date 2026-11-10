@@ -583,6 +583,8 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
         Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors, _s.RecentColors);
+        // Vorschau des aktuellen Designs folgt jeder Änderung an Farbe, Deckkraft, Hintergrund …
+        Panel.PropertyChanged += (_, _) => { OnPropertyChanged(nameof(CurrentPresetText)); OnPropertyChanged(nameof(CurrentDesign)); };
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
@@ -799,6 +801,9 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Kopfzeile der Designvorlagen: welche gerade aktiv ist.</summary>
     public string CurrentPresetText => CurrentPreset is { } p ? L.T("Current: ") + p.Name : L.T("Current: custom settings");
 
+    /// <summary>Das aktuelle Aussehen als Design (Vorschau im Kopf der Designvorlagen, auch eingeklappt).</summary>
+    public DesignPreset CurrentDesign => Appearance.Capture(_s, Panel.ToConfig(), CurrentPreset?.Name ?? string.Empty);
+
     private bool _presetsExpanded;
     public bool PresetsExpanded { get => _presetsExpanded; set => Set(ref _presetsExpanded, value); }
 
@@ -826,6 +831,8 @@ public sealed class SettingsViewModel : ObservableObject
     {
         if (!_app.Dialogs.Confirm(L.F("Delete the custom design “{0}”?", p.Name), L.T("Delete design"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         _s.CustomDesigns.RemoveAll(d => d.Key == p.Key);
+        // Aus dem Marktplatz installiert? Dann gilt es dort wieder als nicht installiert
+        if (_s.MarketplaceInstalls.RemoveAll(i => i.DesignKey == p.Key) > 0) MarketplacePage.Rebuild();
         RaisePresets();
     }
 
@@ -833,6 +840,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(DesignPresets));
         OnPropertyChanged(nameof(CurrentPresetText));
+        OnPropertyChanged(nameof(CurrentDesign));
     }
 
     public ICommand ShowWelcomeCommand { get; }
