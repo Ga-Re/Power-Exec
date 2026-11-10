@@ -45,6 +45,7 @@ public partial class AppController : IDisposable
     {
         var firstStart = !Store.Exists;
         Settings = Store.Load();
+        PowerExec.Core.Localization.L.Use(Settings.Language);
         if (firstStart)
         {
             // Der Installer legt den Autostart-Eintrag an; beim ersten Start übernehmen.

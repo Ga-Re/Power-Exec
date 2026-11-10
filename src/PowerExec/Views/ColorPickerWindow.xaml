@@ -1,8 +1,9 @@
 <Window x:Class="PowerExec.Views.ColorPickerWindow"
+        xmlns:l="clr-namespace:PowerExec.Localization"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Farbe wählen" Style="{StaticResource AppWindow}"
+        Title="{l:T 'Farbe wählen'}" Style="{StaticResource AppWindow}"
         Width="420" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" ShowInTaskbar="True" Topmost="True">
     <Window.Resources>
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
@@ -10,7 +11,7 @@
     </Window.Resources>
     <StackPanel Margin="20,16,20,16">
         <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-        <TextBlock Text="Im Feld ziehen für Sättigung und Helligkeit, darunter den Farbton wählen – oder eine Vorlage bzw. #RRGGBB." Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,12"/>
+        <TextBlock Text="{l:T 'Im Feld ziehen für Sättigung und Helligkeit, darunter den Farbton wählen – oder eine Vorlage bzw. #RRGGBB.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,12"/>
 
         <!-- Sättigung (waagerecht) und Helligkeit (senkrecht) -->
         <Border CornerRadius="6" ClipToBounds="True" Height="180" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1">
@@ -57,7 +58,7 @@
                 </Border.Background>
             </Border>
             <Slider x:Name="HueSlider" Minimum="0" Maximum="360" Opacity="0.9" VerticalAlignment="Center" ValueChanged="Hue_ValueChanged"
-                    AutomationProperties.Name="Farbton"/>
+                    AutomationProperties.Name="{l:T 'Farbton'}"/>
         </Grid>
 
         <!-- Vorlagen -->
@@ -84,13 +85,13 @@
         <!-- Vorschau und Wert -->
         <DockPanel Margin="0,6,0,0">
             <Border x:Name="Preview" DockPanel.Dock="Left" Width="44" Height="32" CornerRadius="4" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" Margin="0,0,10,0"/>
-            <TextBox x:Name="HexBox" Height="32" Padding="8,0" FontFamily="{StaticResource MonoFont}" TextChanged="Hex_TextChanged" AutomationProperties.Name="Farbwert #RRGGBB"/>
+            <TextBox x:Name="HexBox" Height="32" Padding="8,0" FontFamily="{StaticResource MonoFont}" TextChanged="Hex_TextChanged" AutomationProperties.Name="{l:T 'Farbwert #RRGGBB'}"/>
         </DockPanel>
-        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,6,0,0" Visibility="Collapsed" Text="Bitte als #RRGGBB angeben, z. B. #3B82F6."/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,6,0,0" Visibility="Collapsed" Text="{l:T 'Bitte als #RRGGBB angeben, z. B. #3B82F6.'}"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96" />
-            <ui:Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="Übernehmen" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" />
+            <ui:Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="{l:T 'Übernehmen'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
         </StackPanel>
     </StackPanel>
 </Window>
