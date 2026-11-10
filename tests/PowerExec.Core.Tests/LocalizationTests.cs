@@ -97,4 +97,11 @@ public class LocalizationTests
         var stale = L.GermanTable.Keys.Where(k => !used.Contains(k)).ToList();
         Assert.True(stale.Count == 0, "Nicht mehr verwendet (aus Translations/de.json entfernen):\n" + string.Join("\n", stale.Take(30)));
     }
+
+    [Fact]
+    public void TextsAreNotTranslatedTwice()
+    {
+        var doubled = SourceFiles("*.cs").Where(f => Regex.IsMatch(File.ReadAllText(f), @"\bL\.[TF]\(\s*L\.[TF]\(")).Select(Path.GetFileName).ToList();
+        Assert.True(doubled.Count == 0, "Doppelt übersetzt (L.T(L.T(…))): " + string.Join(", ", doubled));
+    }
 }

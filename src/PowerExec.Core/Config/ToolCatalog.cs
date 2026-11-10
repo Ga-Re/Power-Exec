@@ -20,11 +20,11 @@ public sealed record CatalogTemplate(string Category, string Name, CustomEntryKi
 /// <summary>Häufige Windows- und Admin-Werkzeuge, Einstellungsseiten und Beispiele.</summary>
 public static class ToolCatalog
 {
-    private static string Mmc => L.T(L.T("Administration (MMC)"));
-    private static string Cpl => L.T(L.T("Control Panel"));
-    private static string Tools => L.T(L.T("Tools"));
-    private static string Settings => L.T(L.T("Windows Settings"));
-    private static string Examples => L.T(L.T("Examples"));
+    private static string Mmc => L.T("Administration (MMC)");
+    private static string Cpl => L.T("Control Panel");
+    private static string Tools => L.T("Tools");
+    private static string Settings => L.T("Windows Settings");
+    private static string Examples => L.T("Examples");
 
     private static CatalogTemplate T(string cat, string name, string target, string desc, string icon, string args = "") =>
         new(cat, name, CustomEntryKind.Tool, target, args, desc, icon);
