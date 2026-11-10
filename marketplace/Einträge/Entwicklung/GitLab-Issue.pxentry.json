@@ -9,6 +9,7 @@
   "Variables": [
     {
       "Name": "GitLabUrl",
+      "Kind": "Text",
       "Description": "Adresse des GitLab-Servers (ohne / am Ende)",
       "Example": "https://gitlab.firma.local"
     }

@@ -587,7 +587,7 @@ public sealed class SettingsViewModel : ObservableObject
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
         VariablesPage = new VariablesViewModel(app, _s, text => app.Shell.SetClipboardText(text));
-        MarketplacePage = new MarketplaceViewModel(app, _s, OnMarketplaceInstalled);
+        MarketplacePage = new MarketplaceViewModel(app, _s, OnMarketplaceInstalled, VariablesPage);
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
@@ -610,7 +610,10 @@ public sealed class SettingsViewModel : ObservableObject
     private static readonly (string Section, string Page, string Segment)[] Pages =
     {
         ("general", L.T("Allgemein"), ""),
-        ("groups", L.T("Gruppen"), "content"), ("custom", L.T("Eigene Einträge"), "content"), ("tags", L.T("Schlagworte"), "content"), ("variables", L.T("Variablen"), "content"), ("marketplace", L.T("Marktplatz"), "content"), ("workspaces", L.T("Arbeitsbereiche"), "content"),
+        ("groups", L.T("Gruppen"), "content"), ("custom", L.T("Eigene Einträge"), "content"), ("tags", L.T("Schlagworte"), "content"), ("variables", L.T("Variablen"), "content"), ("workspaces", L.T("Arbeitsbereiche"), "content"),
+        ("market-entries", L.T("Marktplatz › Einträge"), "market"), ("market-scripts", L.T("Marktplatz › Scripte"), "market"),
+        ("market-designs", L.T("Marktplatz › Designs"), "market"), ("market-installed", L.T("Marktplatz › Installiert"), "market"),
+        ("market-sources", L.T("Marktplatz › Quellen"), "market"),
         ("look", L.T("Darstellung"), "panel"), ("behavior", L.T("Verhalten"), "panel"),
         ("exec", "PowerShell", "exec"), ("remote", L.T("Remote"), "exec"), ("machines", L.T("Rechnergruppen"), "exec"),
         ("samples", L.T("Beispiele"), "help"), ("diag", L.T("Diagnose"), "help")
@@ -639,7 +642,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("custom", L.T("Eigene Einträge"), L.T("Erreichbarkeit prüfen"), L.T("health tote links")),
         new("custom", L.T("Eigene Einträge"), L.T("Importieren / Exportieren"), L.T("teilen kollegen datei")),
         new("tags", L.T("Schlagworte"), L.T("Schlagworte verwalten"), L.T("tag umbenennen zusammenführen löschen farbe #")),
-        new("marketplace", L.T("Marktplatz"), L.T("Einträge, Pakete, Designs und Scripte herunterladen"), L.T("marktplatz download herunterladen paket design script matrix42 google virustotal")),
+        new("market-entries", L.T("Marktplatz"), L.T("Einträge, Pakete, Designs und Scripte herunterladen"), L.T("marktplatz download herunterladen paket design script matrix42 google virustotal")),
         new("variables", L.T("Variablen"), L.T("Variablen verwalten"), L.T("variable platzhalter $ firmenname datum uhrzeit benutzer computer zwischenablage geheim token umgebungsvariable powershell arbeitsbereich")),
         new("workspaces", L.T("Arbeitsbereiche"), L.T("Arbeitsbereiche"), L.T("kunde profil wechseln")),
         new("workspaces", L.T("Arbeitsbereiche"), L.T("Gruppen je Arbeitsbereich"), L.T("ausblenden sichtbar auswahl")),
@@ -716,9 +719,25 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
-            if (value == "marketplace") _ = MarketplacePage.EnsureLoadedAsync();
+            if (value == "marketplace") { Section = "market-entries"; return; }
+            if (value.StartsWith("market-", StringComparison.Ordinal))
+            {
+                MarketplacePage.Tab = value switch
+                {
+                    "market-scripts" => "Script",
+                    "market-designs" => "Design",
+                    "market-installed" => "Installed",
+                    "market-sources" => "Sources",
+                    _ => "Entry"
+                };
+                _ = MarketplacePage.EnsureLoadedAsync();
+            }
+            OnPropertyChanged(nameof(IsMarketplaceSection));
         }
     }
+
+    /// <summary>Eine der Marktplatz-Seiten ist offen (Einträge, Scripte, Designs, Installiert, Quellen).</summary>
+    public bool IsMarketplaceSection => _section.StartsWith("market-", StringComparison.Ordinal);
 
     // Ordner
     public ObservableCollection<FolderViewModel> Folders { get; } = new();
@@ -898,6 +917,11 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Nach einer Installation: neue Gruppen, Variablen und Designs in den anderen Seiten zeigen.</summary>
     private void OnMarketplaceInstalled()
     {
+        // Marktplatz hat _s direkt geändert: neue Gruppen und Einträge in die Listen übernehmen, sonst überschreibt
+        // das Übernehmen (Build) sie mit dem alten Stand
+        foreach (var g in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.CurrentCultureIgnoreCase))).ToList())
+            Categories.Add(NewCategoryVm(g, GroupManager.IconOf(_s, g).ToString()));
+        EntryList.SyncFrom(_s);
         RaisePresets();
         MarketplaceChanged?.Invoke();
     }
@@ -1678,7 +1702,7 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
     {
         PanelBackdrop.Glass => L.T("Glas"),
         PanelBackdrop.Solid => L.T("Vollton"),
-        _ => Preset.Opacity < 100 ? L.F("Klarglas {0} %", Preset.Opacity) : L.T("Deckend")
+        _ => Preset.Opacity < 100 ? L.F("Transparent {0} %", Preset.Opacity) : L.T("Deckend")
     };
     public string Name => Preset.Name;
     public string Description => Preset.Description;

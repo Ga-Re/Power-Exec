@@ -17,6 +17,7 @@ public sealed class MarketplaceViewModel : ObservableObject
     private readonly ISettingsHost _app;
     private readonly AppSettings _s;
     private readonly Action _changed;
+    private VariablesViewModel? _variables;
     private string _query = string.Empty;
     private string? _error;
     private bool _loading;
@@ -32,11 +33,13 @@ public sealed class MarketplaceViewModel : ObservableObject
     private static readonly TimeSpan TreeLifetime = TimeSpan.FromMinutes(10);
 
     /// <param name="changed">Nach Installation/Deinstallation: Einstellungen übernehmen und Seiten neu lesen.</param>
-    public MarketplaceViewModel(ISettingsHost app, AppSettings workingCopy, Action changed)
+    /// <param name="variables">Seite „Variablen“, über die fehlende Variablen angelegt werden (sonst eine eigene).</param>
+    public MarketplaceViewModel(ISettingsHost app, AppSettings workingCopy, Action changed, VariablesViewModel? variables = null)
     {
         _app = app;
         _s = workingCopy;
         _changed = changed;
+        _variables = variables;
         RefreshCommand = new RelayCommand(async () => await LoadAsync(force: true), () => !_loading);
         AddSourceCommand = new RelayCommand(async () => await AddSourceAsync(), () => !_loading);
         InstallSelectedCommand = new RelayCommand(async () => await InstallAsync(CheckedItems().Where(i => !i.IsInstalled || i.HasUpdate).ToList()),
@@ -70,14 +73,42 @@ public sealed class MarketplaceViewModel : ObservableObject
     public ICommand ClearSelectionCommand { get; }
 
     public bool IsLoading { get => _loading; private set { if (Set(ref _loading, value)) { CommandRequery.Invalidate(); OnPropertyChanged(nameof(IsEmpty)); } } }
-    public bool IsEmpty => !_loading && Rows.Count == 0;
+    public bool IsEmpty => !_loading && Rows.Count == 0 && _tab != "Sources";
+    public bool HasRows => Rows.Count > 0;
     /// <summary>Fehler (bleibt stehen, bis er behoben ist); Erfolg kommt als Snackbar.</summary>
     public string? Error { get => _error; private set => Set(ref _error, value); }
 
     public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Rebuild(); } }
 
     /// <summary>Tab: Entry, Script, Design oder Installed.</summary>
-    public string Tab { get => _tab; set { if (_tab == value) return; _tab = value ?? "Entry"; OnPropertyChanged(); Rebuild(); } }
+    /// <summary>Unterseite: Entry, Script, Design, Installed oder Sources (Navigation Marktplatz › …).</summary>
+    public string Tab
+    {
+        get => _tab;
+        set
+        {
+            if (_tab == value) return;
+            _tab = value ?? "Entry";
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsSourcesPage));
+            OnPropertyChanged(nameof(IsListPage));
+            Rebuild();
+        }
+    }
+    public bool IsSourcesPage => _tab == "Sources";
+    public bool IsListPage => _tab != "Sources";
+
+    /// <summary>Kurzinfo über der Liste, z. B. „12 Einträge in 4 Gruppen · 2 installiert“.</summary>
+    public string SummaryText
+    {
+        get
+        {
+            var items = _items;
+            var groups = items.Select(i => i.Source + "|" + (_tab == "Installed" ? i.File.Folder : i.File.GroupFolder)).Distinct().Count();
+            var installed = items.Count(i => i.IsInstalled);
+            return L.F("{0} Dateien in {1} Gruppen", items.Count, groups) + (installed > 0 && _tab != "Installed" ? L.F(" · {0} installiert", installed) : string.Empty);
+        }
+    }
 
     public string SourceFilter { get => _sourceFilter; set { if (_sourceFilter == value) return; _sourceFilter = value ?? "*"; OnPropertyChanged(); Rebuild(); } }
     public IReadOnlyList<KeyValuePair<string, string>> SourceChoices =>
@@ -205,6 +236,7 @@ public sealed class MarketplaceViewModel : ObservableObject
         foreach (var src in sources)
         {
             if (!Trees.TryGetValue(Key(src.Url), out var tree)) continue;
+            if (_tab == "Sources") continue;
             var files = tree.Files.Where(f => _tab == "Installed" ? Marketplace.FindInstall(_s, src.Url, f.Path) != null : f.Type.ToString() == _tab).ToList();
             var items = files.Select(f => new MarketplaceItemRow(this, src.Url, tree.Repo, f, Payloads.TryGetValue(PayloadKey(src.Url, f), out var p) ? p.Details : null))
                 .Where(i => terms.All(t => i.SearchText.Contains(t, StringComparison.CurrentCultureIgnoreCase))).ToList();
@@ -216,7 +248,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             {
                 var parent = root;
                 var path = string.Empty;
-                foreach (var part in item.File.Folder.Split('/', StringSplitOptions.RemoveEmptyEntries))
+                foreach (var part in (_tab == "Installed" ? item.File.Folder : item.File.GroupFolder).Split('/', StringSplitOptions.RemoveEmptyEntries))
                 {
                     path = path.Length == 0 ? part : path + "/" + part;
                     parent = parent.Folder(Key(src.Url) + "|" + path, part);
@@ -226,7 +258,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             if (bySource) AddRows(root, 0, terms.Length > 0);
             else foreach (var child in root.Children) AddRow(child, 0, terms.Length > 0);
         }
-        foreach (var p in new[] { nameof(IsEmpty), nameof(EntryTabText), nameof(ScriptTabText), nameof(DesignTabText), nameof(InstalledTabText) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(IsEmpty), nameof(EntryTabText), nameof(ScriptTabText), nameof(DesignTabText), nameof(InstalledTabText), nameof(SummaryText), nameof(HasRows) }) OnPropertyChanged(p);
         SelectionChanged();
     }
 
@@ -358,21 +390,18 @@ public sealed class MarketplaceViewModel : ObservableObject
 
             foreach (var v in Marketplace.MissingVariables(_s, loaded.SelectMany(l => l.Details.Variables)))
             {
-                var name = Variables.Normalize(v.Name);
-                var value = _app.Dialogs.Ask(L.F("Variable {{{{${0}}}}}", name),
-                    (v.Description.Length > 0 ? v.Description : L.F("Wert für {{{{${0}}}}}", name)) + (v.Example.Length > 0 ? L.F("\nz. B. {0}", v.Example) : string.Empty),
-                    v.Example, L.T("Übernehmen"));
-                if (value == null) return;
-                _s.Variables.Add(new UserVariable { Name = name, Value = value.Trim(), Description = v.Description });
+                // Variablen-Dialog mit vorgegebener Art (Text, geheim, Umgebungsvariable, PowerShell …) und Vorschlag
+                _variables ??= new VariablesViewModel(_app, _s);
+                if (!_variables.AddFor(v.Name, v.Kind, v.Description, v.Example)) return;
             }
 
             // Gruppe je Ordner abfragen (Updates bleiben in ihrer Gruppe, Designs brauchen keine)
             var groups = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var folder in loaded.Where(l => l.Row.File.Type != MarketplaceItemType.Design && !l.Row.IsInstalled)
-                         .Select(l => l.Row.File.Folder).Distinct(StringComparer.OrdinalIgnoreCase))
+                         .Select(l => l.Row.File.GroupFolder).Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 var suggestion = folder.Length > 0 ? folder.Split('/')[^1] : L.T("Marktplatz");
-                var count = loaded.Count(l => l.Row.File.Folder == folder && l.Row.File.Type != MarketplaceItemType.Design);
+                var count = loaded.Count(l => l.Row.File.GroupFolder == folder && l.Row.File.Type != MarketplaceItemType.Design);
                 var group = _app.Dialogs.Ask(L.T("In welche Gruppe?"),
                     L.F("{0} aus „{1}“ kommen zu den eigenen Einträgen in diese Gruppe (vorhandene oder neue, Untergruppen mit /):",
                         count == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", count), folder.Length > 0 ? folder : L.T("oberste Ebene")), suggestion, L.T("Übernehmen"),
@@ -385,7 +414,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             foreach (var (row, payload, _) in loaded)
             {
                 var record = Marketplace.FindInstall(_s, row.Source, row.File.Path);
-                var group = record != null ? Marketplace.InstalledGroup(_s, record) ?? string.Empty : groups.GetValueOrDefault(row.File.Folder, string.Empty);
+                var group = record != null ? Marketplace.InstalledGroup(_s, record) ?? string.Empty : groups.GetValueOrDefault(row.File.GroupFolder, string.Empty);
                 Marketplace.Install(_s, row.Source, row.File, payload, group, _app.MarketplaceScriptFolder);
                 switch (row.File.Type)
                 {
@@ -584,8 +613,52 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     internal void SetDetails(MarketplaceDetails details)
     {
         _details = details;
-        foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs) }) OnPropertyChanged(p);
+        foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(EntryKindText), nameof(VariablesText),
+                     nameof(HasVariables), nameof(DesignPanelColor), nameof(DesignAccentColor), nameof(DesignTextColor), nameof(DesignSubtleColor),
+                     nameof(DesignBackdropText), nameof(HasDesign) })
+            OnPropertyChanged(p);
     }
+
+    // ---- Vorschau ----------------------------------------------------------------------
+
+    private bool _previewOpen;
+    /// <summary>Vorschau unter der Zeile aufgeklappt (Einträge und Scripte; Designs zeigen sie immer).</summary>
+    public bool IsPreviewOpen { get => _previewOpen; set => Set(ref _previewOpen, value); }
+    public ICommand TogglePreviewCommand => _togglePreview ??= new RelayCommand(() => IsPreviewOpen = !IsPreviewOpen);
+    private ICommand? _togglePreview;
+
+    public bool IsDesignFile => File.Type == MarketplaceItemType.Design;
+    public bool IsEntryOrScript => File.Type != MarketplaceItemType.Design;
+
+    /// <summary>Ziel, Befehl oder Code (Einträge) bzw. Anfang des Scripts.</summary>
+    public string PreviewText => _details?.Preview ?? L.T("Wird geladen …");
+    public string EntryKindText => _details?.Entry is { } e ? CustomEntry.KindLabel(e.Kind) : TypeText;
+    public bool HasVariables => _details?.Variables.Count > 0;
+    /// <summary>Benötigte Variablen mit ihrer Art, je Zeile.</summary>
+    public string VariablesText => _details == null ? string.Empty : string.Join("\n", _details.Variables.Select(v =>
+        "{{$" + Variables.Normalize(v.Name) + "}} · " + Variables.Label(v.Kind) + (v.Description.Length > 0 ? " – " + v.Description : string.Empty)));
+
+    // Design: Panelfläche, Akzent, Schrift – als #RRGGBB für die Mini-Vorschau
+    public bool HasDesign => _details?.Design != null;
+    private bool DesignIsLight => _details?.Design is { } d &&
+        (d.PanelColor.Length > 0 ? ArgbColor.FromHex(d.PanelColor, 255) is { } c && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) > 150 : d.Theme == ThemeMode.Light);
+    public string DesignPanelColor => _details?.Design is { } d
+        ? (d.PanelColor.Length > 0 ? d.PanelColor : d.Theme == ThemeMode.Light ? "#F3F3F3" : "#202020") : "#202020";
+    public string DesignAccentColor => _details?.Design is { AccentColor.Length: > 0 } d ? d.AccentColor : "#0078D4";
+    public string DesignTextColor => DesignIsLight ? "#1B1B1B" : "#FFFFFF";
+    /// <summary>Panelfarbe leicht zur Schriftfarbe gemischt (Zeilen und Knöpfe der Mini-Vorschau).</summary>
+    public string DesignSubtleColor
+    {
+        get
+        {
+            var p = ArgbColor.FromHex(DesignPanelColor) ?? new ArgbColor(255, 32, 32, 32);
+            var t = DesignIsLight ? 0 : 255;
+            byte Mix(byte c) => (byte)Math.Round(c + (t - c) * 0.16);
+            return $"#{Mix(p.R):X2}{Mix(p.G):X2}{Mix(p.B):X2}";
+        }
+    }
+    public string DesignBackdropText => _details?.Design is { } d
+        ? $"{PanelBackdrops.Label(d.Backdrop)} · {d.Opacity} %" : string.Empty;
 }
 
 /// <summary>Eine Quelle in der Liste „Quellen“.</summary>

@@ -468,7 +468,7 @@
             Abschnitt ↔ Auswahl gleicht SettingsWindow.xaml.cs ab.
         -->
         <ui:NavigationView x:Name="Nav" Grid.ColumnSpan="2" PaneDisplayMode="Left" IsBackButtonVisible="Visible" IsPaneToggleVisible="True"
-                           OpenPaneLength="250" PaneTitle="Einstellungen" HeaderVisibility="Collapsed" FrameMargin="0">
+                           OpenPaneLength="250" PaneTitle="{l:T 'Einstellungen'}" HeaderVisibility="Collapsed" FrameMargin="0">
             <ui:NavigationView.MenuItems>
                 <ui:NavigationViewItem Content="{l:T 'Allgemein'}" TargetPageTag="general" TargetPageType="{x:Type v:SettingsSectionPage}">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE713;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
@@ -486,14 +486,32 @@
                         <ui:NavigationViewItem Content="{l:T 'Schlagworte'}" TargetPageTag="tags" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8EC;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Marktplatz'}" TargetPageTag="marketplace" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
                         <ui:NavigationViewItem Content="{l:T 'Variablen'}" TargetPageTag="variables" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE943;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
                         <ui:NavigationViewItem Content="{l:T 'Arbeitsbereiche'}" TargetPageTag="workspaces" TargetPageType="{x:Type v:SettingsSectionPage}">
                             <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE8F1;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                    </ui:NavigationViewItem.MenuItems>
+                </ui:NavigationViewItem>
+                <!-- Marktplatz: eigene Oberkategorie mit den Kategorien des Repositorys -->
+                <ui:NavigationViewItem Content="{l:T 'Marktplatz'}" IsExpanded="False" AutomationProperties.Name="{l:T 'Marktplatz'}">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                    <ui:NavigationViewItem.MenuItems>
+                        <ui:NavigationViewItem Content="{l:T 'Einträge'}" TargetPageTag="market-entries" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="{l:T 'Scripte'}" TargetPageTag="market-scripts" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="{l:T 'Designs'}" TargetPageTag="market-designs" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="{l:T 'Installiert'}" TargetPageTag="market-installed" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE73E;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                        </ui:NavigationViewItem>
+                        <ui:NavigationViewItem Content="{l:T 'Quellen'}" TargetPageTag="market-sources" TargetPageType="{x:Type v:SettingsSectionPage}">
+                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE774;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
                         </ui:NavigationViewItem>
                     </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
@@ -1071,36 +1089,25 @@
                 </StackPanel>
                 </Grid>
 
-                <!-- Marktplatz: Einträge, Scripte und Designs aus Git-Ordnern -->
-                <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=marketplace}" DataContext="{Binding MarketplacePage}">
-                    <TextBlock Text="{l:T 'Marktplatz'}" Style="{StaticResource PageTitle}"/>
-                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
-                               Text="{l:T 'Fertige Einträge, Scripte und Designs aus Git-Ordnern – aus dem mitgelieferten Marktplatz und aus eigenen Quellen. Ordner aufklappen, einzelne Dateien oder ganze Ordner anhaken und herunterladen. Einträge und Scripte landen in den eigenen Einträgen in der Gruppe deiner Wahl; benötigte Variablen fragt Power-Exec einmal ab.'}"/>
-                    <DockPanel Margin="0,16,0,8">
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding RefreshCommand}" Margin="8,0,0,0" ToolTip="{l:T 'Marktplatz neu laden'}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="{l:T 'Aktualisieren'}" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ui:Button>
-                        <Grid>
-                            <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Marktplatz durchsuchen'}"
-                                     AutomationProperties.Name="{l:T 'Marktplatz durchsuchen'}"/>
-                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
-                        </Grid>
-                    </DockPanel>
-                    <!-- Quellen: mitgelieferte und eigene Repositorys; fremde Quellen werden vor der ersten Installation bestätigt -->
-                    <c:SettingsExpander Icon="&#xE774;" Header="{l:T 'Quellen'}" Margin="0,0,0,8"
-                                        Description="{l:T 'Weitere Marktplätze per Repository-URL (GitHub oder GitLab) hinzufügen – z. B. den Katalog deines Teams.'}">
-                        <c:SettingsExpander.HeaderContent>
-                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddSourceCommand}">
+                <!-- Marktplatz (eigener Bereich): Einträge, Scripte, Designs, Installiert, Quellen – aus Git-Ordnern -->
+                <StackPanel Visibility="{Binding DataContext.IsMarketplaceSection, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}" DataContext="{Binding MarketplacePage}">
+                    <TextBlock Text="{Binding DataContext.PageTitle, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource PageTitle}"/>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Visibility="{Binding IsListPage, Converter={StaticResource Vis}}"
+                               Text="{l:T 'Fertige Einträge, Scripte und Designs aus Git-Ordnern – aus dem mitgelieferten Marktplatz und aus eigenen Quellen. Gruppen aufklappen, einzelne Dateien oder ganze Gruppen anhaken und herunterladen. Einträge und Scripte landen in den eigenen Einträgen in der Gruppe deiner Wahl; benötigte Variablen legst du dabei einmal an.'}"/>
+                    <!-- Quellen -->
+                    <StackPanel Visibility="{Binding IsSourcesPage, Converter={StaticResource Vis}}" Margin="0,4,0,0">
+                        <DockPanel Margin="0,0,0,12">
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding AddSourceCommand}" Margin="12,0,0,0" VerticalAlignment="Top">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="{l:T 'Quelle hinzufügen …'}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </ui:Button>
-                        </c:SettingsExpander.HeaderContent>
-                        <ItemsControl ItemsSource="{Binding SourceList}" Focusable="False" Margin="0,6,0,0">
+                            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                       Text="{l:T 'Weitere Marktplätze per Repository-URL (GitHub oder GitLab) hinzufügen – z. B. den Katalog deines Teams. Fremde Quellen werden vor der ersten Installation einmal bestätigt.'}"/>
+                        </DockPanel>
+                        <Border Style="{StaticResource Card}" Padding="0">
+                        <ItemsControl ItemsSource="{Binding SourceList}" Focusable="False" Margin="12,6,12,6">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <DockPanel Style="{StaticResource SubSetting}">
@@ -1114,12 +1121,12 @@
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Text" Value="&#xE7BA;"/>
                                                     <Setter Property="Foreground" Value="{DynamicResource InfoBar.Warning.Icon}"/>
-                                                    <Setter Property="ToolTip" Value="Noch nicht als vertrauenswürdig bestätigt"/>
+                                                    <Setter Property="ToolTip" Value="{l:T 'Noch nicht als vertrauenswürdig bestätigt'}"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Trusted}" Value="True">
                                                             <Setter Property="Text" Value="&#xE83F;"/>
                                                             <Setter Property="Foreground" Value="{DynamicResource InfoBar.Success.Icon}"/>
-                                                            <Setter Property="ToolTip" Value="Vertrauenswürdig"/>
+                                                            <Setter Property="ToolTip" Value="{l:T 'Vertrauenswürdig'}"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -1139,19 +1146,26 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </c:SettingsExpander>
-                    <!-- Tabs nach Art; Ordner aufklappbar, Häkchen auf Ordnern und Dateien -->
-                    <DockPanel Margin="0,0,0,8">
+                        </Border>
+                    </StackPanel>
+                    <!-- Listen: Suche, Quelle, Aktualisieren -->
+                    <DockPanel Margin="0,16,0,6" Visibility="{Binding IsListPage, Converter={StaticResource Vis}}">
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding RefreshCommand}" Margin="8,0,0,0" ToolTip="{l:T 'Marktplatz neu laden'}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="{l:T 'Aktualisieren'}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ui:Button>
                         <ComboBox DockPanel.Dock="Right" Width="190" Margin="8,0,0,0" ItemsSource="{Binding SourceChoices}" SelectedValue="{Binding SourceFilter}"
                                   DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Quelle'}"
                                   Visibility="{Binding HasSeveralSources, Converter={StaticResource Vis}}"/>
-                        <WrapPanel>
-                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding EntryTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Entry}"/>
-                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding ScriptTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Script}"/>
-                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding DesignTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Design}"/>
-                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding InstalledTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Installed}"/>
-                        </WrapPanel>
+                        <Grid>
+                            <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Marktplatz durchsuchen'}"
+                                     AutomationProperties.Name="{l:T 'Marktplatz durchsuchen'}"/>
+                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                        </Grid>
                     </DockPanel>
+                    <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" Margin="2,0,0,8" Visibility="{Binding HasRows, Converter={StaticResource Vis}}"/>
                     <c:InfoBar Severity="Error" Message="{Binding Error}"/>
                     <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                             Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
@@ -1165,7 +1179,7 @@
                     <ui:ProgressRing IsIndeterminate="True" Width="28" Height="28" HorizontalAlignment="Left" Margin="4,8"
                                      Visibility="{Binding IsLoading, Converter={StaticResource Vis}}"/>
                     <TextBlock Text="{l:T 'Keine Treffer.'}" Style="{StaticResource Caption}" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
-                    <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                    <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding HasRows, Converter={StaticResource Vis}}">
                         <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
                             <ItemsControl.Resources>
                                 <!-- Ordner -->
@@ -1207,13 +1221,15 @@
                                 <!-- Datei -->
                                 <DataTemplate DataType="{x:Type vm:MarketplaceItemRow}">
                                     <Border x:Name="ItemRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,4" Background="Transparent">
+                                      <StackPanel>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="28"/>
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="130"/>
-                                                <ColumnDefinition Width="76"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="120"/>
+                                                <ColumnDefinition Width="108"/>
                                             </Grid.ColumnDefinitions>
                                             <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Auswählen'}"/>
                                             <Border Grid.Column="1" Width="{Binding Indent}"/>
@@ -1226,8 +1242,28 @@
                                                                Visibility="{Binding Needs, Converter={StaticResource Vis}}"/>
                                                 </StackPanel>
                                             </DockPanel>
-                                            <TextBlock x:Name="State" Grid.Column="3" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                            <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <!-- Design: Mini-Panel mit Fläche, Akzent und Schrift -->
+                                            <Border Grid.Column="3" Width="132" Height="54" CornerRadius="6" Margin="0,2,12,2" ClipToBounds="True"
+                                                    Background="{Binding DesignPanelColor, Converter={StaticResource HexBrush}}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                                                    Visibility="{Binding HasDesign, Converter={StaticResource Vis}}" ToolTip="{Binding DesignBackdropText}">
+                                                <Grid Margin="8,6">
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <TextBlock Text="Power-Exec" FontSize="9" FontWeight="SemiBold" Foreground="{Binding DesignTextColor, Converter={StaticResource HexBrush}}"/>
+                                                    <Border Grid.Row="1" Height="12" CornerRadius="3" Margin="0,4,0,0" Background="{Binding DesignSubtleColor, Converter={StaticResource HexBrush}}">
+                                                        <Border Width="3" HorizontalAlignment="Left" CornerRadius="2" Background="{Binding DesignAccentColor, Converter={StaticResource HexBrush}}"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <Border Width="34" Height="8" CornerRadius="2" Background="{Binding DesignAccentColor, Converter={StaticResource HexBrush}}"/>
+                                                        <Border Width="50" Height="8" CornerRadius="2" Margin="4,0,0,0" Background="{Binding DesignSubtleColor, Converter={StaticResource HexBrush}}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <TextBlock x:Name="State" Grid.Column="4" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding TogglePreviewCommand}" ToolTip="{l:T 'Vorschau'}"
+                                                           AutomationProperties.Name="{l:T 'Vorschau'}" Visibility="{Binding IsEntryOrScript, Converter={StaticResource Vis}}">
+                                                    <TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding InstallCommand}" ToolTip="{Binding InstallText}"
                                                            AutomationProperties.Name="{Binding InstallText}" Visibility="{Binding CanInstall, Converter={StaticResource Vis}}">
                                                     <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13"/>
@@ -1238,6 +1274,20 @@
                                                 </ui:Button>
                                             </StackPanel>
                                         </Grid>
+                                        <!-- Vorschau: Art, Ziel bzw. Code, benötigte Variablen mit Typ -->
+                                        <Border Margin="60,4,4,6" Padding="12,10" CornerRadius="6" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                                                Visibility="{Binding IsPreviewOpen, Converter={StaticResource Vis}}">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding EntryKindText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}"/>
+                                                <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                         MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0" BorderThickness="0" Background="Transparent" Padding="0"/>
+                                                <TextBlock Text="{l:T 'Benötigte Variablen'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,10,0,0"
+                                                           Visibility="{Binding HasVariables, Converter={StaticResource Vis}}"/>
+                                                <TextBlock Text="{Binding VariablesText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                           Visibility="{Binding HasVariables, Converter={StaticResource Vis}}"/>
+                                            </StackPanel>
+                                        </Border>
+                                      </StackPanel>
                                     </Border>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding HasUpdate}" Value="True">

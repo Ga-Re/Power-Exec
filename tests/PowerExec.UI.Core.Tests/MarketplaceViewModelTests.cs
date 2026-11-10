@@ -67,7 +67,7 @@ public class MarketplaceViewModelTests
 
         vm.Tab = "Script";
         var scripts = vm.Rows.OfType<MarketplaceFolderRow>().First();
-        Assert.Equal("Scripte", scripts.Name);
+        Assert.Equal("System", scripts.Name); // Kategorie-Ordner „Scripte“ entfällt, die Gruppe ist der Unterordner
         Assert.Equal("Zeigt freien Platz.", vm.AllItems.Single().Description);
         vm.Tab = "Installed";
         Assert.True(vm.IsEmpty);
@@ -122,10 +122,12 @@ public class MarketplaceViewModelTests
         await vm.LoadAsync(force: false);
         vm.Query = "ticket";
         var ticket = Assert.Single(vm.Rows.OfType<MarketplaceItemRow>());
-        host.FakeDialogs.Answer = "https://m42.firma.local";
+        host.FakeDialogs.Answer = "Matrix42";
         await vm.InstallOneAsync(ticket);
-        Assert.Equal("https://m42.firma.local", Assert.Single(s.Variables).Value);
-        Assert.Contains("Variable {{$Matrix42Url}}", host.FakeDialogs.Asked);
+        Assert.Null(vm.Error);
+        // fehlende Variable: im Variablen-Dialog angelegt, mit Art und Beispielwert vorbelegt
+        var variable = Assert.Single(s.Variables);
+        Assert.Equal(("Matrix42Url", VariableKind.Text, "https://x"), (variable.Name, variable.Kind, variable.Value));
         Assert.Single(s.CustomEntries);
 
         // geändert → Rückfrage; abgelehnt → bleibt
@@ -226,5 +228,26 @@ public class MarketplaceViewModelTests
         await vm.LoadAsync(force: false);
         Assert.NotNull(vm.Error);
         Assert.True(vm.IsEmpty);
+    }
+
+    [Fact]
+    public async Task InstalledEntryKeepsGroupAfterSettingsAreApplied()
+    {
+        var host = Host();
+        var vm = new SettingsViewModel(host, focusFolder: null);
+        await vm.MarketplacePage.LoadAsync(force: false);
+        host.FakeDialogs.Answer = "Suche";
+        await vm.MarketplacePage.InstallAsync(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
+
+        // Übernehmen baut die Einstellungen aus den Listen neu – die Gruppe darf dabei nicht verloren gehen
+        var s = vm.Build();
+        var e = Assert.Single(s.CustomEntries);
+        Assert.Equal("Suche", GroupManager.GroupOf(s, e.Key));
+        Assert.Contains("Suche", s.CategoryOrder);
+        Assert.Contains(vm.EntryList.Rows, r => r.Group == "Suche");
+
+        // Deinstallieren entfernt den Eintrag auch aus der Liste
+        vm.MarketplacePage.Uninstall(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
+        Assert.Empty(vm.Build().CustomEntries);
     }
 }
