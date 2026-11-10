@@ -18,7 +18,7 @@ public sealed class RemoteTestResult
     public bool Ok => WsMan && Auth;
 
     public string Summary => Ok
-        ? $"OK · PowerShell {Version}{(Ps7 ? " · PS 7 verfügbar" : string.Empty)} · {LatencyMs} ms"
+        ? $"OK · PowerShell {Version}{(Ps7 ? L.T(" · PS 7 verfügbar") : string.Empty)} · {LatencyMs} ms"
         : (Error.Length > 0 ? Error : L.T("Nicht erreichbar"));
 }
 

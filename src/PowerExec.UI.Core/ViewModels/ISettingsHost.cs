@@ -35,4 +35,7 @@ public interface ISettingsHost
 
     /// <summary>Ordner für Scripte aus dem Marktplatz.</summary>
     string MarketplaceScriptFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Power-Exec", "Marktplatz");
+
+    /// <summary>Power-Exec beenden und neu starten (z. B. nach dem Wechsel der Sprache).</summary>
+    void RestartApp() { }
 }

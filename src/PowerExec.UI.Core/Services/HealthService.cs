@@ -174,7 +174,7 @@ public static class FolderStats
                 else dirs++;
                 if (files >= maxFiles || (files % 500 == 0 && watch.Elapsed > limit)) { partial = true; break; }
             }
-            var text = $"{files:N0} {(files == 1 ? "Datei" : "Dateien")} · {dirs:N0} {(dirs == 1 ? "Unterordner" : "Unterordner")} · {Size(bytes)}";
+            var text = L.F("{0:N0} Dateien · {1:N0} Unterordner · {2}", files, dirs, Size(bytes));
             if (partial) text = L.T("mindestens ") + text + L.T(" (Zählung abgebrochen)");
             text += L.F(" · geändert {0:dd.MM.yyyy HH:mm}", dir.LastWriteTime);
             return text;

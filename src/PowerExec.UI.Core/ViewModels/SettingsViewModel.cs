@@ -620,6 +620,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         new("general", L.T("Allgemein"), L.T("Version und Updates"), L.T("update aktualisieren version vorabversion beta github")),
         new("general", L.T("Allgemein"), L.T("Versionshinweise"), L.T("release notes neuerungen änderungen")),
+        new("general", L.T("Allgemein"), L.T("Sprache der Oberfläche"), L.T("sprache language deutsch englisch english german")),
         new("general", L.T("Allgemein"), L.T("Mit Windows starten"), L.T("autostart anmeldung start")),
         new("general", L.T("Allgemein"), L.T("Einstellungen sichern"), L.T("export import backup datei")),
         new("groups", L.T("Gruppen"), L.T("Gruppen und Untergruppen"), L.T("gruppe untergruppe reihenfolge kategorie")),
@@ -842,6 +843,29 @@ public sealed class SettingsViewModel : ObservableObject
 
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
+
+    /// <summary>Sprache der Oberfläche: "" = wie Windows, "de" oder "en".</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> LanguageList { get; } = new[]
+    {
+        new KeyValuePair<string, string>(string.Empty, L.T("Wie Windows")),
+        new KeyValuePair<string, string>("de", "Deutsch"),
+        new KeyValuePair<string, string>("en", "English")
+    };
+    public string Language
+    {
+        get => _s.Language;
+        set
+        {
+            if (_s.Language == (value ?? string.Empty)) return;
+            _s.Language = value ?? string.Empty;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(LanguageChangePending));
+        }
+    }
+    /// <summary>Gewählte Sprache weicht von der laufenden ab – wirkt nach einem Neustart.</summary>
+    public bool LanguageChangePending => L.Resolve(_s.Language, System.Globalization.CultureInfo.CurrentUICulture) != L.Language;
+    public ICommand RestartCommand => _restartCommand ??= new RelayCommand(() => _app.RestartApp());
+    private ICommand? _restartCommand;
 
     // ---- Panels ------------------------------------------------------------
 
@@ -1091,7 +1115,7 @@ public sealed class SettingsViewModel : ObservableObject
         EndCategoryDrag();
         _dragCategory = c;
         var sub = SubtreeOf(c).Count() - 1;
-        CategoryDragLabel = c.Display + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
+        CategoryDragLabel = c.Display + (sub > 0 ? (sub == 1 ? L.T("  + 1 Untergruppe") : L.F("  + {0} Untergruppen", sub)) : string.Empty);
         CategoryDragColor = c.SwatchColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         foreach (var x in SubtreeOf(c)) x.IsDragSource = true;
@@ -1268,9 +1292,9 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var affected = Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name)).ToList();
         var folders = affected.Where(x => x.Folder != null).Select(x => x.Folder!.Path).ToList();
-        var text = $"Gruppe „{c.Display}“" + (affected.Count > 1 ? $" mit {affected.Count - 1} Untergruppe(n)" : string.Empty) + " löschen?" +
-                   (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
-                   "\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.";
+        var text = (affected.Count > 1 ? L.F("Gruppe „{0}“ mit {1} Untergruppe(n) löschen?", c.Display, affected.Count - 1) : L.F("Gruppe „{0}“ löschen?", c.Display)) +
+                   (folders.Count > 0 ? L.F("\n\nDer Ordner {0} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert.", string.Join(", ", folders)) : string.Empty) +
+                   L.T("\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.");
         if (!_app.Dialogs.Confirm(text, L.T("Gruppe löschen"), destructive: true, owner: OwnerWindow())) return;
         foreach (var x in affected)
         {
@@ -1377,7 +1401,7 @@ public sealed class SettingsViewModel : ObservableObject
     private string? _samplesStatus;
     public string? SamplesStatus { get => _samplesStatus; private set { if (Set(ref _samplesStatus, value)) OnPropertyChanged(nameof(SamplesSeverity)); } }
     /// <summary>Art der Rückmeldung für die InfoBar: Success oder Error.</summary>
-    public string SamplesSeverity => _samplesStatus?.Contains("nicht", StringComparison.Ordinal) == true ? "Error" : "Success";
+    public string SamplesSeverity => _samplesStatus != null ? "Error" : "Success";
 
     private void AddCategory()
     {
@@ -1525,8 +1549,8 @@ public sealed class SettingsViewModel : ObservableObject
         : L.F("{0} Dateien · {1:0} ms", st.Count, st.Duration.TotalMilliseconds), st.Error != null)).ToList();
 
     public string SystemInfo =>
-        $"Power-Exec {_app.CurrentVersionText} · {(_app.IsInstalledViaSetup ? "installiert" : "portabel")} · " +
-        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(_app.Shell.IsPwshInstalled ? "ja" : "nein")}";
+        $"Power-Exec {_app.CurrentVersionText} · {(_app.IsInstalledViaSetup ? L.T("installiert") : L.T("portabel"))} · " +
+        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(_app.Shell.IsPwshInstalled ? L.T("ja") : L.T("nein"))}";
 
     public ICommand CopyLogCommand { get; }
     public ICommand OpenAppLogFolderCommand { get; }

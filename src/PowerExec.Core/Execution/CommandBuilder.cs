@@ -144,7 +144,7 @@ public static class CommandBuilder
                    $"Invoke-Command -Session $s {{ & \"$tmp\\{file}\"{args} }}\n" +
                    "Invoke-Command -Session $s { Remove-Item $tmp -Recurse -Force }";
         }
-        return $"Invoke-Command -ComputerName {targets}{opts} -ScriptBlock {{ <Inhalt von {Path.GetFileName(r.EffectivePath)}> }}{(args.Length > 0 ? " # Parameter:" + args : string.Empty)}";
+        return $"Invoke-Command -ComputerName {targets}{opts} -ScriptBlock {{ <{L.T("Inhalt von")} {Path.GetFileName(r.EffectivePath)}> }}{(args.Length > 0 ? " # Parameter:" + args : string.Empty)}";
     }
 
     public static string Encode(string command) => Convert.ToBase64String(Encoding.Unicode.GetBytes(command));

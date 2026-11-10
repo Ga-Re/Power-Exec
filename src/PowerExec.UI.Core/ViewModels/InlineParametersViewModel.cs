@@ -74,7 +74,7 @@ public sealed class InlineParametersViewModel : ObservableObject
     {
         var missing = Fields.Where(f => f.Parameter.IsMandatory && f.IsText && string.IsNullOrWhiteSpace(f.Text)).ToList();
         foreach (var f in missing) f.HasError = true;
-        Error = missing.Count == 0 ? null : $"Bitte ausfüllen: {string.Join(", ", missing.Select(f => f.Name))}";
+        Error = missing.Count == 0 ? null : L.F("Bitte ausfüllen: {0}", string.Join(", ", missing.Select(f => f.Name)));
         return missing.Count == 0;
     }
 

@@ -28,6 +28,6 @@ public static class ExtensionList
         if (bad.Count == 0) return null;
         return bad.Any(b => b.Contains(' ') || b.Contains(','))
             ? L.T("Endungen bitte mit Semikolon trennen, z. B. .ps1; .cmd; .exe")
-            : $"Ungültige Endung: {string.Join(", ", bad)}";
+            : L.F("Ungültige Endung: {0}", string.Join(", ", bad));
     }
 }

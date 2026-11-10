@@ -141,7 +141,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
     public ICommand SelectTileCommand { get; }
 
     public string Title => _request.Item.DisplayName;
-    public string Meta => $"Gestartet {_started:HH:mm} · {Rows.Count} {(Rows.Count == 1 ? "Rechner" : "Rechner")} · als {_account} · " +
+    public string Meta => L.F("Gestartet {0:t} · {1} Rechner · als {2} · ", _started, Rows.Count, _account) +
                           (_request.Engine == PsEngine.PowerShell7 ? L.T("PowerShell 7 (wenn verfügbar)") : "Windows PowerShell 5.1") +
                           (_request.CopyFolder ? L.T(" · mit Scriptordner") : string.Empty);
 

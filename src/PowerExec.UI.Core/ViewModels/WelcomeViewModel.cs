@@ -68,7 +68,7 @@ public sealed class WelcomeViewModel : ObservableObject
     public string? Folder { get => _folder; private set { if (Set(ref _folder, value)) OnPropertyChanged(nameof(HasFolder)); } }
     public bool HasFolder => _folder != null;
     public bool HasExistingFolders => _app.Settings.Folders.Count > 0;
-    public string ExistingFoldersText => $"Bereits eingerichtet: {string.Join(", ", _app.Settings.Folders.Select(f => f.Path))}";
+    public string ExistingFoldersText => L.F("Bereits eingerichtet: {0}", string.Join(", ", _app.Settings.Folders.Select(f => f.Path)));
     /// <summary>Beispielordner mit einem Script anlegen (Dokumente\Power-Exec\Scripte).</summary>
     public bool CreateSample { get => _createSample; set => Set(ref _createSample, value); }
     public static string SampleFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Power-Exec", "Scripte");

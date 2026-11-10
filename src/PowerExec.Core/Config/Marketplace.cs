@@ -223,7 +223,7 @@ public static class Marketplace
             case MarketplaceItemType.Design:
             {
                 var d = ParseDesign(payload, file);
-                var text = $"{d.Theme}, Panelfarbe {(d.PanelColor.Length > 0 ? d.PanelColor : "des Designs")}, {PanelBackdrops.Label(d.Backdrop)}, Deckkraft {d.Opacity} %"
+                var text = L.F("{0}, Panelfarbe {1}, {2}, Deckkraft {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("des Designs"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
                            + (d.AccentColor.Length > 0 ? L.F(", Akzent {0}", d.AccentColor) : string.Empty);
                 return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text);
             }

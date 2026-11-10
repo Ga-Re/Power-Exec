@@ -184,7 +184,7 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     private void Export()
     {
-        var file = _app.Dialogs.SaveFile("CSV (*.csv)|*.csv|Text (*.txt)|*.txt", $"{(_name.Trim().Length > 0 ? _name.Trim() : "Rechnergruppe")}.csv",
+        var file = _app.Dialogs.SaveFile("CSV (*.csv)|*.csv|Text (*.txt)|*.txt", $"{(_name.Trim().Length > 0 ? _name.Trim() : L.T("Rechnergruppe"))}.csv",
             L.T("Rechnergruppe exportieren"));
         if (file == null) return;
         try

@@ -131,7 +131,7 @@ public static class GroupDropPlanner
         var target = $"„{GroupManager.LeafOf(plan.Target)}“";
         if (plan.Position == GroupDropPosition.Into) return L.F("{0} wird Untergruppe von {1}.", name, target);
         var where = plan.NewParent == null ? L.T("oberste Ebene") : L.F("in „{0}“", GroupManager.LeafOf(plan.NewParent));
-        return $"{name}: {where}, {(plan.Position == GroupDropPosition.Before ? "vor" : "nach")} {target}";
+        return (plan.Position == GroupDropPosition.Before ? L.F("{0}: {1}, vor {2}", name, where, target) : L.F("{0}: {1}, nach {2}", name, where, target));
     }
 
     private static GroupDropPlan Invalid(string reason) => new() { IsValid = false, Reason = reason };

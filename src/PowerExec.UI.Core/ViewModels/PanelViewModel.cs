@@ -623,7 +623,7 @@ public sealed class PanelViewModel : ObservableObject
         var items = CheckedItems;
         if (items.Count == 0) return;
         var name = _app.Dialogs.Ask(L.T("Als Ablauf speichern"),
-            $"{items.Count} Schritte: {string.Join(" → ", items.Select(i => i.DisplayName))}. Der Ablauf erscheint als eigener Eintrag – auch in Suche, Favoriten und Mini-Dock.",
+            L.F("{0} Schritte: {1}. Der Ablauf erscheint als eigener Eintrag – auch in Suche, Favoriten und Mini-Dock.", items.Count, string.Join(" → ", items.Select(i => i.DisplayName))),
             L.T("Neuer Ablauf"), L.T("Speichern"), n => n.Trim().Length == 0 ? L.T("Bitte einen Namen eingeben.") : null);
         if (name == null) return;
         ClearChecked();
@@ -1093,7 +1093,7 @@ public sealed class PanelViewModel : ObservableObject
         _pendingFolder = pending.Keys.FirstOrDefault();
         PendingText = total == 0 ? null
             : pending.Count == 1
-                ? $"{total} {(total == 1 ? "neuer Eintrag" : "neue Einträge")} in {_pendingFolder} {(total == 1 ? "wartet" : "warten")} auf Freigabe"
+                ? (total == 1 ? L.F("1 neuer Eintrag in {0} wartet auf Freigabe", _pendingFolder) : L.F("{0} neue Einträge in {1} warten auf Freigabe", total, _pendingFolder))
                 : L.F("{0} neue Einträge in {1} Ordnern warten auf Freigabe", total, pending.Count);
     }
 
@@ -1180,7 +1180,7 @@ public sealed class PanelViewModel : ObservableObject
         if (!group.CanDrag) return;
         _dragGroup = group;
         var sub = group.SelfAndDescendants.Count() - 1;
-        DragLabel = group.Title + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
+        DragLabel = group.Title + (sub > 0 ? (sub == 1 ? L.T("  + 1 Untergruppe") : L.F("  + {0} Untergruppen", sub)) : string.Empty);
         DragColor = group.AccentColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         group.IsDragSource = true;

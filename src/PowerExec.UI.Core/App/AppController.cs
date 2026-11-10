@@ -457,7 +457,7 @@ public partial class AppController : IDisposable
         var unknown = Variables.Unknown(Settings, entry.Target, entry.Arguments, entry.Code, entry.User, entry.RemoteCommand, entry.WorkingDirectory);
         if (unknown.Count > 0)
         {
-            Dialogs.Warn($"„{item.DisplayName}“ verwendet {string.Join(", ", unknown.Select(n => "{{" + n + "}}"))} – diese Variable gibt es nicht. Bitte unter Einstellungen › Inhalte › Variablen anlegen oder den Eintrag korrigieren.", "Variable fehlt");
+            Dialogs.Warn(L.F("„{0}“ verwendet {1} – diese Variable gibt es nicht. Bitte unter Einstellungen › Inhalte › Variablen anlegen oder den Eintrag korrigieren.", item.DisplayName, string.Join(", ", unknown.Select(n => "{{" + n + "}}"))), L.T("Variable fehlt"));
             return null;
         }
         IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
@@ -588,9 +588,9 @@ public partial class AppController : IDisposable
         var name = GroupManager.LeafOf(path);
         var subs = GroupManager.DescendantCount(Settings, path);
         var folders = Settings.Folders.Where(f => f.Group.Length > 0 && GroupManager.IsSameOrBelow(f.Group, path)).Select(f => f.Path).ToList();
-        var text = $"Gruppe „{name}“" + (subs > 0 ? $" mit {subs} {(subs == 1 ? "Untergruppe" : "Untergruppen")}" : string.Empty) + " löschen?" +
-                   (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
-                   (count > 0 && folders.Count == 0 ? $"\n\nDie {count} Einträge bleiben erhalten und erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“." : string.Empty);
+        var text = (subs > 0 ? L.F("Gruppe „{0}“ mit {1} Untergruppe(n) löschen?", name, subs) : L.F("Gruppe „{0}“ löschen?", name)) +
+                   (folders.Count > 0 ? L.F("\n\nDer Ordner {0} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert.", string.Join(", ", folders)) : string.Empty) +
+                   (count > 0 && folders.Count == 0 ? L.F("\n\nDie {0} Einträge bleiben erhalten und erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.", count) : string.Empty);
         // Mit Rückgängig statt Rückfrage; nur bei Untergruppen oder Ordnern zusätzlich nachfragen
         if ((subs > 0 || folders.Count > 0) && !Confirm(text, L.T("Gruppe löschen"))) return;
         RememberForUndo(L.F("Gruppe „{0}“ gelöscht", name));
@@ -915,7 +915,7 @@ public partial class AppController : IDisposable
         {
             File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
             AppLog.Info(L.F("{0} eigene Einträge exportiert: {1}", entries.Count, fileName));
-            Ui.Notify(L.T("Exportiert"), $"{entries.Count} {(entries.Count == 1 ? "Eintrag" : "Einträge")} gespeichert.");
+            Ui.Notify(L.T("Exportiert"), (entries.Count == 1 ? L.T("1 Eintrag gespeichert.") : L.F("{0} Einträge gespeichert.", entries.Count)));
         }
         catch (Exception ex)
         {
@@ -1193,9 +1193,9 @@ public partial class AppController : IDisposable
     {
         if (!profile.ConfirmBeforeRun) return true;
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
-        var where = targetCount > 0 ? $" auf {targetCount} {(targetCount == 1 ? "Rechner" : "Rechnern")}" : string.Empty;
+        var where = targetCount > 0 ? (targetCount == 1 ? L.T(" auf 1 Rechner") : L.F(" auf {0} Rechnern", targetCount)) : string.Empty;
         var text = L.F("„{0}“ mit dem Profil „{1}“{2} wirklich ausführen?", name, profile.Name, where) +
-                   (profile.RunAsAdmin ? "\n\nDer Start erfolgt mit Administratorrechten." : string.Empty);
+                   (profile.RunAsAdmin ? L.T("\n\nDer Start erfolgt mit Administratorrechten.") : string.Empty);
         return Dialogs.Confirm(text, L.T("Ausführen bestätigen"), owner: owner, defaultNo: true);
     }
 
@@ -1365,12 +1365,33 @@ public partial class AppController : IDisposable
             return;
         }
         Update.Subtitle = L.T("Update fehlgeschlagen");
-        if (Dialogs.Confirm(error + "\n\nRelease-Seite im Browser öffnen?", "Update"))
+        if (Dialogs.Confirm(error + L.T("\n\nRelease-Seite im Browser öffnen?"), "Update"))
             Shell.OpenUrl(r.HtmlUrl);
     }
 
     /// <summary>Power-Exec wird gerade beendet (z. B. für ein Update).</summary>
     public bool IsExiting { get; private set; }
+
+    /// <summary>Neu starten: kurz warten (bis diese Instanz beendet ist), dann dieselbe EXE erneut öffnen.</summary>
+    public void RestartApp()
+    {
+        if (Environment.ProcessPath is not { Length: > 0 } exe) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c ping -n 3 127.0.0.1 >nul & start \"\" \"{exe}\"")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
+            });
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Neustart fehlgeschlagen", ex);
+            return;
+        }
+        Exit();
+    }
 
     public void Exit()
     {

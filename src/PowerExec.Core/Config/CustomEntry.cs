@@ -315,7 +315,7 @@ public sealed class CustomEntry
         CustomEntryKind.Ssh => "SSH · " + SshTarget() + (Port > 0 && Port != 22 ? ":" + Port : string.Empty),
         CustomEntryKind.Command => (Target.Trim() + " " + Arguments.Trim()).Trim(),
         CustomEntryKind.Tool => (Target.Trim() + " " + Arguments.Trim()).Trim(),
-        CustomEntryKind.Workflow => $"Ablauf · {Steps.Count} {(Steps.Count == 1 ? "Schritt" : "Schritte")}: " + string.Join(" → ", Steps.Select(s => s.Name.Length > 0 ? s.Name : System.IO.Path.GetFileName(s.Path))),
+        CustomEntryKind.Workflow => (Steps.Count == 1 ? L.T("Ablauf · 1 Schritt: ") : L.F("Ablauf · {0} Schritte: ", Steps.Count)) + string.Join(" → ", Steps.Select(s => s.Name.Length > 0 ? s.Name : System.IO.Path.GetFileName(s.Path))),
         _ => Target.Trim()
     };
 

@@ -351,7 +351,7 @@ public sealed class MarketplaceViewModel : ObservableObject
                 loaded.Add((r, p.Value.Payload, p.Value.Details));
             }
             var preview = string.Join("\n\n", loaded.Take(8).Select(l => $"• {l.Details.Name} ({l.Row.TypeText}, {SourceName(l.Row.Source)})\n  {l.Details.Preview.Replace("\n", "\n  ")}"))
-                          + (loaded.Count > 8 ? $"\n\n… und {loaded.Count - 8} weitere" : string.Empty);
+                          + (loaded.Count > 8 ? L.F("\n\n… und {0} weitere", loaded.Count - 8) : string.Empty);
             if (preview.Length > 2500) preview = preview[..2500] + "\n…";
             var heading = loaded.Count == 1 ? L.F("„{0}“ herunterladen?", loaded[0].Details.Name) : L.F("{0} Elemente herunterladen?", loaded.Count);
             if (!_app.Dialogs.Confirm($"{heading}\n\n{preview}", L.T("Marktplatz – Vorschau"), owner: _app.SettingsDialogOwner)) return;
@@ -360,7 +360,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             {
                 var name = Variables.Normalize(v.Name);
                 var value = _app.Dialogs.Ask(L.F("Variable {{{{${0}}}}}", name),
-                    (v.Description.Length > 0 ? v.Description : L.F("Wert für {{{{${0}}}}}", name)) + (v.Example.Length > 0 ? $"\nz. B. {v.Example}" : string.Empty),
+                    (v.Description.Length > 0 ? v.Description : L.F("Wert für {{{{${0}}}}}", name)) + (v.Example.Length > 0 ? L.F("\nz. B. {0}", v.Example) : string.Empty),
                     v.Example, L.T("Übernehmen"));
                 if (value == null) return;
                 _s.Variables.Add(new UserVariable { Name = name, Value = value.Trim(), Description = v.Description });
@@ -374,8 +374,8 @@ public sealed class MarketplaceViewModel : ObservableObject
                 var suggestion = folder.Length > 0 ? folder.Split('/')[^1] : L.T("Marktplatz");
                 var count = loaded.Count(l => l.Row.File.Folder == folder && l.Row.File.Type != MarketplaceItemType.Design);
                 var group = _app.Dialogs.Ask(L.T("In welche Gruppe?"),
-                    $"{(count == 1 ? "1 Eintrag" : L.F("{0} Einträge", count))} aus „{(folder.Length > 0 ? folder : "oberste Ebene")}“ kommen zu den eigenen Einträgen in diese Gruppe " +
-                    L.T("(vorhandene oder neue, Untergruppen mit /):"), suggestion, L.T("Übernehmen"),
+                    L.F("{0} aus „{1}“ kommen zu den eigenen Einträgen in diese Gruppe (vorhandene oder neue, Untergruppen mit /):",
+                        count == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", count), folder.Length > 0 ? folder : L.T("oberste Ebene")), suggestion, L.T("Übernehmen"),
                     g => GroupManager.Normalize(g).Length == 0 ? L.T("Bitte eine Gruppe angeben.") : null);
                 if (group == null) return;
                 groups[folder] = group;

@@ -1544,6 +1544,19 @@
                         </StackPanel>
                     </c:SettingsExpander>
 
+                    <TextBlock Text="{l:T 'Sprache'}" Style="{StaticResource SettingsSection}"/>
+                    <c:SettingsCard Icon="&#xE775;" Header="{l:T 'Sprache der Oberfläche'}" Description="{l:T 'Wie Windows: Deutsch bei deutschem Windows, sonst Englisch.'}">
+                        <ComboBox Width="190" ItemsSource="{Binding LanguageList}" SelectedValue="{Binding Language}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                  AutomationProperties.Name="{l:T 'Sprache der Oberfläche'}"/>
+                    </c:SettingsCard>
+                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,4,0,0"
+                            Visibility="{Binding LanguageChangePending, Converter={StaticResource Vis}}">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Jetzt neu starten'}" Command="{Binding RestartCommand}" Margin="12,0,0,0"/>
+                            <TextBlock Text="{l:T 'Die neue Sprache gilt nach einem Neustart von Power-Exec.'}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+
                     <TextBlock Text="{l:T 'Start'}" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsCard Icon="&#xE7E8;" Header="{l:T 'Mit Windows starten'}" Description="{l:T 'Power-Exec startet nach der Anmeldung im Hintergrund.'}">
                         <ui:ToggleSwitch IsChecked="{Binding StartWithWindows}" />
