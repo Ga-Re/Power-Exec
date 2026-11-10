@@ -898,6 +898,11 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Nach einer Installation: neue Gruppen, Variablen und Designs in den anderen Seiten zeigen.</summary>
     private void OnMarketplaceInstalled()
     {
+        // Marktplatz hat _s direkt geändert: neue Gruppen und Einträge in die Listen übernehmen, sonst überschreibt
+        // das Übernehmen (Build) sie mit dem alten Stand
+        foreach (var g in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.CurrentCultureIgnoreCase))).ToList())
+            Categories.Add(NewCategoryVm(g, GroupManager.IconOf(_s, g).ToString()));
+        EntryList.SyncFrom(_s);
         RaisePresets();
         MarketplaceChanged?.Invoke();
     }
@@ -1678,7 +1683,7 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
     {
         PanelBackdrop.Glass => L.T("Glas"),
         PanelBackdrop.Solid => L.T("Vollton"),
-        _ => Preset.Opacity < 100 ? L.F("Klarglas {0} %", Preset.Opacity) : L.T("Deckend")
+        _ => Preset.Opacity < 100 ? L.F("Transparent {0} %", Preset.Opacity) : L.T("Deckend")
     };
     public string Name => Preset.Name;
     public string Description => Preset.Description;

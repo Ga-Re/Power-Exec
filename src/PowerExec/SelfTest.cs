@@ -1334,6 +1334,24 @@ public sealed partial class SelfTestController : AppController
                 PowerExec.Core.Localization.L.Use("de");
             }
 
+            // Meldungen: Fluent-ContentDialog statt MessageBox – erscheint, zeigt den Text und schließt sich wieder
+            Step("Meldung als ContentDialog");
+            {
+                var shown = false;
+                var closer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+                closer.Tick += (_, _) =>
+                {
+                    closer.Stop();
+                    var hostWindow = Application.Current.Windows.OfType<MessageDialog.HostWindow>().FirstOrDefault();
+                    shown = hostWindow != null && VisualDescendants(hostWindow).OfType<Wpf.Ui.Controls.ContentDialog>().Any();
+                    if (hostWindow?.Content is FrameworkElement dlgRoot) Screenshot(dlgRoot, "meldung-contentdialog");
+                    hostWindow?.Close();
+                };
+                closer.Start();
+                MessageDialog.Confirm(null, "Selbsttest: Meldung als ContentDialog", "Power-Exec");
+                if (!shown) Fail("Meldungen: ContentDialog wird nicht angezeigt");
+            }
+
             // Dialoge
             var item = Repository.Items.First(i => i.FullPath.Equals(script, StringComparison.OrdinalIgnoreCase));
             await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false), this));

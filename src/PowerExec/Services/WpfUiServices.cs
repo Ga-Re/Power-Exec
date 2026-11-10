@@ -39,30 +39,14 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
     public string? Ask(string heading, string prompt, string initial = "", string okText = "OK", Func<string, string?>? validate = null) =>
         testAnswer()?.Invoke() ?? InputWindow.Ask(heading, prompt, initial, okText, validate);
 
-    private static MessageBoxResult Show(object? owner, string message, string title, MessageBoxButton buttons, MessageBoxImage image,
-        MessageBoxResult defaultResult = MessageBoxResult.None) =>
-        owner is Window { IsLoaded: true } w
-            ? MessageBox.Show(w, message, title, buttons, image, defaultResult)
-            : MessageBox.Show(message, title, buttons, image, defaultResult);
+    public void Inform(string message, string title, object? owner = null) => MessageDialog.Inform(owner, message, title);
 
-    public void Inform(string message, string title, object? owner = null) =>
-        Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Information);
-
-    public void Warn(string message, string title, object? owner = null) =>
-        Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+    public void Warn(string message, string title, object? owner = null) => MessageDialog.Warn(owner, message, title);
 
     public bool Confirm(string message, string title, bool destructive = false, object? owner = null, bool defaultNo = false) =>
-        Show(owner, message, title, MessageBoxButton.YesNo,
-            destructive ? MessageBoxImage.Warning : MessageBoxImage.Question,
-            destructive || defaultNo ? MessageBoxResult.No : MessageBoxResult.None) == MessageBoxResult.Yes;
+        MessageDialog.Confirm(owner, message, title, destructive, defaultNo);
 
-    public bool? ConfirmOrCancel(string message, string title, object? owner = null) =>
-        Show(owner, message, title, MessageBoxButton.YesNoCancel, MessageBoxImage.Question, MessageBoxResult.Cancel) switch
-        {
-            MessageBoxResult.Yes => true,
-            MessageBoxResult.No => false,
-            _ => null
-        };
+    public bool? ConfirmOrCancel(string message, string title, object? owner = null) => MessageDialog.ConfirmOrCancel(owner, message, title);
 
     public string? OpenFile(string filter, string? title = null, object? owner = null)
     {

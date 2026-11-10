@@ -301,12 +301,12 @@ public sealed class PanelSettingsViewModel : ObservableObject
             if (_c.EffectiveBackdropSetting == PanelBackdrop.Solid)
                 return L.T("Vollton: das Panel ist deckend in seiner Farbe – ohne Transparenz, Milchglas oder Weichzeichner.");
             if (_c.EffectiveBackdropSetting != PanelBackdrop.Glass)
-                return L.T("Klarglas: der Desktop scheint direkt durch, Milchglas beruhigt ihn.");
+                return L.T("Transparent: der Desktop scheint direkt durch, Milchglas beruhigt ihn.");
             if (EffectiveBackdrop == PanelBackdrop.Glass)
                 return L.T("Windows zeichnet den Desktop hinter dem Panel weich, das Panel tönt ihn mit seiner Farbe. Nur Windows 11.");
-            if (_app.Theme.IsHighContrast) return L.T("Im Kontrastdesign läuft Klarglas (deckend).");
-            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return L.T("Erst ab Windows 11 – hier läuft Klarglas.");
-            return L.T("Die Windows-Transparenzeffekte sind aus – es läuft Klarglas.");
+            if (_app.Theme.IsHighContrast) return L.T("Im Kontrastdesign ist der Hintergrund deckend.");
+            if (_app.Theme.OsBuild < PanelBackdrops.GlassBuild) return L.T("Erst ab Windows 11 – hier läuft „Transparent“.");
+            return L.T("Die Windows-Transparenzeffekte sind aus – es läuft „Transparent“.");
         }
     }
 

@@ -431,6 +431,30 @@ public sealed class CustomEntryListViewModel : ObservableObject
     }
 
     /// <summary>Liste in die Einstellungen schreiben (beim Speichern).</summary>
+    /// <summary>
+    /// Stand aus den Einstellungen übernehmen, nachdem sie außerhalb der Liste geändert wurden (z. B. Marktplatz):
+    /// neue Einträge mit Gruppe und Schlagworten aufnehmen, entfernte streichen, Gruppen nachziehen.
+    /// </summary>
+    public void SyncFrom(AppSettings s)
+    {
+        var byKey = s.CustomEntries.ToDictionary(e => e.Key, StringComparer.OrdinalIgnoreCase);
+        foreach (var gone in Rows.Where(r => !byKey.ContainsKey(r.Entry.Key)).ToList()) Rows.Remove(gone);
+        foreach (var e in s.CustomEntries)
+        {
+            var row = Rows.FirstOrDefault(r => r.Entry.Key.Equals(e.Key, StringComparison.OrdinalIgnoreCase));
+            if (row == null)
+            {
+                row = new CustomEntryRowViewModel(this, e.Clone(), GroupManager.GroupOf(s, e.Key), Core.Config.Tags.Of(s, e.Key).ToList());
+                row.SetHealth(_app.Health?.Get(row.Entry.Key));
+                Rows.Add(row);
+            }
+            else if (!ReferenceEquals(row.Entry, e) && Marketplace.IsMarketplaceEntry(s, e.Id))
+                row.Update(e.Clone(), GroupManager.GroupOf(s, e.Key), Core.Config.Tags.Of(s, e.Key).ToList());
+        }
+        _rowsView.Refresh();
+        foreach (var p in new[] { nameof(Count), nameof(IsEmpty), nameof(NoMatches) }) OnPropertyChanged(p);
+    }
+
     public void ApplyTo(AppSettings target)
     {
         target.CustomEntries = Rows.Select(r => r.Entry.Clone()).ToList();

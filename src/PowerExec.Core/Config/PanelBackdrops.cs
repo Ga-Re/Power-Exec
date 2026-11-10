@@ -73,9 +73,9 @@ public static class PanelBackdrops
 
     public static string Label(PanelBackdrop b) => b switch
     {
-        PanelBackdrop.Glass => L.T("Glas (eigener Weichzeichner)"),
+        PanelBackdrop.Glass => L.T("Glas (Blur)"),
         PanelBackdrop.Solid => L.T("Vollton (deckend)"),
-        _ => L.T("Klarglas")
+        _ => L.T("Transparent")
     };
 
     /// <summary>Deckkraft, mit der das Panel tatsächlich gezeichnet wird: Vollton ist immer deckend.</summary>

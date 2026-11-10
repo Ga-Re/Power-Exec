@@ -6,12 +6,13 @@ using System.Text.Json;
 namespace PowerExec.Core.Localization;
 
 /// <summary>
-/// Übersetzung der Oberfläche. Schlüssel ist der deutsche Text selbst; die englischen Fassungen stehen in
-/// <c>Localization/en.json</c> (eingebettet). Fehlt eine Übersetzung, erscheint der deutsche Text.
+/// Übersetzung der Oberfläche. Schlüssel ist der deutsche Text im Quelltext; die Texte je Sprache stehen im Ordner
+/// <c>Translations</c> des Repositorys (<c>de.json</c>, <c>en.json</c>, eingebettet). Fehlt eine Übersetzung, erscheint der Schlüssel.
 /// </summary>
 public static class L
 {
     private static readonly Lazy<IReadOnlyDictionary<string, string>> English = new(() => LoadEmbedded("en.json"));
+    private static readonly Lazy<IReadOnlyDictionary<string, string>> German = new(() => LoadEmbedded("de.json"));
     private static readonly ConcurrentDictionary<string, byte> MissingKeys = new();
 
     /// <summary>Aktive Sprache: "de" oder "en".</summary>
@@ -35,7 +36,8 @@ public static class L
     /// <summary>Text in der aktiven Sprache.</summary>
     public static string T(string german)
     {
-        if (Language != "en" || string.IsNullOrEmpty(german)) return german;
+        if (string.IsNullOrEmpty(german)) return german;
+        if (Language != "en") return German.Value.TryGetValue(german, out var de) && de.Length > 0 ? de : german;
         if (English.Value.TryGetValue(german, out var en)) return en;
         MissingKeys.TryAdd(german, 0);
         return german;
@@ -46,6 +48,9 @@ public static class L
 
     /// <summary>Alle englischen Übersetzungen (für Tests).</summary>
     public static IReadOnlyDictionary<string, string> EnglishTable => English.Value;
+
+    /// <summary>Alle deutschen Texte (für Tests).</summary>
+    public static IReadOnlyDictionary<string, string> GermanTable => German.Value;
 
     /// <summary>Im Englischen angefragte, aber nicht übersetzte Texte (Diagnose).</summary>
     public static IReadOnlyCollection<string> Missing => MissingKeys.Keys.ToList();

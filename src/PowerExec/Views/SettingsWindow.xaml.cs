@@ -267,8 +267,7 @@ public partial class SettingsWindow : Window
     /// <summary>Alles auf den Stand beim Öffnen des Fensters zurücksetzen.</summary>
     private void Revert_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show(this, L.T("Alle Änderungen seit dem Öffnen der Einstellungen verwerfen?"), L.T("Änderungen verwerfen"),
-                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return;
+        if (!Services.MessageDialog.Confirm(this, L.T("Alle Änderungen seit dem Öffnen der Einstellungen verwerfen?"), L.T("Änderungen verwerfen"), destructive: true)) return;
         _applyTimer.Stop();
         _reloading = true;
         var restored = SettingsStore.Clone(_snapshot);

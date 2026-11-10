@@ -227,4 +227,25 @@ public class MarketplaceViewModelTests
         Assert.NotNull(vm.Error);
         Assert.True(vm.IsEmpty);
     }
+
+    [Fact]
+    public async Task InstalledEntryKeepsGroupAfterSettingsAreApplied()
+    {
+        var host = Host();
+        var vm = new SettingsViewModel(host, focusFolder: null);
+        await vm.MarketplacePage.LoadAsync(force: false);
+        host.FakeDialogs.Answer = "Suche";
+        await vm.MarketplacePage.InstallAsync(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
+
+        // Übernehmen baut die Einstellungen aus den Listen neu – die Gruppe darf dabei nicht verloren gehen
+        var s = vm.Build();
+        var e = Assert.Single(s.CustomEntries);
+        Assert.Equal("Suche", GroupManager.GroupOf(s, e.Key));
+        Assert.Contains("Suche", s.CategoryOrder);
+        Assert.Contains(vm.EntryList.Rows, r => r.Group == "Suche");
+
+        // Deinstallieren entfernt den Eintrag auch aus der Liste
+        vm.MarketplacePage.Uninstall(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
+        Assert.Empty(vm.Build().CustomEntries);
+    }
 }

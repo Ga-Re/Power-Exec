@@ -48,18 +48,20 @@ public class LocalizationTests
         var keys = Keys().ToList();
         Assert.True(keys.Count > 2000, $"Nur {keys.Count} Texte gefunden – stimmt die Suche noch?");
         var missing = keys.Where(k => !L.EnglishTable.ContainsKey(k.Key)).Select(k => $"{k.File}: {k.Key}").Distinct().ToList();
-        Assert.True(missing.Count == 0, "Ohne Übersetzung:\n" + string.Join("\n", missing.Take(50)));
+        Assert.True(missing.Count == 0, "Ohne englische Übersetzung (Translations/en.json):\n" + string.Join("\n", missing.Take(50)));
+        var missingDe = keys.Where(k => !L.GermanTable.ContainsKey(k.Key)).Select(k => $"{k.File}: {k.Key}").Distinct().ToList();
+        Assert.True(missingDe.Count == 0, "Fehlt in Translations/de.json:\n" + string.Join("\n", missingDe.Take(50)));
     }
 
     [Fact]
     public void TranslationsKeepPlaceholders()
     {
         static string Holes(string s) => string.Join(",", Regex.Matches(s, @"(?<!\{)\{(\d+)[^{}]*\}(?!\})").Select(m => m.Groups[1].Value).Distinct().OrderBy(x => x));
-        var wrong = L.EnglishTable
+        var wrong = L.EnglishTable.Concat(L.GermanTable)
             .Where(kv => Holes(kv.Key) != Holes(kv.Value))
             .Select(kv => $"{kv.Key} → {kv.Value}").ToList();
         Assert.True(wrong.Count == 0, "Platzhalter passen nicht:\n" + string.Join("\n", wrong.Take(30)));
-        foreach (var kv in L.EnglishTable.Where(kv => Regex.IsMatch(kv.Key, @"(?<!\{)\{\d")))
+        foreach (var kv in L.EnglishTable.Concat(L.GermanTable).Where(kv => Regex.IsMatch(kv.Key, @"(?<!\{)\{\d")))
             _ = string.Format(CultureInfo.InvariantCulture, kv.Value, Enumerable.Range(0, 10).Select(_ => (object)new AnyFormat()).ToArray());
     }
 

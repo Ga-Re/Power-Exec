@@ -342,6 +342,9 @@ public static class Marketplace
         s.CategoryOrder = GroupManager.All(s).ToList();
     }
 
+    /// <summary>Stammt der eigene Eintrag aus dem Marktplatz?</summary>
+    public static bool IsMarketplaceEntry(AppSettings s, string entryId) => s.MarketplaceInstalls.Any(i => i.EntryIds.Contains(entryId));
+
     /// <summary>Hat der Benutzer einen installierten Eintrag seither geändert?</summary>
     public static bool IsModified(AppSettings s, MarketplaceInstall record) =>
         record.Fingerprint.Length > 0 && record.EntryIds.Any(id => s.CustomEntries.FirstOrDefault(c => c.Id == id) is { } e && Fingerprint(e) != record.Fingerprint);
