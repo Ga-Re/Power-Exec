@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,7 +23,7 @@ public sealed class DockSlot : ObservableObject
     {
         _item = item;
         Name = item.DisplayName;
-        ToolTip = $"{item.DisplayName} – Klick startet" + (number <= 9 ? $" (Alt+{number})" : string.Empty) + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
+        ToolTip = L.F("{0} – Klick startet", item.DisplayName) + (number <= 9 ? $" (Alt+{number})" : string.Empty) + (string.IsNullOrWhiteSpace(item.Synopsis) ? string.Empty : "\n" + item.Synopsis);
         Command = item.RunCommand;
         item.PropertyChanged += (_, e) =>
         {
@@ -35,8 +36,8 @@ public sealed class DockSlot : ObservableObject
 
     public DockSlot(ICommand openPanel)
     {
-        Name = "Panel öffnen";
-        ToolTip = "Panel öffnen – auch beim Darüberfahren";
+        Name = L.T("Panel öffnen");
+        ToolTip = L.T("Panel öffnen – auch beim Darüberfahren");
         Command = openPanel;
         IsMore = true;
     }

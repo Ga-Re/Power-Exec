@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -23,7 +24,7 @@ public sealed class TagRowViewModel : ObservableObject
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         CustomColorCommand = new RelayCommand(() =>
         {
-            var hex = _owner.App.Dialogs.PickColor($"Farbe für #{Tag}", _color, _owner.App.SettingsDialogOwner);
+            var hex = _owner.App.Dialogs.PickColor(L.F("Farbe für #{0}", Tag), _color, _owner.App.SettingsDialogOwner);
             if (hex != null) Color = hex;
         });
     }
@@ -32,7 +33,7 @@ public sealed class TagRowViewModel : ObservableObject
 
     public string Tag { get; }
     public int Count { get; }
-    public string CountText => Count == 1 ? "1 Eintrag" : $"{Count} Einträge";
+    public string CountText => Count == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", Count);
     public IReadOnlyList<TagEntryViewModel> Entries { get; }
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 
@@ -111,13 +112,13 @@ public sealed class TagsViewModel : ObservableObject
 
     internal void Rename(TagRowViewModel row)
     {
-        var name = _app.Dialogs.Ask("Schlagwort umbenennen",
-            "Gibt es den neuen Namen schon, werden beide Schlagworte zusammengeführt.", row.Tag, "Umbenennen",
-            t => t.Trim().TrimStart('#').Length == 0 ? "Bitte einen Namen eingeben." : t.Contains(',') || t.Contains(';') ? "Ohne Komma oder Semikolon." : null);
+        var name = _app.Dialogs.Ask(L.T("Schlagwort umbenennen"),
+            L.T("Gibt es den neuen Namen schon, werden beide Schlagworte zusammengeführt."), row.Tag, L.T("Umbenennen"),
+            t => t.Trim().TrimStart('#').Length == 0 ? L.T("Bitte einen Namen eingeben.") : t.Contains(',') || t.Contains(';') ? L.T("Ohne Komma oder Semikolon.") : null);
         if (name == null || name.Trim().TrimStart('#') == row.Tag) return;
         var target = name.Trim().TrimStart('#');
         var existing = Tags.All(_s).FirstOrDefault(t => t.Equals(target, StringComparison.CurrentCultureIgnoreCase) && !t.Equals(row.Tag, StringComparison.CurrentCultureIgnoreCase));
-        if (existing != null && !_app.Dialogs.Confirm($"„#{existing}“ gibt es schon. „#{row.Tag}“ damit zusammenführen?", "Schlagworte zusammenführen", owner: Owner())) return;
+        if (existing != null && !_app.Dialogs.Confirm(L.F("„#{0}“ gibt es schon. „#{1}“ damit zusammenführen?", existing, row.Tag), L.T("Schlagworte zusammenführen"), owner: Owner())) return;
         _beforeChange();
         Tags.Rename(_s, row.Tag, existing ?? target);
         _afterChange();
@@ -126,7 +127,7 @@ public sealed class TagsViewModel : ObservableObject
 
     internal void Delete(TagRowViewModel row)
     {
-        if (!_app.Dialogs.Confirm($"„#{row.Tag}“ von {row.CountText} entfernen?\n\nDie Einträge selbst bleiben erhalten.", "Schlagwort löschen", destructive: true, owner: Owner())) return;
+        if (!_app.Dialogs.Confirm(L.F("„#{0}“ von {1} entfernen?\n\nDie Einträge selbst bleiben erhalten.", row.Tag, row.CountText), L.T("Schlagwort löschen"), destructive: true, owner: Owner())) return;
         _beforeChange();
         Tags.Delete(_s, row.Tag);
         _afterChange();

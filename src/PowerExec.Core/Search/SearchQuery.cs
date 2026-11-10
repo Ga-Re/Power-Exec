@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 
@@ -36,34 +37,33 @@ public sealed class SearchQuery
     /// <summary>Erkannte Operatoren (ohne normale Suchbegriffe).</summary>
     public IEnumerable<SearchToken> Operators => Tokens.Where(t => t.Kind != SearchTokenKind.Text);
 
-    public const string Help = "Suche: Name, Synopsis, Beschreibung – Tippfehler und Anfangsbuchstaben („gds“) gehen auch.\n" +
-                               "Filter: #schlagwort · typ:ps1|exe|web|rdp|ssh|ordner|snippet … · gruppe:Name · ist:fav · ist:admin · ist:remote · ist:problem";
+    public static string Help => L.T("Suche: Name, Synopsis, Beschreibung – Tippfehler und Anfangsbuchstaben („gds“) gehen auch.\nFilter: #schlagwort · typ:ps1|exe|web|rdp|ssh|ordner|snippet … · gruppe:Name · ist:fav · ist:admin · ist:remote · ist:problem");
 
     private static readonly (string[] Aliases, SearchKind[] Kinds, string Label)[] TypeAliases =
     {
         (new[] { "ps1", "ps", "powershell" }, new[] { SearchKind.PowerShell }, "PowerShell"),
-        (new[] { "script", "scripte", "scripts", "skript", "skripte" }, new[] { SearchKind.PowerShell, SearchKind.Batch }, "Scripte"),
+        (new[] { "script", "scripte", "scripts", "skript", "skripte" }, new[] { SearchKind.PowerShell, SearchKind.Batch }, L.T("Scripte")),
         (new[] { "cmd", "bat", "batch" }, new[] { SearchKind.Batch }, "Batch"),
         (new[] { "exe" }, new[] { SearchKind.Executable }, "EXE"),
-        (new[] { "programm", "programme", "program", "programs", "app" }, new[] { SearchKind.Executable, SearchKind.Shortcut, SearchKind.SnapIn }, "Programme"),
-        (new[] { "lnk", "verknüpfung", "shortcut" }, new[] { SearchKind.Shortcut }, "Verknüpfung"),
+        (new[] { "programm", "programme", "program", "programs", "app" }, new[] { SearchKind.Executable, SearchKind.Shortcut, SearchKind.SnapIn }, L.T("Programme")),
+        (new[] { "lnk", "verknüpfung", "shortcut" }, new[] { SearchKind.Shortcut }, L.T("Verknüpfung")),
         (new[] { "msc", "snapin", "snap-in", "konsole" }, new[] { SearchKind.SnapIn }, "Snap-in"),
-        (new[] { "web", "url", "webseite", "link", "website" }, new[] { SearchKind.Web }, "Webseite"),
-        (new[] { "ordner", "folder", "freigabe", "share" }, new[] { SearchKind.Folder }, "Ordner"),
-        (new[] { "rdp", "remotedesktop" }, new[] { SearchKind.Rdp }, "Remotedesktop"),
+        (new[] { "web", "url", "webseite", "link", "website" }, new[] { SearchKind.Web }, L.T("Webseite")),
+        (new[] { "ordner", "folder", "freigabe", "share" }, new[] { SearchKind.Folder }, L.T("Ordner")),
+        (new[] { "rdp", "remotedesktop" }, new[] { SearchKind.Rdp }, L.T("Remotedesktop")),
         (new[] { "ssh" }, new[] { SearchKind.Ssh }, "SSH"),
         (new[] { "snippet", "snippets", "text" }, new[] { SearchKind.Snippet }, "Snippet"),
-        (new[] { "befehl", "command" }, new[] { SearchKind.Command }, "Befehl"),
-        (new[] { "werkzeug", "tool", "tools" }, new[] { SearchKind.Tool }, "Werkzeug"),
-        (new[] { "datei", "file" }, new[] { SearchKind.File }, "Datei"),
+        (new[] { "befehl", "command" }, new[] { SearchKind.Command }, L.T("Befehl")),
+        (new[] { "werkzeug", "tool", "tools" }, new[] { SearchKind.Tool }, L.T("Werkzeug")),
+        (new[] { "datei", "file" }, new[] { SearchKind.File }, L.T("Datei")),
     };
 
     private static readonly (string[] Aliases, SearchTokenKind Kind, string Label)[] FlagAliases =
     {
-        (new[] { "fav", "favorit", "favoriten", "favorite", "favorites", "star" }, SearchTokenKind.Favorite, "Favoriten"),
-        (new[] { "admin", "administrator", "elevated" }, SearchTokenKind.Admin, "Benötigt Admin"),
-        (new[] { "remote" }, SearchTokenKind.Remote, "Remote-fähig"),
-        (new[] { "problem", "probleme", "fehler", "defekt", "error", "broken" }, SearchTokenKind.Problem, "Mit Problemen"),
+        (new[] { "fav", "favorit", "favoriten", "favorite", "favorites", "star" }, SearchTokenKind.Favorite, L.T("Favoriten")),
+        (new[] { "admin", "administrator", "elevated" }, SearchTokenKind.Admin, L.T("Benötigt Admin")),
+        (new[] { "remote" }, SearchTokenKind.Remote, L.T("Remote-fähig")),
+        (new[] { "problem", "probleme", "fehler", "defekt", "error", "broken" }, SearchTokenKind.Problem, L.T("Mit Problemen")),
     };
 
     private static readonly string[] TypeKeys = { "typ", "type", "t", "art" };
@@ -90,8 +90,8 @@ public sealed class SearchQuery
                 if (TypeKeys.Contains(key)) { q.AddType(word, start, value); continue; }
                 if (GroupKeys.Contains(key))
                 {
-                    if (value.Length == 0) q.Tokens.Add(new SearchToken(SearchTokenKind.Invalid, word, start, "Gruppe: …"));
-                    else { q.Groups.Add(value); q.Tokens.Add(new SearchToken(SearchTokenKind.Group, word, start, "Gruppe: " + value)); }
+                    if (value.Length == 0) q.Tokens.Add(new SearchToken(SearchTokenKind.Invalid, word, start, L.T("Gruppe: …")));
+                    else { q.Groups.Add(value); q.Tokens.Add(new SearchToken(SearchTokenKind.Group, word, start, L.T("Gruppe: ") + value)); }
                     continue;
                 }
                 if (FlagKeys.Contains(key)) { q.AddFlag(word, start, value); continue; }
@@ -113,11 +113,11 @@ public sealed class SearchQuery
         if (hits.Count == 0 && v.Length > 0) hits = TypeAliases.Where(a => a.Aliases.Any(x => x.StartsWith(v, StringComparison.Ordinal))).ToList();
         if (hits.Count == 0)
         {
-            Tokens.Add(new SearchToken(SearchTokenKind.Invalid, raw, start, value.Length == 0 ? "Typ: …" : $"Typ „{value}“ unbekannt"));
+            Tokens.Add(new SearchToken(SearchTokenKind.Invalid, raw, start, value.Length == 0 ? L.T("Typ: …") : L.F("Typ „{0}“ unbekannt", value)));
             return;
         }
         foreach (var k in hits.SelectMany(h => h.Kinds)) Kinds.Add(k);
-        Tokens.Add(new SearchToken(SearchTokenKind.Type, raw, start, "Typ: " + string.Join(", ", hits.Select(h => h.Label))));
+        Tokens.Add(new SearchToken(SearchTokenKind.Type, raw, start, L.T("Typ: ") + string.Join(", ", hits.Select(h => h.Label))));
     }
 
     private void AddFlag(string raw, int start, string value)
@@ -127,7 +127,7 @@ public sealed class SearchQuery
         if (hit.Aliases == null && v.Length > 0) hit = FlagAliases.FirstOrDefault(a => a.Aliases.Any(x => x.StartsWith(v, StringComparison.Ordinal)));
         if (hit.Aliases == null)
         {
-            Tokens.Add(new SearchToken(SearchTokenKind.Invalid, raw, start, value.Length == 0 ? "ist: …" : $"„ist:{value}“ unbekannt"));
+            Tokens.Add(new SearchToken(SearchTokenKind.Invalid, raw, start, value.Length == 0 ? L.T("ist: …") : L.F("„ist:{0}“ unbekannt", value)));
             return;
         }
         switch (hit.Kind)

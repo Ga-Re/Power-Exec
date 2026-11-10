@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -49,8 +50,8 @@ public sealed class VariablesViewModel : ObservableObject
 
     public int SelectedCount => Items.Count(i => i.IsSelected);
     public bool HasSelection => SelectedCount > 0;
-    public string SelectionText => SelectedCount == 1 ? "1 Variable ausgewählt" : $"{SelectedCount} Variablen ausgewählt";
-    public string SummaryText => Items.Count == VisibleItems.Count ? (Items.Count == 1 ? "1 Variable" : $"{Items.Count} Variablen") : $"{VisibleItems.Count} von {Items.Count}";
+    public string SelectionText => SelectedCount == 1 ? L.T("1 Variable ausgewählt") : L.F("{0} Variablen ausgewählt", SelectedCount);
+    public string SummaryText => Items.Count == VisibleItems.Count ? (Items.Count == 1 ? L.T("1 Variable") : L.F("{0} Variablen", Items.Count)) : L.F("{0} von {1}", VisibleItems.Count, Items.Count);
 
     internal void Refilter()
     {
@@ -71,8 +72,8 @@ public sealed class VariablesViewModel : ObservableObject
     private void RemoveSelected()
     {
         var rows = Items.Where(i => i.IsSelected).ToList();
-        if (rows.Count == 0 || !_app.Dialogs.Confirm(rows.Count == 1 ? $"Variable {rows[0].Token} löschen?" : $"{rows.Count} Variablen löschen?",
-                "Variablen löschen", destructive: true, owner: _app.SettingsDialogOwner)) return;
+        if (rows.Count == 0 || !_app.Dialogs.Confirm(rows.Count == 1 ? L.F("Variable {0} löschen?", rows[0].Token) : L.F("{0} Variablen löschen?", rows.Count),
+                L.T("Variablen löschen"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         foreach (var r in rows) Remove(r);
     }
 
@@ -155,13 +156,13 @@ public sealed class VariableRowViewModel : ObservableObject
         _name = model.Name;
         RemoveCommand = new RelayCommand(() =>
         {
-            if (_page.App.Dialogs.Confirm($"Variable {Token} löschen? Einträge, die sie verwenden, starten danach nicht mehr.", "Variable löschen",
+            if (_page.App.Dialogs.Confirm(L.F("Variable {0} löschen? Einträge, die sie verwenden, starten danach nicht mehr.", Token), L.T("Variable löschen"),
                     destructive: true, owner: _page.App.SettingsDialogOwner))
                 _page.Remove(this);
         });
         EditCommand = new RelayCommand(() => Edit(isNew: false));
         TestCommand = new RelayCommand(async () => await TestAsync(), () => !_testing);
-        CopyTokenCommand = new RelayCommand(() => { _page.CopyText(Token); Snackbar.Show(Token + " in die Zwischenablage kopiert."); });
+        CopyTokenCommand = new RelayCommand(() => { _page.CopyText(Token); Snackbar.Show(Token + L.T(" in die Zwischenablage kopiert.")); });
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         WorkspaceValues = _page.WorkspaceNames.Select(n => new WorkspaceValueRow(this, n)).ToList();
     }
@@ -270,10 +271,10 @@ public sealed class VariableRowViewModel : ObservableObject
 
     public string ValueLabel => Model.Kind switch
     {
-        VariableKind.Workspace => "Standardwert",
-        VariableKind.Environment => "Umgebungsvariable",
-        VariableKind.PowerShell => "PowerShell-Befehl",
-        _ => "Wert"
+        VariableKind.Workspace => L.T("Standardwert"),
+        VariableKind.Environment => L.T("Umgebungsvariable"),
+        VariableKind.PowerShell => L.T("PowerShell-Befehl"),
+        _ => L.T("Wert")
     };
 
     /// <summary>Geheimer Wert: wird beim Setzen verschlüsselt; gelesen wird nie der Klartext.</summary>
@@ -328,17 +329,17 @@ public sealed class VariableRowViewModel : ObservableObject
     private async Task TestAsync()
     {
         IsTesting = true;
-        Status = IsPowerShell ? "Führe den Befehl aus …" : string.Empty;
+        Status = IsPowerShell ? L.T("Führe den Befehl aus …") : string.Empty;
         try
         {
             _page.Resolver.Invalidate(Model.Name);
             var name = Model.Name;
             var value = await Task.Run(() => _page.Resolver.Resolve(name));
-            Status = IsSecret ? "Geheimer Wert lässt sich lesen." : $"Ergebnis: {value}";
+            Status = IsSecret ? L.T("Geheimer Wert lässt sich lesen.") : L.F("Ergebnis: {0}", value);
         }
         catch (Exception ex)
         {
-            Status = "Fehler: " + ex.Message;
+            Status = L.T("Fehler: ") + ex.Message;
         }
         finally
         {

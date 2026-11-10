@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -65,34 +66,34 @@ public sealed class EntryOptions
         switch (kind)
         {
             case CustomEntryKind.Url:
-                parts.Add(Browser switch { BrowserChoice.Edge => "Edge", BrowserChoice.Chrome => "Chrome", BrowserChoice.Firefox => "Firefox", _ => "Standardbrowser" });
+                parts.Add(Browser switch { BrowserChoice.Edge => "Edge", BrowserChoice.Chrome => "Chrome", BrowserChoice.Firefox => "Firefox", _ => L.T("Standardbrowser") });
                 if (BrowserProfile.Length > 0) parts.Add(profileName?.Invoke(Browser, BrowserProfile) ?? BrowserProfile);
                 if (Private) parts.Add("privat");
-                if (AppWindow) parts.Add("App-Fenster");
+                if (AppWindow) parts.Add(L.T("App-Fenster"));
                 break;
             case CustomEntryKind.Rdp:
                 if (User.Length > 0) parts.Add(User);
-                parts.Add(Screen switch { RdpScreen.Fullscreen => "Vollbild", RdpScreen.Window => ScreenWidth > 0 ? $"{ScreenWidth}×{ScreenHeight}" : "Fenster", _ => "Standardanzeige" });
-                if (AllMonitors) parts.Add("alle Monitore");
-                if (AdminSession) parts.Add("Admin-Sitzung");
-                if (Gateway.Length > 0) parts.Add("über " + Gateway);
+                parts.Add(Screen switch { RdpScreen.Fullscreen => L.T("Vollbild"), RdpScreen.Window => ScreenWidth > 0 ? $"{ScreenWidth}×{ScreenHeight}" : L.T("Fenster"), _ => L.T("Standardanzeige") });
+                if (AllMonitors) parts.Add(L.T("alle Monitore"));
+                if (AdminSession) parts.Add(L.T("Admin-Sitzung"));
+                if (Gateway.Length > 0) parts.Add(L.T("über ") + Gateway);
                 break;
             case CustomEntryKind.Ssh:
                 if (User.Length > 0) parts.Add(User);
-                parts.Add(Client switch { SshClient.Putty => "PuTTY", SshClient.Console => "Konsole", _ => "Terminal" });
-                if (JumpHost.Length > 0) parts.Add("über " + JumpHost);
+                parts.Add(Client switch { SshClient.Putty => "PuTTY", SshClient.Console => L.T("Konsole"), _ => "Terminal" });
+                if (JumpHost.Length > 0) parts.Add(L.T("über ") + JumpHost);
                 if (RemoteCommand.Length > 0) parts.Add(RemoteCommand);
                 break;
             case CustomEntryKind.Folder:
-                parts.Add(OpenWith switch { FolderOpener.NewWindow => "neues Fenster", FolderOpener.Program => Path.GetFileNameWithoutExtension(OpenWithProgram), FolderOpener.Terminal => "Terminal", _ => "Explorer" });
+                parts.Add(OpenWith switch { FolderOpener.NewWindow => L.T("neues Fenster"), FolderOpener.Program => Path.GetFileNameWithoutExtension(OpenWithProgram), FolderOpener.Terminal => "Terminal", _ => "Explorer" });
                 break;
             case CustomEntryKind.Command or CustomEntryKind.Tool or CustomEntryKind.File:
-                if (WorkingDirectory.Length > 0) parts.Add("in " + WorkingDirectory);
+                if (WorkingDirectory.Length > 0) parts.Add(L.T("in ") + WorkingDirectory);
                 if (WindowState != LaunchWindowState.Normal) parts.Add(WindowState == LaunchWindowState.Maximized ? "maximiert" : "minimiert");
                 break;
             case CustomEntryKind.Snippet:
                 if (CopyAsHtml) parts.Add("formatiert");
-                if (PasteAfterCopy) parts.Add("direkt einfügen");
+                if (PasteAfterCopy) parts.Add(L.T("direkt einfügen"));
                 break;
         }
         return string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));

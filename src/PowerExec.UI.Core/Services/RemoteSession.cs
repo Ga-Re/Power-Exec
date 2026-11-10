@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -107,7 +108,7 @@ public sealed class RemoteSession : IDisposable
         string? error = null;
         if (!_done)
         {
-            lock (_stderr) error = _stderr.Length > 0 ? _stderr.ToString().Trim() : "Der Remote-Runner wurde unerwartet beendet.";
+            lock (_stderr) error = _stderr.Length > 0 ? _stderr.ToString().Trim() : L.T("Der Remote-Runner wurde unerwartet beendet.");
         }
         // Mit niedriger Priorität, damit noch wartende Ergebnisse vorher verarbeitet werden.
         _dispatcher.Post(() => Completed?.Invoke(error));

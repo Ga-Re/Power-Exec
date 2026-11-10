@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -67,7 +68,7 @@ public partial class App : Application
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec");
             Directory.CreateDirectory(dir);
             File.AppendAllText(Path.Combine(dir, "error.log"), $"{DateTime.Now:u} {e.Exception}{Environment.NewLine}");
-            Services.AppLog.Error("Unerwarteter Fehler", e.Exception);
+            Services.AppLog.Error(L.T("Unerwarteter Fehler"), e.Exception);
         }
         catch { }
         e.Handled = true;
@@ -79,8 +80,8 @@ public partial class App : Application
             .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true);
         var where = frame != null ? $"{frame.DeclaringType!.Name}.{frame.Name}" : e.Exception.TargetSite?.Name ?? "unbekannt";
         var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "error.log");
-        MessageBox.Show($"Ein unerwarteter Fehler ist aufgetreten:\n\n{e.Exception.Message}\n\nOrt: {where} · Version {Services.UpdateService.CurrentVersionText}\n" +
-                        $"Details: {log}", "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(L.F("Ein unerwarteter Fehler ist aufgetreten:\n\n{0}\n\nOrt: {1} · Version {2}\n", e.Exception.Message, where, Services.UpdateService.CurrentVersionText) +
+                        L.F("Details: {0}", log), "Power-Exec", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 

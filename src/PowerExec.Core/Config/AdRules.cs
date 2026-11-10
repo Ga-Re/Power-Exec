@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Globalization;
 using System.Text;
 
@@ -48,16 +49,16 @@ public static class AdRules
 
     public static readonly IReadOnlyList<AdAttribute> Attributes = new AdAttribute[]
     {
-        new("name", "Name", Text, "z. B. SRV-"),
-        new("operatingSystem", "Betriebssystem", Text, "z. B. Server"),
-        new("operatingSystemVersion", "Betriebssystem-Version", Text, "z. B. 10.0 (20348)"),
-        new("description", "Beschreibung", Text, "Text"),
-        new("location", "Standort", Text, "z. B. Berlin"),
-        new("dNSHostName", "DNS-Name", Text, "z. B. .firma.local"),
-        new("managedBy", "Verwaltet von (DN)", new[] { AdOperator.Equals, AdOperator.NotEquals, AdOperator.Exists, AdOperator.NotExists }, "CN=…,OU=…,DC=…"),
-        new(Enabled, "Konto aktiviert", new[] { AdOperator.Equals }, "Ja oder Nein"),
-        new(LastLogonDays, "Letzte Anmeldung (Tage)", new[] { AdOperator.AtMost, AdOperator.AtLeast }, "Anzahl Tage, z. B. 30"),
-        new(MemberOf, "Mitglied der AD-Gruppe (DN)", new[] { AdOperator.Equals, AdOperator.NotEquals }, "CN=Webserver,OU=Gruppen,DC=…"),
+        new("name", L.T("Name"), Text, L.T("z. B. SRV-")),
+        new("operatingSystem", L.T("Betriebssystem"), Text, L.T("z. B. Server")),
+        new("operatingSystemVersion", L.T("Betriebssystem-Version"), Text, "z. B. 10.0 (20348)"),
+        new("description", L.T("Beschreibung"), Text, "Text"),
+        new("location", L.T("Standort"), Text, L.T("z. B. Berlin")),
+        new("dNSHostName", L.T("DNS-Name"), Text, L.T("z. B. .firma.local")),
+        new("managedBy", L.T("Verwaltet von (DN)"), new[] { AdOperator.Equals, AdOperator.NotEquals, AdOperator.Exists, AdOperator.NotExists }, "CN=…,OU=…,DC=…"),
+        new(Enabled, L.T("Konto aktiviert"), new[] { AdOperator.Equals }, L.T("Ja oder Nein")),
+        new(LastLogonDays, L.T("Letzte Anmeldung (Tage)"), new[] { AdOperator.AtMost, AdOperator.AtLeast }, L.T("Anzahl Tage, z. B. 30")),
+        new(MemberOf, L.T("Mitglied der AD-Gruppe (DN)"), new[] { AdOperator.Equals, AdOperator.NotEquals }, L.T("CN=Webserver,OU=Gruppen,DC=…")),
     };
 
     public static AdAttribute? Find(string key) => Attributes.FirstOrDefault(a => a.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
@@ -67,16 +68,16 @@ public static class AdRules
 
     public static string Label(AdOperator op, string attribute = "") => op switch
     {
-        AdOperator.Equals => attribute == Enabled ? "ist" : "ist gleich",
-        AdOperator.NotEquals => "ist nicht",
-        AdOperator.Contains => "enthält",
-        AdOperator.NotContains => "enthält nicht",
-        AdOperator.StartsWith => "beginnt mit",
-        AdOperator.EndsWith => "endet mit",
-        AdOperator.Exists => "ist gesetzt",
-        AdOperator.NotExists => "ist leer",
-        AdOperator.AtMost => attribute == LastLogonDays ? "innerhalb von (Tage)" : "höchstens",
-        AdOperator.AtLeast => attribute == LastLogonDays ? "länger her als (Tage)" : "mindestens",
+        AdOperator.Equals => attribute == Enabled ? "ist" : L.T("ist gleich"),
+        AdOperator.NotEquals => L.T("ist nicht"),
+        AdOperator.Contains => L.T("enthält"),
+        AdOperator.NotContains => L.T("enthält nicht"),
+        AdOperator.StartsWith => L.T("beginnt mit"),
+        AdOperator.EndsWith => L.T("endet mit"),
+        AdOperator.Exists => L.T("ist gesetzt"),
+        AdOperator.NotExists => L.T("ist leer"),
+        AdOperator.AtMost => attribute == LastLogonDays ? L.T("innerhalb von (Tage)") : L.T("höchstens"),
+        AdOperator.AtLeast => attribute == LastLogonDays ? L.T("länger her als (Tage)") : "mindestens",
         _ => op.ToString()
     };
 
@@ -86,13 +87,13 @@ public static class AdRules
     public static string? Validate(AdRule r)
     {
         var attr = r.Attribute.Trim();
-        if (attr.Length == 0) return "Attribut fehlt.";
-        if (!attr.StartsWith('@') && !attr.All(c => char.IsLetterOrDigit(c) || c == '-')) return $"„{attr}“ ist kein gültiger Attributname.";
-        if (!OperatorsFor(attr).Contains(r.Operator)) return $"„{Label(r.Operator, attr)}“ passt nicht zu „{Find(attr)?.Label ?? attr}“.";
+        if (attr.Length == 0) return L.T("Attribut fehlt.");
+        if (!attr.StartsWith('@') && !attr.All(c => char.IsLetterOrDigit(c) || c == '-')) return L.F("„{0}“ ist kein gültiger Attributname.", attr);
+        if (!OperatorsFor(attr).Contains(r.Operator)) return L.F("„{0}“ passt nicht zu „{1}“.", Label(r.Operator, attr), Find(attr)?.Label ?? attr);
         var v = r.Value.Trim();
-        if (NeedsValue(r.Operator) && v.Length == 0) return "Wert fehlt.";
-        if (attr == LastLogonDays && (!int.TryParse(v, out var d) || d < 1 || d > 3650)) return "Tage als Zahl zwischen 1 und 3650.";
-        if (attr == Enabled && ParseYesNo(v) == null) return "„Ja“ oder „Nein“.";
+        if (NeedsValue(r.Operator) && v.Length == 0) return L.T("Wert fehlt.");
+        if (attr == LastLogonDays && (!int.TryParse(v, out var d) || d < 1 || d > 3650)) return L.T("Tage als Zahl zwischen 1 und 3650.");
+        if (attr == Enabled && ParseYesNo(v) == null) return L.T("„Ja“ oder „Nein“.");
         return null;
     }
 
@@ -100,13 +101,13 @@ public static class AdRules
     public static string? Validate(AdGroupQuery q)
     {
         var rules = q.Blocks.SelectMany(b => b.Rules).ToList();
-        if (rules.Count == 0) return "Mindestens eine Regel anlegen.";
+        if (rules.Count == 0) return L.T("Mindestens eine Regel anlegen.");
         foreach (var (block, i) in q.Blocks.Select((b, i) => (b, i)))
         foreach (var r in block.Rules)
-            if (Validate(r) is { } e) return (q.Blocks.Count > 1 ? $"Block {i + 1}: " : string.Empty) + e;
+            if (Validate(r) is { } e) return (q.Blocks.Count > 1 ? L.F("Block {0}: ", i + 1) : string.Empty) + e;
         var sb = q.SearchBase.Trim();
         if (sb.Length > 0 && !sb.Contains("DC=", StringComparison.OrdinalIgnoreCase) && !sb.Contains("OU=", StringComparison.OrdinalIgnoreCase))
-            return "OU als Distinguished Name angeben, z. B. OU=Server,DC=firma,DC=local.";
+            return L.T("OU als Distinguished Name angeben, z. B. OU=Server,DC=firma,DC=local.");
         return null;
     }
 
@@ -202,14 +203,14 @@ public static class AdRules
     public static string Describe(AdGroupQuery q)
     {
         var blocks = q.Blocks.Where(b => b.Rules.Count > 0)
-            .Select(b => string.Join(" und ", b.Rules.Select(r =>
+            .Select(b => string.Join(L.T(" und "), b.Rules.Select(r =>
             {
                 var name = Find(r.Attribute)?.Label ?? r.Attribute;
                 return NeedsValue(r.Operator) ? $"{name} {Label(r.Operator, r.Attribute)} {r.Value.Trim()}" : $"{name} {Label(r.Operator, r.Attribute)}";
             })))
             .ToList();
-        var text = blocks.Count == 0 ? "keine Regeln" : string.Join(" · oder ", blocks.Select(b => blocks.Count > 1 ? "(" + b + ")" : b));
-        return q.SearchBase.Trim().Length > 0 ? $"{text} · ab {q.SearchBase.Trim()}" : text;
+        var text = blocks.Count == 0 ? L.T("keine Regeln") : string.Join(L.T(" · oder "), blocks.Select(b => blocks.Count > 1 ? "(" + b + ")" : b));
+        return q.SearchBase.Trim().Length > 0 ? L.F("{0} · ab {1}", text, q.SearchBase.Trim()) : text;
     }
 
     /// <summary>Ist eine dynamische Gruppe fällig (nie synchronisiert oder älter als das Intervall)?</summary>

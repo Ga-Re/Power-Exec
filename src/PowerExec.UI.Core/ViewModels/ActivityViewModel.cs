@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -95,7 +96,7 @@ public sealed class ActivityViewModel : ObservableObject
     {
         get
         {
-            if (IsRunning) return "seit " + Format(DateTime.Now - Started);
+            if (IsRunning) return L.T("seit ") + Format(DateTime.Now - Started);
             var end = _finished ?? DateTime.Now;
             return $"{end:HH:mm} · {Format(end - Started)}";
         }
@@ -206,8 +207,8 @@ public sealed class ActivityList
         catch (Exception ex)
         {
             // Kein Zugriff auf den Prozess (z. B. anderes Konto): nicht weiter verfolgen
-            AppLog.Info($"Prozess wird nicht verfolgt: {ex.Message}");
-            activity.Complete(ActivityState.Success, detail + " · gestartet");
+            AppLog.Info(L.F("Prozess wird nicht verfolgt: {0}", ex.Message));
+            activity.Complete(ActivityState.Success, detail + L.T(" · gestartet"));
             process.Dispose();
         }
     }
@@ -233,13 +234,13 @@ public sealed class ActivityList
             // „E“: Batch mit Fehler (Exit-Code dort nicht sicher ermittelbar)
             if (text.Equals("E", StringComparison.OrdinalIgnoreCase))
             {
-                activity.Complete(ActivityState.Error, "fertig mit Fehler · Fenster noch offen");
+                activity.Complete(ActivityState.Error, L.T("fertig mit Fehler · Fenster noch offen"));
                 continue;
             }
             var code = int.TryParse(text, out var c) ? c : 0;
             activity.ExitCode = code;
-            if (code == 0) activity.Complete(ActivityState.Success, "fertig · Fenster noch offen");
-            else activity.Complete(ActivityState.Error, $"fertig · Exit-Code {code} · Fenster noch offen");
+            if (code == 0) activity.Complete(ActivityState.Success, L.T("fertig · Fenster noch offen"));
+            else activity.Complete(ActivityState.Error, L.F("fertig · Exit-Code {0} · Fenster noch offen", code));
         }
     }
 
@@ -263,9 +264,9 @@ public sealed class ActivityList
         process.Dispose();
         activity.ExitCode = code;
         // 0xC000013A: Konsolenfenster geschlossen (Strg+C / ✕) – abgebrochen, kein Script-Fehler
-        if (code == unchecked((int)0xC000013A)) activity.Complete(ActivityState.Warning, "Fenster geschlossen");
-        else if (code is null or 0) activity.Complete(ActivityState.Success, code == null ? "beendet" : "beendet · Exit-Code 0");
-        else activity.Complete(ActivityState.Error, $"beendet · Exit-Code {code}");
+        if (code == unchecked((int)0xC000013A)) activity.Complete(ActivityState.Warning, L.T("Fenster geschlossen"));
+        else if (code is null or 0) activity.Complete(ActivityState.Success, code == null ? "beendet" : L.T("beendet · Exit-Code 0"));
+        else activity.Complete(ActivityState.Error, L.F("beendet · Exit-Code {0}", code));
     }
 
     /// <summary>Remote-/Massenlauf aus der Ergebnisliste anzeigen.</summary>
@@ -292,10 +293,10 @@ public sealed class ActivityList
 
     private static string RemoteDetail(IRemoteRunProgress r)
     {
-        var parts = new List<string> { r.IsRunning ? $"{r.DoneCount} / {r.Total} Rechner" : $"{r.Total} Rechner" };
+        var parts = new List<string> { r.IsRunning ? L.F("{0} / {1} Rechner", r.DoneCount, r.Total) : L.F("{0} Rechner", r.Total) };
         if (r.SuccessCount > 0) parts.Add($"{r.SuccessCount} ✓");
-        if (r.ErrorCount > 0) parts.Add($"{r.ErrorCount} Fehler");
-        if (r.UnreachableCount > 0) parts.Add($"{r.UnreachableCount} nicht erreichbar");
+        if (r.ErrorCount > 0) parts.Add(L.F("{0} Fehler", r.ErrorCount));
+        if (r.UnreachableCount > 0) parts.Add(L.F("{0} nicht erreichbar", r.UnreachableCount));
         return string.Join(" · ", parts);
     }
 

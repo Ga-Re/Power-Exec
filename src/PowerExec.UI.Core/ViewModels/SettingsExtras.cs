@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Infrastructure;
@@ -55,9 +56,9 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     public static IReadOnlyList<KeyValuePair<string, string>> SourceChoices { get; } = new[]
     {
-        new KeyValuePair<string, string>("static", "Feste Liste"),
-        new KeyValuePair<string, string>("list", "Dynamisch aus Liste"),
-        new KeyValuePair<string, string>("ad", "Dynamisch aus AD")
+        new KeyValuePair<string, string>("static", L.T("Feste Liste")),
+        new KeyValuePair<string, string>("list", L.T("Dynamisch aus Liste")),
+        new KeyValuePair<string, string>("ad", L.T("Dynamisch aus AD"))
     };
 
     public IReadOnlyList<KeyValuePair<string, string>> Sources => SourceChoices;
@@ -126,10 +127,10 @@ public sealed class MachineGroupViewModel : ObservableObject
     private string DefaultFilterColumn => _table?.NameColumnFor(_nameColumn) ?? MachineTable.NameOnlyColumn;
 
     /// <summary>Art der Liste und Zahl der Treffer mit den aktuellen Filtern.</summary>
-    public string ListSummary => _listError != null ? "Liste nicht lesbar: " + _listError
-        : _table == null ? "Noch keine Liste gewählt."
-        : (_table.IsCsv ? $"CSV mit {_table.Columns.Count} Spalten und {_table.Rows.Count} Zeilen" : $"Namensliste mit {_table.Rows.Count} Einträgen")
-          + $" – mit den Filtern {ListMatches.Count} Rechner.";
+    public string ListSummary => _listError != null ? L.T("Liste nicht lesbar: ") + _listError
+        : _table == null ? L.T("Noch keine Liste gewählt.")
+        : (_table.IsCsv ? L.F("CSV mit {0} Spalten und {1} Zeilen", _table.Columns.Count, _table.Rows.Count) : L.F("Namensliste mit {0} Einträgen", _table.Rows.Count))
+          + L.F(" – mit den Filtern {0} Rechner.", ListMatches.Count);
 
     private IReadOnlyList<string> ListMatches => _table?.Apply(ListQuery()) ?? Array.Empty<string>();
 
@@ -140,7 +141,7 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     private void ChooseList()
     {
-        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*", "Liste für die Rechnergruppe wählen");
+        var file = _app.Dialogs.OpenFile(L.T("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*"), L.T("Liste für die Rechnergruppe wählen"));
         if (file != null) ListPath = file;
     }
 
@@ -183,17 +184,17 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     private void Export()
     {
-        var file = _app.Dialogs.SaveFile("CSV (*.csv)|*.csv|Text (*.txt)|*.txt", $"{(_name.Trim().Length > 0 ? _name.Trim() : "Rechnergruppe")}.csv",
-            "Rechnergruppe exportieren");
+        var file = _app.Dialogs.SaveFile("CSV (*.csv)|*.csv|Text (*.txt)|*.txt", $"{(_name.Trim().Length > 0 ? _name.Trim() : L.T("Rechnergruppe"))}.csv",
+            L.T("Rechnergruppe exportieren"));
         if (file == null) return;
         try
         {
             File.WriteAllText(file, MachineGroupExport.ToFileText(ToGroup(), file.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)), new System.Text.UTF8Encoding(true));
-            Status = $"{CountText} exportiert nach {file}.";
+            Status = L.F("{0} exportiert nach {1}.", CountText, file);
         }
         catch (Exception ex)
         {
-            Status = "Export fehlgeschlagen: " + ex.Message;
+            Status = L.T("Export fehlgeschlagen: ") + ex.Message;
         }
     }
 
@@ -201,17 +202,17 @@ public sealed class MachineGroupViewModel : ObservableObject
     private async Task PickOuAsync()
     {
         IsSearching = true;
-        Status = "Lese OUs aus dem Active Directory …";
+        Status = L.T("Lese OUs aus dem Active Directory …");
         try
         {
             var roots = OuTree.Build(await _app.FindOrganizationalUnitsAsync());
             Status = string.Empty;
-            if (roots.Count == 0) { Status = "Keine OUs gefunden."; return; }
+            if (roots.Count == 0) { Status = L.T("Keine OUs gefunden."); return; }
             if (_app.Dialogs.PickOrganizationalUnit(roots, _searchBase, _app.SettingsDialogOwner) is { } dn) SearchBase = dn;
         }
         catch (Exception ex)
         {
-            Status = "OUs nicht lesbar: " + ex.Message;
+            Status = L.T("OUs nicht lesbar: ") + ex.Message;
         }
         finally { IsSearching = false; }
     }
@@ -267,14 +268,14 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     /// <summary>„Zuletzt aktualisiert …“ bzw. Fehler der letzten Synchronisierung.</summary>
     public string SyncText => _lastSyncError != null
-        ? $"Letzte Aktualisierung fehlgeschlagen: {_lastSyncError} – die bisherige Liste ({CountText}) gilt weiter."
-        : _lastSyncUtc is { } t ? $"Zuletzt aktualisiert {t.ToLocalTime():dd.MM. HH:mm} · {CountText}"
-        : _isList ? "Noch nicht synchronisiert – die Liste wird beim Start und regelmäßig neu gelesen." : "Noch nicht aus dem AD gelesen.";
+        ? L.F("Letzte Aktualisierung fehlgeschlagen: {0} – die bisherige Liste ({1}) gilt weiter.", _lastSyncError, CountText)
+        : _lastSyncUtc is { } t ? L.F("Zuletzt aktualisiert {0:dd.MM. HH:mm} · {1}", t.ToLocalTime(), CountText)
+        : _isList ? L.T("Noch nicht synchronisiert – die Liste wird beim Start und regelmäßig neu gelesen.") : L.T("Noch nicht aus dem AD gelesen.");
 
     private async Task SyncNowAsync()
     {
         IsSearching = true;
-        Status = _isList ? "Lese die Liste …" : "Lese Rechner aus dem Active Directory …";
+        Status = _isList ? L.T("Lese die Liste …") : L.T("Lese Rechner aus dem Active Directory …");
         try
         {
             if (_isList) LoadTable(); // Datei kann sich geändert haben
@@ -283,7 +284,7 @@ public sealed class MachineGroupViewModel : ObservableObject
             _lastSyncUtc = g.LastSyncUtc;
             _lastSyncError = g.LastSyncError;
             if (names != null) Machines = string.Join(Environment.NewLine, names);
-            Status = names == null ? string.Empty : names.Count == 0 ? (_isList ? "Keine Rechner – Filter prüfen." : "Keine Rechner gefunden – Regeln prüfen.") : $"{names.Count} Rechner gefunden.";
+            Status = names == null ? string.Empty : names.Count == 0 ? (_isList ? L.T("Keine Rechner – Filter prüfen.") : L.T("Keine Rechner gefunden – Regeln prüfen.")) : L.F("{0} Rechner gefunden.", names.Count);
             OnPropertyChanged(nameof(SyncText));
         }
         finally { IsSearching = false; }
@@ -309,7 +310,7 @@ public sealed class MachineGroupViewModel : ObservableObject
         get
         {
             if (_isDynamic) return "AD: " + RulesSummary;
-            if (_isList) return "Liste: " + (_listPath.Trim().Length > 0 ? Path.GetFileName(_listPath.Trim()) : "–") + (ListFilters.Count > 0 ? $" · {ListFilters.Count} Filter" : string.Empty);
+            if (_isList) return L.T("Liste: ") + (_listPath.Trim().Length > 0 ? Path.GetFileName(_listPath.Trim()) : "–") + (ListFilters.Count > 0 ? L.F(" · {0} Filter", ListFilters.Count) : string.Empty);
             var names = Parse();
             return names.Count == 0 ? "leer" : string.Join(", ", names.Take(6)) + (names.Count > 6 ? $" … (+{names.Count - 6})" : string.Empty);
         }
@@ -321,7 +322,7 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     /// <summary>Dynamische Gruppe: gefundene Rechner kompakt (nur lesen).</summary>
     public string MachinesInline { get { var n = Parse(); return n.Count == 0 ? "–" : string.Join(", ", n); } }
-    public string CountText { get { var n = Parse().Count; return n == 1 ? "1 Rechner" : $"{n} Rechner"; } }
+    public string CountText { get { var n = Parse().Count; return n == 1 ? L.T("1 Rechner") : L.F("{0} Rechner", n); } }
     public string AdQuery { get => _adQuery; set => Set(ref _adQuery, value ?? string.Empty); }
     public string Status { get => _status; private set => Set(ref _status, value); }
     public bool IsSearching { get => _searching; private set { if (Set(ref _searching, value)) CommandRequery.Invalidate(); } }
@@ -338,12 +339,12 @@ public sealed class MachineGroupViewModel : ObservableObject
         var existing = Parse().ToList();
         var added = names.Where(n => !existing.Contains(n, StringComparer.OrdinalIgnoreCase)).ToList();
         Machines = string.Join(Environment.NewLine, existing.Concat(added));
-        Status = added.Count == 0 ? $"{source}: keine neuen Rechner." : $"{source}: {added.Count} Rechner hinzugefügt.";
+        Status = added.Count == 0 ? L.F("{0}: keine neuen Rechner.", source) : L.F("{0}: {1} Rechner hinzugefügt.", source, added.Count);
     }
 
     private void Import()
     {
-        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*");
+        var file = _app.Dialogs.OpenFile(L.T("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*"));
         if (file == null) return;
         try
         {
@@ -351,22 +352,22 @@ public sealed class MachineGroupViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            Status = "Import fehlgeschlagen: " + ex.Message;
+            Status = L.T("Import fehlgeschlagen: ") + ex.Message;
         }
     }
 
     private async Task SearchAdAsync()
     {
         IsSearching = true;
-        Status = "Suche im Active Directory …";
+        Status = L.T("Suche im Active Directory …");
         try
         {
             var names = await _app.FindComputersAsync(_adQuery);
-            AddNames(names, $"AD ({names.Count} gefunden)");
+            AddNames(names, L.F("AD ({0} gefunden)", names.Count));
         }
         catch (Exception ex)
         {
-            Status = "AD-Suche fehlgeschlagen: " + ex.Message;
+            Status = L.T("AD-Suche fehlgeschlagen: ") + ex.Message;
         }
         finally
         {
@@ -515,7 +516,7 @@ public sealed class AdRuleViewModel : ObservableObject
 
     public bool NeedsValue => AdRules.NeedsValue(_operator);
     public string Value { get => _value; set { if (Set(ref _value, value ?? string.Empty)) _block.Changed(); } }
-    public string ValueHint => AdRules.Find(_attribute)?.ValueHint ?? "Wert";
+    public string ValueHint => AdRules.Find(_attribute)?.ValueHint ?? L.T("Wert");
     public ICommand RemoveCommand { get; }
 
     public AdRule ToRule() => new() { Attribute = _attribute.Trim(), Operator = _operator, Value = _value.Trim() };

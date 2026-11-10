@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Dateiendungen in den Einstellungen: mit Semikolon getrennt, z. B. „.ps1; .cmd; .exe“.</summary>
@@ -26,7 +27,7 @@ public static class ExtensionList
         var bad = parts.Where(p => !IsValid(p)).ToList();
         if (bad.Count == 0) return null;
         return bad.Any(b => b.Contains(' ') || b.Contains(','))
-            ? "Endungen bitte mit Semikolon trennen, z. B. .ps1; .cmd; .exe"
-            : $"Ungültige Endung: {string.Join(", ", bad)}";
+            ? L.T("Endungen bitte mit Semikolon trennen, z. B. .ps1; .cmd; .exe")
+            : L.F("Ungültige Endung: {0}", string.Join(", ", bad));
     }
 }

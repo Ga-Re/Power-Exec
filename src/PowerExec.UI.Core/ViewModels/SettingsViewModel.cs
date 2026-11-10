@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -22,9 +23,9 @@ public sealed class ExclusionViewModel
     public string Value { get; }
     public string Kind => ExclusionMatcher.KindOf(Value) switch
     {
-        ExclusionKind.File => "Datei",
-        ExclusionKind.Type => "Typ",
-        _ => "Muster"
+        ExclusionKind.File => L.T("Datei"),
+        ExclusionKind.Type => L.T("Typ"),
+        _ => L.T("Muster")
     };
     public ICommand RemoveCommand { get; }
 }
@@ -85,11 +86,11 @@ public sealed class EntryRowViewModel : ObservableObject
     {
         get
         {
-            if (IsLocked) return $"Ausgeblendet durch Muster {Pattern}";
+            if (IsLocked) return L.F("Ausgeblendet durch Muster {0}", Pattern);
             var e = _settings.FindEntry(FullPath);
             if (!string.IsNullOrWhiteSpace(e?.Description)) return e!.Description;
             if (Item == null) return string.Empty;
-            return string.IsNullOrWhiteSpace(Item.Synopsis) ? (Item.Type is ItemType.PowerShell or ItemType.Batch ? "Keine Synopsis" : Item.FileName) : Item.Synopsis;
+            return string.IsNullOrWhiteSpace(Item.Synopsis) ? (Item.Type is ItemType.PowerShell or ItemType.Batch ? L.T("Keine Synopsis") : Item.FileName) : Item.Synopsis;
         }
     }
 
@@ -114,9 +115,9 @@ public sealed class EntryRowViewModel : ObservableObject
         {
             if (Item == null || IsLocked) return "–";
             var profiles = ProfileResolver.GetProfiles(_settings, Item);
-            if (profiles[0].IsImplicit) return "Standard (automatisch)";
+            if (profiles[0].IsImplicit) return L.T("Standard (automatisch)");
             var def = profiles.FirstOrDefault(p => p.IsDefault) ?? profiles[0];
-            return profiles.Count == 1 ? def.Name : $"{profiles.Count} Profile · Standard: {def.Name}";
+            return profiles.Count == 1 ? def.Name : L.F("{0} Profile · Standard: {1}", profiles.Count, def.Name);
         }
     }
 
@@ -271,12 +272,12 @@ public sealed class FolderViewModel : ObservableObject
     }
 
     public string ModeHint => RequireApproval
-        ? "Neue Dateien bleiben ausgeblendet; im Panel und hier erscheint ein Hinweis."
-        : "Neue Scripte und Programme erscheinen sofort im Panel.";
+        ? L.T("Neue Dateien bleiben ausgeblendet; im Panel und hier erscheint ein Hinweis.")
+        : L.T("Neue Scripte und Programme erscheinen sofort im Panel.");
 
     public int PendingCount => Rows.Count(r => r.IsNew);
     public bool HasPending => PendingCount > 0;
-    public string PendingText => PendingCount == 1 ? "1 neuer Eintrag wartet auf Freigabe." : $"{PendingCount} neue Einträge warten auf Freigabe.";
+    public string PendingText => PendingCount == 1 ? L.T("1 neuer Eintrag wartet auf Freigabe.") : L.F("{0} neue Einträge warten auf Freigabe.", PendingCount);
 
     public string Summary
     {
@@ -284,12 +285,12 @@ public sealed class FolderViewModel : ObservableObject
         {
             var visible = Rows.Count(r => r.IsVisibleInPanel);
             var selectable = Rows.Count(r => !r.IsLocked);
-            return $"{(Recursive ? "Mit Unterordnern" : "Nur oberste Ebene")} · {selectable} gefunden · {visible} im Panel · neue Dateien: " +
-                   (RequireApproval ? "nach Freigabe" : "automatisch");
+            return L.F("{0} · {1} gefunden · {2} im Panel · neue Dateien: {3}", Recursive ? L.T("Mit Unterordnern") : L.T("Nur oberste Ebene"),
+                selectable, visible, RequireApproval ? L.T("nach Freigabe") : L.T("automatisch"));
         }
     }
 
-    public string CountText => $"{Rows.Count(r => r.IsVisibleInPanel)} von {Rows.Count(r => !r.IsLocked)} im Panel";
+    public string CountText => L.F("{0} von {1} im Panel", Rows.Count(r => r.IsVisibleInPanel), Rows.Count(r => !r.IsLocked));
 
     public ICommand RemoveCommand { get; }
     public ICommand BrowseCommand { get; }
@@ -350,7 +351,7 @@ public sealed class FolderViewModel : ObservableObject
 
     private void Browse()
     {
-        if (_app.Dialogs.PickFolder("Ordner auswählen", _app.SettingsDialogOwner) is { } folder) Path = folder;
+        if (_app.Dialogs.PickFolder(L.T("Ordner auswählen"), _app.SettingsDialogOwner) is { } folder) Path = folder;
     }
 
     private void AddExclusion()
@@ -425,7 +426,7 @@ public sealed class CategoryItemViewModel : ObservableObject
         set { if (Set(ref _folder, value)) { OnPropertyChanged(nameof(IsSmart)); OnPropertyChanged(nameof(KindText)); } }
     }
     public bool IsSmart => _folder != null;
-    public string KindText => _folder != null ? "Smarte Gruppe · " + _folder.Path : "Gruppe";
+    public string KindText => _folder != null ? L.T("Smarte Gruppe · ") + _folder.Path : L.T("Gruppe");
     public bool IsExpanded { get => _isExpanded; set => Set(ref _isExpanded, value); }
 
     // ---- Verschachtelung: Untergruppen als Karten in der Karte -----------------------
@@ -500,15 +501,15 @@ public sealed class CategoryItemViewModel : ObservableObject
 
     public ICommand CustomColorCommand => new RelayCommand(() =>
     {
-        var t = Dialogs?.PickColor($"Farbe für „{Display}“", ColorOwn, DialogOwner);
+        var t = Dialogs?.PickColor(L.F("Farbe für „{0}“", Display), ColorOwn, DialogOwner);
         if (t != null) ColorOwn = t;
     });
 
     public static IReadOnlyList<KeyValuePair<string, string>> LayoutList { get; } = new[]
     {
-        new KeyValuePair<string, string>("panel", "Wie das Panel"),
-        new KeyValuePair<string, string>("List", "Liste"),
-        new KeyValuePair<string, string>("Grid", "Raster")
+        new KeyValuePair<string, string>("panel", L.T("Wie das Panel")),
+        new KeyValuePair<string, string>("List", L.T("Liste")),
+        new KeyValuePair<string, string>("Grid", L.T("Raster"))
     };
 
     public string Layout
@@ -549,7 +550,7 @@ public sealed class SettingsViewModel : ObservableObject
             if (focusFolder != null && f.Path.Equals(focusFolder, StringComparison.OrdinalIgnoreCase)) vm.IsHighlighted = true;
             Folders.Add(vm);
         }
-        _monitors = new[] { new KeyValuePair<int, string>(-1, "Hauptmonitor"), new KeyValuePair<int, string>(-2, "Alle Monitore") }
+        _monitors = new[] { new KeyValuePair<int, string>(-1, L.T("Hauptmonitor")), new KeyValuePair<int, string>(-2, L.T("Alle Monitore")) }
             .Concat(app.Monitors)
             .ToList();
 
@@ -597,8 +598,8 @@ public sealed class SettingsViewModel : ObservableObject
         ExportCommand = new RelayCommand(Export);
         ImportCommand = new RelayCommand(Import);
         UpdateStatus = app.LastUpdateCheck is { } t
-            ? (app.AvailableUpdate is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar (geprüft {t:HH:mm})." : $"Aktuell (geprüft {t:HH:mm}).")
-            : "Noch nicht geprüft.";
+            ? (app.AvailableUpdate is { } r ? L.F("Version {0} ist verfügbar (geprüft {1:HH:mm}).", r.Version.ToString(3), t) : L.F("Aktuell (geprüft {0:HH:mm}).", t))
+            : L.T("Noch nicht geprüft.");
 
     }
 
@@ -608,76 +609,77 @@ public sealed class SettingsViewModel : ObservableObject
 
     private static readonly (string Section, string Page, string Segment)[] Pages =
     {
-        ("general", "Allgemein", ""),
-        ("groups", "Gruppen", "content"), ("custom", "Eigene Einträge", "content"), ("tags", "Schlagworte", "content"), ("variables", "Variablen", "content"), ("marketplace", "Marktplatz", "content"), ("workspaces", "Arbeitsbereiche", "content"),
-        ("look", "Darstellung", "panel"), ("behavior", "Verhalten", "panel"),
-        ("exec", "PowerShell", "exec"), ("remote", "Remote", "exec"), ("machines", "Rechnergruppen", "exec"),
-        ("samples", "Beispiele", "help"), ("diag", "Diagnose", "help")
+        ("general", L.T("Allgemein"), ""),
+        ("groups", L.T("Gruppen"), "content"), ("custom", L.T("Eigene Einträge"), "content"), ("tags", L.T("Schlagworte"), "content"), ("variables", L.T("Variablen"), "content"), ("marketplace", L.T("Marktplatz"), "content"), ("workspaces", L.T("Arbeitsbereiche"), "content"),
+        ("look", L.T("Darstellung"), "panel"), ("behavior", L.T("Verhalten"), "panel"),
+        ("exec", "PowerShell", "exec"), ("remote", L.T("Remote"), "exec"), ("machines", L.T("Rechnergruppen"), "exec"),
+        ("samples", L.T("Beispiele"), "help"), ("diag", L.T("Diagnose"), "help")
     };
 
     private static readonly SearchHit[] Index =
     {
-        new("general", "Allgemein", "Version und Updates", "update aktualisieren version vorabversion beta github"),
-        new("general", "Allgemein", "Versionshinweise", "release notes neuerungen änderungen"),
-        new("general", "Allgemein", "Mit Windows starten", "autostart anmeldung start"),
-        new("general", "Allgemein", "Einstellungen sichern", "export import backup datei"),
-        new("groups", "Gruppen", "Gruppen und Untergruppen", "gruppe untergruppe reihenfolge kategorie"),
-        new("groups", "Gruppen", "Smarte Gruppe (Ordner)", "ordner pfad freigabe unc netzwerk scan smart"),
-        new("groups", "Gruppen", "Gruppensymbole", "icon symbol fluent heroicons emoji"),
-        new("groups", "Gruppen", "Favoriten", "stern favorit anzeigen"),
-        new("groups", "Gruppen", "Zuletzt ausgeführt", "verlauf anzahl recent"),
-        new("groups", "Gruppen", "Unterordner als Untergruppen", "rekursiv unterordner"),
-        new("groups", "Gruppen", "Standard-Dateiendungen", "ps1 exe cmd endung"),
-        new("groups", "Gruppen", "Globale Ausschlüsse", "ausschließen muster"),
-        new("groups", "Gruppen", "Automatisch neu einlesen", "dateiwächter rescan"),
-        new("groups", "Gruppen", "Zeitlimit für nicht erreichbare Ordner", "timeout offline"),
-        new("groups", "Gruppen", "Neue Dateien freigeben", "freigabe sichtbar haken"),
-        new("custom", "Eigene Einträge", "Eigene Einträge verwalten", "webseite url ordner rdp ssh snippet werkzeug befehl datei"),
-        new("custom", "Eigene Einträge", "Aus Vorlagen", "katalog mmc systemsteuerung ms-settings"),
-        new("custom", "Eigene Einträge", "Erreichbarkeit prüfen", "health tote links"),
-        new("custom", "Eigene Einträge", "Importieren / Exportieren", "teilen kollegen datei"),
-        new("tags", "Schlagworte", "Schlagworte verwalten", "tag umbenennen zusammenführen löschen farbe #"),
-        new("marketplace", "Marktplatz", "Einträge, Pakete, Designs und Scripte herunterladen", "marktplatz download herunterladen paket design script matrix42 google virustotal"),
-        new("variables", "Variablen", "Variablen verwalten", "variable platzhalter $ firmenname datum uhrzeit benutzer computer zwischenablage geheim token umgebungsvariable powershell arbeitsbereich"),
-        new("workspaces", "Arbeitsbereiche", "Arbeitsbereiche", "kunde profil wechseln"),
-        new("workspaces", "Arbeitsbereiche", "Gruppen je Arbeitsbereich", "ausblenden sichtbar auswahl"),
-        new("look", "Darstellung", "Design", "hell dunkel theme farbe"),
-        new("look", "Darstellung", "Animation", "ausfahren sanft schnell"),
-        new("look", "Darstellung", "Symbole anzeigen", "icons favicon programmsymbol"),
-        new("look", "Darstellung", "Liste oder Raster", "kacheln ansicht"),
-        new("look", "Darstellung", "Gruppen-Stil", "akzentstreifen karten farbig fluent gruppenfarbe"),
-        new("look", "Darstellung", "Elementgröße", "klein mittel groß kompakt"),
-        new("look", "Darstellung", "Panelfarbe und Deckkraft", "farbe transparenz"),
-        new("look", "Darstellung", "Panel-Abmessungen", "breite höhe lage größe"),
-        new("look", "Darstellung", "Designvorlagen", "vorlage design oled nordic espresso fluent glas eigenes design speichern"),
-        new("look", "Darstellung", "Akzentfarbe", "akzent windows farbe hover-zone"),
-        new("look", "Darstellung", "Mini-Dock", "dock favoriten leiste"),
-        new("look", "Darstellung", "Hintergrund", "vollton deckend klarglas glas milchglas"),
-        new("look", "Darstellung", "Hover-Zone", "rand monitor breite länge auslöser links rechts oben unten"),
-        new("behavior", "Verhalten", "Verweilzeit bis zum Ausfahren", "hover verzögerung"),
-        new("behavior", "Verhalten", "Einklappen nach Verlassen", "schließen verzögerung"),
-        new("behavior", "Verhalten", "Bei Vollbild-Programmen ausblenden", "video präsentation spiel rdp"),
-        new("behavior", "Verhalten", "Gruppen ziehen: Ziehbild am Mauszeiger", "drag drop verschieben gruppe vorschau"),
-        new("behavior", "Verhalten", "Gruppen ziehen: Lücke weich öffnen", "drag drop verschieben animation platzhalter"),
-        new("behavior", "Verhalten", "Gruppen ziehen: Inhalte zuklappen", "drag drop verschieben kompakt karten"),
-        new("behavior", "Verhalten", "Gruppen ziehen: Begründung an ungültigen Stellen", "drag drop verschieben hinweis fehler"),
-        new("behavior", "Verhalten", "Tastenkürzel", "hotkey shortcut"),
-        new("exec", "PowerShell", "Standard-PowerShell", "pwsh 7 5.1 version"),
+        new("general", L.T("Allgemein"), L.T("Version und Updates"), L.T("update aktualisieren version vorabversion beta github")),
+        new("general", L.T("Allgemein"), L.T("Versionshinweise"), L.T("release notes neuerungen änderungen")),
+        new("general", L.T("Allgemein"), L.T("Sprache der Oberfläche"), L.T("sprache language deutsch englisch english german")),
+        new("general", L.T("Allgemein"), L.T("Mit Windows starten"), L.T("autostart anmeldung start")),
+        new("general", L.T("Allgemein"), L.T("Einstellungen sichern"), L.T("export import backup datei")),
+        new("groups", L.T("Gruppen"), L.T("Gruppen und Untergruppen"), L.T("gruppe untergruppe reihenfolge kategorie")),
+        new("groups", L.T("Gruppen"), L.T("Smarte Gruppe (Ordner)"), L.T("ordner pfad freigabe unc netzwerk scan smart")),
+        new("groups", L.T("Gruppen"), L.T("Gruppensymbole"), "icon symbol fluent heroicons emoji"),
+        new("groups", L.T("Gruppen"), L.T("Favoriten"), L.T("stern favorit anzeigen")),
+        new("groups", L.T("Gruppen"), L.T("Zuletzt ausgeführt"), L.T("verlauf anzahl recent")),
+        new("groups", L.T("Gruppen"), L.T("Unterordner als Untergruppen"), L.T("rekursiv unterordner")),
+        new("groups", L.T("Gruppen"), L.T("Standard-Dateiendungen"), L.T("ps1 exe cmd endung")),
+        new("groups", L.T("Gruppen"), L.T("Globale Ausschlüsse"), L.T("ausschließen muster")),
+        new("groups", L.T("Gruppen"), L.T("Automatisch neu einlesen"), L.T("dateiwächter rescan")),
+        new("groups", L.T("Gruppen"), L.T("Zeitlimit für nicht erreichbare Ordner"), "timeout offline"),
+        new("groups", L.T("Gruppen"), L.T("Neue Dateien freigeben"), L.T("freigabe sichtbar haken")),
+        new("custom", L.T("Eigene Einträge"), L.T("Eigene Einträge verwalten"), L.T("webseite url ordner rdp ssh snippet werkzeug befehl datei")),
+        new("custom", L.T("Eigene Einträge"), L.T("Aus Vorlagen"), L.T("katalog mmc systemsteuerung ms-settings")),
+        new("custom", L.T("Eigene Einträge"), L.T("Erreichbarkeit prüfen"), L.T("health tote links")),
+        new("custom", L.T("Eigene Einträge"), L.T("Importieren / Exportieren"), L.T("teilen kollegen datei")),
+        new("tags", L.T("Schlagworte"), L.T("Schlagworte verwalten"), L.T("tag umbenennen zusammenführen löschen farbe #")),
+        new("marketplace", L.T("Marktplatz"), L.T("Einträge, Pakete, Designs und Scripte herunterladen"), L.T("marktplatz download herunterladen paket design script matrix42 google virustotal")),
+        new("variables", L.T("Variablen"), L.T("Variablen verwalten"), L.T("variable platzhalter $ firmenname datum uhrzeit benutzer computer zwischenablage geheim token umgebungsvariable powershell arbeitsbereich")),
+        new("workspaces", L.T("Arbeitsbereiche"), L.T("Arbeitsbereiche"), L.T("kunde profil wechseln")),
+        new("workspaces", L.T("Arbeitsbereiche"), L.T("Gruppen je Arbeitsbereich"), L.T("ausblenden sichtbar auswahl")),
+        new("look", L.T("Darstellung"), "Design", L.T("hell dunkel theme farbe")),
+        new("look", L.T("Darstellung"), "Animation", L.T("ausfahren sanft schnell")),
+        new("look", L.T("Darstellung"), L.T("Symbole anzeigen"), L.T("icons favicon programmsymbol")),
+        new("look", L.T("Darstellung"), L.T("Liste oder Raster"), L.T("kacheln ansicht")),
+        new("look", L.T("Darstellung"), L.T("Gruppen-Stil"), L.T("akzentstreifen karten farbig fluent gruppenfarbe")),
+        new("look", L.T("Darstellung"), L.T("Elementgröße"), L.T("klein mittel groß kompakt")),
+        new("look", L.T("Darstellung"), L.T("Panelfarbe und Deckkraft"), L.T("farbe transparenz")),
+        new("look", L.T("Darstellung"), L.T("Panel-Abmessungen"), L.T("breite höhe lage größe")),
+        new("look", L.T("Darstellung"), L.T("Designvorlagen"), L.T("vorlage design oled nordic espresso fluent glas eigenes design speichern")),
+        new("look", L.T("Darstellung"), L.T("Akzentfarbe"), L.T("akzent windows farbe hover-zone")),
+        new("look", L.T("Darstellung"), L.T("Mini-Dock"), L.T("dock favoriten leiste")),
+        new("look", L.T("Darstellung"), L.T("Hintergrund"), L.T("vollton deckend klarglas glas milchglas")),
+        new("look", L.T("Darstellung"), L.T("Hover-Zone"), L.T("rand monitor breite länge auslöser links rechts oben unten")),
+        new("behavior", L.T("Verhalten"), L.T("Verweilzeit bis zum Ausfahren"), L.T("hover verzögerung")),
+        new("behavior", L.T("Verhalten"), L.T("Einklappen nach Verlassen"), L.T("schließen verzögerung")),
+        new("behavior", L.T("Verhalten"), L.T("Bei Vollbild-Programmen ausblenden"), L.T("video präsentation spiel rdp")),
+        new("behavior", L.T("Verhalten"), L.T("Gruppen ziehen: Ziehbild am Mauszeiger"), L.T("drag drop verschieben gruppe vorschau")),
+        new("behavior", L.T("Verhalten"), L.T("Gruppen ziehen: Lücke weich öffnen"), L.T("drag drop verschieben animation platzhalter")),
+        new("behavior", L.T("Verhalten"), L.T("Gruppen ziehen: Inhalte zuklappen"), L.T("drag drop verschieben kompakt karten")),
+        new("behavior", L.T("Verhalten"), L.T("Gruppen ziehen: Begründung an ungültigen Stellen"), L.T("drag drop verschieben hinweis fehler")),
+        new("behavior", L.T("Verhalten"), L.T("Tastenkürzel"), "hotkey shortcut"),
+        new("exec", "PowerShell", L.T("Standard-PowerShell"), "pwsh 7 5.1 version"),
         new("exec", "PowerShell", "Execution Policy", "bypass remotesigned"),
-        new("exec", "PowerShell", "Ohne Profil / Konsole offen lassen", "noprofile noexit"),
-        new("exec", "PowerShell", "Beim Start nach dem Profil fragen", "profil auswahl fragen"),
-        new("machines", "Rechnergruppen", "Dynamische Gruppen aus dem AD", "active directory regeln filter ldap dynamisch"),
-        new("look", "Darstellung", "Blur-Stärke und Sättigung (Glas)", "transparenz blur milchglas weichzeichner"),
+        new("exec", "PowerShell", L.T("Ohne Profil / Konsole offen lassen"), "noprofile noexit"),
+        new("exec", "PowerShell", L.T("Beim Start nach dem Profil fragen"), L.T("profil auswahl fragen")),
+        new("machines", L.T("Rechnergruppen"), L.T("Dynamische Gruppen aus dem AD"), L.T("active directory regeln filter ldap dynamisch")),
+        new("look", L.T("Darstellung"), L.T("Blur-Stärke und Sättigung (Glas)"), L.T("transparenz blur milchglas weichzeichner")),
         new("exec", "PowerShell", "Editor", "vscode ise notepad"),
-        new("remote", "Remote", "PowerShell bei Remote", "winrm 5.1 7"),
-        new("remote", "Remote", "HTTPS (Port 5986)", "ssl winrm"),
-        new("remote", "Remote", "Gleichzeitige Verbindungen und Timeout", "throttle masse"),
-        new("remote", "Remote", "Benachrichtigung und Log-Ordner", "protokoll fertig"),
-        new("remote", "Remote", "Zuletzt verwendete Rechner", "rechnerliste leeren"),
-        new("machines", "Rechnergruppen", "Rechnergruppen", "gruppe csv import ad active directory"),
-        new("samples", "Beispiele", "Beispielscripte anlegen", "beispiel samples scripte vorlagen"),
-        new("diag", "Diagnose", "Protokoll", "log fehler kopieren"),
-        new("diag", "Diagnose", "Einlesezeiten der Ordner", "scan dauer"),
+        new("remote", L.T("Remote"), L.T("PowerShell bei Remote"), "winrm 5.1 7"),
+        new("remote", L.T("Remote"), "HTTPS (Port 5986)", "ssl winrm"),
+        new("remote", L.T("Remote"), L.T("Gleichzeitige Verbindungen und Timeout"), L.T("throttle masse")),
+        new("remote", L.T("Remote"), L.T("Benachrichtigung und Log-Ordner"), L.T("protokoll fertig")),
+        new("remote", L.T("Remote"), L.T("Zuletzt verwendete Rechner"), L.T("rechnerliste leeren")),
+        new("machines", L.T("Rechnergruppen"), L.T("Rechnergruppen"), L.T("gruppe csv import ad active directory")),
+        new("samples", L.T("Beispiele"), L.T("Beispielscripte anlegen"), L.T("beispiel samples scripte vorlagen")),
+        new("diag", L.T("Diagnose"), L.T("Protokoll"), L.T("log fehler kopieren")),
+        new("diag", L.T("Diagnose"), L.T("Einlesezeiten der Ordner"), L.T("scan dauer")),
     };
 
     private string _searchText = string.Empty;
@@ -732,17 +734,17 @@ public sealed class SettingsViewModel : ObservableObject
     public AnimationMode Animation { get => _s.Animation; set { _s.Animation = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<AnimationMode, string>> Animations { get; } = new[]
     {
-        new KeyValuePair<AnimationMode, string>(AnimationMode.Smooth, "Sanft (320 ms)"),
-        new KeyValuePair<AnimationMode, string>(AnimationMode.Fast, "Schnell (150 ms)"),
-        new KeyValuePair<AnimationMode, string>(AnimationMode.Off, "Aus")
+        new KeyValuePair<AnimationMode, string>(AnimationMode.Smooth, L.T("Sanft (320 ms)")),
+        new KeyValuePair<AnimationMode, string>(AnimationMode.Fast, L.T("Schnell (150 ms)")),
+        new KeyValuePair<AnimationMode, string>(AnimationMode.Off, L.T("Aus"))
     };
 
     public ThemeMode Theme { get => _s.Theme; set { _s.Theme = value; OnPropertyChanged(); RaisePresets(); } }
     public IReadOnlyList<KeyValuePair<ThemeMode, string>> Themes { get; } = new[]
     {
-        new KeyValuePair<ThemeMode, string>(ThemeMode.System, "Wie Windows"),
-        new KeyValuePair<ThemeMode, string>(ThemeMode.Dark, "Dunkel"),
-        new KeyValuePair<ThemeMode, string>(ThemeMode.Light, "Hell")
+        new KeyValuePair<ThemeMode, string>(ThemeMode.System, L.T("Wie Windows")),
+        new KeyValuePair<ThemeMode, string>(ThemeMode.Dark, L.T("Dunkel")),
+        new KeyValuePair<ThemeMode, string>(ThemeMode.Light, L.T("Hell"))
     };
 
     // ---- Darstellung: Akzent, Größe, Vorlagen ---------------------------------------
@@ -776,7 +778,7 @@ public sealed class SettingsViewModel : ObservableObject
     }
 
     /// <summary>Kopfzeile der Designvorlagen: welche gerade aktiv ist.</summary>
-    public string CurrentPresetText => CurrentPreset is { } p ? "Aktuell: " + p.Name : "Aktuell: eigene Einstellungen";
+    public string CurrentPresetText => CurrentPreset is { } p ? L.T("Aktuell: ") + p.Name : L.T("Aktuell: eigene Einstellungen");
 
     private bool _presetsExpanded;
     public bool PresetsExpanded { get => _presetsExpanded; set => Set(ref _presetsExpanded, value); }
@@ -792,9 +794,9 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Aktuelles Aussehen unter einem Namen als eigenes Design speichern.</summary>
     public ICommand SaveDesignCommand => _saveDesign ??= new RelayCommand(() =>
     {
-        var name = _app.Dialogs.Ask("Design speichern", "Name für das aktuelle Design (Farbe, Hintergrund, Deckkraft, Milchglas, Akzent):",
-            "Mein Design", "Speichern", n => n.Trim().Length == 0 ? "Bitte einen Namen eingeben."
-                : Appearance.All(_s).Any(d => d.IsCustom && d.Name.Equals(n.Trim(), StringComparison.OrdinalIgnoreCase)) ? "Ein eigenes Design mit diesem Namen gibt es schon." : null);
+        var name = _app.Dialogs.Ask(L.T("Design speichern"), L.T("Name für das aktuelle Design (Farbe, Hintergrund, Deckkraft, Milchglas, Akzent):"),
+            L.T("Mein Design"), L.T("Speichern"), n => n.Trim().Length == 0 ? L.T("Bitte einen Namen eingeben.")
+                : Appearance.All(_s).Any(d => d.IsCustom && d.Name.Equals(n.Trim(), StringComparison.OrdinalIgnoreCase)) ? L.T("Ein eigenes Design mit diesem Namen gibt es schon.") : null);
         if (name == null) return;
         _s.CustomDesigns.Add(Appearance.Capture(_s, Panel.ToConfig(), name));
         RaisePresets();
@@ -803,7 +805,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void DeleteDesign(DesignPreset p)
     {
-        if (!_app.Dialogs.Confirm($"Das eigene Design „{p.Name}“ löschen?", "Design löschen", destructive: true, owner: _app.SettingsDialogOwner)) return;
+        if (!_app.Dialogs.Confirm(L.F("Das eigene Design „{0}“ löschen?", p.Name), L.T("Design löschen"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         _s.CustomDesigns.RemoveAll(d => d.Key == p.Key);
         RaisePresets();
     }
@@ -825,7 +827,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public ICommand SubscribeCatalogCommand => _subscribeCatalog ??= new RelayCommand(async () =>
     {
-        var file = _app.Dialogs.OpenFile(EntryShare.FileFilter, "Team-Katalog abonnieren (Exportdatei, z. B. auf einer Freigabe)", _app.SettingsDialogOwner);
+        var file = _app.Dialogs.OpenFile(EntryShare.FileFilter, L.T("Team-Katalog abonnieren (Exportdatei, z. B. auf einer Freigabe)"), _app.SettingsDialogOwner);
         if (file == null) return;
         CatalogError = await _app.SubscribeCatalogAsync(file);
         RaiseCatalogs();
@@ -841,6 +843,29 @@ public sealed class SettingsViewModel : ObservableObject
 
     public string? HotkeyError { get => _hotkeyError; set => Set(ref _hotkeyError, value); }
     public bool StartWithWindows { get => _s.StartWithWindows; set { _s.StartWithWindows = value; OnPropertyChanged(); } }
+
+    /// <summary>Sprache der Oberfläche: "" = wie Windows, "de" oder "en".</summary>
+    public IReadOnlyList<KeyValuePair<string, string>> LanguageList { get; } = new[]
+    {
+        new KeyValuePair<string, string>(string.Empty, L.T("Wie Windows")),
+        new KeyValuePair<string, string>("de", "Deutsch"),
+        new KeyValuePair<string, string>("en", "English")
+    };
+    public string Language
+    {
+        get => _s.Language;
+        set
+        {
+            if (_s.Language == (value ?? string.Empty)) return;
+            _s.Language = value ?? string.Empty;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(LanguageChangePending));
+        }
+    }
+    /// <summary>Gewählte Sprache weicht von der laufenden ab – wirkt nach einem Neustart.</summary>
+    public bool LanguageChangePending => L.Resolve(_s.Language, System.Globalization.CultureInfo.CurrentUICulture) != L.Language;
+    public ICommand RestartCommand => _restartCommand ??= new RelayCommand(() => _app.RestartApp());
+    private ICommand? _restartCommand;
 
     // ---- Panels ------------------------------------------------------------
 
@@ -888,8 +913,8 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void AddGroup()
     {
-        var name = "Gruppe";
-        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Gruppe {i}";
+        var name = L.T("Gruppe");
+        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = L.F("Gruppe {0}", i);
         MachineGroups.Add(new MachineGroupViewModel(_app, new MachineGroup { Name = name }, RemoveGroup));
         OnPropertyChanged(nameof(HasNoGroups));
     }
@@ -897,10 +922,10 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Neue Rechnergruppe aus einer Liste (Text oder CSV): dynamisch aus der Datei, mit Filtern.</summary>
     public ICommand ImportGroupFromListCommand => new RelayCommand(() =>
     {
-        var file = _app.Dialogs.OpenFile("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*", "Rechnergruppe aus Liste importieren");
+        var file = _app.Dialogs.OpenFile(L.T("Rechnerlisten (*.csv;*.txt)|*.csv;*.txt|Alle Dateien (*.*)|*.*"), L.T("Rechnergruppe aus Liste importieren"));
         if (file == null) return;
         var name = System.IO.Path.GetFileNameWithoutExtension(file).Trim();
-        if (name.Length == 0) name = "Gruppe";
+        if (name.Length == 0) name = L.T("Gruppe");
         var unique = name;
         for (int i = 2; MachineGroups.Any(g => g.Name.Equals(unique, StringComparison.CurrentCultureIgnoreCase)); i++) unique = $"{name} {i}";
         var vm = new MachineGroupViewModel(_app, new MachineGroup { Name = unique }, RemoveGroup);
@@ -919,9 +944,9 @@ public sealed class SettingsViewModel : ObservableObject
     public int AdSyncIntervalHours { get => _s.AdSyncIntervalHours; set { _s.AdSyncIntervalHours = Math.Clamp(value, 1, 168); OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<int, string>> AdSyncIntervals { get; } = new[]
     {
-        new KeyValuePair<int, string>(1, "jede Stunde"), new KeyValuePair<int, string>(2, "alle 2 Stunden"),
-        new KeyValuePair<int, string>(4, "alle 4 Stunden"), new KeyValuePair<int, string>(8, "alle 8 Stunden"),
-        new KeyValuePair<int, string>(12, "alle 12 Stunden"), new KeyValuePair<int, string>(24, "einmal am Tag")
+        new KeyValuePair<int, string>(1, L.T("jede Stunde")), new KeyValuePair<int, string>(2, L.T("alle 2 Stunden")),
+        new KeyValuePair<int, string>(4, L.T("alle 4 Stunden")), new KeyValuePair<int, string>(8, L.T("alle 8 Stunden")),
+        new KeyValuePair<int, string>(12, L.T("alle 12 Stunden")), new KeyValuePair<int, string>(24, L.T("einmal am Tag"))
     };
 
     /// <summary>Hintergrund-Synchronisierung fertig: gefundene Rechner in die offenen Gruppen übernehmen.</summary>
@@ -954,7 +979,7 @@ public sealed class SettingsViewModel : ObservableObject
             bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
             int favs = active ? _app.Settings.Favorites.Count : w.Favorites.Count;
             int hidden = groups.Count(g => !WorkspaceManager.ShowsGroupIn(w, g));
-            var summary = $"{groups.Count - hidden} von {groups.Count} Gruppen · {favs} Favoriten" + (active ? " · aktiv" : string.Empty);
+            var summary = L.F("{0} von {1} Gruppen · {2} Favoriten", groups.Count - hidden, groups.Count, favs) + (active ? L.T(" · aktiv") : string.Empty);
             var row = new WorkspaceRowViewModel(w.Name, active, summary,
                 r => SwitchWorkspaceRequested?.Invoke(r.OriginalName),
                 RemoveWorkspace);
@@ -978,7 +1003,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void RemoveWorkspace(WorkspaceRowViewModel w)
     {
-        if (!_app.Dialogs.Confirm($"Arbeitsbereich „{w.OriginalName}“ mit seinen Favoriten, Startprofilen und der Gruppenauswahl löschen?\nGruppen und Einträge bleiben erhalten.", "Arbeitsbereich löschen",
+        if (!_app.Dialogs.Confirm(L.F("Arbeitsbereich „{0}“ mit seinen Favoriten, Startprofilen und der Gruppenauswahl löschen?\nGruppen und Einträge bleiben erhalten.", w.OriginalName), L.T("Arbeitsbereich löschen"),
                 destructive: true)) return;
         ApplyWorkspaceRenames();
         WorkspaceManager.Delete(_s, w.Name);
@@ -1009,8 +1034,8 @@ public sealed class SettingsViewModel : ObservableObject
     public bool IsCategoryGrouping => _s.Grouping == GroupingMode.Category;
     public IReadOnlyList<KeyValuePair<GroupingMode, string>> Groupings { get; } = new[]
     {
-        new KeyValuePair<GroupingMode, string>(GroupingMode.Folder, "Eigene Gruppen + Ordner"),
-        new KeyValuePair<GroupingMode, string>(GroupingMode.Category, "Nur eigene Gruppen")
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Folder, L.T("Eigene Gruppen + Ordner")),
+        new KeyValuePair<GroupingMode, string>(GroupingMode.Category, L.T("Nur eigene Gruppen"))
     };
     public ObservableCollection<CategoryItemViewModel> Categories { get; } = new();
 
@@ -1062,7 +1087,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ChooseCategoryIcon(CategoryItemViewModel c)
     {
-        var picked = _app.Dialogs.PickIcon(IconRef.Parse(c.Icon), $"Symbol für „{c.Display}“");
+        var picked = _app.Dialogs.PickIcon(IconRef.Parse(c.Icon), L.F("Symbol für „{0}“", c.Display));
         if (picked == null) return;
         GroupManager.SetIcon(_s, c.Name, picked.Value);
         c.Icon = picked.Value.ToString();
@@ -1090,7 +1115,7 @@ public sealed class SettingsViewModel : ObservableObject
         EndCategoryDrag();
         _dragCategory = c;
         var sub = SubtreeOf(c).Count() - 1;
-        CategoryDragLabel = c.Display + (sub > 0 ? $"  + {sub} Untergruppe{(sub == 1 ? "" : "n")}" : string.Empty);
+        CategoryDragLabel = c.Display + (sub > 0 ? (sub == 1 ? L.T("  + 1 Untergruppe") : L.F("  + {0} Untergruppen", sub)) : string.Empty);
         CategoryDragColor = c.SwatchColor;
         OnPropertyChanged(nameof(AnimateDropGap));
         foreach (var x in SubtreeOf(c)) x.IsDragSource = true;
@@ -1135,7 +1160,7 @@ public sealed class SettingsViewModel : ObservableObject
         if (zone == GroupDropZone.Into && !hovered.IsFixed && dragged.IsFixed)
         {
             _topDrop = null;
-            _categoryPlan = new GroupDropPlan { IsValid = false, Reason = "Feste Gruppen bleiben auf oberster Ebene – vor oder hinter eine Gruppe ziehen." };
+            _categoryPlan = new GroupDropPlan { IsValid = false, Reason = L.T("Feste Gruppen bleiben auf oberster Ebene – vor oder hinter eine Gruppe ziehen.") };
             return _categoryPlan;
         }
         if (ReferenceEquals(anchor, dragged))
@@ -1267,10 +1292,10 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var affected = Categories.Where(x => GroupManager.IsSameOrBelow(x.Name, c.Name)).ToList();
         var folders = affected.Where(x => x.Folder != null).Select(x => x.Folder!.Path).ToList();
-        var text = $"Gruppe „{c.Display}“" + (affected.Count > 1 ? $" mit {affected.Count - 1} Untergruppe(n)" : string.Empty) + " löschen?" +
-                   (folders.Count > 0 ? $"\n\nDer Ordner {string.Join(", ", folders)} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert." : string.Empty) +
-                   "\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.";
-        if (!_app.Dialogs.Confirm(text, "Gruppe löschen", destructive: true, owner: OwnerWindow())) return;
+        var text = (affected.Count > 1 ? L.F("Gruppe „{0}“ mit {1} Untergruppe(n) löschen?", c.Display, affected.Count - 1) : L.F("Gruppe „{0}“ löschen?", c.Display)) +
+                   (folders.Count > 0 ? L.F("\n\nDer Ordner {0} wird dann nicht mehr eingelesen. Die Dateien selbst bleiben unverändert.", string.Join(", ", folders)) : string.Empty) +
+                   L.T("\n\nEinträge, die du in die Gruppe gezogen hattest, erscheinen wieder in ihrer smarten Gruppe bzw. unter „Eigene Einträge“.");
+        if (!_app.Dialogs.Confirm(text, L.T("Gruppe löschen"), destructive: true, owner: OwnerWindow())) return;
         foreach (var x in affected)
         {
             Categories.Remove(x);
@@ -1282,11 +1307,11 @@ public sealed class SettingsViewModel : ObservableObject
     private void RenameCategory(CategoryItemViewModel c)
     {
         var parent = GroupManager.ParentOf(c.Name);
-        var newName = _app.Dialogs.Ask("Gruppe umbenennen", c.IsSmart ? "Der Name erscheint im Panel; der Ordner bleibt gleich." : string.Empty, c.Display, "Umbenennen",
+        var newName = _app.Dialogs.Ask(L.T("Gruppe umbenennen"), c.IsSmart ? L.T("Der Name erscheint im Panel; der Ordner bleibt gleich.") : string.Empty, c.Display, L.T("Umbenennen"),
             n =>
             {
                 var path = parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
-                return Categories.Any(x => x != c && x.Name.Equals(path, StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null;
+                return Categories.Any(x => x != c && x.Name.Equals(path, StringComparison.CurrentCultureIgnoreCase)) ? L.T("Eine Gruppe mit diesem Namen gibt es hier schon.") : null;
             });
         if (newName == null || newName == c.Display) return;
         var oldPath = c.Name;
@@ -1323,9 +1348,9 @@ public sealed class SettingsViewModel : ObservableObject
     private void AddGroupPrompt(string? parent)
     {
         string PathOf(string n) => parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
-        var spec = _app.Dialogs.AskNewGroup(parent == null ? "Neue Gruppe" : $"Neue Untergruppe in „{GroupManager.LeafOf(parent)}“",
-            parent == null ? "Neue Gruppe" : "Neue Untergruppe",
-            n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? "Eine Gruppe mit diesem Namen gibt es hier schon." : null,
+        var spec = _app.Dialogs.AskNewGroup(parent == null ? L.T("Neue Gruppe") : L.F("Neue Untergruppe in „{0}“", GroupManager.LeafOf(parent)),
+            parent == null ? L.T("Neue Gruppe") : L.T("Neue Untergruppe"),
+            n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? L.T("Eine Gruppe mit diesem Namen gibt es hier schon.") : null,
             f => NewGroup.FolderError(Folders.Where(x => x.Path.Length > 0).Select(x => x.Config), f));
         if (spec == null) return;
         AddGroup(spec, PathOf(spec.Name), parent);
@@ -1337,7 +1362,7 @@ public sealed class SettingsViewModel : ObservableObject
         var cat = NewCategoryVm(path, spec.Icon.ToString());
         if (spec.IsSmart)
         {
-            var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = spec.Folder!.Trim(), Group = path }, "Wird eingelesen …", RemoveFolder) { IsExpanded = true, ShowOptions = true };
+            var folder = new FolderViewModel(_app, _s, new FolderConfig { Path = spec.Folder!.Trim(), Group = path }, L.T("Wird eingelesen …"), RemoveFolder) { IsExpanded = true, ShowOptions = true };
             Folders.Add(folder);
             cat.Folder = folder;
             cat.IsExpanded = true;
@@ -1359,24 +1384,24 @@ public sealed class SettingsViewModel : ObservableObject
     public ICommand AddSamplesCommand => new RelayCommand(() =>
     {
         var folder = WelcomeViewModel.CreateSampleFolder();
-        if (folder == null) { SamplesStatus = "Der Beispielordner konnte nicht angelegt werden – Einzelheiten im Protokoll."; return; }
+        if (folder == null) { SamplesStatus = L.T("Der Beispielordner konnte nicht angelegt werden – Einzelheiten im Protokoll."); return; }
         if (Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))
         {
             SamplesStatus = null;
-            Snackbar.Show($"Beispiele liegen in {folder}; der Ordner ist schon eingebunden.");
+            Snackbar.Show(L.F("Beispiele liegen in {0}; der Ordner ist schon eingebunden.", folder));
             return;
         }
-        var name = "Beispiele";
-        for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Beispiele {i}";
+        var name = L.T("Beispiele");
+        for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = L.F("Beispiele {0}", i);
         AddGroup(new NewGroupSpec(name, IconRef.None, folder, string.Empty, null), name, null);
         SamplesStatus = null;
-        Snackbar.Show($"Gruppe „{name}“ mit den Beispielscripten aus {folder} hinzugefügt.");
+        Snackbar.Show(L.F("Gruppe „{0}“ mit den Beispielscripten aus {1} hinzugefügt.", name, folder));
     });
 
     private string? _samplesStatus;
     public string? SamplesStatus { get => _samplesStatus; private set { if (Set(ref _samplesStatus, value)) OnPropertyChanged(nameof(SamplesSeverity)); } }
     /// <summary>Art der Rückmeldung für die InfoBar: Success oder Error.</summary>
-    public string SamplesSeverity => _samplesStatus?.Contains("nicht", StringComparison.Ordinal) == true ? "Error" : "Success";
+    public string SamplesSeverity => _samplesStatus != null ? "Error" : "Success";
 
     private void AddCategory()
     {
@@ -1398,15 +1423,15 @@ public sealed class SettingsViewModel : ObservableObject
     public IReadOnlyList<KeyValuePair<RemoteEngineMode, string>> RemoteEngines { get; } = new[]
     {
         new KeyValuePair<RemoteEngineMode, string>(RemoteEngineMode.WindowsPowerShell, "Windows PowerShell 5.1"),
-        new KeyValuePair<RemoteEngineMode, string>(RemoteEngineMode.PreferPowerShell7, "PowerShell 7, falls vorhanden, sonst 5.1")
+        new KeyValuePair<RemoteEngineMode, string>(RemoteEngineMode.PreferPowerShell7, L.T("PowerShell 7, falls vorhanden, sonst 5.1"))
     };
 
     public string ExecutionPolicy { get => _s.ExecutionPolicy; set { _s.ExecutionPolicy = value ?? string.Empty; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<string, string>> Policies { get; } = new[]
     {
-        new KeyValuePair<string, string>("Bypass", "Bypass (nur für gestartete Scripte)"),
+        new KeyValuePair<string, string>("Bypass", L.T("Bypass (nur für gestartete Scripte)")),
         new KeyValuePair<string, string>("RemoteSigned", "RemoteSigned"),
-        new KeyValuePair<string, string>("", "Systemstandard")
+        new KeyValuePair<string, string>("", L.T("Systemstandard"))
     };
 
     public bool NoProfile { get => _s.NoProfile; set { _s.NoProfile = value; OnPropertyChanged(); } }
@@ -1427,11 +1452,11 @@ public sealed class SettingsViewModel : ObservableObject
     {
         new KeyValuePair<EditorKind, string>(EditorKind.VSCode, "Visual Studio Code"),
         new KeyValuePair<EditorKind, string>(EditorKind.Ise, "PowerShell ISE"),
-        new KeyValuePair<EditorKind, string>(EditorKind.Notepad, "Editor (notepad.exe)"),
-        new KeyValuePair<EditorKind, string>(EditorKind.Custom, "Eigener Pfad …")
+        new KeyValuePair<EditorKind, string>(EditorKind.Notepad, L.T("Editor (notepad.exe)")),
+        new KeyValuePair<EditorKind, string>(EditorKind.Custom, L.T("Eigener Pfad …"))
     };
 
-    public string MachinesText => $"{_s.Machines.Count(m => !m.Favorite)} zuletzt verwendet · {_s.Machines.Count(m => m.Favorite)} Favoriten";
+    public string MachinesText => L.F("{0} zuletzt verwendet · {1} Favoriten", _s.Machines.Count(m => !m.Favorite), _s.Machines.Count(m => m.Favorite));
 
     // Updates
     public string CurrentVersion => _app.CurrentVersionText;
@@ -1452,23 +1477,23 @@ public sealed class SettingsViewModel : ObservableObject
     private string FolderStatusText(string path)
     {
         var st = _app.Repository.FolderStatuses.FirstOrDefault(s => s.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
-        if (st == null) return "Noch nicht eingelesen";
+        if (st == null) return L.T("Noch nicht eingelesen");
         if (st.Error != null) return st.Error;
-        return st.Excluded > 0 ? $"{st.Count} Dateien, {st.Excluded} ausgeblendet" : $"{st.Count} Dateien";
+        return st.Excluded > 0 ? L.F("{0} Dateien, {1} ausgeblendet", st.Count, st.Excluded) : L.F("{0} Dateien", st.Count);
     }
 
     /// <summary>Ordner von der smarten Gruppe trennen (Gruppe bleibt als normale Gruppe).</summary>
     private void RemoveFolder(FolderViewModel f)
     {
-        if (!_app.Dialogs.Confirm($"Ordner {f.Path} von der Gruppe trennen?\n\nSeine Dateien erscheinen dann nicht mehr im Panel; die Gruppe selbst und hineingezogene Einträge bleiben.",
-                "Ordner entfernen", destructive: true, owner: OwnerWindow())) return;
+        if (!_app.Dialogs.Confirm(L.F("Ordner {0} von der Gruppe trennen?\n\nSeine Dateien erscheinen dann nicht mehr im Panel; die Gruppe selbst und hineingezogene Einträge bleiben.", f.Path),
+                L.T("Ordner entfernen"), destructive: true, owner: OwnerWindow())) return;
         Folders.Remove(f);
         foreach (var c in Categories.Where(c => c.Folder == f)) c.Folder = null;
     }
 
     private void BrowseEditor()
     {
-        if (_app.Dialogs.OpenFile("Programme (*.exe)|*.exe", owner: OwnerWindow()) is { } file) EditorPath = file;
+        if (_app.Dialogs.OpenFile(L.T("Programme (*.exe)|*.exe"), owner: OwnerWindow()) is { } file) EditorPath = file;
     }
 
     private void BrowseLogFolder()
@@ -1482,7 +1507,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public UpdateState Update => _app.Update;
     public bool HasUpdate => _app.AvailableUpdate != null;
-    public string UpdateBannerTitle => _app.AvailableUpdate is { } r ? $"Version {r.Version.ToString(3)} ist verfügbar" : string.Empty;
+    public string UpdateBannerTitle => _app.AvailableUpdate is { } r ? L.F("Version {0} ist verfügbar", r.Version.ToString(3)) : string.Empty;
     public bool IsChecking { get => _isChecking; private set { if (Set(ref _isChecking, value)) CommandRequery.Invalidate(); } }
 
     public ICommand InstallUpdateCommand { get; }
@@ -1520,12 +1545,12 @@ public sealed class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<FolderTimeInfo> FolderTimes => _app.Repository.FolderStatuses.Select(st => new FolderTimeInfo(st.Path,
         st.Error != null ? st.Error
-        : st.FromCache ? $"zwischengespeichert (Stand {st.CachedAtUtc?.ToLocalTime():dd.MM. HH:mm})"
-        : $"{st.Count} Dateien · {st.Duration.TotalMilliseconds:0} ms", st.Error != null)).ToList();
+        : st.FromCache ? L.F("zwischengespeichert (Stand {0:dd.MM. HH:mm})", st.CachedAtUtc?.ToLocalTime())
+        : L.F("{0} Dateien · {1:0} ms", st.Count, st.Duration.TotalMilliseconds), st.Error != null)).ToList();
 
     public string SystemInfo =>
-        $"Power-Exec {_app.CurrentVersionText} · {(_app.IsInstalledViaSetup ? "installiert" : "portabel")} · " +
-        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(_app.Shell.IsPwshInstalled ? "ja" : "nein")}";
+        $"Power-Exec {_app.CurrentVersionText} · {(_app.IsInstalledViaSetup ? L.T("installiert") : L.T("portabel"))} · " +
+        $"{Environment.OSVersion.VersionString} · .NET {Environment.Version} · PowerShell 7: {(_app.Shell.IsPwshInstalled ? L.T("ja") : L.T("nein"))}";
 
     public ICommand CopyLogCommand { get; }
     public ICommand OpenAppLogFolderCommand { get; }
@@ -1546,23 +1571,23 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Export()
     {
-        var file = _app.Dialogs.SaveFile("Power-Exec-Einstellungen (*.json)|*.json", $"Power-Exec-Einstellungen_{DateTime.Now:yyyy-MM-dd}.json");
+        var file = _app.Dialogs.SaveFile(L.T("Power-Exec-Einstellungen (*.json)|*.json"), $"Power-Exec-Einstellungen_{DateTime.Now:yyyy-MM-dd}.json");
         if (file == null) return;
         try
         {
             File.WriteAllText(file, SettingsTransfer.Export(_app.Settings));
-            AppLog.Info($"Einstellungen exportiert: {file}");
-            _app.Dialogs.Inform("Die gespeicherten Einstellungen wurden exportiert.\nKennwörter sind darin nicht enthalten.", "Exportieren");
+            AppLog.Info(L.F("Einstellungen exportiert: {0}", file));
+            _app.Dialogs.Inform(L.T("Die gespeicherten Einstellungen wurden exportiert.\nKennwörter sind darin nicht enthalten."), L.T("Exportieren"));
         }
         catch (Exception ex)
         {
-            _app.Dialogs.Warn(ex.Message, "Exportieren");
+            _app.Dialogs.Warn(ex.Message, L.T("Exportieren"));
         }
     }
 
     private void Import()
     {
-        var file = _app.Dialogs.OpenFile("Power-Exec-Einstellungen (*.json)|*.json|Alle Dateien (*.*)|*.*");
+        var file = _app.Dialogs.OpenFile(L.T("Power-Exec-Einstellungen (*.json)|*.json|Alle Dateien (*.*)|*.*"));
         if (file == null) return;
         AppSettings imported;
         try
@@ -1571,14 +1596,13 @@ public sealed class SettingsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _app.Dialogs.Warn("Die Datei konnte nicht gelesen werden:\n" + ex.Message, "Importieren");
+            _app.Dialogs.Warn(L.T("Die Datei konnte nicht gelesen werden:\n") + ex.Message, L.T("Importieren"));
             return;
         }
         var merge = _app.Dialogs.ConfirmOrCancel(
-            $"{imported.Folders.Count} Ordner, {imported.Entries.Count} konfigurierte Einträge, {imported.Favorites.Count} Favoriten.\n\n" +
-            "Ja = zusammenführen (vorhandene Einstellungen bleiben, Ordner und Profile werden ergänzt)\n" +
-            "Nein = alles ersetzen\nAbbrechen = nichts ändern",
-            "Einstellungen importieren");
+            L.F("{0} Ordner, {1} konfigurierte Einträge, {2} Favoriten.\n\n", imported.Folders.Count, imported.Entries.Count, imported.Favorites.Count) +
+            L.T("Ja = zusammenführen (vorhandene Einstellungen bleiben, Ordner und Profile werden ergänzt)\nNein = alles ersetzen\nAbbrechen = nichts ändern"),
+            L.T("Einstellungen importieren"));
         if (merge == null) return;
         var result = merge == true ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
         result.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
@@ -1590,12 +1614,12 @@ public sealed class SettingsViewModel : ObservableObject
     private async Task CheckUpdatesAsync()
     {
         IsChecking = true;
-        UpdateStatus = "Suche nach Updates …";
+        UpdateStatus = L.T("Suche nach Updates …");
         var r = await _app.CheckUpdatesAsync(manual: true, includePrereleases: _s.IncludePrereleases);
         IsChecking = false;
         UpdateStatus = _app.UpdateError != null
-            ? "Prüfung fehlgeschlagen: " + _app.UpdateError
-            : r != null ? $"Version {r.Version.ToString(3)} ist verfügbar – siehe Hinweis oben." : $"Du verwendest die aktuelle Version ({_app.CurrentVersionText}).";
+            ? L.T("Prüfung fehlgeschlagen: ") + _app.UpdateError
+            : r != null ? L.F("Version {0} ist verfügbar – siehe Hinweis oben.", r.Version.ToString(3)) : L.F("Du verwendest die aktuelle Version ({0}).", _app.CurrentVersionText);
         OnPropertyChanged(nameof(HasUpdate));
         OnPropertyChanged(nameof(UpdateBannerTitle));
     }
@@ -1652,9 +1676,9 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
     /// <summary>Kurzinfo zum Hintergrund (Glas, Vollton …) für die Kachel.</summary>
     public string BackdropText => Preset.Backdrop switch
     {
-        PanelBackdrop.Glass => "Glas",
-        PanelBackdrop.Solid => "Vollton",
-        _ => Preset.Opacity < 100 ? $"Klarglas {Preset.Opacity} %" : "Deckend"
+        PanelBackdrop.Glass => L.T("Glas"),
+        PanelBackdrop.Solid => L.T("Vollton"),
+        _ => Preset.Opacity < 100 ? L.F("Klarglas {0} %", Preset.Opacity) : L.T("Deckend")
     };
     public string Name => Preset.Name;
     public string Description => Preset.Description;
@@ -1686,10 +1710,10 @@ public sealed class CatalogRow
     public string Name => Subscription.Name;
     public string Path => Subscription.Path;
     public int Count => TeamCatalogs.EntriesOf(_app.Settings, Subscription).Count();
-    public string Status => Subscription.LastError.Length > 0 ? "Problem: " + Subscription.LastError
-        : Subscription.PendingSummary.Length > 0 ? "Änderungen verfügbar: " + Subscription.PendingSummary
-        : $"{Count} Einträge" + (Subscription.LastAppliedUtc is { } t ? $" · aktualisiert {RecentRunList.Ago(t)}" : string.Empty)
-          + (Subscription.LastCheckedUtc is { } c ? $" · geprüft {RecentRunList.Ago(c)}" : string.Empty);
+    public string Status => Subscription.LastError.Length > 0 ? L.T("Problem: ") + Subscription.LastError
+        : Subscription.PendingSummary.Length > 0 ? L.T("Änderungen verfügbar: ") + Subscription.PendingSummary
+        : L.F("{0} Einträge", Count) + (Subscription.LastAppliedUtc is { } t ? L.F(" · aktualisiert {0}", RecentRunList.Ago(t)) : string.Empty)
+          + (Subscription.LastCheckedUtc is { } c ? L.F(" · geprüft {0}", RecentRunList.Ago(c)) : string.Empty);
     public bool HasProblem => Subscription.LastError.Length > 0;
     public bool HasPending => Subscription.PendingSummary.Length > 0;
 

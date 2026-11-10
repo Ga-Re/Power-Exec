@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
@@ -130,7 +131,7 @@ public static class CommandBuilder
     /// <summary>Lesbare Vorschau für einen Remote-Start (die Ausführung übernimmt der RemoteRunner).</summary>
     public static string RemotePreview(ExecutionRequest r)
     {
-        var targets = r.Targets.Count > 0 ? string.Join(",", r.Targets) : "<Rechner>";
+        var targets = r.Targets.Count > 0 ? string.Join(",", r.Targets) : L.T("<Rechner>");
         var opts = (r.Engine == PsEngine.PowerShell7 ? " -ConfigurationName PowerShell.7" : string.Empty) +
                    (r.Mode == ExecutionMode.OtherUser ? " -Credential $cred" : string.Empty);
         var args = ParameterValueConverter.ToPowerShellArguments(Config.Placeholders.ApplyVariables(r.Parameters));
@@ -143,7 +144,7 @@ public static class CommandBuilder
                    $"Invoke-Command -Session $s {{ & \"$tmp\\{file}\"{args} }}\n" +
                    "Invoke-Command -Session $s { Remove-Item $tmp -Recurse -Force }";
         }
-        return $"Invoke-Command -ComputerName {targets}{opts} -ScriptBlock {{ <Inhalt von {Path.GetFileName(r.EffectivePath)}> }}{(args.Length > 0 ? " # Parameter:" + args : string.Empty)}";
+        return $"Invoke-Command -ComputerName {targets}{opts} -ScriptBlock {{ <{L.T("Inhalt von")} {Path.GetFileName(r.EffectivePath)}> }}{(args.Length > 0 ? " # Parameter:" + args : string.Empty)}";
     }
 
     public static string Encode(string command) => Convert.ToBase64String(Encoding.Unicode.GetBytes(command));

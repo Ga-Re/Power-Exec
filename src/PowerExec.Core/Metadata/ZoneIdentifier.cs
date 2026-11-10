@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Metadata;
 
 /// <summary>Auswertung der Zonen-Kennung (Datenstrom „Zone.Identifier“) heruntergeladener Dateien.</summary>
@@ -23,8 +24,8 @@ public static class ZoneIdentifier
 
     public static string Describe(int? zoneId) => zoneId switch
     {
-        3 => "aus dem Internet heruntergeladen",
-        4 => "aus einer eingeschränkten Zone",
-        _ => "aus einer nicht vertrauenswürdigen Quelle"
+        3 => L.T("aus dem Internet heruntergeladen"),
+        4 => L.T("aus einer eingeschränkten Zone"),
+        _ => L.T("aus einer nicht vertrauenswürdigen Quelle")
     };
 }

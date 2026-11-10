@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Management.Automation.Language;
 using PowerExec.Core.Models;
 
@@ -34,7 +35,7 @@ public static class ScriptInfoReader
     private static void Fill(LaunchItem item, ScriptBlockAst ast, Token[] tokens, ParseError[] errors)
     {
         if (errors.Length > 0)
-            item.ParseError = $"Zeile {errors[0].Extent.StartLineNumber}: {errors[0].Message}";
+            item.ParseError = L.F("Zeile {0}: {1}", errors[0].Extent.StartLineNumber, errors[0].Message);
 
         CommentHelpInfo? help = null;
         try { help = ast.GetHelpContent() ?? FindHelpInComments(tokens); } catch { /* Hilfe ist optional */ }

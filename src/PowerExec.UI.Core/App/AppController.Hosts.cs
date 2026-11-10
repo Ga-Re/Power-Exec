@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -70,8 +71,8 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
     private static string BuildVersionText()
     {
         var running = $"Version {UpdateService.CurrentVersionText}";
-        if (UpdateService.IsInstalledViaSetup) return running + " · installiert";
-        return InstalledVersion.Read() is { } v ? $"{running} · portabel (installiert: {v})" : running + " · portabel";
+        if (UpdateService.IsInstalledViaSetup) return running + L.T(" · installiert");
+        return InstalledVersion.Read() is { } v ? L.F("{0} · portabel (installiert: {1})", running, v) : running + L.T(" · portabel");
     }
 
     IItemSource IPanelHost.Repository => Repository;

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.Concurrent;
 using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
@@ -68,7 +69,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         if (items.Count == 0) return;
         Items = items;
         FolderStatuses = statuses;
-        AppLog.Info($"Zwischenspeicher geladen: {items.Count} Einträge");
+        AppLog.Info(L.F("Zwischenspeicher geladen: {0} Einträge", items.Count));
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -104,7 +105,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
             // Das reine Durchsuchen bekommt ein Zeitlimit – eine nicht erreichbare Freigabe kann sonst minutenlang hängen.
             var scanTask = Task.Run(() => FolderScanner.Scan(folder, settings));
             ScanResult? result = scanTask.Wait(timeout) ? scanTask.Result : null;
-            string? error = result == null ? $"Keine Antwort nach {timeout.TotalSeconds:0} s" : result.Error;
+            string? error = result == null ? L.F("Keine Antwort nach {0:0} s", timeout.TotalSeconds) : result.Error;
 
             if (result == null || result.Error != null)
             {
@@ -114,14 +115,14 @@ public sealed class ItemRepository : IItemSource, IDisposable
                     foreach (var it in c.Items)
                         if (seen.Add(it.FullPath)) items.Add(it);
                     statuses.Add(new FolderStatus(folder.Path, c.Items.Count, c.Excluded,
-                        $"{error} – angezeigt wird der Stand vom {c.ScannedUtc.ToLocalTime():dd.MM. HH:mm}")
+                        L.F("{0} – angezeigt wird der Stand vom {1:dd.MM. HH:mm}", error, c.ScannedUtc.ToLocalTime()))
                     { Duration = sw.Elapsed, FromCache = true, CachedAtUtc = c.ScannedUtc });
                 }
                 else
                 {
                     statuses.Add(new FolderStatus(folder.Path, 0, Array.Empty<ExcludedFile>(), error) { Duration = sw.Elapsed });
                 }
-                AppLog.Warn($"Ordner {folder.Path}: {error}");
+                AppLog.Warn(L.F("Ordner {0}: {1}", folder.Path, error));
                 continue;
             }
 
@@ -139,7 +140,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
             {
                 Path = folder.Path, ScannedUtc = DateTime.UtcNow, Items = folderItems, Excluded = result.Excluded.ToList()
             };
-            AppLog.Info($"Ordner {folder.Path}: {result.Files.Count} Dateien, {result.ExcludedCount} per Muster ausgeschlossen, {sw.ElapsedMilliseconds} ms");
+            AppLog.Info(L.F("Ordner {0}: {1} Dateien, {2} per Muster ausgeschlossen, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
         }
 
         // Cache auf aktuelle Dateien begrenzen
@@ -188,7 +189,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 {
                     var loaded = _loader.Load(path, basic.RootFolder);
                     loaded.ZoneId = WindowsMetadata.ReadZoneId(path);
-                    if (!File.Exists(path)) loaded.ParseError = "Datei nicht gefunden";
+                    if (!File.Exists(path)) loaded.ParseError = L.T("Datei nicht gefunden");
                     _singles[path] = (DateTime.UtcNow, loaded);
                 }
                 catch { }

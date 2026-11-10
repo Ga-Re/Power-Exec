@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows.Input;
 using System.Windows.Interop;
 using PowerExec.Interop;
@@ -27,10 +28,10 @@ public sealed class HotkeyService : IHotkeys
         Unregister(id);
         if (string.IsNullOrWhiteSpace(hotkey)) return null;
         if (!TryParse(hotkey, out var mods, out var key))
-            return $"Tastenkürzel \"{hotkey}\" wird nicht erkannt.";
+            return L.F("Tastenkürzel \"{0}\" wird nicht erkannt.", hotkey);
         var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
         if (!NativeMethods.RegisterHotKey(_source.Handle, id, mods | NativeMethods.MOD_NOREPEAT, vk))
-            return $"Tastenkürzel \"{hotkey}\" ist bereits belegt (anderes Programm oder anderes Panel).";
+            return L.F("Tastenkürzel \"{0}\" ist bereits belegt (anderes Programm oder anderes Panel).", hotkey);
         _registered.Add(id);
         return null;
     }

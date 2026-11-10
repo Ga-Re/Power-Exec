@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
@@ -30,7 +31,7 @@ public sealed class ResultRowViewModel : ObservableObject
     {
         get
         {
-            if (_result.Status == RemoteStatus.Running) return "läuft …";
+            if (_result.Status == RemoteStatus.Running) return L.T("läuft …");
             var text = !string.IsNullOrWhiteSpace(_result.Error) ? _result.Error : _result.Output;
             var line = text.Replace("\r", "").Split('\n').FirstOrDefault(l => l.Trim().Length > 0) ?? string.Empty;
             return _result.Note.Length > 0 ? $"{line}  ({_result.Note})" : line;
@@ -140,9 +141,9 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
     public ICommand SelectTileCommand { get; }
 
     public string Title => _request.Item.DisplayName;
-    public string Meta => $"Gestartet {_started:HH:mm} · {Rows.Count} {(Rows.Count == 1 ? "Rechner" : "Rechner")} · als {_account} · " +
-                          (_request.Engine == PsEngine.PowerShell7 ? "PowerShell 7 (wenn verfügbar)" : "Windows PowerShell 5.1") +
-                          (_request.CopyFolder ? " · mit Scriptordner" : string.Empty);
+    public string Meta => L.F("Gestartet {0:t} · {1} Rechner · als {2} · ", _started, Rows.Count, _account) +
+                          (_request.Engine == PsEngine.PowerShell7 ? L.T("PowerShell 7 (wenn verfügbar)") : "Windows PowerShell 5.1") +
+                          (_request.CopyFolder ? L.T(" · mit Scriptordner") : string.Empty);
 
     public int Total => Rows.Count;
     public int SuccessCount => Rows.Count(r => r.Status == RemoteStatus.Success);
@@ -159,14 +160,14 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
 
     public bool IsRunning { get => _isRunning; private set { if (Set(ref _isRunning, value)) OnPropertyChanged(nameof(StatusLine)); } }
     public bool ShowLog { get => _showLog; set { if (Set(ref _showLog, value)) OnPropertyChanged(nameof(LogLabel)); } }
-    public string LogLabel => ShowLog ? "Log ausblenden" : "Log anzeigen";
+    public string LogLabel => ShowLog ? L.T("Log ausblenden") : L.T("Log anzeigen");
     public string LogText { get => _logText; private set => Set(ref _logText, value); }
     public string? RunnerError { get => _runnerError; private set => Set(ref _runnerError, value); }
     public string? LogFile { get; private set; }
 
     public string StatusLine => IsRunning
-        ? $"Läuft … {DoneCount} von {Total} fertig"
-        : $"Fertig · {SuccessCount} erfolgreich · {ErrorCount} Fehler · {UnreachableCount} nicht erreichbar";
+        ? L.F("Läuft … {0} von {1} fertig", DoneCount, Total)
+        : L.F("Fertig · {0} erfolgreich · {1} Fehler · {2} nicht erreichbar", SuccessCount, ErrorCount, UnreachableCount);
 
     public ICommand ToggleLogCommand { get; }
     public ICommand ExportCsvCommand { get; }
@@ -190,7 +191,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
         }
         catch (Exception ex)
         {
-            OnCompleted("Der Remote-Runner konnte nicht gestartet werden: " + ex.Message);
+            OnCompleted(L.T("Der Remote-Runner konnte nicht gestartet werden: ") + ex.Message);
         }
         finally
         {
@@ -221,12 +222,12 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
     private void OnCompleted(string? error)
     {
         foreach (var row in Rows.Where(r => r.Status == RemoteStatus.Running))
-            row.Update(new RemoteResult { Computer = row.Computer, Status = RemoteStatus.Error, Error = error != null ? "Abgebrochen" : "Keine Rückmeldung" });
+            row.Update(new RemoteResult { Computer = row.Computer, Status = RemoteStatus.Error, Error = error != null ? L.T("Abgebrochen") : L.T("Keine Rückmeldung") });
         RunnerError = error;
         IsRunning = false;
         RaiseCounts();
         WriteLog();
-        AppLog.Info($"Remote-Lauf beendet: {_request.Item.FileName} · {StatusLine}" + (error != null ? " · Runner: " + error : string.Empty));
+        AppLog.Info(L.F("Remote-Lauf beendet: {0} · {1}", _request.Item.FileName, StatusLine) + (error != null ? " · Runner: " + error : string.Empty));
         Finished?.Invoke();
         _session?.Dispose();
         _session = null;
@@ -249,9 +250,9 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
 
     private void WriteLog()
     {
-        var engine = _request.Engine == PsEngine.PowerShell7 ? "PowerShell 7 (Fallback 5.1)" : "Windows PowerShell 5.1";
+        var engine = _request.Engine == PsEngine.PowerShell7 ? L.T("PowerShell 7 (Fallback 5.1)") : "Windows PowerShell 5.1";
         LogText = ResultExport.ToLog(_request.EffectivePath, _account, engine, _started, Rows.Select(r => r.Result));
-        if (RunnerError != null) LogText += Environment.NewLine + "Runner-Fehler: " + RunnerError + Environment.NewLine;
+        if (RunnerError != null) LogText += Environment.NewLine + L.T("Runner-Fehler: ") + RunnerError + Environment.NewLine;
         try
         {
             var dir = _app.Settings.EffectiveLogFolder;
@@ -268,7 +269,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
 
     private void ExportCsv()
     {
-        var file = _app.Dialogs.SaveFile("CSV-Datei (*.csv)|*.csv",
+        var file = _app.Dialogs.SaveFile(L.T("CSV-Datei (*.csv)|*.csv"),
             $"{Path.GetFileNameWithoutExtension(_request.Item.FileName)}_{_started:yyyy-MM-dd_HHmm}.csv");
         if (file == null) return;
         try
@@ -277,7 +278,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
         }
         catch (Exception ex)
         {
-            _app.Dialogs.Warn(ex.Message, "CSV-Export");
+            _app.Dialogs.Warn(ex.Message, L.T("CSV-Export"));
         }
     }
 

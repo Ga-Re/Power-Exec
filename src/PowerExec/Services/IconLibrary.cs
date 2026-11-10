@@ -111,7 +111,7 @@ public static class IconLibrary
         new IconChoice(new IconRef(IconSource.Glyph, g.Code), g.Name, g.Name));
 
     public static IEnumerable<IconChoice> Emoji() => EmojiList.Select(e =>
-        new IconChoice(new IconRef(IconSource.Emoji, e.Char), e.Name, e.Name));
+        new IconChoice(new IconRef(IconSource.Emoji, e.Char), PowerExec.Core.Localization.L.T(e.Name), e.Name + " " + PowerExec.Core.Localization.L.T(e.Name)));
 
     private static string Pretty(string key)
     {

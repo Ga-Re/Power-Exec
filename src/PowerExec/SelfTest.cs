@@ -1309,6 +1309,31 @@ public sealed partial class SelfTestController : AppController
             }
             settingsWindow.Close();
 
+            // Englische Oberfläche: Einstellungen einmal komplett auf Englisch öffnen, fehlende Übersetzungen melden
+            Step("Einstellungen auf Englisch");
+            PowerExec.Core.Localization.L.Use("en");
+            try
+            {
+                var enVm = new SettingsViewModel(this, null);
+                var enWindow = new SettingsWindow(enVm, this);
+                enWindow.Show();
+                await Settle();
+                foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "marketplace", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+                {
+                    enVm.Section = section;
+                    await Settle();
+                    if (enWindow.Content is FrameworkElement enRoot) Screenshot(enRoot, "settings-en-" + section);
+                }
+                enWindow.Close();
+                await ShowAndClose(new WelcomeWindow(new WelcomeViewModel(this)));
+                var missing = PowerExec.Core.Localization.L.Missing;
+                if (missing.Count > 0) Fail("Englisch: ohne Übersetzung: " + string.Join(" | ", missing.Take(20)));
+            }
+            finally
+            {
+                PowerExec.Core.Localization.L.Use("de");
+            }
+
             // Dialoge
             var item = Repository.Items.First(i => i.FullPath.Equals(script, StringComparison.OrdinalIgnoreCase));
             await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false), this));

@@ -1,8 +1,9 @@
 <Window x:Class="PowerExec.Views.WelcomeWindow"
+        xmlns:l="clr-namespace:PowerExec.Localization"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Willkommen bei Power-Exec" Style="{StaticResource AppWindow}"
+        Title="{l:T 'Willkommen bei Power-Exec'}" Style="{StaticResource AppWindow}"
         Width="620" Height="520" MinWidth="520" MinHeight="460" ResizeMode="CanResize" WindowStartupLocation="CenterScreen">
     <Window.Resources>
       <ResourceDictionary>
@@ -66,10 +67,10 @@
         <!-- Fußzeile -->
         <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource Border.Default}" Padding="24,12">
             <DockPanel>
-                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Subtle}" Content="Überspringen" Command="{Binding SkipCommand}"
-                        ToolTip="Nichts ändern; später unter Einstellungen › Allgemein erneut starten" />
+                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Überspringen'}" Command="{Binding SkipCommand}"
+                        ToolTip="{l:T 'Nichts ändern; später unter Einstellungen › Allgemein erneut starten'}" />
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <ui:Button Style="{StaticResource Btn.Standard}" Content="Zurück" Command="{Binding BackCommand}" MinWidth="96" />
+                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Zurück'}" Command="{Binding BackCommand}" MinWidth="96" />
                     <ui:Button Style="{StaticResource Btn.Accent}" Content="{Binding NextLabel}" Command="{Binding NextCommand}" MinWidth="96" Margin="8,0,0,0" IsDefault="True" />
                 </StackPanel>
                 <TextBlock Text="{Binding StepText}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource Text.Tertiary}" FontSize="12"/>
@@ -116,22 +117,22 @@
             <Grid>
                 <!-- 1: Scripte -->
                 <StackPanel Visibility="{Binding IsStep0, Converter={StaticResource Vis}}">
-                    <TextBlock Text="Wo liegen deine Scripte?" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{l:T 'Wo liegen deine Scripte?'}" FontSize="20" FontWeight="SemiBold"/>
                     <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
-                               Text="Power-Exec liest einen Ordner mit Scripten und Programmen ein und zeigt sie als smarte Gruppe im Panel. Neue Dateien erscheinen automatisch. Webseiten, Ordner, RDP und SSH legst du später per Rechtsklick im Panel an."/>
+                               Text="{l:T 'Power-Exec liest einen Ordner mit Scripten und Programmen ein und zeigt sie als smarte Gruppe im Panel. Neue Dateien erscheinen automatisch. Webseiten, Ordner, RDP und SSH legst du später per Rechtsklick im Panel an.'}"/>
                     <ui:Button Style="{StaticResource Btn.Accent}" HorizontalAlignment="Left" Command="{Binding ChooseFolderCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" Margin="0,0,8,0"/>
-                            <TextBlock Text="Ordner auswählen …"/>
+                            <TextBlock Text="{l:T 'Ordner auswählen …'}"/>
                         </StackPanel>
                     </ui:Button>
                     <TextBlock Text="{Binding Folder, StringFormat=Gewählt: {0}}" Margin="0,8,0,0" TextWrapping="Wrap"
                                Visibility="{Binding HasFolder, Converter={StaticResource Vis}}"/>
                     <CheckBox IsChecked="{Binding CreateSample}" Margin="0,16,0,0">
                         <TextBlock TextWrapping="Wrap">
-                            <Run Text="Beispielscripte anlegen" FontWeight="SemiBold"/>
+                            <Run Text="{l:T 'Beispielscripte anlegen'}" FontWeight="SemiBold"/>
                             <LineBreak/>
-                            <Run Text="Acht fertige Scripte (Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter) unter Dokumente › Power-Exec › Scripte – im Panel als Gruppe „Beispiele“." Foreground="{DynamicResource Text.Secondary}"/>
+                            <Run Text="{l:T 'Acht fertige Scripte (Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter) unter Dokumente › Power-Exec › Scripte – im Panel als Gruppe „Beispiele“.'}" Foreground="{DynamicResource Text.Secondary}"/>
                         </TextBlock>
                     </CheckBox>
                     <TextBlock Text="{Binding ExistingFoldersText}" Style="{StaticResource Tip}" Margin="0,16,0,0"
@@ -140,17 +141,17 @@
 
                 <!-- 2: Rand -->
                 <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource Vis}}">
-                    <TextBlock Text="An welchem Rand soll das Panel erscheinen?" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{l:T 'An welchem Rand soll das Panel erscheinen?'}" FontSize="20" FontWeight="SemiBold"/>
                     <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
-                               Text="Fährt die Maus an diesen Rand, gleitet das Panel nach einer kurzen Verweilzeit heraus. Monitor, Länge und Verweilzeit stellst du später unter Panel › Verhalten ein."/>
+                               Text="{l:T 'Fährt die Maus an diesen Rand, gleitet das Panel nach einer kurzen Verweilzeit heraus. Monitor, Länge und Verweilzeit stellst du später unter Panel › Verhalten ein.'}"/>
                     <WrapPanel>
-                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Left" Content="Links" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Left"
+                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Left" Content="{l:T 'Links'}" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Left"
                                      IsChecked="{Binding Edge, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Left}"/>
-                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Right" Content="Rechts" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Right"
+                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Right" Content="{l:T 'Rechts'}" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Right"
                                      IsChecked="{Binding Edge, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Right}"/>
-                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Top" Content="Oben" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Top"
+                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Top" Content="{l:T 'Oben'}" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Top"
                                      IsChecked="{Binding Edge, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Top}"/>
-                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Bottom" Content="Unten" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Bottom"
+                        <RadioButton Style="{StaticResource EdgeChoice}" Tag="Bottom" Content="{l:T 'Unten'}" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Bottom"
                                      IsChecked="{Binding Edge, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=Bottom}"/>
                     </WrapPanel>
                     <TextBlock Text="{Binding EdgeText}" Style="{StaticResource Tip}"/>
@@ -158,35 +159,35 @@
 
                 <!-- 3: Tastenkürzel und Start -->
                 <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource Vis}}">
-                    <TextBlock Text="Schneller per Tastatur" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{l:T 'Schneller per Tastatur'}" FontSize="20" FontWeight="SemiBold"/>
                     <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
-                               Text="Mit dem Tastenkürzel öffnet sich das Panel überall, der Cursor steht im Suchfeld. Tippen, Enter – fertig."/>
+                               Text="{l:T 'Mit dem Tastenkürzel öffnet sich das Panel überall, der Cursor steht im Suchfeld. Tippen, Enter – fertig.'}"/>
                     <Border Padding="14,10" CornerRadius="6" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" HorizontalAlignment="Left">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tastenkürzel:" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Tastenkürzel:'}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                 <TextBox x:Name="HotkeyBox" Width="220" IsReadOnly="True" Text="{Binding HotkeyText, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas"
-                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown" AutomationProperties.Name="Tastenkürzel"
-                                         ToolTip="Klicken und die gewünschte Tastenkombination drücken; Entf entfernt das Kürzel"/>
-                                <ui:Button Style="{StaticResource Btn.Standard}" Content="Standard" Margin="8,0,0,0" Command="{Binding ResetHotkeyCommand}"
-                                           ToolTip="Strg+Alt+Leertaste"/>
+                                         PreviewKeyDown="HotkeyBox_PreviewKeyDown" AutomationProperties.Name="{l:T 'Tastenkürzel'}"
+                                         ToolTip="{l:T 'Klicken und die gewünschte Tastenkombination drücken; Entf entfernt das Kürzel'}"/>
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Standard'}" Margin="8,0,0,0" Command="{Binding ResetHotkeyCommand}"
+                                           ToolTip="{l:T 'Strg+Alt+Leertaste'}"/>
                             </StackPanel>
-                            <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,0" Text="Zum Ändern ins Feld klicken und die Kombination drücken."/>
+                            <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,0" Text="{l:T 'Zum Ändern ins Feld klicken und die Kombination drücken.'}"/>
                         </StackPanel>
                     </Border>
-                    <CheckBox Content="Mit Windows starten" IsChecked="{Binding StartWithWindows}" Margin="0,18,0,0"/>
-                    <CheckBox Content="Akzentfarbe von Windows übernehmen" IsChecked="{Binding UseWindowsAccent}" Margin="0,8,0,0"/>
+                    <CheckBox Content="{l:T 'Mit Windows starten'}" IsChecked="{Binding StartWithWindows}" Margin="0,18,0,0"/>
+                    <CheckBox Content="{l:T 'Akzentfarbe von Windows übernehmen'}" IsChecked="{Binding UseWindowsAccent}" Margin="0,8,0,0"/>
                 </StackPanel>
 
                 <!-- 4: Fertig -->
                 <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource Vis}}">
-                    <TextBlock Text="Alles bereit" FontSize="20" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16" Text="Mit „Fertig“ wird alles übernommen und das Panel öffnet sich einmal zur Probe. Ein paar Tipps für den Anfang:"/>
-                    <TextBlock Style="{StaticResource Tip}" Text="• Suchen: einfach tippen – auch Anfangsbuchstaben („gds“) und Filter wie typ:ps1 oder #schlagwort."/>
-                    <TextBlock Style="{StaticResource Tip}" Text="• Enter startet, Strg+Enter als Administrator, Leertaste zeigt eine Vorschau."/>
-                    <TextBlock Style="{StaticResource Tip}" Text="• Rechtsklick auf eine freie Fläche: neue Gruppe, Webseite, RDP, SSH, Snippet …"/>
-                    <TextBlock Style="{StaticResource Tip}" Text="• Dateien und Links aus dem Explorer oder Browser einfach ins Panel ziehen."/>
-                    <TextBlock Style="{StaticResource Tip}" Text="• F1 im Panel zeigt alle Tastenkürzel."/>
+                    <TextBlock Text="{l:T 'Alles bereit'}" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16" Text="{l:T 'Mit „Fertig“ wird alles übernommen und das Panel öffnet sich einmal zur Probe. Ein paar Tipps für den Anfang:'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Suchen: einfach tippen – auch Anfangsbuchstaben („gds“) und Filter wie typ:ps1 oder #schlagwort.'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Enter startet, Strg+Enter als Administrator, Leertaste zeigt eine Vorschau.'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Rechtsklick auf eine freie Fläche: neue Gruppe, Webseite, RDP, SSH, Snippet …'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Dateien und Links aus dem Explorer oder Browser einfach ins Panel ziehen.'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Text="{l:T '• F1 im Panel zeigt alle Tastenkürzel.'}"/>
                 </StackPanel>
             </Grid>
         </ScrollViewer>

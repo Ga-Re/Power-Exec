@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Services;
@@ -31,12 +32,12 @@ public partial class AppController
         try
         {
             var read = Task.Run(() => File.ReadAllText(path));
-            if (await Task.WhenAny(read, Task.Delay(CatalogReadTimeout)) != read) return (null, "Zeitüberschreitung beim Lesen (Freigabe nicht erreichbar?)");
+            if (await Task.WhenAny(read, Task.Delay(CatalogReadTimeout)) != read) return (null, L.T("Zeitüberschreitung beim Lesen (Freigabe nicht erreichbar?)"));
             return (await read, null);
         }
         catch (Exception ex)
         {
-            return (null, ex is FileNotFoundException or DirectoryNotFoundException ? "Datei nicht gefunden" : ex.Message);
+            return (null, ex is FileNotFoundException or DirectoryNotFoundException ? L.T("Datei nicht gefunden") : ex.Message);
         }
     }
 
@@ -51,7 +52,7 @@ public partial class AppController
             sub.LastCheckedUtc = DateTime.UtcNow;
             if (content == null)
             {
-                sub.LastError = error ?? "nicht lesbar";
+                sub.LastError = error ?? L.T("nicht lesbar");
                 continue;
             }
             sub.LastError = string.Empty;
@@ -59,7 +60,7 @@ public partial class AppController
             if (!force && hash == sub.LastHash && sub.PendingSummary.Length == 0) continue;
             EntryShare.SharedFile file;
             try { file = EntryShare.Parse(content); }
-            catch (Exception ex) { sub.LastError = "Keine gültige Katalogdatei: " + ex.Message; continue; }
+            catch (Exception ex) { sub.LastError = L.T("Keine gültige Katalogdatei: ") + ex.Message; continue; }
 
             var diff = TeamCatalogs.Diff(Settings, sub, file);
             if (!sub.AutoApply && !force && !diff.IsEmpty)
@@ -68,18 +69,18 @@ public partial class AppController
                 changed = true;
                 continue;
             }
-            RememberForUndo($"Katalog „{sub.Name}“ aktualisiert");
+            RememberForUndo(L.F("Katalog „{0}“ aktualisiert", sub.Name));
             TeamCatalogs.Apply(Settings, sub, file);
             sub.LastHash = hash;
             changed = true;
             if (!diff.IsEmpty) messages.Add($"{sub.Name}: {diff.Summary}");
-            AppLog.Info($"Katalog {sub.Name} ({sub.Path}): {diff.Summary}");
+            AppLog.Info(L.F("Katalog {0} ({1}): {2}", sub.Name, sub.Path, diff.Summary));
         }
         SaveSettings();
         if (changed) CommitUserChange();
         CatalogsChanged?.Invoke();
         foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
-        if (messages.Count > 0) ShowUndoToast("Team-Katalog aktualisiert – " + string.Join(" · ", messages));
+        if (messages.Count > 0) ShowUndoToast(L.T("Team-Katalog aktualisiert – ") + string.Join(" · ", messages));
     }
 
     /// <summary>Gemeldete Änderung übernehmen (bei „automatisch übernehmen“ aus).</summary>
@@ -89,13 +90,13 @@ public partial class AppController
     public async Task<string?> SubscribeCatalogAsync(string path, string? name = null)
     {
         path = path.Trim().Trim('"');
-        if (Settings.Catalogs.Any(c => c.Path.Equals(path, StringComparison.OrdinalIgnoreCase))) return "Dieser Katalog ist bereits abonniert.";
+        if (Settings.Catalogs.Any(c => c.Path.Equals(path, StringComparison.OrdinalIgnoreCase))) return L.T("Dieser Katalog ist bereits abonniert.");
         var (content, error) = await ReadCatalogAsync(path);
         if (content == null) return error;
         try { EntryShare.Parse(content); }
-        catch (Exception ex) { return "Keine gültige Katalogdatei: " + ex.Message; }
+        catch (Exception ex) { return L.T("Keine gültige Katalogdatei: ") + ex.Message; }
         var baseName = name is { Length: > 0 } ? name : Path.GetFileNameWithoutExtension(path).Replace(".pxentries", string.Empty, StringComparison.OrdinalIgnoreCase);
-        var sub = new CatalogSubscription { Path = path, Name = GroupManager.CleanName(baseName.Length > 0 ? baseName : "Team-Katalog") };
+        var sub = new CatalogSubscription { Path = path, Name = GroupManager.CleanName(baseName.Length > 0 ? baseName : L.T("Team-Katalog")) };
         Settings.Catalogs.Add(sub);
         await CheckCatalogsAsync(force: true);
         return null;
@@ -103,12 +104,12 @@ public partial class AppController
 
     public void UnsubscribeCatalog(CatalogSubscription sub)
     {
-        RememberForUndo($"Katalog „{sub.Name}“ abbestellt");
+        RememberForUndo(L.F("Katalog „{0}“ abbestellt", sub.Name));
         TeamCatalogs.Unsubscribe(Settings, sub);
         CommitUserChange();
         CatalogsChanged?.Invoke();
         foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
-        ShowUndoToast($"Katalog „{sub.Name}“ abbestellt");
+        ShowUndoToast(L.F("Katalog „{0}“ abbestellt", sub.Name));
     }
 
     /// <summary>Katalog, aus dem ein Eintrag stammt (für Hinweis und Schreibschutz).</summary>

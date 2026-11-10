@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 
 namespace PowerExec.Services;
@@ -107,8 +108,8 @@ public sealed record ChoiceOption(string Glyph, string Title, string Description
     /// <summary>Möglichkeiten beim Ziehen eines Ordners ins Panel.</summary>
     public static readonly IReadOnlyList<ChoiceOption> FolderDrop = new[]
     {
-        new ChoiceOption("\uE8B7", "Als Gruppe", "Smarte Gruppe: Scripte und Programme im Ordner erscheinen als Einträge und bleiben aktuell."),
-        new ChoiceOption("\uE71B", "Als Link", "Ein Eintrag, der den Ordner im Explorer öffnet.")
+        new ChoiceOption("\uE8B7", L.T("Als Gruppe"), L.T("Smarte Gruppe: Scripte und Programme im Ordner erscheinen als Einträge und bleiben aktuell.")),
+        new ChoiceOption("\uE71B", L.T("Als Link"), L.T("Ein Eintrag, der den Ordner im Explorer öffnet."))
     };
 }
 

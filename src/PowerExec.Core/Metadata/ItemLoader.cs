@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Metadata;
@@ -47,7 +48,7 @@ public sealed class ItemLoader
                     _platform?.FillShortcut(item);
                     break;
                 case ItemType.ConsoleSnapIn:
-                    item.Synopsis = $"Snap-in ({item.FileName})";
+                    item.Synopsis = L.F("Snap-in ({0})", item.FileName);
                     break;
             }
         }
@@ -57,7 +58,7 @@ public sealed class ItemLoader
         }
 
         if (string.IsNullOrWhiteSpace(item.Synopsis) && item.Type == ItemType.PowerShell && item.ParseError != null)
-            item.Synopsis = "Script enthält Fehler: " + item.ParseError;
+            item.Synopsis = L.T("Script enthält Fehler: ") + item.ParseError;
         return item;
     }
 }

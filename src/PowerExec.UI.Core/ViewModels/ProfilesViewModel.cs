@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -39,10 +40,10 @@ public sealed class ProfileParamViewModel : ObservableObject
     {
         get
         {
-            if (IsSecure) return "Wird nie gespeichert – das Script fragt beim Start selbst.";
+            if (IsSecure) return L.T("Wird nie gespeichert – das Script fragt beim Start selbst.");
             var help = string.IsNullOrWhiteSpace(Parameter.HelpText) ? string.Empty : Parameter.HelpText;
-            if (Parameter.IsMandatory && _mode == ParameterMode.Ask) return "Pflicht · wird beim Start abgefragt";
-            return Parameter.IsMandatory ? "Pflicht" + (help.Length > 0 ? " · " + help : string.Empty) : help;
+            if (Parameter.IsMandatory && _mode == ParameterMode.Ask) return L.T("Pflicht · wird beim Start abgefragt");
+            return Parameter.IsMandatory ? L.T("Pflicht") + (help.Length > 0 ? " · " + help : string.Empty) : help;
         }
     }
 
@@ -128,7 +129,7 @@ public sealed class ProfileEditViewModel : ObservableObject
 
     /// <summary>Kurzinfo in der Profilliste, z. B. „Edge · Arbeit“ bzw. „Admin · 2 Rechner“.</summary>
     public string Detail => Options is { HasOptions: true } o && o.OptionsSummary.Length > 0
-        ? o.OptionsSummary + (_runAsAdmin ? " · Admin" : _runAsOther ? " · anderer Benutzer" : string.Empty)
+        ? o.OptionsSummary + (_runAsAdmin ? L.T(" · Admin") : _runAsOther ? L.T(" · anderer Benutzer") : string.Empty)
         : Summary;
 
     private readonly string _key;
@@ -213,11 +214,11 @@ public sealed class ProfileEditViewModel : ObservableObject
             bool needs = ProfileResolver.NeedsDialog(p, _owner.Item);
             return _dialog switch
             {
-                DialogMode.Always => "Der Dialog zeigt die Werte des Profils; Änderungen gelten nur für diesen Start.",
-                DialogMode.Never when needs => "Achtung: Ein Pflichtfeld wird abgefragt oder Rechner fehlen – der Dialog erscheint trotzdem.",
-                DialogMode.Never => "Ein Klick im Panel startet sofort.",
-                _ when needs => "Der Dialog erscheint, weil noch etwas abgefragt wird.",
-                _ => "Alles festgelegt – der Dialog wird übersprungen."
+                DialogMode.Always => L.T("Der Dialog zeigt die Werte des Profils; Änderungen gelten nur für diesen Start."),
+                DialogMode.Never when needs => L.T("Achtung: Ein Pflichtfeld wird abgefragt oder Rechner fehlen – der Dialog erscheint trotzdem."),
+                DialogMode.Never => L.T("Ein Klick im Panel startet sofort."),
+                _ when needs => L.T("Der Dialog erscheint, weil noch etwas abgefragt wird."),
+                _ => L.T("Alles festgelegt – der Dialog wird übersprungen.")
             };
         }
     }
@@ -242,7 +243,7 @@ public sealed class ProfileEditViewModel : ObservableObject
             };
             if (item.SupportsRemote && p.Target != ProfileTarget.Local) return CommandBuilder.RemotePreview(request);
             var preview = CommandBuilder.BuildLocal(request).Preview;
-            return p.RunAsAdmin ? preview + "   (als Administrator)" : p.RunAsOtherUser ? preview + "   (als anderer Benutzer)" : preview;
+            return p.RunAsAdmin ? preview + L.T("   (als Administrator)") : p.RunAsOtherUser ? preview + L.T("   (als anderer Benutzer)") : preview;
         }
     }
 
@@ -259,7 +260,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     {
         var p = new LaunchProfile
         {
-            Name = string.IsNullOrWhiteSpace(_name) ? "Profil" : _name.Trim(),
+            Name = string.IsNullOrWhiteSpace(_name) ? L.T("Profil") : _name.Trim(),
             IsDefault = _isDefault,
             RunAsAdmin = _runAsAdmin,
             RunAsOtherUser = _runAsOther,
@@ -465,19 +466,19 @@ public sealed class ProfilesViewModel : ObservableObject
         set { if (Entry != null) Entry.Description = value; else Description = value; OnPropertyChanged(); }
     }
     public string HeaderNameHint => Entry != null ? Entry.NameSuggestion : Item.DisplayName;
-    public string HeaderDescriptionHint => Entry != null ? "Beschreibung (erscheint im Panel)" : DescriptionPlaceholder;
+    public string HeaderDescriptionHint => Entry != null ? L.T("Beschreibung (erscheint im Panel)") : DescriptionPlaceholder;
 
     // ---- Abschnitte je Art -----------------------------------------------------------------
 
     private CustomEntryKind? EntryKind => Entry?.Kind;
     /// <summary>Datei aus einer smarten Gruppe (oder eigener Datei-Eintrag): Script/Programm-Infos.</summary>
     public bool IsScannedFile => Entry == null;
-    public string FileKindText => Item.IsPowerShell ? "PowerShell-Script" : Item.Type switch
+    public string FileKindText => Item.IsPowerShell ? L.T("PowerShell-Script") : Item.Type switch
     {
-        ItemType.Batch => "Batch-Script", ItemType.Shortcut => "Verknüpfung", ItemType.ConsoleSnapIn => "Snap-in", ItemType.Executable => "Programm", _ => "Datei"
+        ItemType.Batch => L.T("Batch-Script"), ItemType.Shortcut => L.T("Verknüpfung"), ItemType.ConsoleSnapIn => "Snap-in", ItemType.Executable => L.T("Programm"), _ => L.T("Datei")
     };
-    public string FileInfo => Item.ParseError ?? (Item.Synopsis.Length > 0 ? Item.Synopsis : "Keine Beschreibung im Script (Comment-Based Help .SYNOPSIS).");
-    public string FileParametersText => Item.Parameters.Count == 0 ? "Keine Parameter" : "Parameter: " + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? " (Pflicht)" : string.Empty)));
+    public string FileInfo => Item.ParseError ?? (Item.Synopsis.Length > 0 ? Item.Synopsis : L.T("Keine Beschreibung im Script (Comment-Based Help .SYNOPSIS)."));
+    public string FileParametersText => Item.Parameters.Count == 0 ? L.T("Keine Parameter") : L.T("Parameter: ") + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? L.T(" (Pflicht)") : string.Empty)));
     public ICommand OpenFileLocationCommand => new RelayCommand(() => _app.Shell.OpenLocation(Item.FullPath));
 
     /// <summary>Startprofile gibt es für alle Arten.</summary>
@@ -501,7 +502,7 @@ public sealed class ProfilesViewModel : ObservableObject
 
     /// <summary>Befehlsvorschau: Standardprofil bzw. das gerade bearbeitete weitere Profil.</summary>
     public string PreviewText => ((_moreProfilesExpanded ? Selected : DefaultProfile) ?? Selected)?.Preview ?? string.Empty;
-    public string MoreProfilesText => Profiles.Count <= 1 ? "Weitere Startprofile" : $"Weitere Startprofile ({Profiles.Count - 1})";
+    public string MoreProfilesText => Profiles.Count <= 1 ? L.T("Weitere Startprofile") : L.F("Weitere Startprofile ({0})", Profiles.Count - 1);
 
     private void RaiseKindDependent()
     {
@@ -554,9 +555,9 @@ public sealed class ProfilesViewModel : ObservableObject
     /// <summary>Felder des eigenen Eintrags (Art, Ziel, Code …); null bei Dateien aus Ordnern.</summary>
     public CustomEntryViewModel? Entry { get; }
     public bool HasEntry => Entry != null;
-    public string Title => ShowKindPicker ? "Was möchtest du anlegen?" : Entry != null ? (IsNew && string.IsNullOrWhiteSpace(Entry.Name) ? "Neuer Eintrag: " + Entry.KindLabel : Entry.Title) : Item.FileName;
+    public string Title => ShowKindPicker ? L.T("Was möchtest du anlegen?") : Entry != null ? (IsNew && string.IsNullOrWhiteSpace(Entry.Name) ? L.T("Neuer Eintrag: ") + Entry.KindLabel : Entry.Title) : Item.FileName;
     public string PathText => Entry != null ? Entry.KindLabel : Item.FullPath;
-    public string WindowTitle => ShowKindPicker ? "Neuer Eintrag" : (IsNew ? "Neuer Eintrag – " : "Eintrag – ") + (Entry?.KindLabel ?? FileKindText);
+    public string WindowTitle => ShowKindPicker ? L.T("Neuer Eintrag") : (IsNew ? L.T("Neuer Eintrag – ") : L.T("Eintrag – ")) + (Entry?.KindLabel ?? FileKindText);
 
     private bool _singleClick;
     /// <summary>Ein Klick im Panel startet sofort (statt aufzuklappen).</summary>
@@ -567,9 +568,9 @@ public sealed class ProfilesViewModel : ObservableObject
     public string AskProfile { get => _askProfile; set => Set(ref _askProfile, value ?? "default"); }
     public IReadOnlyList<KeyValuePair<string, string>> AskProfileChoices { get; } = new[]
     {
-        new KeyValuePair<string, string>("default", "Wie unter Ausführung eingestellt"),
-        new KeyValuePair<string, string>("yes", "Immer nach dem Profil fragen"),
-        new KeyValuePair<string, string>("no", "Nie fragen (Standardprofil)")
+        new KeyValuePair<string, string>("default", L.T("Wie unter Ausführung eingestellt")),
+        new KeyValuePair<string, string>("yes", L.T("Immer nach dem Profil fragen")),
+        new KeyValuePair<string, string>("no", L.T("Nie fragen (Standardprofil)"))
     };
 
     /// <summary>Vorhandene Schlagworte (global) für Vorschläge.</summary>
@@ -583,12 +584,12 @@ public sealed class ProfilesViewModel : ObservableObject
     public string FirstError => ShowKindPicker ? string.Empty : Entry?.FirstError ?? string.Empty;
     public bool HasParameters => Item.Parameters.Count > 0;
     public bool SupportsNoExit => Item.Type is ItemType.PowerShell or ItemType.Batch;
-    public string SaveLabel => _saveImmediately ? "Speichern" : "Übernehmen";
+    public string SaveLabel => _saveImmediately ? L.T("Speichern") : L.T("Übernehmen");
     public string SaveHint => _saveImmediately
-        ? "Kennwörter und Parameter vom Typ PSCredential/SecureString werden nie gespeichert."
-        : "Wird sofort übernommen. Kennwörter werden nie gespeichert.";
+        ? L.T("Kennwörter und Parameter vom Typ PSCredential/SecureString werden nie gespeichert.")
+        : L.T("Wird sofort übernommen. Kennwörter werden nie gespeichert.");
     public string DisplayNamePlaceholder => Item.DisplayName;
-    public string DescriptionPlaceholder => string.IsNullOrWhiteSpace(Item.Synopsis) ? "Beschreibung im Panel" : "aus der Datei: " + Item.Synopsis;
+    public string DescriptionPlaceholder => string.IsNullOrWhiteSpace(Item.Synopsis) ? L.T("Beschreibung im Panel") : L.T("aus der Datei: ") + Item.Synopsis;
 
     public string DisplayName { get => _displayName; set => Set(ref _displayName, value ?? string.Empty); }
     public string Description { get => _description; set => Set(ref _description, value ?? string.Empty); }
@@ -642,7 +643,7 @@ public sealed class ProfilesViewModel : ObservableObject
 
     private void Add()
     {
-        var p = new ProfileEditViewModel(this, ProfileResolver.CreateNew(_target, Item, $"Profil {Profiles.Count + 1}"));
+        var p = new ProfileEditViewModel(this, ProfileResolver.CreateNew(_target, Item, L.F("Profil {0}", Profiles.Count + 1)));
         Profiles.Add(p);
         Selected = p;
         OnPropertyChanged(nameof(MoreProfilesText));
@@ -652,7 +653,7 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         if (Selected == null) return;
         var copy = Selected.ToProfile();
-        copy.Name += " (Kopie)";
+        copy.Name += L.T(" (Kopie)");
         copy.IsDefault = false;
         var p = new ProfileEditViewModel(this, copy);
         Profiles.Add(p);

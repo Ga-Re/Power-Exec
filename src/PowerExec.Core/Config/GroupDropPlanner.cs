@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Bereich auf dem Kopf einer Gruppe beim Ziehen: obere Kante, Mitte, untere Kante.</summary>
@@ -53,14 +54,14 @@ public static class GroupDropPlanner
 
         var rest = visibleOrder.Select(GroupManager.Normalize).Where(p => !GroupManager.IsSameOrBelow(p, dragged)).ToList();
         int i = rest.FindIndex(p => p.Equals(hovered, StringComparison.CurrentCultureIgnoreCase));
-        if (i < 0) return Invalid("Hier kann keine Gruppe abgelegt werden.");
+        if (i < 0) return Invalid(L.T("Hier kann keine Gruppe abgelegt werden."));
 
         GroupDropPosition position;
         string target;
         int depth, min, max;
         if (zone == GroupDropZone.Into)
         {
-            if (siblingsOnly) return Invalid("Hier lässt sich nur die Reihenfolge ändern. Untergruppen legst du im Panel an, indem du eine Gruppe auf die Mitte einer anderen ziehst.");
+            if (siblingsOnly) return Invalid(L.T("Hier lässt sich nur die Reihenfolge ändern. Untergruppen legst du im Panel an, indem du eine Gruppe auf die Mitte einer anderen ziehst."));
             position = GroupDropPosition.Into;
             target = rest[i];
             depth = min = max = GroupManager.DepthOf(target) + 1;
@@ -104,8 +105,8 @@ public static class GroupDropPlanner
             {
                 IsValid = false,
                 Reason = draggedParent == null
-                    ? $"„{leaf}“ bleibt auf der obersten Ebene – hier lässt sich nur die Reihenfolge ändern."
-                    : $"„{leaf}“ bleibt in „{GroupManager.LeafOf(draggedParent)}“ – hier lässt sich nur die Reihenfolge ändern."
+                    ? L.F("„{0}“ bleibt auf der obersten Ebene – hier lässt sich nur die Reihenfolge ändern.", leaf)
+                    : L.F("„{0}“ bleibt in „{1}“ – hier lässt sich nur die Reihenfolge ändern.", leaf, GroupManager.LeafOf(draggedParent))
             };
 
         var newPath = newParent == null ? leaf : newParent + GroupManager.Separator + leaf;
@@ -114,8 +115,8 @@ public static class GroupDropPlanner
             {
                 IsValid = false,
                 Reason = newParent == null
-                    ? $"Auf der obersten Ebene gibt es schon eine Gruppe „{leaf}“."
-                    : $"In „{GroupManager.LeafOf(newParent)}“ gibt es schon eine Gruppe „{leaf}“."
+                    ? L.F("Auf der obersten Ebene gibt es schon eine Gruppe „{0}“.", leaf)
+                    : L.F("In „{0}“ gibt es schon eine Gruppe „{1}“.", GroupManager.LeafOf(newParent), leaf)
             };
 
         return plan with { IsNoOp = sameParent && IsSameOrder(visibleOrder, dragged, position, target) };
@@ -125,12 +126,12 @@ public static class GroupDropPlanner
     public static string Describe(GroupDropPlan plan, string dragged)
     {
         var name = $"„{GroupManager.LeafOf(GroupManager.Normalize(dragged))}“";
-        if (!plan.IsValid) return plan.Reason ?? "Hier nicht möglich.";
-        if (plan.IsNoOp) return "Keine Änderung.";
+        if (!plan.IsValid) return plan.Reason ?? L.T("Hier nicht möglich.");
+        if (plan.IsNoOp) return L.T("Keine Änderung.");
         var target = $"„{GroupManager.LeafOf(plan.Target)}“";
-        if (plan.Position == GroupDropPosition.Into) return $"{name} wird Untergruppe von {target}.";
-        var where = plan.NewParent == null ? "oberste Ebene" : $"in „{GroupManager.LeafOf(plan.NewParent)}“";
-        return $"{name}: {where}, {(plan.Position == GroupDropPosition.Before ? "vor" : "nach")} {target}";
+        if (plan.Position == GroupDropPosition.Into) return L.F("{0} wird Untergruppe von {1}.", name, target);
+        var where = plan.NewParent == null ? L.T("oberste Ebene") : L.F("in „{0}“", GroupManager.LeafOf(plan.NewParent));
+        return (plan.Position == GroupDropPosition.Before ? L.F("{0}: {1}, vor {2}", name, where, target) : L.F("{0}: {1}, nach {2}", name, where, target));
     }
 
     private static GroupDropPlan Invalid(string reason) => new() { IsValid = false, Reason = reason };

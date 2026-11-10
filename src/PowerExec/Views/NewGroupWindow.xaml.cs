@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
@@ -21,15 +22,15 @@ public partial class NewGroupWindow : Window
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
-        _colors.Add(new KeyValuePair<string, string>(string.Empty, "Keine / wie übergeordnet"));
+        _colors.Add(new KeyValuePair<string, string>(string.Empty, L.T("Keine / wie übergeordnet")));
         _colors.AddRange(PanelColors.AccentPresets.Select(p => new KeyValuePair<string, string>(p.Hex, p.Name)));
         ColorBox.ItemsSource = _colors;
         ColorBox.SelectedIndex = 0;
         LayoutBox.ItemsSource = new[]
         {
-            new KeyValuePair<string, string>("panel", "Wie das Panel"),
-            new KeyValuePair<string, string>("List", "Liste"),
-            new KeyValuePair<string, string>("Grid", "Raster")
+            new KeyValuePair<string, string>("panel", L.T("Wie das Panel")),
+            new KeyValuePair<string, string>("List", L.T("Liste")),
+            new KeyValuePair<string, string>("Grid", L.T("Raster"))
         };
         LayoutBox.SelectedIndex = 0;
         Loaded += (_, _) => { NameBox.Focus(); NameBox.SelectAll(); };
@@ -73,7 +74,7 @@ public partial class NewGroupWindow : Window
     private void Icon_Click(object sender, RoutedEventArgs e)
     {
         Topmost = false; // Auswahlfenster nicht verdecken
-        var picked = IconPickerWindow.Pick(_icon, "Symbol oder Bild für die Gruppe");
+        var picked = IconPickerWindow.Pick(_icon, L.T("Symbol oder Bild für die Gruppe"));
         Topmost = true;
         if (picked == null) return;
         _icon = picked.Value;
@@ -84,7 +85,7 @@ public partial class NewGroupWindow : Window
 
     private void Browse_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Ordner für die Gruppe auswählen" };
+        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = L.T("Ordner für die Gruppe auswählen") };
         if (dlg.ShowDialog(this) != true) return;
         FolderBox.Text = dlg.FolderName;
         ClearFolderButton.Visibility = Visibility.Visible;
@@ -108,12 +109,12 @@ public partial class NewGroupWindow : Window
     private void CustomColor_Click(object sender, RoutedEventArgs e)
     {
         Topmost = false;
-        var hex = ColorPickerWindow.Pick("Farbe für die Gruppe", ColorBox.SelectedValue as string, this);
+        var hex = ColorPickerWindow.Pick(L.T("Farbe für die Gruppe"), ColorBox.SelectedValue as string, this);
         Topmost = true;
         if (hex == null) return;
         if (!_colors.Any(c => c.Key.Equals(hex, StringComparison.OrdinalIgnoreCase)))
         {
-            _colors.Add(new KeyValuePair<string, string>(hex, "Eigene " + hex));
+            _colors.Add(new KeyValuePair<string, string>(hex, L.T("Eigene ") + hex));
             ColorBox.ItemsSource = null;
             ColorBox.ItemsSource = _colors;
         }
@@ -129,7 +130,7 @@ public partial class NewGroupWindow : Window
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         var name = NameBox.Text.Trim();
-        var error = name.Length == 0 ? "Bitte einen Namen eingeben." : _validateName?.Invoke(name);
+        var error = name.Length == 0 ? L.T("Bitte einen Namen eingeben.") : _validateName?.Invoke(name);
         error ??= _validateFolder?.Invoke(FolderBox.Text.Trim().Length > 0 ? FolderBox.Text.Trim() : null);
         if (error != null)
         {

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
@@ -44,9 +45,9 @@ public sealed class CustomEntryViewModel : ObservableObject
         _e = entry.Clone();
         _useRdpFile = _e.RdpFile.Trim().Length > 0;
         BrowseCommand = new RelayCommand(Browse, () => CanBrowse);
-        BrowseKeyCommand = new RelayCommand(() => PickFile("Schlüsseldateien (*.ppk;*.pem;id_*)|*.ppk;*.pem;id_*|Alle Dateien (*.*)|*.*", f => KeyFile = f));
-        BrowseRdpFileCommand = new RelayCommand(() => PickFile("Remotedesktop-Verbindungen (*.rdp)|*.rdp", f => RdpFile = f));
-        BrowseOpenWithCommand = new RelayCommand(() => PickFile("Programme (*.exe)|*.exe", f => OpenWithProgram = f));
+        BrowseKeyCommand = new RelayCommand(() => PickFile(L.T("Schlüsseldateien (*.ppk;*.pem;id_*)|*.ppk;*.pem;id_*|Alle Dateien (*.*)|*.*"), f => KeyFile = f));
+        BrowseRdpFileCommand = new RelayCommand(() => PickFile(L.T("Remotedesktop-Verbindungen (*.rdp)|*.rdp"), f => RdpFile = f));
+        BrowseOpenWithCommand = new RelayCommand(() => PickFile(L.T("Programme (*.exe)|*.exe"), f => OpenWithProgram = f));
         BrowseWorkDirCommand = new RelayCommand(() => PickFolder(f => WorkingDirectory = f));
         TestCommand = new RelayCommand(Test, () => IsValid && _e.Placeholders.Count == 0);
         ChooseIconCommand = new RelayCommand(ChooseIcon);
@@ -88,15 +89,15 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     public static IReadOnlyList<KindTile> Tiles { get; } = new[]
     {
-        new KindTile("Url", "Webseite", "\uE774"),
-        new KindTile("Folder", "Ordner / Freigabe", "\uE8B7"),
-        new KindTile("Rdp", "Remotedesktop", "\uE8AF"),
-        new KindTile("Ssh", "SSH-Verbindung", "\uE756"),
-        new KindTile("Snippet", "PowerShell-Snippet", "\uE943"),
-        new KindTile("TextSnippet", "Text-Snippet", "\uE8C8"),
-        new KindTile("Tool", "Windows-Werkzeug", "\uE90F"),
-        new KindTile("Command", "Befehl / Programm", "\uE7C4"),
-        new KindTile("File", "Datei", "\uE8A5")
+        new KindTile("Url", L.T("Webseite"), "\uE774"),
+        new KindTile("Folder", L.T("Ordner / Freigabe"), "\uE8B7"),
+        new KindTile("Rdp", L.T("Remotedesktop"), "\uE8AF"),
+        new KindTile("Ssh", L.T("SSH-Verbindung"), "\uE756"),
+        new KindTile("Snippet", L.T("PowerShell-Snippet"), "\uE943"),
+        new KindTile("TextSnippet", L.T("Text-Snippet"), "\uE8C8"),
+        new KindTile("Tool", L.T("Windows-Werkzeug"), "\uE90F"),
+        new KindTile("Command", L.T("Befehl / Programm"), "\uE7C4"),
+        new KindTile("File", L.T("Datei"), "\uE8A5")
     };
 
     public CustomEntryKind Kind => _e.Kind;
@@ -132,9 +133,9 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     public string Name { get => _e.Name; set { _e.Name = value ?? string.Empty; Touch(); OnPropertyChanged(nameof(Title)); } }
     public string Description { get => _e.Description; set { _e.Description = value ?? string.Empty; Touch(); } }
-    public string Title => string.IsNullOrWhiteSpace(_e.Name) ? (string.IsNullOrWhiteSpace(_e.Target) ? "Neuer Eintrag" : _e.Target) : _e.Name;
+    public string Title => string.IsNullOrWhiteSpace(_e.Name) ? (string.IsNullOrWhiteSpace(_e.Target) ? L.T("Neuer Eintrag") : _e.Target) : _e.Name;
     /// <summary>Vorschlag für den Anzeigenamen (Platzhalter im Namensfeld).</summary>
-    public string NameSuggestion => _e.ToLaunchItem().DisplayName is { Length: > 0 } n && n != "Snippet" ? n : "Anzeigename";
+    public string NameSuggestion => _e.ToLaunchItem().DisplayName is { Length: > 0 } n && n != "Snippet" ? n : L.T("Anzeigename");
 
     public string Icon { get => _e.Icon; set { _e.Icon = value ?? string.Empty; Touch(); OnPropertyChanged(nameof(HasIcon)); OnPropertyChanged(nameof(ShowAutoIcon)); OnPropertyChanged(nameof(ShowBadge)); CommandRequery.Invalidate(); } }
     public bool HasIcon => _e.Icon.Length > 0;
@@ -181,11 +182,11 @@ public sealed class CustomEntryViewModel : ObservableObject
     public string OptionsSummary => EntryOptions.From(_e).Summary(_e.Kind, BrowserCatalog.ProfileDisplay);
     public bool AppWindow { get => _e.AppWindow; set { _e.AppWindow = value; Touch(); OnPropertyChanged(nameof(AppWindowHint)); } }
     public string AppWindowHint => !_e.AppWindow ? string.Empty
-        : _e.Browser == BrowserChoice.Firefox ? "Firefox kennt kein App-Fenster – die Seite öffnet in einem eigenen Fenster."
-        : _e.Browser == BrowserChoice.Default ? "Öffnet in Microsoft Edge ohne Tabs und Adressleiste." : "Ohne Tabs und Adressleiste.";
+        : _e.Browser == BrowserChoice.Firefox ? L.T("Firefox kennt kein App-Fenster – die Seite öffnet in einem eigenen Fenster.")
+        : _e.Browser == BrowserChoice.Default ? L.T("Öffnet in Microsoft Edge ohne Tabs und Adressleiste.") : L.T("Ohne Tabs und Adressleiste.");
     public static IReadOnlyList<KeyValuePair<BrowserChoice, string>> Browsers { get; } = new[]
     {
-        new KeyValuePair<BrowserChoice, string>(BrowserChoice.Default, "Standardbrowser"),
+        new KeyValuePair<BrowserChoice, string>(BrowserChoice.Default, L.T("Standardbrowser")),
         new KeyValuePair<BrowserChoice, string>(BrowserChoice.Edge, "Microsoft Edge"),
         new KeyValuePair<BrowserChoice, string>(BrowserChoice.Chrome, "Google Chrome"),
         new KeyValuePair<BrowserChoice, string>(BrowserChoice.Firefox, "Mozilla Firefox")
@@ -193,7 +194,7 @@ public sealed class CustomEntryViewModel : ObservableObject
     /// <summary>Nur installierte Browser (plus der gespeicherte, falls er fehlt).</summary>
     public IReadOnlyList<KeyValuePair<BrowserChoice, string>> BrowserList =>
         BrowserCatalog.Installed.Append(_e.Browser).Distinct()
-            .Select(b => new KeyValuePair<BrowserChoice, string>(b, BrowserCatalog.DisplayName(b) + (BrowserCatalog.Installed.Contains(b) ? string.Empty : " (nicht installiert)")))
+            .Select(b => new KeyValuePair<BrowserChoice, string>(b, BrowserCatalog.DisplayName(b) + (BrowserCatalog.Installed.Contains(b) ? string.Empty : L.T(" (nicht installiert)"))))
             .ToList();
 
     /// <summary>Gefundene Profile des gewählten Browsers; leer = Standardprofil des Browsers.</summary>
@@ -201,10 +202,10 @@ public sealed class CustomEntryViewModel : ObservableObject
     {
         get
         {
-            var list = new List<KeyValuePair<string, string>> { new(string.Empty, "Standardprofil") };
+            var list = new List<KeyValuePair<string, string>> { new(string.Empty, L.T("Standardprofil")) };
             list.AddRange(BrowserCatalog.ProfilesOf(_e.Browser).Select(p => new KeyValuePair<string, string>(p.Id, p.Display)));
             if (_e.BrowserProfile.Length > 0 && !list.Any(x => x.Key.Equals(_e.BrowserProfile, StringComparison.OrdinalIgnoreCase)))
-                list.Add(new(_e.BrowserProfile, _e.BrowserProfile + " (nicht gefunden)"));
+                list.Add(new(_e.BrowserProfile, _e.BrowserProfile + L.T(" (nicht gefunden)")));
             return list;
         }
     }
@@ -245,8 +246,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     public bool AdminSession { get => _e.AdminSession; set { _e.AdminSession = value; Touch(); } }
     public string Gateway { get => _e.Gateway; set { _e.Gateway = value ?? string.Empty; Touch(); } }
     public string RdpHint => _e.NeedsGeneratedRdpFile
-        ? "Benutzer bzw. Gateway übergibt Power-Exec über eine erzeugte .rdp-Datei – ohne Kennwort. Das Kennwort fragt Windows beim Verbinden ab."
-        : "Benutzername und Kennwort fragt Windows beim Verbinden ab; gespeichert wird hier nichts.";
+        ? L.T("Benutzer bzw. Gateway übergibt Power-Exec über eine erzeugte .rdp-Datei – ohne Kennwort. Das Kennwort fragt Windows beim Verbinden ab.")
+        : L.T("Benutzername und Kennwort fragt Windows beim Verbinden ab; gespeichert wird hier nichts.");
 
     // ---- SSH -------------------------------------------------------------------
 
@@ -260,7 +261,7 @@ public sealed class CustomEntryViewModel : ObservableObject
     public static IReadOnlyList<KeyValuePair<SshClient, string>> Clients { get; } = new[]
     {
         new KeyValuePair<SshClient, string>(SshClient.Terminal, "Windows Terminal"),
-        new KeyValuePair<SshClient, string>(SshClient.Console, "Konsole (ssh.exe)"),
+        new KeyValuePair<SshClient, string>(SshClient.Console, L.T("Konsole (ssh.exe)")),
         new KeyValuePair<SshClient, string>(SshClient.Putty, "PuTTY")
     };
     public IReadOnlyList<KeyValuePair<SshClient, string>> ClientList => Clients;
@@ -301,8 +302,8 @@ public sealed class CustomEntryViewModel : ObservableObject
                 .Where(n => !Variables.IsBuiltin(n) && !_app.UserVariables.Any(v => v.Name.Equals(Variables.Normalize(n), StringComparison.CurrentCultureIgnoreCase)))
                 .Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
             return unknown.Count == 0 ? null
-                : (unknown.Count == 1 ? $"Die Variable {{{{{unknown[0]}}}}} gibt es nicht" : "Diese Variablen gibt es nicht: " + string.Join(", ", unknown.Select(n => "{{" + n + "}}")))
-                  + " – unter Einstellungen › Inhalte › Variablen anlegen, sonst startet der Eintrag nicht.";
+                : (unknown.Count == 1 ? L.F("Die Variable {{{{{0}}}}} gibt es nicht", unknown[0]) : L.T("Diese Variablen gibt es nicht: ") + string.Join(", ", unknown.Select(n => "{{" + n + "}}")))
+                  + L.T(" – unter Einstellungen › Inhalte › Variablen anlegen, sonst startet der Eintrag nicht.");
         }
     }
     public bool HasVariableWarning => VariableWarning != null;
@@ -313,8 +314,8 @@ public sealed class CustomEntryViewModel : ObservableObject
         {
             var ph = _e.Placeholders;
             return ph.Count == 0
-                ? "{{Name}} bzw. {{Name:Vorgabe}} wird beim Start abgefragt; {{$Variablen}} (eingebaute und eigene) setzt Power-Exec selbst ein."
-                : "Wird beim Start abgefragt: " + string.Join(", ", ph.Select(p => p.Default.Length > 0 ? $"{p.Name} (Vorgabe {p.Default})" : p.Name));
+                ? L.T("{{Name}} bzw. {{Name:Vorgabe}} wird beim Start abgefragt; {{$Variablen}} (eingebaute und eigene) setzt Power-Exec selbst ein.")
+                : L.T("Wird beim Start abgefragt: ") + string.Join(", ", ph.Select(p => p.Default.Length > 0 ? L.F("{0} (Vorgabe {1})", p.Name, p.Default) : p.Name));
         }
     }
     public bool HasPlaceholders => _e.Placeholders.Count > 0;
@@ -338,8 +339,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     public static IReadOnlyList<KeyValuePair<LaunchWindowState, string>> WindowStates { get; } = new[]
     {
         new KeyValuePair<LaunchWindowState, string>(LaunchWindowState.Normal, "Normal"),
-        new KeyValuePair<LaunchWindowState, string>(LaunchWindowState.Maximized, "Maximiert"),
-        new KeyValuePair<LaunchWindowState, string>(LaunchWindowState.Minimized, "Minimiert")
+        new KeyValuePair<LaunchWindowState, string>(LaunchWindowState.Maximized, L.T("Maximiert")),
+        new KeyValuePair<LaunchWindowState, string>(LaunchWindowState.Minimized, L.T("Minimiert"))
     };
     public IReadOnlyList<KeyValuePair<LaunchWindowState, string>> WindowStateList => WindowStates;
 
@@ -437,9 +438,9 @@ public sealed class CustomEntryViewModel : ObservableObject
             var probe = new LaunchItem { FullPath = "snippet.ps1", RootFolder = string.Empty, Type = ItemType.PowerShell };
             try { Core.Metadata.ScriptInfoReader.FillFromText(probe, _e.Code); } catch { }
             ParameterPreview = probe.Parameters.Count == 0
-                ? "Keine Parameter – das Snippet startet ohne Abfrage."
-                : "Beim Start abgefragt: " + string.Join(", ", probe.Parameters.Select(p =>
-                    p.Name + (p.TypeName.Length > 0 ? $" [{p.TypeName}]" : string.Empty) + (p.IsMandatory ? " (Pflicht)" : string.Empty)));
+                ? L.T("Keine Parameter – das Snippet startet ohne Abfrage.")
+                : L.T("Beim Start abgefragt: ") + string.Join(", ", probe.Parameters.Select(p =>
+                    p.Name + (p.TypeName.Length > 0 ? $" [{p.TypeName}]" : string.Empty) + (p.IsMandatory ? L.T(" (Pflicht)") : string.Empty)));
         }
         else SyntaxErrors = Array.Empty<SyntaxIssue>();
 
@@ -457,7 +458,7 @@ public sealed class CustomEntryViewModel : ObservableObject
             TargetOk = null;
             return;
         }
-        TargetStatus = "Wird geprüft …";
+        TargetStatus = L.T("Wird geprüft …");
         TargetOk = null;
         bool? ok;
         try
@@ -469,12 +470,12 @@ public sealed class CustomEntryViewModel : ObservableObject
         if (version != _checkVersion) return;
         TargetOk = ok;
         var unc = IsFolder || IsFile ? _app.ToUnc(t) : t;
-        var uncHint = !unc.Equals(t, StringComparison.OrdinalIgnoreCase) ? $" · Netzlaufwerk – andere Konten erreichen es als {unc}" : string.Empty;
+        var uncHint = !unc.Equals(t, StringComparison.OrdinalIgnoreCase) ? L.F(" · Netzlaufwerk – andere Konten erreichen es als {0}", unc) : string.Empty;
         TargetStatus = ok switch
         {
-            true => (IsFolder ? "Ordner erreichbar" : IsFile ? "Datei gefunden" : "Programm gefunden") + uncHint,
-            false => (IsFolder ? "Ordner nicht gefunden" : IsFile ? "Datei nicht gefunden" : "Programm nicht gefunden") + " – speichern geht trotzdem (z. B. Freigabe gerade offline).",
-            null => "Keine Antwort innerhalb von 3 Sekunden (Netzwerk?)."
+            true => (IsFolder ? L.T("Ordner erreichbar") : IsFile ? L.T("Datei gefunden") : L.T("Programm gefunden")) + uncHint,
+            false => (IsFolder ? L.T("Ordner nicht gefunden") : IsFile ? L.T("Datei nicht gefunden") : L.T("Programm nicht gefunden")) + L.T(" – speichern geht trotzdem (z. B. Freigabe gerade offline)."),
+            null => L.T("Keine Antwort innerhalb von 3 Sekunden (Netzwerk?).")
         };
     }
 
@@ -499,24 +500,24 @@ public sealed class CustomEntryViewModel : ObservableObject
         var url = _e.Target.Trim();
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https") || url.Contains("{{")) return;
         if (!force && _e.Name.Length > 0 && _e.Name != _autoTitle) return;
-        TitleStatus = "Titel wird abgerufen …";
+        TitleStatus = L.T("Titel wird abgerufen …");
         try
         {
             var html = await Http.GetStringAsync(uri);
             if (_e.Target.Trim() != url) return;
             var m = Regex.Match(html, @"<title[^>]*>\s*(.*?)\s*</title>", RegexOptions.IgnoreCase | RegexOptions.Singleline);
             var title = m.Success ? System.Net.WebUtility.HtmlDecode(Regex.Replace(m.Groups[1].Value, @"\s+", " ")).Trim() : string.Empty;
-            if (title.Length == 0) { TitleStatus = "Die Seite hat keinen Titel."; return; }
+            if (title.Length == 0) { TitleStatus = L.T("Die Seite hat keinen Titel."); return; }
             if (force || _e.Name.Length == 0 || _e.Name == _autoTitle)
             {
                 _autoTitle = title.Length > 80 ? title[..80] : title;
                 Name = _autoTitle;
             }
-            TitleStatus = "Titel übernommen.";
+            TitleStatus = L.T("Titel übernommen.");
         }
         catch (Exception ex)
         {
-            if (_e.Target.Trim() == url) TitleStatus = "Titel nicht abrufbar (" + (ex is TaskCanceledException ? "keine Antwort" : "Anmeldung nötig oder offline") + ").";
+            if (_e.Target.Trim() == url) TitleStatus = L.T("Titel nicht abrufbar (") + (ex is TaskCanceledException ? L.T("keine Antwort") : L.T("Anmeldung nötig oder offline")) + ").";
         }
     }
 
@@ -536,19 +537,19 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     public string TargetLabel => _e.Kind switch
     {
-        CustomEntryKind.Url => "Adresse",
-        CustomEntryKind.Folder => "Pfad",
-        CustomEntryKind.Rdp or CustomEntryKind.Ssh => "Rechner",
-        CustomEntryKind.File => "Datei",
-        CustomEntryKind.Tool => "Werkzeug",
-        _ => "Programm"
+        CustomEntryKind.Url => L.T("Adresse"),
+        CustomEntryKind.Folder => L.T("Pfad"),
+        CustomEntryKind.Rdp or CustomEntryKind.Ssh => L.T("Rechner"),
+        CustomEntryKind.File => L.T("Datei"),
+        CustomEntryKind.Tool => L.T("Werkzeug"),
+        _ => L.T("Programm")
     };
 
     public string TargetHint => _e.Kind switch
     {
         CustomEntryKind.Url => "https://intranet.firma.local oder https://ticket/{{Nummer}}",
         CustomEntryKind.Folder => @"\\server\freigabe\Ordner",
-        CustomEntryKind.Rdp => "SRV-01 oder {{Rechner}}",
+        CustomEntryKind.Rdp => L.T("SRV-01 oder {{Rechner}}"),
         CustomEntryKind.Ssh => "server.firma.local",
         CustomEntryKind.File => @"\\server\tools\Skript.ps1",
         CustomEntryKind.Tool => "dsa.msc, ms-settings:display, control.exe",
@@ -562,8 +563,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     {
         if (_e.Kind == CustomEntryKind.Folder) { PickFolder(f => Target = f); return; }
         PickFile(_e.Kind == CustomEntryKind.File
-            ? "Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"
-            : "Programme (*.exe;*.cmd;*.bat;*.msc)|*.exe;*.cmd;*.bat;*.msc|Alle Dateien (*.*)|*.*", f => Target = f);
+            ? L.T("Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*")
+            : L.T("Programme (*.exe;*.cmd;*.bat;*.msc)|*.exe;*.cmd;*.bat;*.msc|Alle Dateien (*.*)|*.*"), f => Target = f);
     }
 
     private void PickFile(string filter, Action<string> done)
@@ -578,7 +579,7 @@ public sealed class CustomEntryViewModel : ObservableObject
 
     private void ChooseIcon()
     {
-        var picked = _app.Dialogs.PickIcon(IconRef.Parse(_e.Icon), "Symbol für den Eintrag");
+        var picked = _app.Dialogs.PickIcon(IconRef.Parse(_e.Icon), L.T("Symbol für den Eintrag"));
         if (picked != null) Icon = picked.Value.ToString();
     }
 
@@ -596,7 +597,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _app.Dialogs.Warn(ex.Message, "Eintrag testen");
+            _app.Dialogs.Warn(ex.Message, L.T("Eintrag testen"));
         }
     }
 

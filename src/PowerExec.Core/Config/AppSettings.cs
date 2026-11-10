@@ -87,6 +87,9 @@ public sealed class AppSettings
     public List<string> GlobalExcludes { get; set; } = new();
     public bool AutoRescan { get; set; } = true;
 
+    /// <summary>Sprache der Oberfläche: "" = wie Windows, "de" oder "en".</summary>
+    public string Language { get; set; } = string.Empty;
+
     // Panel
     public ScreenEdge Edge { get; set; } = ScreenEdge.Right;
     public MonitorMode MonitorMode { get; set; } = MonitorMode.Primary;

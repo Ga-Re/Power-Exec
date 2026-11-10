@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -20,14 +21,14 @@ public sealed class HistoryRowViewModel
     public string Time => Entry.StartUtc.ToLocalTime() is var t && t.Date == DateTime.Today ? t.ToString("HH:mm") : t.ToString("dd.MM. HH:mm");
     public string Name => Entry.Name;
     public string Where => Entry.IsRemote
-        ? (Entry.Targets.Count == 1 ? Entry.Targets[0] : $"{Entry.Targets.Count} Rechner")
-        : Entry.Mode switch { ExecutionMode.Administrator => "lokal · Admin", ExecutionMode.OtherUser => "lokal · anderer Benutzer", _ => "lokal" };
+        ? (Entry.Targets.Count == 1 ? Entry.Targets[0] : L.F("{0} Rechner", Entry.Targets.Count))
+        : Entry.Mode switch { ExecutionMode.Administrator => L.T("lokal · Admin"), ExecutionMode.OtherUser => L.T("lokal · anderer Benutzer"), _ => "lokal" };
     public string Meta => string.Join(" · ", new[]
     {
         Where,
         Entry.ProfileName is "Standard" or "Verlauf" or "" ? null : Entry.ProfileName,
         Entry.Origin.Length > 0 ? Entry.Origin : null,
-        Entry.Result == HistoryResult.Running ? "läuft …" : Entry.Summary.Length > 0 ? Entry.Summary : null
+        Entry.Result == HistoryResult.Running ? L.T("läuft …") : Entry.Summary.Length > 0 ? Entry.Summary : null
     }.Where(s => !string.IsNullOrEmpty(s)));
     public string Duration => Entry.Duration is { } d ? DisplayText.Duration(d) : string.Empty;
     /// <summary>Parameter in einer Zeile, z. B. „-ComputerName SRV01 -Force“.</summary>
@@ -38,7 +39,7 @@ public sealed class HistoryRowViewModel
     public bool IsWarning => Entry.Result == HistoryResult.Warning;
     public bool IsRunning => Entry.Result == HistoryResult.Running;
     public bool CanRetryFailed => Entry.FailedTargets.Count > 0;
-    public string RetryText => $"Nur {Entry.FailedTargets.Count} fehlgeschlagene";
+    public string RetryText => L.F("Nur {0} fehlgeschlagene", Entry.FailedTargets.Count);
     public bool HasLog => Entry.LogFile != null;
 
     public ICommand RunAgainCommand { get; }

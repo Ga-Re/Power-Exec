@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Services;
@@ -57,14 +58,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info($"Rechnergruppe @{g.Name}: {names.Count} Rechner aus dem AD");
+            AppLog.Info(L.F("Rechnergruppe @{0}: {1} Rechner aus dem AD", g.Name, names.Count));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow; // nicht jede Minute erneut versuchen
-            AppLog.Info($"Rechnergruppe @{g.Name}: AD nicht erreichbar ({ex.Message})");
+            AppLog.Info(L.F("Rechnergruppe @{0}: AD nicht erreichbar ({1})", g.Name, ex.Message));
             return null;
         }
     }
@@ -74,20 +75,20 @@ public partial class AppController
     {
         try
         {
-            if (q.Path.Trim().Length == 0) throw new InvalidOperationException("Keine Datei angegeben.");
+            if (q.Path.Trim().Length == 0) throw new InvalidOperationException(L.T("Keine Datei angegeben."));
             var text = await File.ReadAllTextAsync(q.Path.Trim());
             var names = MachineTable.Parse(text).Apply(q);
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info($"Rechnergruppe @{g.Name}: {names.Count} Rechner aus {q.Path}");
+            AppLog.Info(L.F("Rechnergruppe @{0}: {1} Rechner aus {2}", g.Name, names.Count, q.Path));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow;
-            AppLog.Info($"Rechnergruppe @{g.Name}: Liste nicht lesbar ({ex.Message})");
+            AppLog.Info(L.F("Rechnergruppe @{0}: Liste nicht lesbar ({1})", g.Name, ex.Message));
             return null;
         }
     }

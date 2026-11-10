@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 
@@ -112,20 +113,20 @@ public static class ProfileResolver
         {
             parts.Add(profile.Target switch
             {
-                ProfileTarget.Fixed => profile.Machines.Count == 1 ? profile.Machines[0] : $"{profile.Machines.Count} Rechner",
-                ProfileTarget.Ask => "Rechner wählen",
-                _ => "Dieser PC"
+                ProfileTarget.Fixed => profile.Machines.Count == 1 ? profile.Machines[0] : L.F("{0} Rechner", profile.Machines.Count),
+                ProfileTarget.Ask => L.T("Rechner wählen"),
+                _ => L.T("Dieser PC")
             });
             parts.Add(NeedsDialog(profile, item)
-                ? (profile.Dialog == DialogMode.Always ? "mit Dialog" : "Dialog wenn nötig")
-                : "startet direkt");
+                ? (profile.Dialog == DialogMode.Always ? L.T("mit Dialog") : L.T("Dialog wenn nötig"))
+                : L.T("startet direkt"));
         }
         else
         {
-            parts.Add(string.IsNullOrWhiteSpace(profile.Arguments) ? "ohne Argumente" : profile.Arguments.Trim());
+            parts.Add(string.IsNullOrWhiteSpace(profile.Arguments) ? L.T("ohne Argumente") : profile.Arguments.Trim());
         }
         if (profile.RunAsAdmin) parts.Add("Admin");
-        else if (profile.RunAsOtherUser) parts.Add("anderer Benutzer");
+        else if (profile.RunAsOtherUser) parts.Add(L.T("anderer Benutzer"));
         return string.Join(" · ", parts);
     }
 }

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
@@ -13,35 +14,35 @@ public sealed class TrayIcon : IDisposable
     {
         _icon = new Forms.NotifyIcon
         {
-            Text = $"Power-Exec {UpdateService.CurrentVersionText}",
+            Text = L.F("Power-Exec {0}", UpdateService.CurrentVersionText),
             Icon = LoadIcon(),
             Visible = true
         };
 
         _app = app;
         var menu = new Forms.ContextMenuStrip();
-        _panels = new Forms.ToolStripMenuItem("Panel öffnen", null, (_, _) => app.ShowPanelFromHotkey());
-        _favorites = new Forms.ToolStripMenuItem("Favoriten");
-        _recent = new Forms.ToolStripMenuItem("Zuletzt ausgeführt");
-        _workspaces = new Forms.ToolStripMenuItem("Arbeitsbereich");
+        _panels = new Forms.ToolStripMenuItem(L.T("Panel öffnen"), null, (_, _) => app.ShowPanelFromHotkey());
+        _favorites = new Forms.ToolStripMenuItem(L.T("Favoriten"));
+        _recent = new Forms.ToolStripMenuItem(L.T("Zuletzt ausgeführt"));
+        _workspaces = new Forms.ToolStripMenuItem(L.T("Arbeitsbereich"));
         menu.Items.Add(_panels);
         menu.Items.Add(_favorites);
         menu.Items.Add(_recent);
         menu.Items.Add(_workspaces);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Opening += (_, _) => RebuildQuickMenus();
-        menu.Items.Add("Ordner neu einlesen", null, (_, _) => _ = app.Repository.ScanAsync());
-        menu.Items.Add("Einstellungen", null, (_, _) => app.ShowSettings());
-        menu.Items.Add("Nach Updates suchen", null, async (_, _) =>
+        menu.Items.Add(L.T("Ordner neu einlesen"), null, (_, _) => _ = app.Repository.ScanAsync());
+        menu.Items.Add(L.T("Einstellungen"), null, (_, _) => app.ShowSettings());
+        menu.Items.Add(L.T("Nach Updates suchen"), null, async (_, _) =>
         {
             var r = await app.CheckUpdatesAsync(manual: true, includePrereleases: app.Settings.IncludePrereleases);
             if (r == null)
-                ShowBalloon("Keine Updates", app.Updates.LastError != null
-                    ? "Prüfung fehlgeschlagen: " + app.Updates.LastError
-                    : $"Version {UpdateService.CurrentVersionText} ist aktuell.");
+                ShowBalloon(L.T("Keine Updates"), app.Updates.LastError != null
+                    ? L.T("Prüfung fehlgeschlagen: ") + app.Updates.LastError
+                    : L.F("Version {0} ist aktuell.", UpdateService.CurrentVersionText));
         });
         menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add("Beenden", null, (_, _) => app.Exit());
+        menu.Items.Add(L.T("Beenden"), null, (_, _) => app.Exit());
         _icon.ContextMenuStrip = menu;
         _icon.BalloonTipClicked += (_, _) =>
         {

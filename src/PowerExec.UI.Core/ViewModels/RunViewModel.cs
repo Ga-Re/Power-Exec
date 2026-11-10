@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -52,9 +53,9 @@ public sealed class ParameterViewModel : ObservableObject
 
     public string Placeholder => Parameter.Kind switch
     {
-        ParameterKind.List => "Mehrere Werte durch Komma trennen",
-        ParameterKind.Number => "Zahl",
-        _ => Parameter.DefaultValueText is { Length: > 0 } d && Parameter.DefaultValueLiteral == null ? $"Standard: {d}" : string.Empty
+        ParameterKind.List => L.T("Mehrere Werte durch Komma trennen"),
+        ParameterKind.Number => L.T("Zahl"),
+        _ => Parameter.DefaultValueText is { Length: > 0 } d && Parameter.DefaultValueLiteral == null ? L.F("Standard: {0}", d) : string.Empty
     };
 
     public string Value { get => _value; set => Set(ref _value, value ?? string.Empty); }
@@ -160,12 +161,12 @@ public sealed class RunViewModel : ObservableObject
             (m.Favorite ? FavoriteMachines : RecentMachines).Add(vm);
         }
         foreach (var name in preselect)
-            RecentMachines.Insert(0, new MachineViewModel(this, name, false, "aus Profil", true));
+            RecentMachines.Insert(0, new MachineViewModel(this, name, false, L.T("aus Profil"), true));
 
         foreach (var g in s.MachineGroups.Where(g => g.Machines.Count > 0))
         {
             var members = g.Machines.ToList();
-            Groups.Add(new MachineGroupChip("@" + g.Name, members.Count == 1 ? "1 Rechner" : $"{members.Count} Rechner",
+            Groups.Add(new MachineGroupChip("@" + g.Name, members.Count == 1 ? L.T("1 Rechner") : L.F("{0} Rechner", members.Count),
                 string.Join(", ", members.Take(30)) + (members.Count > 30 ? " …" : string.Empty),
                 new RelayCommand(() => SelectGroup(members))));
         }
@@ -181,7 +182,7 @@ public sealed class RunViewModel : ObservableObject
 
     public LaunchItem Item { get; }
     public LaunchProfile Profile { get; }
-    public string ProfileText => Profile.IsImplicit ? string.Empty : $"Startprofil: {Profile.Name}";
+    public string ProfileText => Profile.IsImplicit ? string.Empty : L.F("Startprofil: {0}", Profile.Name);
     public bool HasProfile => !Profile.IsImplicit;
     public string Title => Item.DisplayName;
     public string PathText => Item.FullPath;
@@ -206,10 +207,10 @@ public sealed class RunViewModel : ObservableObject
         get
         {
             var parts = new List<string>();
-            if (Item.RequiresAdmin && !_remote) parts.Add("Das Script verlangt Administratorrechte (#Requires -RunAsAdministrator).");
+            if (Item.RequiresAdmin && !_remote) parts.Add(L.T("Das Script verlangt Administratorrechte (#Requires -RunAsAdministrator)."));
             if (Requirements.NeedsPowerShell7(Item))
-                parts.Add($"Das Script verlangt PowerShell {Item.RequiredPsVersion} (#Requires -Version)" +
-                          (!_remote && !_app.IsPwshInstalled ? " – PowerShell 7 ist hier nicht installiert." : "."));
+                parts.Add(L.F("Das Script verlangt PowerShell {0} (#Requires -Version)", Item.RequiredPsVersion) +
+                          (!_remote && !_app.IsPwshInstalled ? L.T(" – PowerShell 7 ist hier nicht installiert.") : "."));
             return parts.Count > 0 ? string.Join(" ", parts) : null;
         }
     }
@@ -221,7 +222,7 @@ public sealed class RunViewModel : ObservableObject
             var existing = FavoriteMachines.Concat(RecentMachines).FirstOrDefault(m => m.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             if (existing != null) { existing.IsSelected = true; continue; }
             _fromGroup.Add(name);
-            RecentMachines.Add(new MachineViewModel(this, name, false, "aus Gruppe", true));
+            RecentMachines.Add(new MachineViewModel(this, name, false, L.T("aus Gruppe"), true));
         }
         OnMachinesChanged();
     }
@@ -280,11 +281,11 @@ public sealed class RunViewModel : ObservableObject
 
     public string ModeInfo => (_mode, _remote) switch
     {
-        (ExecutionMode.CurrentUser, false) => "Läuft mit deinem Konto, ohne erhöhte Rechte.",
-        (ExecutionMode.CurrentUser, true) => "Verbindung mit deinem aktuellen Konto (Kerberos/WinRM).",
-        (ExecutionMode.Administrator, false) => "Windows fragt per UAC nach Bestätigung.",
-        (ExecutionMode.Administrator, true) => "Remote-Sitzungen laufen bereits mit den vollen Rechten des verbundenen Kontos. Für ein anderes Admin-Konto „Anderer Benutzer“ wählen.",
-        _ => "Benutzername und Kennwort werden beim Start abgefragt und nicht gespeichert."
+        (ExecutionMode.CurrentUser, false) => L.T("Läuft mit deinem Konto, ohne erhöhte Rechte."),
+        (ExecutionMode.CurrentUser, true) => L.T("Verbindung mit deinem aktuellen Konto (Kerberos/WinRM)."),
+        (ExecutionMode.Administrator, false) => L.T("Windows fragt per UAC nach Bestätigung."),
+        (ExecutionMode.Administrator, true) => L.T("Remote-Sitzungen laufen bereits mit den vollen Rechten des verbundenen Kontos. Für ein anderes Admin-Konto „Anderer Benutzer“ wählen."),
+        _ => L.T("Benutzername und Kennwort werden beim Start abgefragt und nicht gespeichert.")
     };
 
     public string? EngineWarning
@@ -292,20 +293,20 @@ public sealed class RunViewModel : ObservableObject
         get
         {
             if (_remote) return _engine == PsEngine.PowerShell7
-                ? "Auf den meisten Servern gibt es nur 5.1. Fehlt der Endpunkt PowerShell.7, wird automatisch 5.1 verwendet."
+                ? L.T("Auf den meisten Servern gibt es nur 5.1. Fehlt der Endpunkt PowerShell.7, wird automatisch 5.1 verwendet.")
                 : null;
             return _engine == PsEngine.PowerShell7 && !_app.IsPwshInstalled
-                ? "PowerShell 7 ist auf diesem PC nicht installiert."
+                ? L.T("PowerShell 7 ist auf diesem PC nicht installiert.")
                 : null;
         }
     }
 
     public string? ReadHostWarning => _remote && Item.UsesReadHost
-        ? "Das Script verwendet Read-Host. Bei Remote-Ausführung kann niemand antworten – es bricht ab."
+        ? L.T("Das Script verwendet Read-Host. Bei Remote-Ausführung kann niemand antworten – es bricht ab.")
         : null;
 
     public string? ModulesInfo => Item.RequiredModules.Count > 0
-        ? "Benötigte Module (#Requires): " + string.Join(", ", Item.RequiredModules) + ". Bei Remote wird vorher geprüft, ob sie vorhanden sind."
+        ? L.T("Benötigte Module (#Requires): ") + string.Join(", ", Item.RequiredModules) + L.T(". Bei Remote wird vorher geprüft, ob sie vorhanden sind.")
         : null;
 
     public string Preview { get => _preview; private set => Set(ref _preview, value); }
@@ -317,30 +318,30 @@ public sealed class RunViewModel : ObservableObject
     {
         get
         {
-            if (!_remote) return "Ausführen";
+            if (!_remote) return L.T("Ausführen");
             var sel = SelectedMachines.ToList();
             return sel.Count switch
             {
-                0 => "Rechner auswählen",
-                1 => $"Auf {sel[0].Name} ausführen",
-                _ => $"Auf {sel.Count} Rechnern ausführen"
+                0 => L.T("Rechner auswählen"),
+                1 => L.F("Auf {0} ausführen", sel[0].Name),
+                _ => L.F("Auf {0} Rechnern ausführen", sel.Count)
             };
         }
     }
 
     public string FootNote => _mode == ExecutionMode.OtherUser
-        ? "Beim Start werden die Anmeldedaten abgefragt. Nichts wird gespeichert."
+        ? L.T("Beim Start werden die Anmeldedaten abgefragt. Nichts wird gespeichert.")
         : _remote
-            ? "Vor dem Start wird pro Rechner geprüft: erreichbar, PowerShell-Version, Module aus #Requires."
-            : "Befehlsvorschau: So startet Power-Exec das Script.";
+            ? L.T("Vor dem Start wird pro Rechner geprüft: erreichbar, PowerShell-Version, Module aus #Requires.")
+            : L.T("Befehlsvorschau: So startet Power-Exec das Script.");
 
     public ICommand AddMachineCommand { get; }
     public ICommand TestConnectionCommand { get; }
 
     private bool _testing;
     public bool IsTesting { get => _testing; private set { if (Set(ref _testing, value)) { OnPropertyChanged(nameof(TestButtonText)); CommandRequery.Invalidate(); } } }
-    public string TestButtonText => _testing ? "Teste …" : "Verbindung testen";
-    public string SslHint => _app.Settings.RemoteUseSsl ? "Verbindung über HTTPS (5986)" : "Verbindung über HTTP (5985)";
+    public string TestButtonText => _testing ? L.T("Teste …") : L.T("Verbindung testen");
+    public string SslHint => _app.Settings.RemoteUseSsl ? L.T("Verbindung über HTTPS (5986)") : L.T("Verbindung über HTTP (5985)");
 
     /// <summary>Prüft die gewählten Rechner: WinRM erreichbar, Anmeldung, PowerShell-Version, Endpunkt PowerShell.7.</summary>
     private async Task TestConnectionsAsync()
@@ -350,17 +351,17 @@ public sealed class RunViewModel : ObservableObject
         RunCredential? cred = null;
         if (_mode == ExecutionMode.OtherUser)
         {
-            cred = _app.PromptCredential(OwnerWindow?.Invoke(), "Verbindungstest", remote: true);
+            cred = _app.PromptCredential(OwnerWindow?.Invoke(), L.T("Verbindungstest"), remote: true);
             if (cred == null) return;
         }
         IsTesting = true;
-        foreach (var m in machines) { m.TestText = "wird getestet …"; m.TestOk = null; }
+        foreach (var m in machines) { m.TestText = L.T("wird getestet …"); m.TestOk = null; }
         var results = await _app.TestConnectionsAsync(machines.Select(m => m.Name).ToList(), cred);
         foreach (var m in machines)
         {
             var r = results.FirstOrDefault(x => x.Computer.Equals(m.Name, StringComparison.OrdinalIgnoreCase));
             m.TestOk = r?.Ok ?? false;
-            m.TestText = r?.Summary ?? "keine Antwort";
+            m.TestText = r?.Summary ?? L.T("keine Antwort");
         }
         IsTesting = false;
     }
@@ -453,7 +454,7 @@ public sealed class RunViewModel : ObservableObject
             {
                 _app.RecordParameters(Item, RawValues());
                 _app.RecordRun(Item, Profile);
-                AppLog.Info($"Start (Dialog): {Item.FullPath} · {req.Targets.Count} Rechner");
+                AppLog.Info(L.F("Start (Dialog): {0} · {1} Rechner", Item.FullPath, req.Targets.Count));
                 CloseRequested?.Invoke();
             }
         }

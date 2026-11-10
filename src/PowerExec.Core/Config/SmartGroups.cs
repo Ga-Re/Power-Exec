@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>
@@ -25,7 +26,7 @@ public static class SmartGroups
                 continue;
             }
             var name = GroupManager.CleanName(LeafName(f.Path));
-            if (name.Length == 0) name = "Ordner";
+            if (name.Length == 0) name = L.T("Ordner");
             var candidate = name;
             for (int i = 2; GroupManager.Exists(s, candidate) || s.Folders.Any(o => !ReferenceEquals(o, f) && o.Group.Equals(candidate, StringComparison.CurrentCultureIgnoreCase)); i++)
                 candidate = $"{name} {i}";

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.IO;
 using Microsoft.Win32;
 using PowerExec.Core.Config;
@@ -64,7 +65,7 @@ public static class BrowserCatalog
         BrowserChoice.Edge => "Microsoft Edge",
         BrowserChoice.Chrome => "Google Chrome",
         BrowserChoice.Firefox => "Mozilla Firefox",
-        _ => "Standardbrowser"
+        _ => L.T("Standardbrowser")
     };
 
     /// <summary>Profile eines Browsers (leer beim Standardbrowser oder wenn nichts gefunden wird).</summary>
@@ -96,7 +97,7 @@ public static class BrowserCatalog
             }
             catch (Exception ex)
             {
-                AppLog.Info($"Browserprofile von {DisplayName(b)} nicht lesbar: {ex.Message}");
+                AppLog.Info(L.F("Browserprofile von {0} nicht lesbar: {1}", DisplayName(b), ex.Message));
             }
             _profiles[b] = result;
             return result;

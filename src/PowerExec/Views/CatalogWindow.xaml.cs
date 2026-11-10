@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
@@ -55,7 +56,7 @@ public partial class CatalogWindow : Window
     private void UpdateCount()
     {
         var n = _rows.Count(r => r.IsChecked);
-        CountText.Text = n == 0 ? "Nichts ausgewählt" : n == 1 ? "1 Vorlage ausgewählt" : $"{n} Vorlagen ausgewählt";
+        CountText.Text = n == 0 ? L.T("Nichts ausgewählt") : n == 1 ? L.T("1 Vorlage ausgewählt") : L.F("{0} Vorlagen ausgewählt", n);
     }
 
     private void Ok_Click(object sender, RoutedEventArgs e) => DialogResult = true;
