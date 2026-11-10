@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Services;
 
 /// <summary>Lädt Index und Dateien des Marktplatzes (HTTPS, mit Zeitlimit).</summary>
@@ -11,7 +12,7 @@ public static class MarketplaceClient
     {
         using var response = await Http.GetAsync(uri).ConfigureAwait(false);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            throw new InvalidOperationException($"Nicht gefunden: {uri} – ist das Repository öffentlich und der Pfad richtig?");
+            throw new InvalidOperationException(L.F("Nicht gefunden: {0} – ist das Repository öffentlich und der Pfad richtig?", uri));
         response.EnsureSuccessStatusCode();
         var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
         return System.Text.Encoding.UTF8.GetString(bytes).TrimStart('﻿');

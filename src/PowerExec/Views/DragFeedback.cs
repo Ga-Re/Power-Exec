@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -63,7 +64,7 @@ internal sealed class DragFeedback : IDisposable
     public void Update(GroupDropPlan? plan)
     {
         _invalid = plan is { IsValid: false };
-        _reason.Text = _invalid ? plan!.Reason ?? "Hier nicht möglich." : string.Empty;
+        _reason.Text = _invalid ? plan!.Reason ?? L.T("Hier nicht möglich.") : string.Empty;
         Refresh();
         Move();
     }

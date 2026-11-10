@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using PowerExec.Services;
 
@@ -15,9 +16,9 @@ public partial class CredentialWindow : Window
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
-        Subtitle.Text = remote ? $"{target} · Remote-Verbindung" : target;
+        Subtitle.Text = remote ? L.F("{0} · Remote-Verbindung", target) : target;
         if (remote)
-            Hint.Text = "Die Anmeldedaten werden nur für diese Ausführung an den Remote-Runner übergeben (im Speicher) und nicht gespeichert.";
+            Hint.Text = L.T("Die Anmeldedaten werden nur für diese Ausführung an den Remote-Runner übergeben (im Speicher) und nicht gespeichert.");
         UserBox.Text = _lastAccount;
         Loaded += (_, _) =>
         {
@@ -42,7 +43,7 @@ public partial class CredentialWindow : Window
         var account = UserBox.Text.Trim();
         if (account.Length == 0)
         {
-            ErrorText.Text = "Bitte einen Benutzernamen eingeben.";
+            ErrorText.Text = L.T("Bitte einen Benutzernamen eingeben.");
             ErrorText.Visibility = Visibility.Visible;
             return;
         }

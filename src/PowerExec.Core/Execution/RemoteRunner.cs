@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -25,7 +26,7 @@ public static class RemoteRunner
     private static readonly Lazy<string> ScriptText = new(() =>
     {
         using var s = typeof(RemoteRunner).Assembly.GetManifestResourceStream("PowerExec.RemoteRunner.ps1")
-                      ?? throw new InvalidOperationException("RemoteRunner.ps1 fehlt als Ressource.");
+                      ?? throw new InvalidOperationException(L.T("RemoteRunner.ps1 fehlt als Ressource."));
         using var r = new StreamReader(s, Encoding.UTF8);
         return r.ReadToEnd();
     });

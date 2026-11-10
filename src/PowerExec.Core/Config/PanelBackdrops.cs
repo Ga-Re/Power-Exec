@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Hintergrund hinter dem Panel.</summary>
@@ -72,9 +73,9 @@ public static class PanelBackdrops
 
     public static string Label(PanelBackdrop b) => b switch
     {
-        PanelBackdrop.Glass => "Glas (eigener Weichzeichner)",
-        PanelBackdrop.Solid => "Vollton (deckend)",
-        _ => "Klarglas"
+        PanelBackdrop.Glass => L.T("Glas (eigener Weichzeichner)"),
+        PanelBackdrop.Solid => L.T("Vollton (deckend)"),
+        _ => L.T("Klarglas")
     };
 
     /// <summary>Deckkraft, mit der das Panel tatsächlich gezeichnet wird: Vollton ist immer deckend.</summary>

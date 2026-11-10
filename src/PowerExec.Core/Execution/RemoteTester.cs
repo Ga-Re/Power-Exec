@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Text;
 using System.Text.Json;
 using PowerExec.Core.Config;
@@ -18,7 +19,7 @@ public sealed class RemoteTestResult
 
     public string Summary => Ok
         ? $"OK · PowerShell {Version}{(Ps7 ? " · PS 7 verfügbar" : string.Empty)} · {LatencyMs} ms"
-        : (Error.Length > 0 ? Error : "Nicht erreichbar");
+        : (Error.Length > 0 ? Error : L.T("Nicht erreichbar"));
 }
 
 /// <summary>Vorbereitung und Auswertung des Verbindungstests (RemoteTest.ps1).</summary>

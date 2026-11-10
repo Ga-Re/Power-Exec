@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Config;
@@ -9,10 +10,10 @@ namespace PowerExec.Core.Config;
 public static class ParameterSets
 {
     /// <summary>Startprofil für einen einmaligen Start mit diesen Werten (Kennwörter fragt das Script selbst).</summary>
-    public static LaunchProfile WithValues(LaunchProfile baseProfile, LaunchItem item, IReadOnlyDictionary<string, string?> values, string name = "Panel")
+    public static LaunchProfile WithValues(LaunchProfile baseProfile, LaunchItem item, IReadOnlyDictionary<string, string?> values, string? name = null)
     {
         var p = baseProfile.Clone();
-        p.Name = name;
+        p.Name = name ?? L.T("Panel");
         p.IsDefault = false;
         p.IsImplicit = false;
         p.Dialog = DialogMode.WhenNeeded;
@@ -33,14 +34,14 @@ public static class ParameterSets
     public static string? Save(AppSettings s, LaunchItem item, string name, IReadOnlyDictionary<string, string?> values, LaunchProfile defaultProfile)
     {
         name = (name ?? string.Empty).Trim();
-        if (name.Length == 0) return "Bitte einen Namen eingeben.";
+        if (name.Length == 0) return L.T("Bitte einen Namen eingeben.");
         var entry = s.FindEntry(item.FullPath);
         if (entry == null)
         {
             entry = new EntryConfig { Path = item.FullPath };
             s.Entries.Add(entry);
         }
-        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) return $"Ein Startprofil „{name}“ gibt es schon.";
+        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) return L.F("Ein Startprofil „{0}“ gibt es schon.", name);
         if (entry.Profiles.Count == 0)
         {
             var standard = defaultProfile.Clone();

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Diagnostics;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -38,8 +39,8 @@ public partial class AppController
         var name = Settings.FindEntry(item.FullPath)?.DisplayName is { Length: > 0 } dn ? dn : item.DisplayName;
         var detail = mode switch
         {
-            ExecutionMode.Administrator => "lokal · als Administrator",
-            ExecutionMode.OtherUser => "lokal · als anderer Benutzer",
+            ExecutionMode.Administrator => L.T("lokal · als Administrator"),
+            ExecutionMode.OtherUser => L.T("lokal · als anderer Benutzer"),
             _ => "lokal"
         };
         return p => Activities.TrackProcess(item, name, p, detail, created, restart);
@@ -53,7 +54,7 @@ public partial class AppController
     {
         var entry = beginHistory();
         var ok = Launcher.StartLocal(request, owner, TrackLocal(item, request.Mode, entry, () => StartLocalTracked(item, request, beginHistory, null)));
-        if (!ok) CompleteHistory(entry, HistoryResult.Cancelled, "nicht gestartet");
+        if (!ok) CompleteHistory(entry, HistoryResult.Cancelled, L.T("nicht gestartet"));
         return ok;
     }
 }

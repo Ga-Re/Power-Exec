@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Config;
@@ -18,7 +19,7 @@ public sealed class PanelConfig
     public const string CustomEntriesKey = "custom:";
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Name { get; set; } = "Hauptpanel";
+    public string Name { get; set; } = L.T("Hauptpanel");
 
     public ScreenEdge Edge { get; set; } = ScreenEdge.Right;
     public MonitorMode MonitorMode { get; set; } = MonitorMode.Primary;
@@ -129,7 +130,7 @@ public sealed class PanelConfig
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
-        Name = "Hauptpanel",
+        Name = L.T("Hauptpanel"),
         Edge = s.Edge, MonitorMode = s.MonitorMode, MonitorIndex = s.MonitorIndex, HotZone = s.HotZone,
         HotZoneThickness = s.HotZoneThickness, HotZoneLength = s.HotZoneLength, PanelWidth = s.PanelWidth,
         PanelHeightPercent = s.PanelHeightPercent, PanelAlignment = s.PanelAlignment, PanelColor = s.PanelColor,
@@ -139,7 +140,7 @@ public sealed class PanelConfig
     public void Normalize()
     {
         if (string.IsNullOrWhiteSpace(Id)) Id = Guid.NewGuid().ToString("N");
-        if (string.IsNullOrWhiteSpace(Name)) Name = "Panel";
+        if (string.IsNullOrWhiteSpace(Name)) Name = L.T("Panel");
         if (Layout == ItemLayout.Compact) { Layout = ItemLayout.List; Compact = true; }
         // „Kompakt“ (bis 0.12) wird zur Elementgröße „Klein“
         if (Compact) { ItemSize = ItemSize.Small; Compact = false; }

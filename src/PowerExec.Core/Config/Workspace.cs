@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>
@@ -127,7 +128,7 @@ public static class WorkspaceManager
     public static Workspace Create(AppSettings s, string name, bool copyCurrent)
     {
         EnsureInitialized(s);
-        name = UniqueName(s, string.IsNullOrWhiteSpace(name) ? "Neuer Arbeitsbereich" : name.Trim());
+        name = UniqueName(s, string.IsNullOrWhiteSpace(name) ? L.T("Neuer Arbeitsbereich") : name.Trim());
         Capture(s);
         var ws = new Workspace { Name = name };
         if (copyCurrent)

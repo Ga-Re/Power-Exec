@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.ComponentModel;
 using System.Windows;
 using PowerExec.ViewModels;
@@ -20,7 +21,7 @@ public partial class ResultsWindow : Window
     protected override void OnClosing(CancelEventArgs e)
     {
         if (_vm.IsRunning &&
-            MessageBox.Show(this, "Die Ausführung läuft noch. Abbrechen und Fenster schließen?", "Power-Exec",
+            MessageBox.Show(this, L.T("Die Ausführung läuft noch. Abbrechen und Fenster schließen?"), "Power-Exec",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             e.Cancel = true;

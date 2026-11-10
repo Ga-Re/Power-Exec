@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>
@@ -16,9 +17,9 @@ public static class FixedGroups
 
     public static string Title(string key) => key switch
     {
-        Recent => "Zuletzt ausgeführt",
-        Favorites => "Favoriten",
-        Custom => "Eigene Einträge",
+        Recent => L.T("Zuletzt ausgeführt"),
+        Favorites => L.T("Favoriten"),
+        Custom => L.T("Eigene Einträge"),
         _ => key
     };
 
@@ -33,9 +34,9 @@ public static class FixedGroups
 
     public static string Description(string key) => key switch
     {
-        Recent => "Die zuletzt gestarteten Einträge (je Arbeitsbereich).",
-        Favorites => "Mit ☆ markierte Einträge; Alt+1 … 9 startet sie.",
-        Custom => "Eigene Einträge, die (noch) in keiner Gruppe liegen – nur sichtbar, wenn es solche gibt.",
+        Recent => L.T("Die zuletzt gestarteten Einträge (je Arbeitsbereich)."),
+        Favorites => L.T("Mit ☆ markierte Einträge; Alt+1 … 9 startet sie."),
+        Custom => L.T("Eigene Einträge, die (noch) in keiner Gruppe liegen – nur sichtbar, wenn es solche gibt."),
         _ => string.Empty
     };
 

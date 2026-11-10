@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Pflegt die Liste „Zuletzt ausgeführt“.</summary>
@@ -16,10 +17,10 @@ public static class RecentRunList
     public static string Ago(DateTime utc, DateTime? nowUtc = null)
     {
         var span = (nowUtc ?? DateTime.UtcNow) - utc;
-        if (span.TotalMinutes < 1) return "gerade eben";
-        if (span.TotalMinutes < 60) return $"vor {(int)span.TotalMinutes} Min.";
-        if (span.TotalHours < 24) return $"vor {(int)span.TotalHours} Std.";
+        if (span.TotalMinutes < 1) return L.T("gerade eben");
+        if (span.TotalMinutes < 60) return L.F("vor {0} Min.", (int)span.TotalMinutes);
+        if (span.TotalHours < 24) return L.F("vor {0} Std.", (int)span.TotalHours);
         if (span.TotalDays < 2) return "gestern";
-        return $"vor {(int)span.TotalDays} Tagen";
+        return L.F("vor {0} Tagen", (int)span.TotalDays);
     }
 }

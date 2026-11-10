@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Search;
@@ -34,10 +35,10 @@ public sealed class SpotlightViewModel : ObservableObject
 
     public IReadOnlyList<ItemViewModel> Results { get => _results; private set { if (Set(ref _results, value)) { OnPropertyChanged(nameof(IsEmpty)); OnPropertyChanged(nameof(Heading)); } } }
     public bool IsEmpty => _results.Count == 0;
-    public string Heading => _searchText.Trim().Length == 0 ? "Häufig verwendet und Favoriten" : $"{_results.Count} beste Treffer";
+    public string Heading => _searchText.Trim().Length == 0 ? L.T("Häufig verwendet und Favoriten") : L.F("{0} beste Treffer", _results.Count);
     public string EmptyText => _searchText.Trim().Length == 0
-        ? "Noch nichts gestartet. Tippe einen Namen – oder Tab für das volle Panel."
-        : "Keine Treffer. Tab öffnet das volle Panel mit allen Einträgen.";
+        ? L.T("Noch nichts gestartet. Tippe einen Namen – oder Tab für das volle Panel.")
+        : L.T("Keine Treffer. Tab öffnet das volle Panel mit allen Einträgen.");
 
     public int SelectedIndex
     {

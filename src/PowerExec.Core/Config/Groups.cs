@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 public enum GroupDropPosition { Before, After, Into }
@@ -66,7 +67,7 @@ public static class GroupManager
     /// <returns>Pfad der angelegten Gruppe (bei Namensgleichheit mit Zusatz „2“, „3“ …).</returns>
     public static string Create(AppSettings s, string name, string? parent = null)
     {
-        name = CleanName(string.IsNullOrWhiteSpace(name) ? "Neue Gruppe" : name);
+        name = CleanName(string.IsNullOrWhiteSpace(name) ? L.T("Neue Gruppe") : name);
         parent = string.IsNullOrEmpty(parent) ? null : Normalize(parent);
         string PathOf(string n) => parent == null ? n : parent + Separator + n;
         var candidate = name;

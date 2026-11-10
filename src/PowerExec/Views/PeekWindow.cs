@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -27,7 +28,7 @@ internal sealed class PeekWindow : Window
         ShowActivated = false;
         Topmost = true;
         ResizeMode = ResizeMode.NoResize;
-        Title = "Vorschau";
+        Title = L.T("Vorschau");
         Resources = resources;
         SetBinding(FontFamilyProperty, new Binding(nameof(FontFamily)) { Source = fontSource });
         SetBinding(FontSizeProperty, new Binding(nameof(FontSize)) { Source = fontSource });

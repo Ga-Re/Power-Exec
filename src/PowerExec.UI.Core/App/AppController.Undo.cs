@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
@@ -77,7 +78,7 @@ public partial class AppController
         try { ApplySettings(restored); }
         finally { _undoing = false; }
         SettingsChangedOutside?.Invoke();
-        AppLog.Info($"Rückgängig: {step.Description}");
+        AppLog.Info(L.F("Rückgängig: {0}", step.Description));
         UndoToast = null;
         _undoTimer?.Stop();
         RefreshUndo();

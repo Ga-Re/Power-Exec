@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Text;
 using System.Windows;
 using PowerExec.Core.Config;
@@ -40,7 +41,7 @@ public static class ExternalDrop
         }
         catch (Exception ex)
         {
-            AppLog.Error("Drag & Drop konnte nicht gelesen werden", ex);
+            AppLog.Error(L.T("Drag & Drop konnte nicht gelesen werden"), ex);
         }
         return result;
     }

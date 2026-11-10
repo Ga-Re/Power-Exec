@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Angaben aus dem Dialog „Neue Gruppe“: Name, Symbol oder Bild, optional Ordner (→ smarte Gruppe), Farbe, Darstellung.</summary>
@@ -30,7 +31,7 @@ public static class NewGroup
     {
         if (string.IsNullOrWhiteSpace(folder)) return null;
         var f = folders.FirstOrDefault(x => x.Path.Trim().TrimEnd('\\', '/').Equals(folder.Trim().TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
-        return f == null ? null : $"Dieser Ordner gehört bereits zur Gruppe „{GroupManager.LeafOf(f.Group)}“.";
+        return f == null ? null : L.F("Dieser Ordner gehört bereits zur Gruppe „{0}“.", GroupManager.LeafOf(f.Group));
     }
 
     /// <summary>Vorschlag für den Namen aus dem Ordner („C:\Scripte\AD“ → „AD“).</summary>

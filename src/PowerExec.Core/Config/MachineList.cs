@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
 /// <summary>Verwaltet die Liste der zuletzt verwendeten und favorisierten Rechner.</summary>
@@ -99,8 +100,8 @@ public static class MachineList
         if (t.Date == now.Date) return "heute";
         if (t.Date == now.Date.AddDays(-1)) return "gestern";
         var days = (now.Date - t.Date).Days;
-        if (days < 7) return $"vor {days} Tagen";
-        if (days < 14) return "letzte Woche";
+        if (days < 7) return L.F("vor {0} Tagen", days);
+        if (days < 14) return L.T("letzte Woche");
         return t.ToString("dd.MM.yyyy");
     }
 }
