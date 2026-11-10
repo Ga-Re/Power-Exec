@@ -1171,9 +1171,11 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
                 nav.IsPaneOpen = true;
                 await Settle();
-                // Oberkategorien (Inhalte, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
+                // Oberkategorien (Inhalte, Marktplatz, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
                 var categories = nav.MenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Where(i => i.MenuItems.Count > 0).ToList();
-                if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
+                if (categories.Count != 5) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 5");
+                if (categories.FirstOrDefault(c => (c.Content as string) == "Marktplatz") is not { } market || market.MenuItems.Count != 5)
+                    Fail("Navigation: Marktplatz fehlt als eigener Bereich mit Einträge, Scripte, Designs, Installiert und Quellen");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
                     // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg.
