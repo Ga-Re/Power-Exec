@@ -8,6 +8,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 31, 0), L.T("New design preview on your own desktop"), new[]
+        {
+            L.T("Design previews show your real desktop background, a window in the Windows theme and the panel on the right with search box, lines, buttons, accent color and glowing hover zone – the same under Appearance and in the marketplace"),
+            L.T("The design templates show the current design even when collapsed"),
+            L.T("A design deleted under Appearance shows as not installed in the marketplace again; the delete button glows red when hovered")
+        }),
         new ReleaseNote(new Version(0, 30, 0), L.T("Clearer dialogs, three base designs, translations based on English"), new[]
         {
             L.T("Buttons like “Apply” are clearly readable again in the variable and group dialogs; the variable description has several lines"),
