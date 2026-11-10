@@ -1,0 +1,16 @@
+{
+  "Entry": {
+    "Name": "Matrix42 Ticket aufrufen",
+    "Kind": "Url",
+    "Target": "{{$Matrix42Url}}/m42_workspace/index.html#/service/ticket/{{Ticketnummer}}",
+    "Description": "Springt direkt in das Ticket im Matrix42 ESM.",
+    "Icon": "fluent:ticket_diagonal"
+  },
+  "Variables": [
+    {
+      "Name": "Matrix42Url",
+      "Description": "Adresse des Matrix42-Servers (ohne / am Ende)",
+      "Example": "https://m42.firma.local"
+    }
+  ]
+}

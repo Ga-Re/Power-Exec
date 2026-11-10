@@ -20,7 +20,8 @@ public class VariablesViewModelTests
 
         vm.AddCommand.Execute(null);
         var row = Assert.Single(vm.Items);
-        Assert.True(row.IsExpanded);
+        Assert.True(row.IsNew);
+        Assert.Single(vm.VisibleItems);
         row.Name = "$CompanyName";
         Assert.False(row.HasNameError);
         Assert.Equal("{{$CompanyName}}", row.Token);
@@ -28,7 +29,7 @@ public class VariablesViewModelTests
         Assert.Equal("Med360°", row.Preview);
         Assert.Equal("CompanyName", Assert.Single(s.Variables).Name);
 
-        row.Name = "Datum";
+        row.Name = "Date";
         Assert.True(row.HasNameError);
         Assert.Equal("CompanyName", s.Variables[0].Name); // ungültiger Name wird nicht übernommen
         row.Name = "CompanyName";
@@ -71,6 +72,25 @@ public class VariablesViewModelTests
     }
 
     [Fact]
+    public void TableSearchSelectAndBulkDelete()
+    {
+        var host = new FakeEntryHost();
+        var s = new AppSettings { Variables = { new UserVariable { Name = "CompanyName", Value = "Med360°" }, new UserVariable { Name = "Domain", Value = "firma.local", Description = "AD" } } };
+        var vm = new VariablesViewModel(host, s);
+        Assert.Equal(2, vm.VisibleItems.Count);
+        vm.Query = "firma";
+        Assert.Equal("Domain", Assert.Single(vm.VisibleItems).Name);
+        Assert.Equal("1 von 2", vm.SummaryText);
+        vm.Query = "";
+        vm.SelectAllCommand.Execute(null);
+        Assert.Equal(2, vm.SelectedCount);
+        Assert.Equal("2 Variablen ausgewählt", vm.SelectionText);
+        vm.RemoveSelectedCommand.Execute(null);
+        Assert.Empty(s.Variables);
+        Assert.True(vm.HasNoItems);
+    }
+
+    [Fact]
     public void EditorOffersVariablesAndWarnsAboutUnknownOnes()
     {
         var host = new FakeEntryHost();
@@ -78,7 +98,7 @@ public class VariablesViewModelTests
         var vm = new CustomEntryViewModel(new CustomEntry { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Gruß {{$CompanyName}}" }, host);
 
         Assert.Contains("{{$CompanyName}}", vm.Builtins);
-        Assert.Contains("{{$Datum}}", vm.Builtins);
+        Assert.Contains("{{$Date}}", vm.Builtins);
         Assert.False(vm.HasVariableWarning);
 
         vm.Code = "Gruß {{$Firmenname}} {{Ticket}}";

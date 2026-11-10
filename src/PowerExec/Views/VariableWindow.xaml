@@ -1,0 +1,99 @@
+<Window x:Class="PowerExec.Views.VariableWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Power-Exec" Style="{StaticResource AppWindow}"
+        Width="720" SizeToContent="Height" MinWidth="560" WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
+        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
+    </Window.Resources>
+    <DockPanel Margin="24,20,24,20">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+            <TextBlock FontSize="18" FontWeight="SemiBold">
+                <Run x:Name="Heading" Text="Variable bearbeiten"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Accent}"/>
+            </TextBlock>
+            <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                       Text="Im Text als {{$Name}} verwenden – Power-Exec setzt den Wert beim Start ein."/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="Abbrechen" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>
+            <ui:Button Style="{StaticResource Btn.Accent}" Content="Übernehmen" IsDefault="True" MinWidth="96" Click="Ok_Click" IsEnabled="{Binding CanSave}"/>
+        </StackPanel>
+        <StackPanel>
+            <DockPanel Style="{StaticResource SubSetting}">
+                <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                         AutomationProperties.Name="Name der Variable"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Name"/>
+                    <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap"
+                               Visibility="{Binding HasNameError, Converter={StaticResource Vis}}"/>
+                </StackPanel>
+            </DockPanel>
+            <DockPanel Style="{StaticResource SubSetting}">
+                <ComboBox DockPanel.Dock="Right" Width="280" ItemsSource="{Binding Kinds}" SelectedValue="{Binding Kind}"
+                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Art der Variable"/>
+                <TextBlock Text="Art" VerticalAlignment="Center"/>
+            </DockPanel>
+            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                         FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="Wert der Variable"
+                         AcceptsReturn="{Binding IsPowerShell}" TextWrapping="Wrap" MaxHeight="120" VerticalScrollBarVisibility="Auto"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="{Binding ValueLabel}"/>
+                    <TextBlock Text="z. B. (Get-ADDomain).DNSRoot – die Ausgabe wird der Wert." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                               Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="Name der Windows-Umgebungsvariable, z. B. USERDNSDOMAIN." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                               Visibility="{Binding IsEnvironment, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="Gilt für Arbeitsbereiche ohne eigenen Wert." Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                               Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}"/>
+                </StackPanel>
+            </DockPanel>
+            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}}">
+                <PasswordBox DockPanel.Dock="Right" Width="280" VerticalAlignment="Center" LostFocus="SecretBox_LostFocus"
+                             AutomationProperties.Name="Geheimer Wert"/>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Geheimer Wert"/>
+                    <TextBlock Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                               Text="Verschlüsselt mit deinem Windows-Konto gespeichert – nur du kannst ihn auf diesem PC lesen. Zum Ändern neu eingeben."/>
+                </StackPanel>
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding WorkspaceValues}" Focusable="False" Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Style="{StaticResource SubSetting}">
+                            <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                                     AutomationProperties.Name="{Binding Workspace}"/>
+                            <TextBlock VerticalAlignment="Center"><Run Text="Arbeitsbereich"/> <Run Text="{Binding Workspace, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
+                        </DockPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox Width="60" Text="{Binding CacheMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" VerticalAlignment="Center"
+                             Visibility="{Binding IsCached, Converter={StaticResource Vis}}" AutomationProperties.Name="Minuten"/>
+                    <TextBlock Text="min" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="{Binding IsCached, Converter={StaticResource Vis}}"/>
+                    <ComboBox Width="200" ItemsSource="{Binding Refreshes}" SelectedValue="{Binding Refresh}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                              AutomationProperties.Name="Wann ausführen"/>
+                </StackPanel>
+                <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                    <TextBlock Text="Wann ausführen"/>
+                    <TextBlock Text="Zwischenspeichern: Ergebnis für die angegebene Zeit merken – Starts warten nicht jedes Mal auf PowerShell."
+                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                </StackPanel>
+            </DockPanel>
+            <DockPanel Style="{StaticResource SubSetting}">
+                <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+                         AutomationProperties.Name="Beschreibung"/>
+                <TextBlock Text="Beschreibung (optional)" VerticalAlignment="Center"/>
+            </DockPanel>
+            <DockPanel Style="{StaticResource SubSetting}">
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="Jetzt ermitteln" Command="{Binding TestCommand}" VerticalAlignment="Center"
+                           ToolTip="Wert jetzt auflösen (PowerShell: Befehl ausführen)"/>
+                <TextBlock Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,16,0"/>
+            </DockPanel>
+        </StackPanel>
+    </DockPanel>
+</Window>

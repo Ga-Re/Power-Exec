@@ -1,0 +1,16 @@
+{
+  "Entry": {
+    "Name": "Matrix42 Suche",
+    "Kind": "Url",
+    "Target": "{{$Matrix42Url}}/m42_workspace/index.html#/search?query={{Suchbegriff}}",
+    "Description": "Globale Suche über Assets, Tickets und Wissensdatenbank in Matrix42.",
+    "Icon": "fluent:search"
+  },
+  "Variables": [
+    {
+      "Name": "Matrix42Url",
+      "Description": "Adresse des Matrix42-Servers (ohne / am Ende)",
+      "Example": "https://m42.firma.local"
+    }
+  ]
+}

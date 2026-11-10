@@ -1,0 +1,10 @@
+{
+  "Entry": {
+    "Name": "VirusTotal Hash-Check",
+    "Kind": "Url",
+    "Target": "https://www.virustotal.com/gui/search/{{SHA256_oder_IP}}",
+    "Description": "Datei-Hash, IP oder URL auf Schadsoftware prüfen.",
+    "Icon": "fluent:shield"
+  },
+  "Variables": []
+}

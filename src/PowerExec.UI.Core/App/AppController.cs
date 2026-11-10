@@ -460,7 +460,7 @@ public partial class AppController : IDisposable
             return null;
         }
         IReadOnlyDictionary<string, string>? values = preset ?? new Dictionary<string, string>();
-        if (preset == null && entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Datum}} …) brauchen keine Abfrage
+        if (preset == null && entry.Placeholders.Count > 0) // eingebaute Variablen ({{$Date}} …) brauchen keine Abfrage
             values = WithDialog(() => Dialogs.AskPlaceholders(item.DisplayName, entry.Placeholders,
                 name => ParameterHistory.Get(Settings, entry.Key, name)));
         if (values == null) return null;

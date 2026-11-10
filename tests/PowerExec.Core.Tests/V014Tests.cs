@@ -84,7 +84,7 @@ public class V014Tests
     [Fact]
     public void BuiltinVariablesAreNotAsked()
     {
-        var e = new CustomEntry { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Gruß {{$Benutzer}} am {{$Datum}} – Ticket {{Nr}}" };
+        var e = new CustomEntry { Kind = CustomEntryKind.Snippet, Language = SnippetLanguage.Text, Code = "Gruß {{$User}} am {{$Date}} – Ticket {{Nr}}" };
         Assert.Single(e.Placeholders);
         Assert.True(e.NeedsResolving);
         var resolved = e.WithValues(new Dictionary<string, string> { ["Nr"] = "42" });

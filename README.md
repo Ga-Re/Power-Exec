@@ -60,7 +60,7 @@ oder remote auf einem oder vielen Rechnern.
   - **Remotedesktop:** Rechner, Port, **Benutzer** (vorbelegt, ohne Kennwort), **Vollbild oder Fenstergröße**, **alle Monitore**, **Admin-Sitzung**, **RD-Gateway** – oder eine vorhandene **.rdp-Datei**
   - **SSH:** **Befehl nach dem Login**, **Sprungserver** (-J), **Port-Weiterleitungen** (-L), **Windows-Terminal-Profil**
   - **PowerShell-Snippet:** Editor mit Zeilennummern und **Syntaxprüfung**, **Vorschau der abgefragten Parameter**, Ausführungsart (Admin, anderer Benutzer, remote, PowerShell 5.1/7), **Testen**
-  - **Text-Snippet:** eingebaute Variablen **{{$Datum}}, {{$Uhrzeit}}, {{$Benutzer}}, {{$Computer}}, {{$Zwischenablage}}**, Platzhalter mit Vorschau, **formatiert (HTML) kopieren**, **direkt in das vorher aktive Fenster einfügen**
+  - **Text-Snippet:** eingebaute Variablen **{{$Date}}, {{$Time}}, {{$User}}, {{$Computer}}, {{$Clipboard}}**, Platzhalter mit Vorschau, **formatiert (HTML) kopieren**, **direkt in das vorher aktive Fenster einfügen**
   - **Ordner:** Erreichbarkeitsprüfung mit UNC-Hinweis, **Öffnen mit** (Explorer, neues Fenster, Programm, Terminal), als anderer Benutzer
   - **Befehl, Datei, Werkzeug:** **Arbeitsordner**, **Fenster** (normal, maximiert, minimiert), Ausführen als (aktuelles Konto, Administrator, anderer Benutzer), Werkzeug-Auswahl mit Suche
   - **Startprofile für alle Arten** (Liste links, Einstellungen rechts): je Profil eigene Startoptionen – z. B. Webseite „Arbeit“ in Edge mit Browserprofil A, „Privat“ in Chrome mit Browserprofil B; RDP mit anderem Benutzer oder Vollbild; SSH über anderen Sprungserver; Ordner im Terminal statt Explorer. Ziel, Adresse und Code gelten für alle Profile. Gleicher Aufbau für Scripte und Programme aus smarten Gruppen (⚙)

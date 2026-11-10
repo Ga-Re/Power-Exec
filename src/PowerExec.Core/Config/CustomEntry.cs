@@ -212,7 +212,7 @@ public sealed class CustomEntry
     /// <summary>Platzhalter in Ziel, Argumenten und Code.</summary>
     public IReadOnlyList<Placeholder> Placeholders => Config.Placeholders.Find(Target, Arguments, Code, User, RemoteCommand, WorkingDirectory);
 
-    /// <summary>Enthält Platzhalter oder eingebaute Variablen ({{$Datum}} …), die vor dem Start eingesetzt werden müssen.</summary>
+    /// <summary>Enthält Platzhalter oder eingebaute Variablen ({{$Date}} …), die vor dem Start eingesetzt werden müssen.</summary>
     public bool NeedsResolving => Placeholders.Count > 0 || Config.Placeholders.HasBuiltins(Target, Arguments, Code, User, RemoteCommand, WorkingDirectory);
 
     /// <summary>Kopie mit eingesetzten Platzhalter-Werten (bei Webseiten URL-codiert).</summary>

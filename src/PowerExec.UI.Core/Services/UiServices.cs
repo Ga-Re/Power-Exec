@@ -69,6 +69,9 @@ public interface IDialogs
     /// <summary>Organisationseinheit aus dem OU-Baum wählen (Distinguished Name); null = abgebrochen.</summary>
     string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) => null;
 
+    /// <summary>Variable im Dialog bearbeiten (DataContext ist die Zeile). true = übernehmen.</summary>
+    bool EditVariable(object row, object? owner = null) => true;
+
     /// <summary>Farbe wählen (#RRGGBB); null = abgebrochen.</summary>
     string? PickColor(string title, string? initial, object? owner = null);
 

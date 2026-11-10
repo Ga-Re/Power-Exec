@@ -322,7 +322,7 @@
                 <TextBlock Text="Text" Style="{StaticResource FieldLabel}"/>
                 <TextBox x:Name="TextCodeBox" Text="{Binding Code, UpdateSourceTrigger=PropertyChanged, Delay=200}" AcceptsReturn="True" AcceptsTab="True"
                          MinHeight="180" MaxHeight="380" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
-                         Tag="Viele Grüße&#x0a;{{$Benutzer}}"/>
+                         Tag="Viele Grüße&#x0a;{{$User}}"/>
                 <TextBlock Text="{Binding CodeError}" Style="{StaticResource FieldError}" Visibility="{Binding CodeError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="Variablen einfügen" Style="{StaticResource FieldLabel}"/>
                 <WrapPanel>

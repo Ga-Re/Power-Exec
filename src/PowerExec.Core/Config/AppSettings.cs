@@ -247,9 +247,9 @@ public sealed class AppSettings
 
     /// <summary>Eigene Variablen ({{$Name}} in Texten, Links, Befehlen und Code).</summary>
     public List<UserVariable> Variables { get; set; } = new();
-    /// <summary>Format von {{$Datum}} (.NET-Format, z. B. dd.MM.yyyy).</summary>
+    /// <summary>Format von {{$Date}} (.NET-Format, z. B. dd.MM.yyyy).</summary>
     public string DateFormat { get; set; } = Config.Variables.DefaultDateFormat;
-    /// <summary>Format von {{$Uhrzeit}} (.NET-Format, z. B. HH:mm).</summary>
+    /// <summary>Format von {{$Time}} (.NET-Format, z. B. HH:mm).</summary>
     public string TimeFormat { get; set; } = Config.Variables.DefaultTimeFormat;
 
     /// <summary>Aus dem Marktplatz installierte Elemente (Herkunft und Stand, für „Update verfügbar“).</summary>
