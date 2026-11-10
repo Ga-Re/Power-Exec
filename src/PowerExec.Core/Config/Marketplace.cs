@@ -22,6 +22,8 @@ public enum MarketplaceItemType
 public sealed class MarketplaceVariable
 {
     public string Name { get; set; } = string.Empty;
+    /// <summary>Art der Variable (fester Text, geheim, Umgebungsvariable, PowerShell-Befehl, je Arbeitsbereich).</summary>
+    public VariableKind Kind { get; set; } = VariableKind.Text;
     public string Description { get; set; } = string.Empty;
     public string Example { get; set; } = string.Empty;
 }
@@ -36,8 +38,20 @@ public sealed class MarketplaceEntryFile
 /// <summary>Eine Datei im Repository einer Quelle (Pfad relativ zum Marktplatz-Ordner, Git-Stand für Updates).</summary>
 public sealed record MarketplaceFile(string Path, string Sha, MarketplaceItemType Type)
 {
-    /// <summary>Ordner der Datei („Links/Security“), leer = oberste Ebene.</summary>
+    /// <summary>Ordner der Datei („Einträge/Links“), leer = oberste Ebene.</summary>
     public string Folder => Path.Contains('/') ? Path[..Path.LastIndexOf('/')] : string.Empty;
+
+    /// <summary>
+    /// Ordner ohne den Kategorie-Ordner („Einträge“, „Scripte“, „Designs“ bzw. englisch) – das ist die Gruppe im Marktplatz.
+    /// </summary>
+    public string GroupFolder
+    {
+        get
+        {
+            var parts = Folder.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length > 0 && Marketplace.IsCategoryFolder(parts[0]) ? string.Join('/', parts.Skip(1)) : Folder;
+        }
+    }
     public string FileName => Path[(Path.LastIndexOf('/') + 1)..];
 
     /// <summary>Name aus dem Dateinamen (ohne Endung, Bindestriche als Leerzeichen) – bis die Datei gelesen ist.</summary>
@@ -54,7 +68,13 @@ public sealed record MarketplaceFile(string Path, string Sha, MarketplaceItemTyp
 }
 
 /// <summary>Was die Oberfläche über eine Datei zeigt (nach dem Lesen der Datei).</summary>
-public sealed record MarketplaceDetails(string Name, string Description, IReadOnlyList<MarketplaceVariable> Variables, string Preview);
+public sealed record MarketplaceDetails(string Name, string Description, IReadOnlyList<MarketplaceVariable> Variables, string Preview)
+{
+    /// <summary>Nur Designs: die Vorlage (für die Vorschau).</summary>
+    public DesignPreset? Design { get; init; }
+    /// <summary>Nur Einträge: der Eintrag (für die Vorschau).</summary>
+    public CustomEntry? Entry { get; init; }
+}
 
 /// <summary>Eine zusätzliche Marktplatz-Quelle (Repository-URL).</summary>
 public sealed class MarketplaceSource
@@ -177,6 +197,10 @@ public static class Marketplace
 
     // ---- Ordner lesen ------------------------------------------------------------
 
+    /// <summary>Kategorie-Ordner direkt unter dem Marktplatz-Ordner (deutsch oder englisch).</summary>
+    public static bool IsCategoryFolder(string name) =>
+        new[] { "Einträge", "Eintraege", "Entries", "Scripte", "Skripte", "Scripts", "Designs" }.Contains(name, StringComparer.OrdinalIgnoreCase);
+
     public static MarketplaceItemType? TypeOf(string path) =>
         path.EndsWith(".pxentry.json", StringComparison.OrdinalIgnoreCase) ? MarketplaceItemType.Entry
         : path.EndsWith(".design.json", StringComparison.OrdinalIgnoreCase) ? MarketplaceItemType.Design
@@ -218,14 +242,14 @@ public static class Marketplace
                 var f = ParseEntry(payload);
                 var e = f.Entry;
                 var what = e.Kind == CustomEntryKind.Snippet ? e.Code : (e.Target + " " + e.Arguments).Trim();
-                return new MarketplaceDetails(e.Name.Length > 0 ? e.Name : file.DefaultName, e.Description, f.Variables, Trim(what));
+                return new MarketplaceDetails(e.Name.Length > 0 ? e.Name : file.DefaultName, e.Description, f.Variables, Trim(what)) { Entry = e };
             }
             case MarketplaceItemType.Design:
             {
                 var d = ParseDesign(payload, file);
                 var text = L.F("{0}, Panelfarbe {1}, {2}, Deckkraft {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("des Designs"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
                            + (d.AccentColor.Length > 0 ? L.F(", Akzent {0}", d.AccentColor) : string.Empty);
-                return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text);
+                return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text) { Design = d };
             }
             default:
             {
@@ -305,7 +329,7 @@ public static class Marketplace
             }
             default:
             {
-                var folder = file.Folder.Length > 0 ? Path.Combine(new[] { scriptFolder }.Concat(file.Folder.Split('/').Select(SafeName)).ToArray()) : scriptFolder;
+                var folder = file.GroupFolder.Length > 0 ? Path.Combine(new[] { scriptFolder }.Concat(file.GroupFolder.Split('/').Select(SafeName)).ToArray()) : scriptFolder;
                 Directory.CreateDirectory(folder);
                 var path = Path.Combine(folder, SafeName(file.FileName));
                 File.WriteAllText(path, payload, new UTF8Encoding(true));

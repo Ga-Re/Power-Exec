@@ -110,6 +110,29 @@ public sealed class VariablesViewModel : ObservableObject
         if (!row.Edit(isNew: true)) Remove(row);
     }
 
+    /// <summary>
+    /// Neue Variable vorbelegt anlegen und im Dialog bearbeiten (z. B. von einem Marktplatz-Eintrag verlangt).
+    /// Gibt es sie schon, passiert nichts. False = abgebrochen (dann wird sie nicht angelegt).
+    /// </summary>
+    public bool AddFor(string name, VariableKind kind, string description, string suggestion)
+    {
+        name = Variables.Normalize(name);
+        if (Variables.Find(_s, name) != null) return true;
+        var v = new UserVariable
+        {
+            Name = name, Kind = kind, Description = description,
+            // Geheimes nie vorbelegen (wird verschlüsselt gespeichert); sonst Vorschlag bzw. Befehl übernehmen
+            Value = kind == VariableKind.Secret ? string.Empty : suggestion
+        };
+        _s.Variables.Add(v);
+        var row = new VariableRowViewModel(this, v);
+        Items.Add(row);
+        Refilter();
+        if (row.Edit(isNew: true)) return true;
+        Remove(row);
+        return false;
+    }
+
     internal void Remove(VariableRowViewModel row)
     {
         _s.Variables.Remove(row.Model);

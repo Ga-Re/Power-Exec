@@ -8,6 +8,15 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 29, 0), L.T("Marktplatz als eigener Bereich, Fluent-Meldungen"), new[]
+        {
+            L.T("Marktplatz ist ein eigener Bereich in den Einstellungen mit Einträge, Scripte, Designs, Installiert und Quellen; im Repository liegen Kategorien als Ordner, darunter die Gruppen"),
+            L.T("Heruntergeladene Einträge landen jetzt zuverlässig in der gewählten Gruppe"),
+            L.T("Vorschau: Designs zeigen ein Mini-Panel in ihren Farben, Einträge und Scripte klappen Ziel bzw. Code und benötigte Variablen auf"),
+            L.T("Benötigte Variablen bringen ihre Art mit (Text, geheim, Umgebungsvariable, PowerShell …) und werden im Variablen-Dialog angelegt"),
+            L.T("Meldungen und Rückfragen erscheinen als Fluent-Dialog statt als Windows-Meldungsfenster"),
+            L.T("Hintergründe heißen jetzt „Glas (Blur)“ und „Transparent“; die Übersetzungen liegen im Repository unter Translations (de.json, en.json)")
+        }),
         new ReleaseNote(new Version(0, 28, 0), L.T("Englische Oberfläche"), new[]
         {
             L.T("Power-Exec gibt es jetzt auch auf Englisch: die Sprache folgt Windows (Deutsch bei deutschem Windows, sonst Englisch) und lässt sich unter Einstellungen › Allgemein › Sprache umstellen"),

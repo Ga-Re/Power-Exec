@@ -77,7 +77,7 @@ public class MarketplaceTests
         var details = files.ToDictionary(f => f.Path, f => Marketplace.Describe(f, File.ReadAllText(Path.Combine(root, f.Path))));
         Assert.All(details.Values, d => Assert.False(string.IsNullOrWhiteSpace(d.Name)));
         Assert.All(files.Where(f => f.Type == MarketplaceItemType.Entry), f => Assert.False(string.IsNullOrWhiteSpace(details[f.Path].Description)));
-        Assert.Contains(details, kv => kv.Key.StartsWith("Matrix42/") && kv.Value.Variables.Any(v => v.Name == "Matrix42Url"));
+        Assert.Contains(details, kv => kv.Key.StartsWith("Einträge/Matrix42/") && kv.Value.Variables.Any(v => v.Name == "Matrix42Url"));
         // Variablen der Einträge sind deklariert
         var s = new AppSettings();
         foreach (var f in files.Where(f => f.Type == MarketplaceItemType.Entry))

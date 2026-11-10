@@ -9,6 +9,7 @@
   "Variables": [
     {
       "Name": "Matrix42Url",
+      "Kind": "Text",
       "Description": "Adresse des Matrix42-Servers (ohne / am Ende)",
       "Example": "https://m42.firma.local"
     }
