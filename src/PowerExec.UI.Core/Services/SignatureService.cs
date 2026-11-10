@@ -24,19 +24,19 @@ public static class SignatureService
             if (valid)
             {
                 var signer = SignerName(path);
-                text = signer != null ? L.F("Signiert von {0}", signer) : L.T("Gültig signiert");
+                text = signer != null ? L.F("Signed by {0}", signer) : L.T("Validly signed");
             }
             else
             {
                 text = (uint)code switch
                 {
-                    0x800B0100 => L.T("Nicht signiert"),
-                    0x800B0003 => L.T("Nicht signiert"),
-                    0x80096010 => L.T("Signatur ungültig – Datei wurde nach dem Signieren verändert"),
-                    0x800B0109 => L.T("Signiert, aber das Zertifikat ist nicht vertrauenswürdig"),
-                    0x800B0101 => L.T("Signiert, aber das Zertifikat ist abgelaufen"),
-                    0x800B0111 => L.T("Signatur ausdrücklich nicht vertrauenswürdig"),
-                    _ => L.F("Signatur nicht prüfbar (0x{0:X8})", code)
+                    0x800B0100 => L.T("Not signed"),
+                    0x800B0003 => L.T("Not signed"),
+                    0x80096010 => L.T("Invalid signature – file was modified after signing"),
+                    0x800B0109 => L.T("Signed, but the certificate isn't trusted"),
+                    0x800B0101 => L.T("Signed, but the certificate has expired"),
+                    0x800B0111 => L.T("Signature explicitly untrusted"),
+                    _ => L.F("Signature can't be checked (0x{0:X8})", code)
                 };
             }
             lock (Cache) Cache[path] = (written, text, valid);
@@ -44,7 +44,7 @@ public static class SignatureService
         }
         catch (Exception ex)
         {
-            return (L.T("Signatur nicht prüfbar: ") + ex.Message, false);
+            return (L.T("Signature can't be checked: ") + ex.Message, false);
         }
     }
 

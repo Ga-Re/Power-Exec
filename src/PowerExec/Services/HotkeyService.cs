@@ -28,10 +28,10 @@ public sealed class HotkeyService : IHotkeys
         Unregister(id);
         if (string.IsNullOrWhiteSpace(hotkey)) return null;
         if (!TryParse(hotkey, out var mods, out var key))
-            return L.F("Tastenkürzel \"{0}\" wird nicht erkannt.", hotkey);
+            return L.F("Hotkey \"{0}\" isn't recognized.", hotkey);
         var vk = (uint)KeyInterop.VirtualKeyFromKey(key);
         if (!NativeMethods.RegisterHotKey(_source.Handle, id, mods | NativeMethods.MOD_NOREPEAT, vk))
-            return L.F("Tastenkürzel \"{0}\" ist bereits belegt (anderes Programm oder anderes Panel).", hotkey);
+            return L.F("Hotkey \"{0}\" is already in use (another program or another panel).", hotkey);
         _registered.Add(id);
         return null;
     }

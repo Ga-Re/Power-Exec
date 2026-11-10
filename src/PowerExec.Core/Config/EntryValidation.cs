@@ -22,52 +22,52 @@ public static class EntryValidation
         switch (e.Kind)
         {
             case CustomEntryKind.Url:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte eine Adresse eingeben.")));
-                else if (!LooksLikeUrl(target)) list.Add(new(EntryField.Target, L.T("Keine gültige Adresse – z. B. https://intranet.firma.local")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please enter an address.")));
+                else if (!LooksLikeUrl(target)) list.Add(new(EntryField.Target, L.T("Not a valid address – e.g. https://intranet.company.local")));
                 break;
             case CustomEntryKind.Folder:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte einen Ordner angeben.")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please enter a folder.")));
                 if (e.OpenWith == FolderOpener.Program && e.OpenWithProgram.Trim().Length == 0)
-                    list.Add(new(EntryField.OpenWithProgram, L.T("Bitte das Programm angeben, mit dem der Ordner geöffnet wird.")));
+                    list.Add(new(EntryField.OpenWithProgram, L.T("Please enter the program that opens the folder.")));
                 break;
             case CustomEntryKind.Rdp:
                 if (e.UsesRdpFile)
                 {
                     if (!e.RdpFile.Trim().EndsWith(".rdp", StringComparison.OrdinalIgnoreCase))
-                        list.Add(new(EntryField.RdpFile, L.T("Bitte eine .rdp-Datei wählen.")));
+                        list.Add(new(EntryField.RdpFile, L.T("Please choose an .rdp file.")));
                 }
-                else if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte einen Rechner eingeben – oder eine .rdp-Datei wählen.")));
-                else if (target.Contains(' ')) list.Add(new(EntryField.Target, L.T("Rechnernamen enthalten keine Leerzeichen.")));
+                else if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please enter a computer – or choose an .rdp file.")));
+                else if (target.Contains(' ')) list.Add(new(EntryField.Target, L.T("Computer names don't contain spaces.")));
                 if (e.Screen == RdpScreen.Window && (e.ScreenWidth is > 0 and < 640 || e.ScreenHeight is > 0 and < 480))
-                    list.Add(new(EntryField.ScreenSize, L.T("Mindestens 640 × 480.")));
+                    list.Add(new(EntryField.ScreenSize, L.T("At least 640 × 480.")));
                 if (e.UsesRdpFile && (e.User.Trim().Length > 0 || e.Gateway.Trim().Length > 0))
-                    list.Add(new(EntryField.RdpFile, L.T("Mit .rdp-Datei gelten Benutzer und Gateway aus der Datei."), IsError: false));
+                    list.Add(new(EntryField.RdpFile, L.T("With an .rdp file, user and gateway come from the file."), IsError: false));
                 break;
             case CustomEntryKind.Ssh:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte einen Rechner eingeben.")));
-                else if (target.Contains(' ') || target.Contains('@')) list.Add(new(EntryField.Target, L.T("Nur den Rechner eingeben – den Benutzer im Feld „Benutzer“.")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please enter a computer.")));
+                else if (target.Contains(' ') || target.Contains('@')) list.Add(new(EntryField.Target, L.T("Only enter the computer – the user goes in the “User” field.")));
                 foreach (var f in e.PortForward.Split(new[] { ';', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    if (!IsForward(f)) { list.Add(new(EntryField.PortForward, L.F("„{0}“ hat nicht das Format Port:Ziel:Port, z. B. 8080:localhost:80.", f))); break; }
+                    if (!IsForward(f)) { list.Add(new(EntryField.PortForward, L.F("“{0}” doesn't have the format port:target:port, e.g. 8080:localhost:80.", f))); break; }
                 foreach (var w in e.SshWarnings()) list.Add(new(EntryField.General, w, IsError: false));
                 break;
             case CustomEntryKind.Snippet:
-                if (e.Code.Trim().Length == 0) list.Add(new(EntryField.Code, L.T("Der Code fehlt.")));
+                if (e.Code.Trim().Length == 0) list.Add(new(EntryField.Code, L.T("The code is missing.")));
                 else if (e.Language == SnippetLanguage.PowerShell && CheckSyntax(e.Code) is { Count: > 0 } errors)
-                    list.Add(new(EntryField.Code, L.F("Zeile {0}: {1}", errors[0].Line, errors[0].Message) + (errors.Count > 1 ? L.F(" (+{0} weitere)", errors.Count - 1) : string.Empty)));
+                    list.Add(new(EntryField.Code, L.F("Line {0}: {1}", errors[0].Line, errors[0].Message) + (errors.Count > 1 ? L.F(" (+{0} more)", errors.Count - 1) : string.Empty)));
                 break;
             case CustomEntryKind.Tool:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte ein Werkzeug wählen oder eingeben.")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please choose or enter a tool.")));
                 break;
             case CustomEntryKind.Command:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte das Programm angeben.")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please enter the program.")));
                 break;
             case CustomEntryKind.File:
-                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Bitte eine Datei wählen.")));
-                else if (!Path.IsPathRooted(target) && !target.StartsWith("{{")) list.Add(new(EntryField.Target, L.T("Bitte den vollständigen Pfad angeben.")));
+                if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please choose a file.")));
+                else if (!Path.IsPathRooted(target) && !target.StartsWith("{{")) list.Add(new(EntryField.Target, L.T("Please enter the full path.")));
                 break;
         }
         if (e.Kind is CustomEntryKind.Rdp or CustomEntryKind.Ssh && e.Port is < 0 or > 65535)
-            list.Add(new(EntryField.Port, L.T("Port zwischen 1 und 65535.")));
+            list.Add(new(EntryField.Port, L.T("Port between 1 and 65535.")));
         return list;
     }
 

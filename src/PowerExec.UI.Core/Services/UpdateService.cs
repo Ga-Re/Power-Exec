@@ -80,17 +80,17 @@ public sealed class UpdateService
     {
         var currentExe = Environment.ProcessPath;
         if (string.IsNullOrEmpty(currentExe) || !currentExe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            return L.T("Der Pfad der laufenden Anwendung konnte nicht ermittelt werden.");
+            return L.T("The path of the running application couldn't be determined.");
 
         bool useSetup = release.SetupUrl != null && IsInstalledViaSetup;
         var url = useSetup ? release.SetupUrl : release.ExeUrl;
         var checksumUrl = useSetup ? release.SetupChecksumUrl : release.ChecksumUrl;
         if (url == null)
-            return L.T("Das Release enthält keine passende Datei (PowerExec.exe oder PowerExec-Setup.exe).");
+            return L.T("The release contains no suitable file (PowerExec.exe or PowerExec-Setup.exe).");
 
         var targetDir = Path.GetDirectoryName(currentExe)!;
         if (!useSetup && !CanWrite(targetDir))
-            return L.F("Keine Schreibrechte in {0}. Installiere Power-Exec mit dem Installer oder lade die neue Version manuell herunter.", targetDir);
+            return L.F("No write permission in {0}. Install Power-Exec with the installer or download the new version manually.", targetDir);
 
         var tempDir = Path.Combine(Path.GetTempPath(), "PowerExec-Update");
         Directory.CreateDirectory(tempDir);
@@ -122,7 +122,7 @@ public sealed class UpdateService
             if (expected == null || expected != actual)
             {
                 File.Delete(download);
-                return L.T("Die Prüfsumme der heruntergeladenen Datei stimmt nicht. Das Update wurde verworfen.");
+                return L.T("The checksum of the downloaded file doesn't match. The update was discarded.");
             }
         }
 

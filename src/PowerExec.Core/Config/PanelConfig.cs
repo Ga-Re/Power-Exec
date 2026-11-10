@@ -19,7 +19,7 @@ public sealed class PanelConfig
     public const string CustomEntriesKey = "custom:";
 
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Name { get; set; } = L.T("Hauptpanel");
+    public string Name { get; set; } = L.T("Main panel");
 
     public ScreenEdge Edge { get; set; } = ScreenEdge.Right;
     public MonitorMode MonitorMode { get; set; } = MonitorMode.Primary;
@@ -130,7 +130,7 @@ public sealed class PanelConfig
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
-        Name = L.T("Hauptpanel"),
+        Name = L.T("Main panel"),
         Edge = s.Edge, MonitorMode = s.MonitorMode, MonitorIndex = s.MonitorIndex, HotZone = s.HotZone,
         HotZoneThickness = s.HotZoneThickness, HotZoneLength = s.HotZoneLength, PanelWidth = s.PanelWidth,
         PanelHeightPercent = s.PanelHeightPercent, PanelAlignment = s.PanelAlignment, PanelColor = s.PanelColor,

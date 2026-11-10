@@ -479,7 +479,7 @@ public partial class PanelWindow : Window
             var frame = new System.Diagnostics.StackTrace(ex).GetFrames().FirstOrDefault(f => f.GetMethod()?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true)
                         ?? new System.Diagnostics.StackTrace(ex).GetFrame(0);
             GlassError = $"{ex.GetType().Name}: {ex.Message} (in {frame?.GetMethod()?.DeclaringType?.Name}.{frame?.GetMethod()?.Name})";
-            AppLog.Error(L.T("Glas-Weichzeichner nicht verfügbar, Rückfall auf Milchglas"), ex);
+            AppLog.Error(L.T("Glass blur not available, falling back to frosted glass"), ex);
             DisposeGlass();
         }
     }
@@ -1411,7 +1411,7 @@ public partial class PanelWindow : Window
             var title = new StackPanel { Orientation = Orientation.Horizontal };
             title.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeights.SemiBold });
             if (p.IsDefault)
-                title.Children.Add(new TextBlock { Text = L.T("Standard"), FontSize = 11, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Text.Tertiary") });
+                title.Children.Add(new TextBlock { Text = L.T("Default"), FontSize = 11, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Text.Tertiary") });
             if (p.IsAdmin)
                 title.Children.Add(new TextBlock { Text = "\uE7EF", FontFamily = (FontFamily)FindResource("IconFont"), FontSize = 12, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Status.Warning") });
             header.Children.Add(title);
@@ -1421,7 +1421,7 @@ public partial class PanelWindow : Window
             menu.Items.Add(mi);
         }
         menu.Items.Add(new Separator());
-        menu.Items.Add(new MenuItem { Header = L.T("Profile verwalten …"), Command = item.ManageProfilesCommand });
+        menu.Items.Add(new MenuItem { Header = L.T("Manage profiles …"), Command = item.ManageProfilesCommand });
         menu.IsOpen = true;
     }
 

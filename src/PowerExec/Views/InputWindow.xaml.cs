@@ -32,7 +32,7 @@ public partial class InputWindow : Window
     private void Ok_Click(object sender, RoutedEventArgs e)
     {
         var value = ValueBox.Text.Trim();
-        var error = value.Length == 0 ? L.T("Bitte einen Namen eingeben.") : _validate?.Invoke(value);
+        var error = value.Length == 0 ? L.T("Please enter a name.") : _validate?.Invoke(value);
         if (error != null)
         {
             ErrorText.Text = error;

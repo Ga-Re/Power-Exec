@@ -24,8 +24,8 @@ public static class ZoneIdentifier
 
     public static string Describe(int? zoneId) => zoneId switch
     {
-        3 => L.T("aus dem Internet heruntergeladen"),
-        4 => L.T("aus einer eingeschränkten Zone"),
-        _ => L.T("aus einer nicht vertrauenswürdigen Quelle")
+        3 => L.T("downloaded from the internet"),
+        4 => L.T("from a restricted zone"),
+        _ => L.T("from an untrusted source")
     };
 }

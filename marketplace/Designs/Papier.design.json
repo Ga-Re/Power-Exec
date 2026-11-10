@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Papier",
+  "Description": "Hell und ruhig",
+  "Theme": "Light",
+  "PanelColor": "#FAFAFA",
+  "Opacity": 100,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": ""
+}

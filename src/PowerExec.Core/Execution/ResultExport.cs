@@ -8,17 +8,17 @@ public static class ResultExport
 {
     public static string StatusText(RemoteStatus s) => s switch
     {
-        RemoteStatus.Success => L.T("Erfolgreich"),
-        RemoteStatus.Error => L.T("Fehler"),
-        RemoteStatus.Unreachable => L.T("Nicht erreichbar"),
-        _ => L.T("Läuft")
+        RemoteStatus.Success => L.T("Succeeded"),
+        RemoteStatus.Error => L.T("Error"),
+        RemoteStatus.Unreachable => L.T("Unreachable"),
+        _ => L.T("Running")
     };
 
     /// <summary>CSV mit Semikolon (öffnet sich in deutschem Excel direkt korrekt).</summary>
     public static string ToCsv(IEnumerable<RemoteResult> results)
     {
         var sb = new StringBuilder();
-        sb.AppendLine(L.T("Rechner;Status;Dauer (s);Fehler;Hinweis;Ausgabe"));
+        sb.AppendLine(L.T("Computer;Status;Duration (s);Error;Note;Output"));
         foreach (var r in results)
         {
             sb.Append(Field(r.Computer)).Append(';')
@@ -38,22 +38,22 @@ public static class ResultExport
         var sb = new StringBuilder();
         sb.AppendLine($"Power-Exec · {started:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine(L.F("Script:   {0}", scriptPath));
-        sb.AppendLine(L.F("Konto:    {0} (Anmeldedaten nicht gespeichert)", runAs));
+        sb.AppendLine(L.F("Account:  {0} (credentials not saved)", runAs));
         sb.AppendLine($"Engine:   {engine}");
-        sb.AppendLine(L.F("Rechner:  {0}", list.Count));
+        sb.AppendLine(L.F("Computers: {0}", list.Count));
         sb.AppendLine(new string('-', 72));
         foreach (var r in list)
         {
             sb.AppendLine($"{r.Computer,-20} {StatusText(r.Status),-17} {r.DurationMs / 1000.0,6:0.0} s  {r.Error}");
-            if (r.Note.Length > 0) sb.AppendLine(L.T("    Hinweis: ") + r.Note);
+            if (r.Note.Length > 0) sb.AppendLine(L.T("    Note: ") + r.Note);
             if (r.Output.Length > 0)
                 foreach (var line in r.Output.Replace("\r", "").Split('\n'))
                     sb.AppendLine("    " + line);
         }
         sb.AppendLine(new string('-', 72));
-        sb.AppendLine(L.F("Ende: {0} OK · ", list.Count(r => r.Status == RemoteStatus.Success)) +
-                      L.F("{0} Fehler · ", list.Count(r => r.Status == RemoteStatus.Error)) +
-                      L.F("{0} nicht erreichbar", list.Count(r => r.Status == RemoteStatus.Unreachable)));
+        sb.AppendLine(L.F("End: {0} OK · ", list.Count(r => r.Status == RemoteStatus.Success)) +
+                      L.F("{0} errors · ", list.Count(r => r.Status == RemoteStatus.Error)) +
+                      L.F("{0} unreachable", list.Count(r => r.Status == RemoteStatus.Unreachable)));
         return sb.ToString();
     }
 

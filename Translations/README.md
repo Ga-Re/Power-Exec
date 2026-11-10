@@ -1,17 +1,25 @@
-# Übersetzungen / Translations
+# Translations / Übersetzungen
 
-Power-Exec zeigt seine Oberfläche auf Deutsch oder Englisch (Einstellungen › Allgemein › Sprache; „Wie Windows“ = Deutsch bei deutschem Windows, sonst Englisch).
+Power-Exec is written in **English** – the English text in the source code is both the default UI text and the key
+for every translation. Each other language is one file in this folder, named after its two-letter code:
 
-| Datei | Sprache |
+| File | Language |
 |---|---|
 | `de.json` | Deutsch |
-| `en.json` | English |
 
-**Aufbau:** Jede Datei ist ein JSON-Objekt `"Schlüssel": "Text"`. Der Schlüssel ist der deutsche Originaltext aus dem Quelltext
-(`L.T("…")`, `L.F("…")` in C#, `{l:T '…'}` in XAML). Platzhalter wie `{0}`, `{1:HH:mm}` und `{{$Name}}` müssen in der Übersetzung erhalten bleiben.
+**Format:** a JSON object `"English text": "translation"`. Placeholders such as `{0}`, `{1:HH:mm}` and `{{$Name}}`
+must stay in the translation.
 
-- Text ändern: nur den Wert rechts anpassen, der Schlüssel bleibt.
-- Fehlt ein Schlüssel in einer Datei, zeigt Power-Exec den Schlüssel (deutschen Originaltext).
-- Der Test `LocalizationTests` prüft, dass jeder Text in beiden Dateien steht und die Platzhalter passen.
+- **New language:** copy `de.json` to e.g. `fr.json` and translate the values. Power-Exec picks it up automatically
+  (Settings › General › Language; “Like Windows” uses it when Windows runs in that language).
+- **Missing entries** fall back to English.
+- The test `LocalizationTests` checks that every text used in code (`L.T("…")`, `L.F("…")`) and XAML (`{l:T '…'}`)
+  is in `de.json`, that placeholders match and that no unused entries remain.
 
-Die Dateien werden beim Bauen in das Programm eingebettet – Änderungen wirken mit dem nächsten Release.
+The files are embedded when building – changes take effect with the next release.
+
+---
+
+Power-Exec ist auf **Englisch** geschrieben; der englische Text im Quelltext ist zugleich Schlüssel. Jede weitere
+Sprache ist eine Datei hier (`de.json` = Deutsch). Neue Sprache: `de.json` kopieren (z. B. `fr.json`) und die Werte
+übersetzen – fehlende Einträge erscheinen auf Englisch.

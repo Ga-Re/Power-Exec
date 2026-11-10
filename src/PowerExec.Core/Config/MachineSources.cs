@@ -65,7 +65,7 @@ public sealed class MachineTable
             var rows = lines.Select(l => (IReadOnlyDictionary<string, string>)new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { [NameOnlyColumn] = l.Trim().Trim('"') }).ToList();
             return new MachineTable(new[] { NameOnlyColumn }, rows, false);
         }
-        var header = SplitCsv(lines[0], delimiter.Value).Select((h, i) => h.Length > 0 ? h : L.F("Spalte {0}", i + 1)).ToList();
+        var header = SplitCsv(lines[0], delimiter.Value).Select((h, i) => h.Length > 0 ? h : L.F("Column {0}", i + 1)).ToList();
         // Doppelte Spaltennamen eindeutig machen
         for (int i = 0; i < header.Count; i++)
             for (int n = 2; header.Take(i).Contains(header[i], StringComparer.OrdinalIgnoreCase); n++) header[i] = $"{header[i]} {n}";

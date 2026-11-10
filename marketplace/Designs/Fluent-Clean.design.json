@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Fluent Clean",
+  "Description": "Dezentes Anthrazit wie Explorer und Einstellungen",
+  "Theme": "Dark",
+  "PanelColor": "#202020",
+  "Opacity": 85,
+  "Frost": 15,
+  "WindowsAccent": true,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": ""
+}

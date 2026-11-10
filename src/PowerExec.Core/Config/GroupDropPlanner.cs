@@ -54,14 +54,14 @@ public static class GroupDropPlanner
 
         var rest = visibleOrder.Select(GroupManager.Normalize).Where(p => !GroupManager.IsSameOrBelow(p, dragged)).ToList();
         int i = rest.FindIndex(p => p.Equals(hovered, StringComparison.CurrentCultureIgnoreCase));
-        if (i < 0) return Invalid(L.T("Hier kann keine Gruppe abgelegt werden."));
+        if (i < 0) return Invalid(L.T("A group can't be dropped here."));
 
         GroupDropPosition position;
         string target;
         int depth, min, max;
         if (zone == GroupDropZone.Into)
         {
-            if (siblingsOnly) return Invalid(L.T("Hier lässt sich nur die Reihenfolge ändern. Untergruppen legst du im Panel an, indem du eine Gruppe auf die Mitte einer anderen ziehst."));
+            if (siblingsOnly) return Invalid(L.T("Only the order can be changed here. You create subgroups in the panel by dragging a group onto the middle of another one."));
             position = GroupDropPosition.Into;
             target = rest[i];
             depth = min = max = GroupManager.DepthOf(target) + 1;
@@ -105,8 +105,8 @@ public static class GroupDropPlanner
             {
                 IsValid = false,
                 Reason = draggedParent == null
-                    ? L.F("„{0}“ bleibt auf der obersten Ebene – hier lässt sich nur die Reihenfolge ändern.", leaf)
-                    : L.F("„{0}“ bleibt in „{1}“ – hier lässt sich nur die Reihenfolge ändern.", leaf, GroupManager.LeafOf(draggedParent))
+                    ? L.F("“{0}” stays at the top level – only the order can be changed here.", leaf)
+                    : L.F("“{0}” stays in “{1}” – only the order can be changed here.", leaf, GroupManager.LeafOf(draggedParent))
             };
 
         var newPath = newParent == null ? leaf : newParent + GroupManager.Separator + leaf;
@@ -115,8 +115,8 @@ public static class GroupDropPlanner
             {
                 IsValid = false,
                 Reason = newParent == null
-                    ? L.F("Auf der obersten Ebene gibt es schon eine Gruppe „{0}“.", leaf)
-                    : L.F("In „{0}“ gibt es schon eine Gruppe „{1}“.", GroupManager.LeafOf(newParent), leaf)
+                    ? L.F("There is already a group “{0}” at the top level.", leaf)
+                    : L.F("There is already a group “{1}” in “{0}”.", GroupManager.LeafOf(newParent), leaf)
             };
 
         return plan with { IsNoOp = sameParent && IsSameOrder(visibleOrder, dragged, position, target) };
@@ -126,12 +126,12 @@ public static class GroupDropPlanner
     public static string Describe(GroupDropPlan plan, string dragged)
     {
         var name = $"„{GroupManager.LeafOf(GroupManager.Normalize(dragged))}“";
-        if (!plan.IsValid) return plan.Reason ?? L.T("Hier nicht möglich.");
-        if (plan.IsNoOp) return L.T("Keine Änderung.");
+        if (!plan.IsValid) return plan.Reason ?? L.T("Not possible here.");
+        if (plan.IsNoOp) return L.T("No change.");
         var target = $"„{GroupManager.LeafOf(plan.Target)}“";
-        if (plan.Position == GroupDropPosition.Into) return L.F("{0} wird Untergruppe von {1}.", name, target);
-        var where = plan.NewParent == null ? L.T("oberste Ebene") : L.F("in „{0}“", GroupManager.LeafOf(plan.NewParent));
-        return (plan.Position == GroupDropPosition.Before ? L.F("{0}: {1}, vor {2}", name, where, target) : L.F("{0}: {1}, nach {2}", name, where, target));
+        if (plan.Position == GroupDropPosition.Into) return L.F("{0} becomes a subgroup of {1}.", name, target);
+        var where = plan.NewParent == null ? L.T("top level") : L.F("in “{0}”", GroupManager.LeafOf(plan.NewParent));
+        return (plan.Position == GroupDropPosition.Before ? L.F("{0}: {1}, before {2}", name, where, target) : L.F("{0}: {1}, after {2}", name, where, target));
     }
 
     private static GroupDropPlan Invalid(string reason) => new() { IsValid = false, Reason = reason };

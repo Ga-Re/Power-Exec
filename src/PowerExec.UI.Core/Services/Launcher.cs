@@ -75,7 +75,7 @@ public sealed class Launcher
         if (started != null && CommandBuilder.SupportsDoneFile(request))
         {
             try { doneFile = NewDoneFile(); }
-            catch (Exception ex) { AppLog.Info(L.F("Fertig-Markierung nicht möglich: {0}", ex.Message)); }
+            catch (Exception ex) { AppLog.Info(L.F("Completion marker not possible: {0}", ex.Message)); }
         }
         var spec = CommandBuilder.BuildLocal(request, doneFile);
         RunCredential? cred = null;
@@ -135,21 +135,21 @@ public sealed class Launcher
         string hint = ex is Win32Exception w ? w.NativeErrorCode switch
         {
             2 when spec.FileName.Equals("pwsh.exe", StringComparison.OrdinalIgnoreCase)
-                => L.T("PowerShell 7 (pwsh.exe) ist nicht installiert. Wähle im Dialog Windows PowerShell 5.1."),
-            2 or 3 => L.F("Die Datei wurde nicht gefunden:\n{0}", spec.FileName),
-            1326 => L.T("Benutzername oder Kennwort ist falsch."),
-            1327 or 1385 => L.T("Das Konto darf sich auf diesem Rechner nicht anmelden."),
+                => L.T("PowerShell 7 (pwsh.exe) isn't installed. Choose Windows PowerShell 5.1 in the dialog."),
+            2 or 3 => L.F("The file wasn't found:\n{0}", spec.FileName),
+            1326 => L.T("User name or password is wrong."),
+            1327 or 1385 => L.T("The account isn't allowed to sign in on this computer."),
             5 when cred != null && PathResolver.IsNetworkPath(path)
-                => L.F("Das Konto {0} hat keinen Zugriff auf {1}.", cred.Account, PathResolver.ServerShare(path)),
-            5 => L.T("Zugriff verweigert."),
-            267 => L.T("Das Arbeitsverzeichnis ist für dieses Konto nicht erreichbar."),
+                => L.F("The account {0} has no access to {1}.", cred.Account, PathResolver.ServerShare(path)),
+            5 => L.T("Access denied."),
+            267 => L.T("The working directory isn't reachable for this account."),
             _ => ex.Message
         } : ex.Message;
 
         if (cred != null && PathResolver.IsNetworkPath(path) && !hint.Contains(PathResolver.ServerShare(path)))
             hint += $"\n\nHinweis: Das Script liegt auf {PathResolver.ServerShare(path)}. Prüfe, ob {cred.Account} dort Leserechte hat.";
 
-        var title = L.F("{0} konnte nicht gestartet werden", r.Item.DisplayName);
+        var title = L.F("{0} couldn't be started", r.Item.DisplayName);
         _dialogs.Warn(hint, title, owner);
     }
 
@@ -177,7 +177,7 @@ public sealed class Launcher
         }
         catch (Exception ex)
         {
-            _dialogs.Warn(L.F("Der Editor konnte nicht gestartet werden.\n\n{0}\n\nDen Editor stellst du in den Einstellungen unter „Ausführung“ ein.", ex.Message), "Power-Exec");
+            _dialogs.Warn(L.F("The editor couldn't be started.\n\n{0}\n\nYou set the editor in the settings under “Execution”.", ex.Message), "Power-Exec");
         }
     }
 

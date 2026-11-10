@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Graphit",
+  "Description": "Dunkel und deckend, klassische Akzentfarbe",
+  "Theme": "Dark",
+  "PanelColor": "#1C1C1C",
+  "Opacity": 100,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": ""
+}

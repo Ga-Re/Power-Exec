@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Espresso",
+  "Description": "Dunkles Kaffeebraun mit Champagner-Akzent",
+  "Theme": "Dark",
+  "PanelColor": "#1E1A18",
+  "Opacity": 95,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#D9B87C"
+}

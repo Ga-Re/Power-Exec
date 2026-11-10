@@ -14,7 +14,7 @@ public partial class VariableWindow : Window
         Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         DataContext = row;
-        Heading.Text = row.IsNew ? L.T("Neue Variable") : L.T("Variable bearbeiten");
+        Heading.Text = row.IsNew ? L.T("New variable") : L.T("Edit variable");
     }
 
     /// <returns>true = übernehmen, false = abgebrochen.</returns>

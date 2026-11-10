@@ -1,66 +1,80 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Reflection;
 using System.Text.Json;
 
 namespace PowerExec.Core.Localization;
 
 /// <summary>
-/// Übersetzung der Oberfläche. Schlüssel ist der deutsche Text im Quelltext; die Texte je Sprache stehen im Ordner
-/// <c>Translations</c> des Repositorys (<c>de.json</c>, <c>en.json</c>, eingebettet). Fehlt eine Übersetzung, erscheint der Schlüssel.
+/// Übersetzung der Oberfläche. Basis ist Englisch: der englische Text im Quelltext (<c>L.T("…")</c>, <c>{l:T '…'}</c>) ist
+/// zugleich der Schlüssel. Weitere Sprachen liegen im Repository unter <c>Translations/&lt;sprache&gt;.json</c>
+/// (z. B. <c>de.json</c>, englischer Text → Übersetzung) und werden eingebettet. Fehlt eine Übersetzung, erscheint Englisch.
 /// </summary>
 public static class L
 {
-    private static readonly Lazy<IReadOnlyDictionary<string, string>> English = new(() => LoadEmbedded("en.json"));
-    private static readonly Lazy<IReadOnlyDictionary<string, string>> German = new(() => LoadEmbedded("de.json"));
+    private static readonly ConcurrentDictionary<string, IReadOnlyDictionary<string, string>> Tables = new();
     private static readonly ConcurrentDictionary<string, byte> MissingKeys = new();
 
-    /// <summary>Aktive Sprache: "de" oder "en".</summary>
+    /// <summary>Aktive Sprache (zweibuchstabig, z. B. „de“ oder „en“).</summary>
     public static string Language { get; private set; } = "de";
     public static bool IsEnglish => Language == "en";
 
-    /// <summary>Einstellung "" (wie Windows), "de" oder "en" anwenden.</summary>
-    public static void Use(string? setting, CultureInfo? windows = null)
-    {
+    /// <summary>Verfügbare Sprachen: Englisch plus jede eingebettete Übersetzung.</summary>
+    public static IReadOnlyList<string> Available { get; } =
+        new[] { "en" }.Concat(typeof(L).Assembly.GetManifestResourceNames()
+                .Where(n => n.StartsWith("PowerExec.Localization.", StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal))
+                .Select(n => n["PowerExec.Localization.".Length..^".json".Length]))
+            .Distinct().ToList();
+
+    /// <summary>Einstellung "" (wie Windows) oder ein Sprachkürzel anwenden.</summary>
+    public static void Use(string? setting, CultureInfo? windows = null) =>
         Language = Resolve(setting, windows ?? CultureInfo.CurrentUICulture);
+
+    /// <summary>Gewählte Sprache, sonst die von Windows, wenn es eine Übersetzung gibt – sonst Englisch.</summary>
+    public static string Resolve(string? setting, CultureInfo windows)
+    {
+        if (!string.IsNullOrEmpty(setting) && Available.Contains(setting)) return setting;
+        var os = windows.TwoLetterISOLanguageName;
+        return Available.Contains(os) ? os : "en";
     }
 
-    /// <summary>Sprache aus Einstellung und Windows-Sprache: Deutsch nur bei deutschem Windows, sonst Englisch.</summary>
-    public static string Resolve(string? setting, CultureInfo windows) => setting switch
+    /// <summary>Text (englisch) in der aktiven Sprache.</summary>
+    public static string T(string english)
     {
-        "de" => "de",
-        "en" => "en",
-        _ => windows.TwoLetterISOLanguageName == "de" ? "de" : "en"
-    };
-
-    /// <summary>Text in der aktiven Sprache.</summary>
-    public static string T(string german)
-    {
-        if (string.IsNullOrEmpty(german)) return german;
-        if (Language != "en") return German.Value.TryGetValue(german, out var de) && de.Length > 0 ? de : german;
-        if (English.Value.TryGetValue(german, out var en)) return en;
-        MissingKeys.TryAdd(german, 0);
-        return german;
+        if (Language == "en" || string.IsNullOrEmpty(english)) return english;
+        if (Table(Language).TryGetValue(english, out var text) && text.Length > 0) return text;
+        MissingKeys.TryAdd(english, 0);
+        return english;
     }
 
     /// <summary>Formatierter Text (Platzhalter {0}, {1} …) in der aktiven Sprache.</summary>
-    public static string F(string german, params object?[] args) => string.Format(CultureInfo.CurrentCulture, T(german), args);
+    public static string F(string english, params object?[] args) => string.Format(CultureInfo.CurrentCulture, T(english), args);
 
-    /// <summary>Alle englischen Übersetzungen (für Tests).</summary>
-    public static IReadOnlyDictionary<string, string> EnglishTable => English.Value;
+    /// <summary>Übersetzungen einer Sprache (englischer Text → Text), leer für Englisch.</summary>
+    public static IReadOnlyDictionary<string, string> Table(string language) =>
+        Tables.GetOrAdd(language, LoadEmbedded);
 
-    /// <summary>Alle deutschen Texte (für Tests).</summary>
-    public static IReadOnlyDictionary<string, string> GermanTable => German.Value;
+    /// <summary>Deutsche Texte (für Tests).</summary>
+    public static IReadOnlyDictionary<string, string> GermanTable => Table("de");
 
-    /// <summary>Im Englischen angefragte, aber nicht übersetzte Texte (Diagnose).</summary>
+    /// <summary>In der aktiven Sprache angefragte, aber nicht übersetzte Texte (Diagnose).</summary>
     public static IReadOnlyCollection<string> Missing => MissingKeys.Keys.ToList();
 
-    private static IReadOnlyDictionary<string, string> LoadEmbedded(string name)
+    /// <summary>Name der Sprache in ihr selbst („Deutsch“, „English“).</summary>
+    public static string NativeName(string language)
     {
-        var asm = typeof(L).Assembly;
-        var res = asm.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("Localization." + name, StringComparison.Ordinal));
-        if (res == null) return new Dictionary<string, string>();
-        using var stream = asm.GetManifestResourceStream(res)!;
+        try
+        {
+            var n = CultureInfo.GetCultureInfo(language).NativeName;
+            return n.Length > 0 ? char.ToUpper(n[0], CultureInfo.InvariantCulture) + n[1..] : language;
+        }
+        catch (CultureNotFoundException) { return language; }
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadEmbedded(string language)
+    {
+        if (language == "en") return new Dictionary<string, string>();
+        using var stream = typeof(L).Assembly.GetManifestResourceStream($"PowerExec.Localization.{language}.json");
+        if (stream == null) return new Dictionary<string, string>();
         return JsonSerializer.Deserialize<Dictionary<string, string>>(stream) ?? new Dictionary<string, string>();
     }
 }

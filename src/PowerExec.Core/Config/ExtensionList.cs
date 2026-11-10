@@ -27,7 +27,7 @@ public static class ExtensionList
         var bad = parts.Where(p => !IsValid(p)).ToList();
         if (bad.Count == 0) return null;
         return bad.Any(b => b.Contains(' ') || b.Contains(','))
-            ? L.T("Endungen bitte mit Semikolon trennen, z. B. .ps1; .cmd; .exe")
-            : L.F("Ungültige Endung: {0}", string.Join(", ", bad));
+            ? L.T("Please separate extensions with semicolons, e.g. .ps1; .cmd; .exe")
+            : L.F("Invalid extension: {0}", string.Join(", ", bad));
     }
 }

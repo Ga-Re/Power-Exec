@@ -25,7 +25,7 @@ public sealed class WorkflowStepViewModel : ObservableObject
     public WorkflowStep Step { get; }
     public string Name { get; }
     public bool Exists { get; }
-    public string Status => Exists ? string.Empty : L.T("nicht gefunden – wird übersprungen bzw. bricht ab");
+    public string Status => Exists ? string.Empty : L.T("not found – will be skipped or abort");
     public IReadOnlyList<string> Profiles { get; }
     public bool HasProfiles => Profiles.Count > 1;
     public string ProfileName { get => _profileName; set => Set(ref _profileName, value ?? Profiles[0]); }

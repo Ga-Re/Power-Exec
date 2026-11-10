@@ -70,7 +70,7 @@ public sealed class CustomEntryRowViewModel : ObservableObject
     public bool HasPlaceholders => Entry.Placeholders.Count > 0;
 
     private HealthResult? _health;
-    public string HealthText => _health == null ? (HealthService.CanCheck(Entry) ? L.T("nicht geprüft") : "–") : _health.Message;
+    public string HealthText => _health == null ? (HealthService.CanCheck(Entry) ? L.T("not checked") : "–") : _health.Message;
     public bool? HealthOk => _health?.Ok;
 
     public bool IsSelected { get => _isSelected; set { if (Set(ref _isSelected, value)) _owner.OnSelectionChanged(); } }
@@ -165,14 +165,14 @@ public sealed class CustomEntryListViewModel : ObservableObject
     /// <summary>Weitere Typen im Dropdown neben den vier Chips (Alle, Webseiten, Snippets, RDP/SSH).</summary>
     public IReadOnlyList<KeyValuePair<string, string>> MoreKinds { get; } = new[]
     {
-        new KeyValuePair<string, string>("more", L.T("Weitere Typen …")),
-        new KeyValuePair<string, string>("Folder", L.T("Ordner")),
-        new KeyValuePair<string, string>("Tool", L.T("Werkzeuge")),
-        new KeyValuePair<string, string>("Command", L.T("Befehle")),
-        new KeyValuePair<string, string>("File", L.T("Dateien")),
-        new KeyValuePair<string, string>("Rdp", L.T("Nur RDP")),
-        new KeyValuePair<string, string>("Ssh", L.T("Nur SSH")),
-        new KeyValuePair<string, string>("problems", L.T("Mit Problemen"))
+        new KeyValuePair<string, string>("more", L.T("More types …")),
+        new KeyValuePair<string, string>("Folder", L.T("Folder")),
+        new KeyValuePair<string, string>("Tool", L.T("Tools")),
+        new KeyValuePair<string, string>("Command", L.T("Commands")),
+        new KeyValuePair<string, string>("File", L.T("Files")),
+        new KeyValuePair<string, string>("Rdp", L.T("RDP only")),
+        new KeyValuePair<string, string>("Ssh", L.T("SSH only")),
+        new KeyValuePair<string, string>("problems", L.T("With problems"))
     };
 
     /// <summary>Gewählter weiterer Typ („more“ = Hinweistext, solange ein Chip aktiv ist).</summary>
@@ -197,7 +197,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     {
         get
         {
-            var fixedOnes = new[] { new KeyValuePair<string, string>("*", L.T("Alle Gruppen")), new KeyValuePair<string, string>("", L.T("Ohne Gruppe")) };
+            var fixedOnes = new[] { new KeyValuePair<string, string>("*", L.T("All groups")), new KeyValuePair<string, string>("", L.T("Without group")) };
             var groups = _groups().Select(g => new KeyValuePair<string, string>(g, GroupManager.Display(g))).ToList();
             return groups.Count == 0 ? fixedOnes : fixedOnes.Append(new KeyValuePair<string, string>(SeparatorKey, string.Empty)).Concat(groups).ToList();
         }
@@ -205,28 +205,28 @@ public sealed class CustomEntryListViewModel : ObservableObject
     public const string SeparatorKey = "\u2014sep";
 
     public IReadOnlyList<KeyValuePair<string, string>> TagFilters =>
-        new[] { new KeyValuePair<string, string>("*", L.T("Alle Schlagworte")) }
+        new[] { new KeyValuePair<string, string>("*", L.T("All tags")) }
             .Concat(Rows.SelectMany(r => r.Tags).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(t => t)
                 .Select(t => new KeyValuePair<string, string>(t, "#" + t))).ToList();
 
-    public IReadOnlyList<string> MoveTargets => new[] { L.T("(ohne Gruppe)") }.Concat(_groups()).ToList();
+    public IReadOnlyList<string> MoveTargets => new[] { L.T("(no group)") }.Concat(_groups()).ToList();
     public string MoveTarget { get => _moveTarget; set => Set(ref _moveTarget, value ?? string.Empty); }
 
     public IEnumerable<CustomEntryRowViewModel> Selected => Rows.Where(r => r.IsSelected);
     public int SelectedCount => Rows.Count(r => r.IsSelected);
     public bool HasSelection => SelectedCount > 0;
-    public string SelectionText => SelectedCount == 1 ? L.T("1 Eintrag ausgewählt") : L.F("{0} Einträge ausgewählt", SelectedCount);
+    public string SelectionText => SelectedCount == 1 ? L.T("1 entry selected") : L.F("{0} entries selected", SelectedCount);
     public string SummaryText
     {
         get
         {
             var visible = VisibleRows.Count;
             var problems = Rows.Count(r => r.HealthOk == false);
-            return (visible == Rows.Count ? L.F("{0} Einträge", Rows.Count) : L.F("{0} von {1} Einträgen", visible, Rows.Count)) +
-                   (problems > 0 ? L.F(" · {0} mit Problemen", problems) : string.Empty);
+            return (visible == Rows.Count ? L.F("{0} entries", Rows.Count) : L.F("{0} of {1} entries", visible, Rows.Count)) +
+                   (problems > 0 ? L.F(" · {0} with problems", problems) : string.Empty);
         }
     }
-    public string CheckText => _checking ? L.T("Prüfe …") : L.T("Erreichbarkeit prüfen");
+    public string CheckText => _checking ? L.T("Checking …") : L.T("Check reachability");
 
     public ICommand NewCommand { get; }
     public ICommand CatalogCommand { get; }
@@ -310,7 +310,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
     private void AddFiles(string group)
     {
         var files = _app.Dialogs.OpenFiles(
-            L.T("Scripte und Programme (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|Alle Dateien (*.*)|*.*"), owner: Owner());
+            L.T("Scripts and programs (*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc)|*.ps1;*.cmd;*.bat;*.exe;*.lnk;*.msc|All files (*.*)|*.*"), owner: Owner());
         if (files.Count == 0) return;
         foreach (var f in files)
         {
@@ -338,8 +338,8 @@ public sealed class CustomEntryListViewModel : ObservableObject
     internal void Remove(IReadOnlyList<CustomEntryRowViewModel> rows)
     {
         if (rows.Count == 0) return;
-        var text = rows.Count == 1 ? L.F("„{0}“ entfernen?", rows[0].Name) : L.F("{0} Einträge entfernen?", rows.Count);
-        if (!_app.Dialogs.Confirm(text + "\n\nDateien und Ordner selbst bleiben unverändert.", L.T("Entfernen"), owner: Owner(), defaultNo: true)) return;
+        var text = rows.Count == 1 ? L.F("Remove “{0}”?", rows[0].Name) : L.F("Remove {0} entries?", rows.Count);
+        if (!_app.Dialogs.Confirm(text + "\n\nDateien und Ordner selbst bleiben unverändert.", L.T("Remove"), owner: Owner(), defaultNo: true)) return;
         foreach (var r in rows)
         {
             _removedKeys.Add(r.Entry.Key);
@@ -350,7 +350,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void MoveSelected()
     {
-        var target = _moveTarget == L.T("(ohne Gruppe)") ? string.Empty : GroupManager.Normalize(_moveTarget);
+        var target = _moveTarget == L.T("(no group)") ? string.Empty : GroupManager.Normalize(_moveTarget);
         foreach (var r in Selected.ToList()) r.Update(r.Entry, target, r.Tags);
         Refilter();
         CountsChanged();
@@ -372,7 +372,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
 
     private void Import()
     {
-        var path = _app.Dialogs.OpenFile(EntryShare.FileFilter + L.T("|Alle Dateien (*.*)|*.*"), owner: Owner());
+        var path = _app.Dialogs.OpenFile(EntryShare.FileFilter + L.T("|All files (*.*)|*.*"), owner: Owner());
         if (path == null) return;
         try
         {
@@ -394,11 +394,11 @@ public sealed class CustomEntryListViewModel : ObservableObject
                 if (_s.FindEntry(cfg.Path) is { } target) target.Profiles = cfg.Profiles.Select(p => p.Clone()).ToList();
                 else _s.Entries.Add(cfg.Clone());
             CountsChanged();
-            _app.Dialogs.Inform(L.F("{0} neue und {1} aktualisierte Einträge übernommen.", added, updated), L.T("Importieren"), Owner());
+            _app.Dialogs.Inform(L.F("{0} new and {1} updated entries imported.", added, updated), L.T("Import"), Owner());
         }
         catch (Exception ex)
         {
-            _app.Dialogs.Warn(L.T("Die Datei konnte nicht gelesen werden:\n") + ex.Message, L.T("Importieren"), Owner());
+            _app.Dialogs.Warn(L.T("The file couldn't be read:\n") + ex.Message, L.T("Import"), Owner());
         }
     }
 

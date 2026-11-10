@@ -29,16 +29,11 @@ public class AppearanceDesignTests
         Assert.Equal(PanelBackdrop.Solid, s.Panels[0].Backdrop);
         Assert.Equal(100, s.Panels[0].EffectiveOpacity);
 
-        Appearance.Apply(s, Appearance.Presets.Single(p => p.Key == "nordic"));
-        Assert.Equal("#2E3440", s.Panels[0].PanelColor);
-        Assert.Equal("#88C0D0", s.Panels[0].AccentColor);
-        Assert.False(s.UseWindowsAccent);
-        Assert.Equal("nordic", Appearance.Current(s)?.Key);
+        Assert.Equal("oled", Appearance.Current(s)?.Key);
 
-        Appearance.Apply(s, Appearance.Presets.Single(p => p.Key == "espresso"));
-        Assert.Equal("#1E1A18", s.Panels[0].PanelColor);
+        // Drei Grund-Designs (je Hintergrund eins); weitere liegen im Marktplatz
+        Assert.Equal(new[] { "fluent", "glass", "oled" }, Appearance.Presets.Select(p => p.Key));
         Assert.Equal(string.Empty, Appearance.Presets.Single(p => p.Key == "fluent").AccentColor);
-        Assert.Contains(Appearance.Presets, p => p.Key == "clean" && p.PanelColor == "#202020" && p.Opacity == 85);
     }
 
     [Fact]

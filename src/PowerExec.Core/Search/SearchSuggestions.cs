@@ -47,19 +47,19 @@ public static class SearchSuggestions
     {
         var list = new List<SearchSuggestion>();
         if (src.Tags.Count > 0)
-            list.Add(new SearchSuggestion("#", L.T("Schlagwort"), Examples(src.Tags.OrderByDescending(t => t.Value).ThenBy(t => t.Key).Select(t => "#" + t.Key), src.Tags.Count), src.Tags.Count)
+            list.Add(new SearchSuggestion("#", L.T("Tag"), Examples(src.Tags.OrderByDescending(t => t.Value).ThenBy(t => t.Key).Select(t => "#" + t.Key), src.Tags.Count), src.Tags.Count)
                 { IsCategory = true, Glyph = "\uE8EC" });
         var kinds = src.Kinds.Where(k => k.Value > 0 && KindNames.ContainsKey(k.Key)).OrderByDescending(k => k.Value).ToList();
         if (kinds.Count > 0)
-            list.Add(new SearchSuggestion(TypeKey, L.T("Typ"), Examples(kinds.Select(k => KindNames[k.Key].Label), kinds.Count), kinds.Count)
+            list.Add(new SearchSuggestion(TypeKey, L.T("Type"), Examples(kinds.Select(k => KindNames[k.Key].Label), kinds.Count), kinds.Count)
                 { IsCategory = true, Glyph = "\uE7C3" });
         var groups = src.Groups.Where(g => g.Value > 0 && g.Key.Length > 0).ToList();
         if (groups.Count > 0)
-            list.Add(new SearchSuggestion(GroupKey, L.T("Gruppe"), Examples(groups.OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => g.Key), groups.Count), groups.Count)
+            list.Add(new SearchSuggestion(GroupKey, L.T("Group"), Examples(groups.OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => g.Key), groups.Count), groups.Count)
                 { IsCategory = true, Glyph = "\uE8B7" });
         var flags = Flags(src).Where(f => f.Count > 0).ToList();
         if (flags.Count > 0)
-            list.Add(new SearchSuggestion(FlagKey, L.T("Merkmal"), Examples(flags.Select(f => f.Label), flags.Count), flags.Count)
+            list.Add(new SearchSuggestion(FlagKey, L.T("Property"), Examples(flags.Select(f => f.Label), flags.Count), flags.Count)
                 { IsCategory = true, Glyph = "\uE734" });
         return list;
     }
@@ -72,15 +72,15 @@ public static class SearchSuggestions
 
     private static IEnumerable<(string Alias, string Label, int Count)> Flags(SuggestionSource src) => new[]
     {
-        ("fav", L.T("Favoriten"), src.Favorites), ("admin", L.T("Benötigt Administrator"), src.Admin),
-        ("remote", L.T("Remote-fähig"), src.Remote), ("problem", L.T("Mit Problemen"), src.Problems)
+        ("fav", L.T("Favorites"), src.Favorites), ("admin", L.T("Requires administrator"), src.Admin),
+        ("remote", L.T("Remote-capable"), src.Remote), ("problem", L.T("With problems"), src.Problems)
     };
 
     /// <summary>Sammelarten wie die früheren Filterknöpfe: nur, wenn sie mehr als eine vorhandene Art zusammenfassen.</summary>
     private static readonly (string Alias, string Label, SearchKind[] Kinds)[] KindGroups =
     {
-        ("script", L.T("Scripte (PowerShell und Batch)"), new[] { SearchKind.PowerShell, SearchKind.Batch }),
-        (L.IsEnglish ? "program" : "programm", L.T("Programme (.exe, Verknüpfungen, Snap-ins)"), new[] { SearchKind.Executable, SearchKind.Shortcut, SearchKind.SnapIn }),
+        ("script", L.T("Scripts (PowerShell and batch)"), new[] { SearchKind.PowerShell, SearchKind.Batch }),
+        (L.IsEnglish ? "program" : "programm", L.T("Programs (.exe, shortcuts, snap-ins)"), new[] { SearchKind.Executable, SearchKind.Shortcut, SearchKind.SnapIn }),
     };
 
     /// <summary>Kanonischer Wert für <c>typ:</c> und Anzeigename je Art.</summary>
@@ -126,7 +126,7 @@ public static class SearchSuggestions
             var prefix = token[1..];
             list.AddRange(src.Tags.Where(t => prefix.Length == 0 || t.Key.Contains(prefix, StringComparison.CurrentCultureIgnoreCase))
                 .OrderByDescending(t => t.Key.StartsWith(prefix, StringComparison.CurrentCultureIgnoreCase)).ThenByDescending(t => t.Value).ThenBy(t => t.Key)
-                .Select(t => new SearchSuggestion("#" + t.Key, "#" + t.Key, L.T("Schlagwort"), t.Value)));
+                .Select(t => new SearchSuggestion("#" + t.Key, "#" + t.Key, L.T("Tag"), t.Value)));
             return list.Take(prefix.Length == 0 ? MaxBrowse : MaxSuggestions).ToList();
         }
 
@@ -153,7 +153,7 @@ public static class SearchSuggestions
                 case "gruppe" or "group" or "g" or "in":
                     list.AddRange(src.Groups.Where(g => g.Value > 0 && g.Key.Length > 0 && (value.Length == 0 || g.Key.Contains(value, StringComparison.CurrentCultureIgnoreCase)))
                         .OrderByDescending(g => g.Key.StartsWith(value, StringComparison.CurrentCultureIgnoreCase)).ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase)
-                        .Select(g => new SearchSuggestion($"{key}:{Quote(g.Key)}", $"{key}:{g.Key}", L.T("Gruppe"), g.Value)));
+                        .Select(g => new SearchSuggestion($"{key}:{Quote(g.Key)}", $"{key}:{g.Key}", L.T("Group"), g.Value)));
                     break;
                 case "ist" or "is":
                     foreach (var (alias, label, count) in Flags(src))
@@ -170,9 +170,9 @@ public static class SearchSuggestions
             var t = token.ToLowerInvariant();
             var typ = TypeKey.TrimEnd(':'); var grp = GroupKey.TrimEnd(':'); var ist = FlagKey.TrimEnd(':');
             if (typ.StartsWith(t) && src.Kinds.Count > 0)
-                list.Add(new SearchSuggestion(TypeKey, TypeKey, L.F("nach Art filtern ({0} …)", string.Join(", ", src.Kinds.Keys.Take(4).Select(k => KindNames[k].Alias))), src.Kinds.Values.Sum()));
-            if (grp.StartsWith(t) && src.Groups.Count > 0) list.Add(new SearchSuggestion(GroupKey, GroupKey, L.T("nach Gruppe filtern"), src.Groups.Count));
-            if (ist.StartsWith(t) && src.Favorites + src.Admin + src.Remote + src.Problems > 0) list.Add(new SearchSuggestion(FlagKey, FlagKey, L.T("Favoriten, Admin, Remote, Probleme"), src.Favorites));
+                list.Add(new SearchSuggestion(TypeKey, TypeKey, L.F("filter by type ({0} …)", string.Join(", ", src.Kinds.Keys.Take(4).Select(k => KindNames[k].Alias))), src.Kinds.Values.Sum()));
+            if (grp.StartsWith(t) && src.Groups.Count > 0) list.Add(new SearchSuggestion(GroupKey, GroupKey, L.T("filter by group"), src.Groups.Count));
+            if (ist.StartsWith(t) && src.Favorites + src.Admin + src.Remote + src.Problems > 0) list.Add(new SearchSuggestion(FlagKey, FlagKey, L.T("Favorites, admin, remote, problems"), src.Favorites));
         }
         return list;
     }

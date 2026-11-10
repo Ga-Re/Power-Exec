@@ -21,7 +21,7 @@ public partial class ResultsWindow : Window
     protected override void OnClosing(CancelEventArgs e)
     {
         if (_vm.IsRunning &&
-            !Services.MessageDialog.Confirm(this, L.T("Die Ausführung läuft noch. Abbrechen und Fenster schließen?"), "Power-Exec", defaultNo: true))
+            !Services.MessageDialog.Confirm(this, L.T("The run is still in progress. Cancel and close the window?"), "Power-Exec", defaultNo: true))
         {
             e.Cancel = true;
             return;

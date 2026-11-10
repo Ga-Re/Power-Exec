@@ -13,19 +13,19 @@
     <DockPanel Margin="24,20,24,20">
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBlock FontSize="18" FontWeight="SemiBold">
-                <Run x:Name="Heading" Text="{l:T 'Variable bearbeiten'}"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Accent}"/>
+                <Run x:Name="Heading" Text="{l:T 'Edit variable'}"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Accent}"/>
             </TextBlock>
             <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
-                       Text="{l:T 'Im Text als \{\{$Name\}\} verwenden – Power-Exec setzt den Wert beim Start ein.'}"/>
+                       Text="{l:T 'Use as \{\{$Name\}\} in text – Power-Exec inserts the value at launch.'}"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Abbrechen'}" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>
-            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Übernehmen'}" IsDefault="True" MinWidth="96" Click="Ok_Click" IsEnabled="{Binding CanSave}"/>
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>
+            <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" IsDefault="True" MinWidth="96" Click="Ok_Click" IsEnabled="{Binding CanSave}"/>
         </StackPanel>
         <StackPanel>
             <DockPanel Style="{StaticResource SubSetting}">
                 <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
-                         AutomationProperties.Name="{l:T 'Name der Variable'}"/>
+                         AutomationProperties.Name="{l:T 'Variable name'}"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{l:T 'Name'}"/>
                     <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap"
@@ -34,30 +34,30 @@
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}">
                 <ComboBox DockPanel.Dock="Right" Width="280" ItemsSource="{Binding Kinds}" SelectedValue="{Binding Kind}"
-                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Art der Variable'}"/>
-                <TextBlock Text="{l:T 'Art'}" VerticalAlignment="Center"/>
+                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Variable type'}"/>
+                <TextBlock Text="{l:T 'Kind'}" VerticalAlignment="Center"/>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}, ConverterParameter=invert}">
                 <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
-                         FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="{l:T 'Wert der Variable'}"
+                         FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="{l:T 'Variable value'}"
                          AcceptsReturn="{Binding IsPowerShell}" TextWrapping="Wrap" MaxHeight="120" VerticalScrollBarVisibility="Auto"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{Binding ValueLabel}"/>
-                    <TextBlock Text="{l:T 'z. B. (Get-ADDomain).DNSRoot – die Ausgabe wird der Wert.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'e.g. (Get-ADDomain).DNSRoot – the output becomes the value.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{l:T 'Name der Windows-Umgebungsvariable, z. B. USERDNSDOMAIN.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'Name of the Windows environment variable, e.g. USERDNSDOMAIN.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{Binding IsEnvironment, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{l:T 'Gilt für Arbeitsbereiche ohne eigenen Wert.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'Applies to workspaces without their own value.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
                                Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}}">
                 <PasswordBox DockPanel.Dock="Right" Width="280" VerticalAlignment="Center" LostFocus="SecretBox_LostFocus"
-                             AutomationProperties.Name="{l:T 'Geheimer Wert'}"/>
+                             AutomationProperties.Name="{l:T 'Secret value'}"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="{l:T 'Geheimer Wert'}"/>
+                    <TextBlock Text="{l:T 'Secret value'}"/>
                     <TextBlock Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
-                               Text="{l:T 'Verschlüsselt mit deinem Windows-Konto gespeichert – nur du kannst ihn auf diesem PC lesen. Zum Ändern neu eingeben.'}"/>
+                               Text="{l:T 'Stored encrypted with your Windows account – only you can read it on this PC. Enter it again to change it.'}"/>
                 </StackPanel>
             </DockPanel>
             <ItemsControl ItemsSource="{Binding WorkspaceValues}" Focusable="False" Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}">
@@ -66,7 +66,7 @@
                         <DockPanel Style="{StaticResource SubSetting}">
                             <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
                                      AutomationProperties.Name="{Binding Workspace}"/>
-                            <TextBlock VerticalAlignment="Center"><Run Text="{l:T 'Arbeitsbereich'}"/> <Run Text="{Binding Workspace, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
+                            <TextBlock VerticalAlignment="Center"><Run Text="{l:T 'Workspace'}"/> <Run Text="{Binding Workspace, Mode=OneWay}" FontWeight="SemiBold"/></TextBlock>
                         </DockPanel>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -74,25 +74,26 @@
             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBox Width="60" Text="{Binding CacheMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" VerticalAlignment="Center"
-                             Visibility="{Binding IsCached, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Minuten'}"/>
+                             Visibility="{Binding IsCached, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Minutes'}"/>
                     <TextBlock Text="{l:T 'min'}" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="{Binding IsCached, Converter={StaticResource Vis}}"/>
                     <ComboBox Width="200" ItemsSource="{Binding Refreshes}" SelectedValue="{Binding Refresh}" DisplayMemberPath="Value" SelectedValuePath="Key"
-                              AutomationProperties.Name="{l:T 'Wann ausführen'}"/>
+                              AutomationProperties.Name="{l:T 'When to run'}"/>
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="{l:T 'Wann ausführen'}"/>
-                    <TextBlock Text="{l:T 'Zwischenspeichern: Ergebnis für die angegebene Zeit merken – Starts warten nicht jedes Mal auf PowerShell.'}"
+                    <TextBlock Text="{l:T 'When to run'}"/>
+                    <TextBlock Text="{l:T 'Cache: remember the result for the given time – launches don\'t wait for PowerShell every time.'}"
                                Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </DockPanel>
-            <DockPanel Style="{StaticResource SubSetting}">
-                <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
-                         AutomationProperties.Name="{l:T 'Beschreibung'}"/>
-                <TextBlock Text="{l:T 'Beschreibung (optional)'}" VerticalAlignment="Center"/>
+            <DockPanel Style="{StaticResource SubSetting}" Margin="0,8,0,4">
+                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Description (optional)'}" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" AcceptsReturn="True" TextWrapping="Wrap"
+                         MinHeight="64" MaxHeight="160" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
+                         AutomationProperties.Name="{l:T 'Description'}"/>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}">
-                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Jetzt ermitteln'}" Command="{Binding TestCommand}" VerticalAlignment="Center"
-                           ToolTip="{l:T 'Wert jetzt auflösen (PowerShell: Befehl ausführen)'}"/>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Determine now'}" Command="{Binding TestCommand}" VerticalAlignment="Center"
+                           ToolTip="{l:T 'Resolve value now (PowerShell: run the command)'}"/>
                 <TextBlock Text="{Binding Status}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,16,0"/>
             </DockPanel>
         </StackPanel>

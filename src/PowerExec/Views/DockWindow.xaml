@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
-        Title="{l:T 'Power-Exec Mini-Dock'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="{l:T 'Power-Exec mini dock'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" ShowActivated="False" Focusable="False">
     <Window.Resources>
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->

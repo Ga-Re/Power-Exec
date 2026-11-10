@@ -309,7 +309,7 @@
                                 </StackPanel>
                                 <ContentPresenter Grid.Column="2" Content="{TemplateBinding HeaderContent}" VerticalAlignment="Center"/>
                                 <ui:Button Grid.Column="3" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="8,0,0,0" Command="{Binding ToggleCommand, RelativeSource={RelativeSource TemplatedParent}}"
-                                        ToolTip="{l:T 'Weitere Optionen'}">
+                                        ToolTip="{l:T 'More options'}">
                                     <TextBlock x:Name="Chevron" Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="12"/>
                                 </ui:Button>
                             </Grid>

@@ -12,7 +12,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Execution\RemoteRunner.ps1" LogicalName="PowerExec.RemoteRunner.ps1" />
     <EmbeddedResource Include="Execution\RemoteTest.ps1" LogicalName="PowerExec.RemoteTest.ps1" />
-    <EmbeddedResource Include="..\..\Translations\en.json" LogicalName="PowerExec.Localization.en.json" Link="Localization\en.json" />
-    <EmbeddedResource Include="..\..\Translations\de.json" LogicalName="PowerExec.Localization.de.json" Link="Localization\de.json" />
+    <EmbeddedResource Include="..\..\Translations\*.json" LogicalName="PowerExec.Localization.%(Filename).json" Link="Localization\%(Filename).json" />
   </ItemGroup>
 </Project>

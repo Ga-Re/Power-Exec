@@ -16,9 +16,9 @@ public partial class CredentialWindow : Window
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
-        Subtitle.Text = remote ? L.F("{0} · Remote-Verbindung", target) : target;
+        Subtitle.Text = remote ? L.F("{0} · remote connection", target) : target;
         if (remote)
-            Hint.Text = L.T("Die Anmeldedaten werden nur für diese Ausführung an den Remote-Runner übergeben (im Speicher) und nicht gespeichert.");
+            Hint.Text = L.T("The credentials are only passed to the remote runner for this run (in memory) and are not saved.");
         UserBox.Text = _lastAccount;
         Loaded += (_, _) =>
         {
@@ -43,7 +43,7 @@ public partial class CredentialWindow : Window
         var account = UserBox.Text.Trim();
         if (account.Length == 0)
         {
-            ErrorText.Text = L.T("Bitte einen Benutzernamen eingeben.");
+            ErrorText.Text = L.T("Please enter a user name.");
             ErrorText.Visibility = Visibility.Visible;
             return;
         }

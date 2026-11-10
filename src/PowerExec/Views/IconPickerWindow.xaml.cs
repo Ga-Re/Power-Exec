@@ -42,7 +42,7 @@ public partial class IconPickerWindow : Window
     /// <returns>Das gewählte Symbol, <see cref="IconRef.None"/> für „kein Symbol“ oder null bei Abbruch.</returns>
     public static IconRef? Pick(IconRef current, string? heading = null)
     {
-        var w = new IconPickerWindow(current, heading ?? L.T("Symbol wählen"));
+        var w = new IconPickerWindow(current, heading ?? L.T("Choose icon"));
         return w.ShowDialog() == true ? (w._cleared ? IconRef.None : w._selected) : null;
     }
 
@@ -56,10 +56,10 @@ public partial class IconPickerWindow : Window
         SearchBox.IsEnabled = !file;
         License.Text = tag switch
         {
-            "fluent" => L.F("Fluent UI System Icons · {0} Symbole · MIT-Lizenz, © Microsoft", IconLibrary.FluentCount),
-            "hero" => L.F("Heroicons · {0} Symbole · MIT-Lizenz, © Tailwind Labs", IconLibrary.HeroCount),
-            "glyph" => L.T("Segoe Fluent Icons (in Windows enthalten)"),
-            "emoji" => L.T("Segoe UI Emoji (in Windows enthalten)"),
+            "fluent" => L.F("Fluent UI System Icons · {0} icons · MIT license, © Microsoft", IconLibrary.FluentCount),
+            "hero" => L.F("Heroicons · {0} icons · MIT license, © Tailwind Labs", IconLibrary.HeroCount),
+            "glyph" => L.T("Segoe Fluent Icons (included in Windows)"),
+            "emoji" => L.T("Segoe UI Emoji (included in Windows)"),
             _ => string.Empty
         };
         Filter();
@@ -81,8 +81,8 @@ public partial class IconPickerWindow : Window
         var words = SearchBox.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var matches = all.Where(c => words.All(w => c.Search.Contains(w, StringComparison.CurrentCultureIgnoreCase))).ToList();
         Results.ItemsSource = matches.Take(MaxShown).Select(c => new Entry(c.Ref.ToString(), c.Name)).ToList();
-        MoreText.Text = matches.Count > MaxShown ? L.F("{0} Treffer, die ersten {1} werden angezeigt – Suche eingrenzen.", matches.Count, MaxShown) :
-                        _source == "file" ? string.Empty : L.F("{0} Treffer", matches.Count);
+        MoreText.Text = matches.Count > MaxShown ? L.F("{0} matches, showing the first {1} – narrow your search.", matches.Count, MaxShown) :
+                        _source == "file" ? string.Empty : L.F("{0} matches", matches.Count);
     }
 
     private void Icon_Click(object sender, RoutedEventArgs e)
@@ -103,7 +103,7 @@ public partial class IconPickerWindow : Window
 
     private void BrowseImage_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = L.T("Bilder (*.png;*.ico;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.ico;*.jpg;*.jpeg;*.gif;*.bmp") };
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = L.T("Images (*.png;*.ico;*.jpg;*.jpeg;*.gif;*.bmp)|*.png;*.ico;*.jpg;*.jpeg;*.gif;*.bmp") };
         if (dlg.ShowDialog(this) != true) return;
         _selected = new IconRef(IconSource.File, dlg.FileName);
         _cleared = false;
@@ -113,7 +113,7 @@ public partial class IconPickerWindow : Window
     private void UpdatePreview(string? name = null)
     {
         Preview.Icon = _selected.ToString();
-        PreviewName.Text = _selected.IsEmpty ? L.T("Kein Symbol ausgewählt") : name ?? _selected.Value;
+        PreviewName.Text = _selected.IsEmpty ? L.T("No icon selected") : name ?? _selected.Value;
     }
 
     private void None_Click(object sender, RoutedEventArgs e)

@@ -37,20 +37,16 @@ public static class Appearance
     /// <summary>Windows speichert die Akzentfarbe als 0xAABBGGRR.</summary>
     public static Rgb FromAbgr(uint abgr) => new((byte)(abgr & 0xFF), (byte)((abgr >> 8) & 0xFF), (byte)((abgr >> 16) & 0xFF));
 
+    /// <summary>
+    /// Mitgelieferte Grund-Designs – je eins pro Hintergrund (wie Windows, Glas, Vollton). Weitere Designs gibt es im
+    /// Marktplatz (Einstellungen › Marktplatz › Designs).
+    /// </summary>
     public static readonly IReadOnlyList<DesignPreset> Presets = new[]
     {
-        new DesignPreset("fluent", "Fluent", L.T("Wie Windows: Design und Akzentfarbe vom System"), ThemeMode.System, string.Empty, 100, 0, true),
-        new DesignPreset("glass", L.T("Glas"), L.T("Weichgezeichneter Desktop hinter dem Panel (Windows 11)"), ThemeMode.Dark, string.Empty, 70, 20, true,
+        new DesignPreset("fluent", "Fluent", L.T("Like Windows: design and accent color from the system"), ThemeMode.System, string.Empty, 100, 0, true),
+        new DesignPreset("glass", L.T("Glass"), L.T("Blurred desktop behind the panel (Windows 11)"), ThemeMode.Dark, string.Empty, 70, 20, true,
             PanelBackdrop.Glass, GlassBlur: 60, GlassSaturation: 125),
-        new DesignPreset("clean", "Fluent Clean", L.T("Dezentes Anthrazit wie Explorer und Einstellungen"), ThemeMode.Dark, "#202020", 85, 15, true),
-        new DesignPreset("oled", "OLED", L.T("Tiefschwarz und deckend, Akzentfarbe von Windows"), ThemeMode.Dark, "#000000", 100, 0, true, PanelBackdrop.Solid),
-        new DesignPreset("nordic", "Nordic Frost", L.T("Kühles Schiefergrau mit eisblauem Akzent und Eisglas"), ThemeMode.Dark, "#2E3440", 80, 20, false,
-            PanelBackdrop.Glass, GlassBlur: 40, GlassSaturation: 110, AccentColor: "#88C0D0"),
-        new DesignPreset("espresso", "Espresso", L.T("Dunkles Kaffeebraun mit Champagner-Akzent"), ThemeMode.Dark, "#1E1A18", 95, 0, false,
-            AccentColor: "#D9B87C"),
-        new DesignPreset("graphite", L.T("Graphit"), L.T("Dunkel und deckend, klassische Akzentfarbe"), ThemeMode.Dark, "#1C1C1C", 100, 0, false),
-        new DesignPreset("paper", L.T("Papier"), L.T("Hell und ruhig"), ThemeMode.Light, "#FAFAFA", 100, 0, false),
-        new DesignPreset("midnight", L.T("Mitternacht"), L.T("Dunkelblau getönt"), ThemeMode.Dark, "#14213D", 95, 0, false),
+        new DesignPreset("oled", "OLED", L.T("Deep black and opaque, Windows accent color"), ThemeMode.Dark, "#000000", 100, 0, true, PanelBackdrop.Solid),
     };
 
     /// <summary>Mitgelieferte und eigene Designs (eigene am Ende).</summary>
@@ -86,7 +82,7 @@ public static class Appearance
         panel.Frost, s.UseWindowsAccent, panel.EffectiveBackdropSetting, panel.GlassBlur, panel.GlassSaturation, panel.AccentColor, IsCustom: true);
 
     private static string DescribeCustom(PanelConfig p) =>
-        L.F("Eigenes Design · {0}", PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]) + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");
+        L.F("Custom design · {0}", PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]) + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");
 
     /// <summary>Passt das Panel zur Vorlage? (für die Markierung)</summary>
     public static bool Matches(AppSettings s, PanelConfig x, DesignPreset p) =>

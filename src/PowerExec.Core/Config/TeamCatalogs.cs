@@ -26,11 +26,11 @@ public sealed class CatalogSubscription
 public sealed record CatalogDiff(IReadOnlyList<string> Added, IReadOnlyList<string> Changed, IReadOnlyList<string> Removed)
 {
     public bool IsEmpty => Added.Count + Changed.Count + Removed.Count == 0;
-    public string Summary => IsEmpty ? L.T("keine Änderungen") : string.Join(", ", new[]
+    public string Summary => IsEmpty ? L.T("no changes") : string.Join(", ", new[]
     {
-        Added.Count > 0 ? L.F("{0} neu", Added.Count) : null,
-        Changed.Count > 0 ? L.F("{0} geändert", Changed.Count) : null,
-        Removed.Count > 0 ? L.F("{0} entfernt", Removed.Count) : null
+        Added.Count > 0 ? L.F("{0} new", Added.Count) : null,
+        Changed.Count > 0 ? L.F("{0} changed", Changed.Count) : null,
+        Removed.Count > 0 ? L.F("{0} removed", Removed.Count) : null
     }.Where(x => x != null));
 }
 

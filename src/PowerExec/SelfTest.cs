@@ -1328,8 +1328,7 @@ public sealed partial class SelfTestController : AppController
                 }
                 enWindow.Close();
                 await ShowAndClose(new WelcomeWindow(new WelcomeViewModel(this)));
-                var missing = PowerExec.Core.Localization.L.Missing;
-                if (missing.Count > 0) Fail("Englisch: ohne Übersetzung: " + string.Join(" | ", missing.Take(20)));
+
             }
             finally
             {
@@ -1467,6 +1466,9 @@ public sealed partial class SelfTestController : AppController
         }
         lock (bindingErrors.Errors)
             foreach (var e in bindingErrors.Errors.Take(25)) Fail("Bindungsfehler: " + e);
+        // Deutsch ist eine Übersetzung der englischen Basis: alles, was im Lauf angezeigt wurde, muss in de.json stehen
+        if (PowerExec.Core.Localization.L.Missing is { Count: > 0 } missingDe)
+            Fail("Übersetzung: fehlt in Translations/de.json: " + string.Join(" | ", missingDe.Take(20)));
         return _selfTestErrors.Count == 0 ? null : string.Join(Environment.NewLine + Environment.NewLine, _selfTestErrors);
     }
 

@@ -61,14 +61,14 @@ public sealed class WelcomeViewModel : ObservableObject
     public bool IsStep2 => _step == 2;
     public bool IsStep3 => _step == 3;
     public bool IsLast => _step == StepCount - 1;
-    public string NextLabel => IsLast ? L.T("Fertig") : L.T("Weiter");
-    public string StepText => L.F("Schritt {0} von {1}", _step + 1, StepCount);
+    public string NextLabel => IsLast ? L.T("Done") : L.T("Next");
+    public string StepText => L.F("Step {0} of {1}", _step + 1, StepCount);
 
     // Schritt 1: Scripte
     public string? Folder { get => _folder; private set { if (Set(ref _folder, value)) OnPropertyChanged(nameof(HasFolder)); } }
     public bool HasFolder => _folder != null;
     public bool HasExistingFolders => _app.Settings.Folders.Count > 0;
-    public string ExistingFoldersText => L.F("Bereits eingerichtet: {0}", string.Join(", ", _app.Settings.Folders.Select(f => f.Path)));
+    public string ExistingFoldersText => L.F("Already set up: {0}", string.Join(", ", _app.Settings.Folders.Select(f => f.Path)));
     /// <summary>Beispielordner mit einem Script anlegen (Dokumente\Power-Exec\Scripte).</summary>
     public bool CreateSample { get => _createSample; set => Set(ref _createSample, value); }
     public static string SampleFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Power-Exec", "Scripte");
@@ -81,10 +81,10 @@ public sealed class WelcomeViewModel : ObservableObject
     }
     public string EdgeText => _edge switch
     {
-        ScreenEdge.Left => L.T("Links: Maus an den linken Bildschirmrand"),
-        ScreenEdge.Top => L.T("Oben: Maus an den oberen Bildschirmrand"),
-        ScreenEdge.Bottom => L.T("Unten: Maus an den unteren Bildschirmrand"),
-        _ => L.T("Rechts: Maus an den rechten Bildschirmrand")
+        ScreenEdge.Left => L.T("Left: mouse to the left screen edge"),
+        ScreenEdge.Top => L.T("Top: mouse to the top screen edge"),
+        ScreenEdge.Bottom => L.T("Bottom: mouse to the bottom screen edge"),
+        _ => L.T("Right: mouse to the right screen edge")
     };
 
     // Schritt 3: Tastenkürzel und Start
@@ -95,7 +95,7 @@ public sealed class WelcomeViewModel : ObservableObject
         set { if (Set(ref _hotkey, value ?? string.Empty)) OnPropertyChanged(nameof(HotkeyText)); }
     }
 
-    public string HotkeyText => _hotkey.Length > 0 ? DisplayText.Hotkey(_hotkey) : L.T("keins – Panel nur über die Hover-Zone");
+    public string HotkeyText => _hotkey.Length > 0 ? DisplayText.Hotkey(_hotkey) : L.T("none – panel only via the hover zone");
 
     /// <summary>Zurück auf Strg+Alt+Leertaste.</summary>
     public ICommand ResetHotkeyCommand { get; }
@@ -113,7 +113,7 @@ public sealed class WelcomeViewModel : ObservableObject
 
     private void ChooseFolder()
     {
-        if (_app.PickFolder(L.T("Ordner mit Scripten und Programmen auswählen")) is { } folder)
+        if (_app.PickFolder(L.T("Select folder with scripts and programs")) is { } folder)
             Folder = folder; // Beispielscripte bleiben wählbar – zusätzlich zum eigenen Ordner
     }
 
@@ -142,8 +142,8 @@ public sealed class WelcomeViewModel : ObservableObject
         var samples = _createSample ? _createSamples() : null;
         if (samples != null && !s.Folders.Any(f => f.Path.Equals(samples, StringComparison.OrdinalIgnoreCase)))
         {
-            var name = L.T("Beispiele");
-            for (int i = 2; GroupManager.Exists(s, name); i++) name = L.F("Beispiele {0}", i);
+            var name = L.T("Examples");
+            for (int i = 2; GroupManager.Exists(s, name); i++) name = L.F("Examples {0}", i);
             SmartGroups.Add(s, samples, name, null);
         }
         _app.ApplySettings(s);
@@ -175,7 +175,7 @@ public sealed class WelcomeViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Beispielordner konnte nicht angelegt werden"), ex);
+            AppLog.Error(L.T("Sample folder couldn't be created"), ex);
             return null;
         }
     }

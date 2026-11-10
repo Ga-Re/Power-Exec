@@ -12,7 +12,7 @@ public sealed record PeekFact(string Label, string Value);
 public sealed record PeekParameter(string Name, string Type, bool IsMandatory, string Default, string Help)
 {
     public bool HasHelp => Help.Length > 0;
-    public string Summary => (Type.Length > 0 ? Type : "beliebig") + (IsMandatory ? L.T(" · Pflicht") : Default.Length > 0 ? L.T(" · Vorgabe ") + Default : string.Empty);
+    public string Summary => (Type.Length > 0 ? Type : "beliebig") + (IsMandatory ? L.T(" · required") : Default.Length > 0 ? L.T(" · default ") + Default : string.Empty);
 }
 
 /// <summary>
@@ -38,7 +38,7 @@ public sealed class PeekViewModel
         else if ((li.Type is ItemType.PowerShell or ItemType.Batch) && (!li.IsCustom || li.CustomKind == CustomEntryKind.File))
         {
             if (CodePreview.ReadHead(li.FullPath) is { } head) (code, truncated) = head;
-            else facts.Add(new PeekFact(L.T("Inhalt"), L.T("Datei nicht lesbar oder zu groß für die Vorschau")));
+            else facts.Add(new PeekFact(L.T("Contents"), L.T("File not readable or too large for the preview")));
         }
         if (code != null)
         {
@@ -53,27 +53,27 @@ public sealed class PeekViewModel
         if (li.IsCustom && li.CustomKind != CustomEntryKind.File)
         {
             var target = Vars(((li.LaunchTarget ?? string.Empty) + " " + li.LaunchArguments).Trim());
-            if (target.Length > 0 && li.CustomKind != CustomEntryKind.Snippet) facts.Add(new PeekFact(L.T("Ziel"), target));
+            if (target.Length > 0 && li.CustomKind != CustomEntryKind.Snippet) facts.Add(new PeekFact(L.T("Target"), target));
         }
-        else facts.Add(new PeekFact(L.T("Pfad"), li.FullPath));
+        else facts.Add(new PeekFact(L.T("Path"), li.FullPath));
         if (li.Source is { } src && Placeholders.VariableNames(src.Target, src.Arguments, src.Code, src.User, src.RemoteCommand, src.WorkingDirectory) is { Count: > 0 } used)
-            facts.Add(new PeekFact(L.T("Variablen"), string.Join(" · ", used.Distinct(StringComparer.CurrentCultureIgnoreCase)
+            facts.Add(new PeekFact(L.T("Variables"), string.Join(" · ", used.Distinct(StringComparer.CurrentCultureIgnoreCase)
                 .Select(n => $"{n} = {app.VariablePreview(n)}"))));
-        if (li.RequiresAdmin) facts.Add(new PeekFact(L.T("Rechte"), L.T("benötigt Administrator (#Requires)")));
-        if (li.RequiredPsVersion.Length > 0) facts.Add(new PeekFact("PowerShell", li.RequiredPsVersion + L.T(" oder neuer")));
-        if (li.RequiredModules.Count > 0) facts.Add(new PeekFact(L.T("Module"), string.Join(", ", li.RequiredModules)));
-        if (li.IsBlocked) facts.Add(new PeekFact(L.T("Blockiert"), item.BlockedText));
-        if (li.UsesReadHost) facts.Add(new PeekFact(L.T("Hinweis"), L.T("verwendet Read-Host – remote nicht geeignet")));
-        if (item.HasNotes) facts.Add(new PeekFact(L.T("Notiz"), item.Notes));
+        if (li.RequiresAdmin) facts.Add(new PeekFact(L.T("Rights"), L.T("requires administrator (#Requires)")));
+        if (li.RequiredPsVersion.Length > 0) facts.Add(new PeekFact("PowerShell", li.RequiredPsVersion + L.T(" or newer")));
+        if (li.RequiredModules.Count > 0) facts.Add(new PeekFact(L.T("Modules"), string.Join(", ", li.RequiredModules)));
+        if (li.IsBlocked) facts.Add(new PeekFact(L.T("Blocked"), item.BlockedText));
+        if (li.UsesReadHost) facts.Add(new PeekFact(L.T("Hint"), L.T("uses Read-Host – not suitable for remote")));
+        if (item.HasNotes) facts.Add(new PeekFact(L.T("Note"), item.Notes));
         if (li.LastWriteTimeUtc > DateTime.MinValue.AddYears(1) && !li.IsCustom)
-            facts.Add(new PeekFact(L.T("Geändert"), li.LastWriteTimeUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")));
+            facts.Add(new PeekFact(L.T("Modified"), li.LastWriteTimeUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")));
         var stat = app.Settings.RunStats.FirstOrDefault(kv => kv.Key.Equals(li.FullPath, StringComparison.OrdinalIgnoreCase)).Value;
         if (stat != null && stat.Count > 0)
-            facts.Add(new PeekFact(L.T("Gestartet"), L.F("{0}× · zuletzt {1}", stat.Count, RecentRunList.Ago(stat.LastUtc))));
+            facts.Add(new PeekFact(L.T("Launched"), L.F("{0}× · last {1}", stat.Count, RecentRunList.Ago(stat.LastUtc))));
         Facts = facts;
 
         Parameters = li.Parameters.Select(p => new PeekParameter("-" + p.Name, p.TypeName, p.IsMandatory, p.DefaultValueText ?? string.Empty,
-            p.ValidValues.Count > 0 ? (p.HelpText.Length > 0 ? p.HelpText + " · " : string.Empty) + L.T("Werte: ") + string.Join(", ", p.ValidValues) : p.HelpText)).ToList();
+            p.ValidValues.Count > 0 ? (p.HelpText.Length > 0 ? p.HelpText + " · " : string.Empty) + L.T("Values: ") + string.Join(", ", p.ValidValues) : p.HelpText)).ToList();
     }
 
     public ItemViewModel Item { get; }

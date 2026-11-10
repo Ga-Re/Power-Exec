@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Nordic Frost",
+  "Description": "Kühles Schiefergrau mit eisblauem Akzent und Eisglas",
+  "Theme": "Dark",
+  "PanelColor": "#2E3440",
+  "Opacity": 80,
+  "Frost": 20,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 40,
+  "GlassSaturation": 110,
+  "AccentColor": "#88C0D0"
+}

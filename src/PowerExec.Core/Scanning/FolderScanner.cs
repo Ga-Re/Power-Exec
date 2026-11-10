@@ -16,12 +16,12 @@ public static class FolderScanner
     public static ScanResult Scan(FolderConfig folder, AppSettings settings)
     {
         var root = folder.Path.Trim();
-        if (root.Length == 0) return new ScanResult(folder, Array.Empty<string>(), Array.Empty<ExcludedFile>(), L.T("Kein Pfad angegeben."));
+        if (root.Length == 0) return new ScanResult(folder, Array.Empty<string>(), Array.Empty<ExcludedFile>(), L.T("No path specified."));
 
         try
         {
             if (!Directory.Exists(root))
-                return new ScanResult(folder, Array.Empty<string>(), Array.Empty<ExcludedFile>(), L.T("Ordner nicht gefunden oder nicht erreichbar."));
+                return new ScanResult(folder, Array.Empty<string>(), Array.Empty<ExcludedFile>(), L.T("Folder not found or not reachable."));
 
             var extensions = new HashSet<string>(
                 settings.ExtensionsFor(folder).Select(e => e.StartsWith('.') ? e : "." + e),
