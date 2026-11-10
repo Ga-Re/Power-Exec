@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
@@ -23,19 +24,19 @@ public static class SignatureService
             if (valid)
             {
                 var signer = SignerName(path);
-                text = signer != null ? $"Signiert von {signer}" : "Gültig signiert";
+                text = signer != null ? L.F("Signiert von {0}", signer) : L.T("Gültig signiert");
             }
             else
             {
                 text = (uint)code switch
                 {
-                    0x800B0100 => "Nicht signiert",
-                    0x800B0003 => "Nicht signiert",
-                    0x80096010 => "Signatur ungültig – Datei wurde nach dem Signieren verändert",
-                    0x800B0109 => "Signiert, aber das Zertifikat ist nicht vertrauenswürdig",
-                    0x800B0101 => "Signiert, aber das Zertifikat ist abgelaufen",
-                    0x800B0111 => "Signatur ausdrücklich nicht vertrauenswürdig",
-                    _ => $"Signatur nicht prüfbar (0x{code:X8})"
+                    0x800B0100 => L.T("Nicht signiert"),
+                    0x800B0003 => L.T("Nicht signiert"),
+                    0x80096010 => L.T("Signatur ungültig – Datei wurde nach dem Signieren verändert"),
+                    0x800B0109 => L.T("Signiert, aber das Zertifikat ist nicht vertrauenswürdig"),
+                    0x800B0101 => L.T("Signiert, aber das Zertifikat ist abgelaufen"),
+                    0x800B0111 => L.T("Signatur ausdrücklich nicht vertrauenswürdig"),
+                    _ => L.F("Signatur nicht prüfbar (0x{0:X8})", code)
                 };
             }
             lock (Cache) Cache[path] = (written, text, valid);
@@ -43,7 +44,7 @@ public static class SignatureService
         }
         catch (Exception ex)
         {
-            return ("Signatur nicht prüfbar: " + ex.Message, false);
+            return (L.T("Signatur nicht prüfbar: ") + ex.Message, false);
         }
     }
 

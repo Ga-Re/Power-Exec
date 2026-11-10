@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Config;
@@ -147,7 +148,7 @@ public sealed class CustomEntry
     {
         var c = Clone();
         c.Id = Guid.NewGuid().ToString("N");
-        c.Name = (string.IsNullOrWhiteSpace(Name) ? Target : Name) + " (Kopie)";
+        c.Name = (string.IsNullOrWhiteSpace(Name) ? Target : Name) + L.T(" (Kopie)");
         c.CatalogId = string.Empty; // Kopie gehört dem Benutzer
         c.CatalogFingerprint = string.Empty;
         return c;
@@ -191,14 +192,14 @@ public sealed class CustomEntry
 
     public static string KindLabel(CustomEntryKind kind) => kind switch
     {
-        CustomEntryKind.Url => "Webseite",
-        CustomEntryKind.Folder => "Ordner",
-        CustomEntryKind.Rdp => "Remotedesktop",
-        CustomEntryKind.File => "Datei",
+        CustomEntryKind.Url => L.T("Webseite"),
+        CustomEntryKind.Folder => L.T("Ordner"),
+        CustomEntryKind.Rdp => L.T("Remotedesktop"),
+        CustomEntryKind.File => L.T("Datei"),
         CustomEntryKind.Snippet => "Snippet",
         CustomEntryKind.Ssh => "SSH",
-        CustomEntryKind.Tool => "Windows-Werkzeug",
-        _ => "Befehl"
+        CustomEntryKind.Tool => L.T("Windows-Werkzeug"),
+        _ => L.T("Befehl")
     };
 
     /// <summary>Ordner, in dem PowerShell-Snippets als .ps1 abgelegt werden (setzt die App).</summary>
@@ -273,7 +274,7 @@ public sealed class CustomEntry
                 FullPath = Key,
                 RootFolder = PanelConfig.CustomEntriesKey,
                 Type = ItemType.Other,
-                DisplayName = string.IsNullOrWhiteSpace(Name) ? "Ablauf" : Name.Trim(),
+                DisplayName = string.IsNullOrWhiteSpace(Name) ? L.T("Ablauf") : Name.Trim(),
                 Synopsis = Description.Trim().Length > 0 ? Description.Trim() : SummaryText(),
                 CustomKind = Kind,
                 Source = this
@@ -310,7 +311,7 @@ public sealed class CustomEntry
     /// <summary>Kurzinfo ohne Wiederholungen: die Adresse, der Pfad bzw. die Verbindung.</summary>
     public string SummaryText() => Kind switch
     {
-        CustomEntryKind.Rdp => "Remotedesktop · " + (UsesRdpFile ? LeafOf(RdpFile) : RdpHost()),
+        CustomEntryKind.Rdp => L.T("Remotedesktop · ") + (UsesRdpFile ? LeafOf(RdpFile) : RdpHost()),
         CustomEntryKind.Ssh => "SSH · " + SshTarget() + (Port > 0 && Port != 22 ? ":" + Port : string.Empty),
         CustomEntryKind.Command => (Target.Trim() + " " + Arguments.Trim()).Trim(),
         CustomEntryKind.Tool => (Target.Trim() + " " + Arguments.Trim()).Trim(),
@@ -378,9 +379,9 @@ public sealed class CustomEntry
     {
         var w = new List<string>();
         if (Kind != CustomEntryKind.Ssh || Client != SshClient.Putty) return w;
-        if (JumpHost.Trim().Length > 0) w.Add("PuTTY unterstützt den Sprungserver hier nicht – nimm Windows Terminal oder Konsole.");
-        if (RemoteCommand.Trim().Length > 0) w.Add("PuTTY führt den Befehl nach dem Login hier nicht aus – nimm Windows Terminal oder Konsole.");
-        if (TerminalProfile.Trim().Length > 0) w.Add("Das Terminal-Profil gilt nur für Windows Terminal.");
+        if (JumpHost.Trim().Length > 0) w.Add(L.T("PuTTY unterstützt den Sprungserver hier nicht – nimm Windows Terminal oder Konsole."));
+        if (RemoteCommand.Trim().Length > 0) w.Add(L.T("PuTTY führt den Befehl nach dem Login hier nicht aus – nimm Windows Terminal oder Konsole."));
+        if (TerminalProfile.Trim().Length > 0) w.Add(L.T("Das Terminal-Profil gilt nur für Windows Terminal."));
         return w;
     }
 

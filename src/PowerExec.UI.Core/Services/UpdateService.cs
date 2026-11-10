@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
@@ -79,17 +80,17 @@ public sealed class UpdateService
     {
         var currentExe = Environment.ProcessPath;
         if (string.IsNullOrEmpty(currentExe) || !currentExe.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            return "Der Pfad der laufenden Anwendung konnte nicht ermittelt werden.";
+            return L.T("Der Pfad der laufenden Anwendung konnte nicht ermittelt werden.");
 
         bool useSetup = release.SetupUrl != null && IsInstalledViaSetup;
         var url = useSetup ? release.SetupUrl : release.ExeUrl;
         var checksumUrl = useSetup ? release.SetupChecksumUrl : release.ChecksumUrl;
         if (url == null)
-            return "Das Release enthält keine passende Datei (PowerExec.exe oder PowerExec-Setup.exe).";
+            return L.T("Das Release enthält keine passende Datei (PowerExec.exe oder PowerExec-Setup.exe).");
 
         var targetDir = Path.GetDirectoryName(currentExe)!;
         if (!useSetup && !CanWrite(targetDir))
-            return $"Keine Schreibrechte in {targetDir}. Installiere Power-Exec mit dem Installer oder lade die neue Version manuell herunter.";
+            return L.F("Keine Schreibrechte in {0}. Installiere Power-Exec mit dem Installer oder lade die neue Version manuell herunter.", targetDir);
 
         var tempDir = Path.Combine(Path.GetTempPath(), "PowerExec-Update");
         Directory.CreateDirectory(tempDir);
@@ -121,7 +122,7 @@ public sealed class UpdateService
             if (expected == null || expected != actual)
             {
                 File.Delete(download);
-                return "Die Prüfsumme der heruntergeladenen Datei stimmt nicht. Das Update wurde verworfen.";
+                return L.T("Die Prüfsumme der heruntergeladenen Datei stimmt nicht. Das Update wurde verworfen.");
             }
         }
 
@@ -132,8 +133,7 @@ public sealed class UpdateService
               $"del \"{download}\"\r\n"
             : $"move /y \"{download}\" \"{currentExe}\" >nul\r\n";
         File.WriteAllText(script,
-            "@echo off\r\n" +
-            ":wait\r\n" +
+            "@echo off\r\n:wait\r\n" +
             $"tasklist /FI \"PID eq {pid}\" 2>nul | find \"{pid}\" >nul && (timeout /t 1 /nobreak >nul & goto wait)\r\n" +
             install +
             $"start \"\" \"{currentExe}\"\r\n" +

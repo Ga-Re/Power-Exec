@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,7 +29,7 @@ public static class SecretProtector
         if (stored.Length == 0) return string.Empty;
         if (stored.StartsWith(DpapiPrefix, StringComparison.Ordinal))
         {
-            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Geheime Werte lassen sich nur unter Windows lesen.");
+            if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException(L.T("Geheime Werte lassen sich nur unter Windows lesen."));
             return Encoding.UTF8.GetString(Dpapi(Convert.FromBase64String(stored[DpapiPrefix.Length..]), protect: false));
         }
         if (stored.StartsWith(PlainPrefix, StringComparison.Ordinal)) return Encoding.UTF8.GetString(Convert.FromBase64String(stored[PlainPrefix.Length..]));
@@ -58,8 +59,8 @@ public static class SecretProtector
             bool ok = protect
                 ? CryptProtectData(ref input, "Power-Exec", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output)
                 : CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output);
-            if (!ok) throw new InvalidOperationException("Der geheime Wert ließ sich nicht " + (protect ? "verschlüsseln" : "entschlüsseln") +
-                                                         $" (Fehler {Marshal.GetLastWin32Error()}). Bitte neu eingeben.");
+            if (!ok) throw new InvalidOperationException(L.T("Der geheime Wert ließ sich nicht ") + (protect ? L.T("verschlüsseln") : L.T("entschlüsseln")) +
+                                                         L.F(" (Fehler {0}). Bitte neu eingeben.", Marshal.GetLastWin32Error()));
             var result = new byte[output.Size];
             Marshal.Copy(output.Data, result, 0, output.Size);
             return result;
@@ -81,25 +82,24 @@ public static class VariableCommandRunner
     {
         if (command.Trim().Length == 0) return string.Empty;
         // Ausgabe als UTF-8, Fehler beenden den Befehl (damit sie hier ankommen)
-        var script = "[Console]::OutputEncoding = [Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; " +
-                     "$__r = & { " + command + " }; ($__r | Out-String).TrimEnd()";
+        var script = "[Console]::OutputEncoding = [Text.Encoding]::UTF8; $ErrorActionPreference = 'Stop'; $__r = & { " + command + " }; ($__r | Out-String).TrimEnd()";
         var psi = new ProcessStartInfo(CommandBuilder.EngineExe(Launcher.EffectiveEngine(engine)),
             "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand " + CommandBuilder.Encode(script))
         {
             UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
             StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
         };
-        using var p = Process.Start(psi) ?? throw new InvalidOperationException("PowerShell ließ sich nicht starten.");
+        using var p = Process.Start(psi) ?? throw new InvalidOperationException(L.T("PowerShell ließ sich nicht starten."));
         var stdout = p.StandardOutput.ReadToEndAsync();
         var stderr = p.StandardError.ReadToEndAsync();
         if (!p.WaitForExit((int)Timeout.TotalMilliseconds))
         {
             try { p.Kill(entireProcessTree: true); } catch { }
-            throw new TimeoutException($"Der Befehl hat nach {Timeout.TotalSeconds:0} s nicht geantwortet.");
+            throw new TimeoutException(L.F("Der Befehl hat nach {0:0} s nicht geantwortet.", Timeout.TotalSeconds));
         }
         var error = CleanError(stderr.Result);
         if (p.ExitCode != 0 || error.Length > 0 && stdout.Result.Trim().Length == 0)
-            throw new InvalidOperationException(error.Length > 0 ? error : $"PowerShell endete mit Code {p.ExitCode}.");
+            throw new InvalidOperationException(error.Length > 0 ? error : L.F("PowerShell endete mit Code {0}.", p.ExitCode));
         return stdout.Result.Trim();
     }
 

@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -125,12 +126,12 @@ public static class Marketplace
     {
         var s = source.Trim().TrimEnd('/');
         if (!Uri.TryCreate(s, UriKind.Absolute, out var uri) || uri.Scheme != "https")
-            throw new ArgumentException("Bitte die Adresse des Repositorys angeben, z. B. https://github.com/firma/power-exec-katalog.");
+            throw new ArgumentException(L.T("Bitte die Adresse des Repositorys angeben, z. B. https://github.com/firma/power-exec-katalog."));
         var parts = uri.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries).Select(Uri.UnescapeDataString).ToArray();
         static string Repo(string p) => p.EndsWith(".git", StringComparison.OrdinalIgnoreCase) ? p[..^4] : p;
         if (uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase))
         {
-            if (parts.Length < 2) throw new ArgumentException("GitHub-Adresse ohne Repository – z. B. https://github.com/firma/katalog.");
+            if (parts.Length < 2) throw new ArgumentException(L.T("GitHub-Adresse ohne Repository – z. B. https://github.com/firma/katalog."));
             var (branch, folder) = parts.Length >= 4 && parts[2] is "tree" or "blob" ? (parts[3], string.Join('/', parts.Skip(4))) : ("main", string.Empty);
             return new MarketplaceRepo(true, "github.com", $"{parts[0]}/{Repo(parts[1])}", branch, folder);
         }
@@ -139,7 +140,7 @@ public static class Marketplace
             return new MarketplaceRepo(false, uri.Authority, string.Join('/', parts.Take(dash)), parts[dash + 2], string.Join('/', parts.Skip(dash + 3)));
         if (dash < 0 && parts.Length >= 2)
             return new MarketplaceRepo(false, uri.Authority, string.Join('/', parts.Select(Repo)), "main", string.Empty);
-        throw new ArgumentException("Diese Adresse erkennt Power-Exec nicht als Repository (GitHub oder GitLab).");
+        throw new ArgumentException(L.T("Diese Adresse erkennt Power-Exec nicht als Repository (GitHub oder GitLab)."));
     }
 
     /// <summary>Alle Quellen: die mitgelieferte zuerst (immer vertrauenswürdig), dann die eigenen.</summary>
@@ -159,7 +160,7 @@ public static class Marketplace
     {
         try { ParseSource(url); }
         catch (ArgumentException ex) { return ex.Message; }
-        if (Sources(s).Any(x => SameSource(x.Url, url))) return "Diese Quelle ist schon eingetragen.";
+        if (Sources(s).Any(x => SameSource(x.Url, url))) return L.T("Diese Quelle ist schon eingetragen.");
         return null;
     }
 
@@ -191,7 +192,7 @@ public static class Marketplace
         using var doc = JsonDocument.Parse(json);
         var items = doc.RootElement.ValueKind == JsonValueKind.Array ? doc.RootElement
             : doc.RootElement.TryGetProperty("tree", out var t) ? t
-            : throw new InvalidDataException("Unerwartete Antwort des Repositorys.");
+            : throw new InvalidDataException(L.T("Unerwartete Antwort des Repositorys."));
         var prefix = repo.Folder.Length > 0 ? repo.Folder.TrimEnd('/') + "/" : string.Empty;
         var result = new List<MarketplaceFile>();
         foreach (var e in items.EnumerateArray())
@@ -223,7 +224,7 @@ public static class Marketplace
             {
                 var d = ParseDesign(payload, file);
                 var text = $"{d.Theme}, Panelfarbe {(d.PanelColor.Length > 0 ? d.PanelColor : "des Designs")}, {PanelBackdrops.Label(d.Backdrop)}, Deckkraft {d.Opacity} %"
-                           + (d.AccentColor.Length > 0 ? $", Akzent {d.AccentColor}" : string.Empty);
+                           + (d.AccentColor.Length > 0 ? L.F(", Akzent {0}", d.AccentColor) : string.Empty);
                 return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text);
             }
             default:
@@ -239,14 +240,14 @@ public static class Marketplace
 
     public static MarketplaceEntryFile ParseEntry(string json)
     {
-        var f = JsonSerializer.Deserialize<MarketplaceEntryFile>(json, Json) ?? throw new InvalidDataException("Leere Eintragsdatei.");
-        if (f.Entry == null) throw new InvalidDataException("Die Datei enthält keinen Eintrag.");
+        var f = JsonSerializer.Deserialize<MarketplaceEntryFile>(json, Json) ?? throw new InvalidDataException(L.T("Leere Eintragsdatei."));
+        if (f.Entry == null) throw new InvalidDataException(L.T("Die Datei enthält keinen Eintrag."));
         return f;
     }
 
     public static DesignPreset ParseDesign(string json, MarketplaceFile file)
     {
-        var d = JsonSerializer.Deserialize<DesignPreset>(json, Json) ?? throw new InvalidDataException("Leere Design-Datei.");
+        var d = JsonSerializer.Deserialize<DesignPreset>(json, Json) ?? throw new InvalidDataException(L.T("Leere Design-Datei."));
         return d with { Key = "market:" + StableId(file.Path), Name = d.Name.Length > 0 ? d.Name : file.DefaultName, IsCustom = true };
     }
 

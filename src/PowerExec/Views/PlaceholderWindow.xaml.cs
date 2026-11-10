@@ -1,3 +1,4 @@
+using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
@@ -71,7 +72,7 @@ public partial class PlaceholderWindow : Window
     private void ShowProfiles(IReadOnlyList<LaunchProfile> profiles, LaunchProfile selected)
     {
         ProfileRow.Visibility = Visibility.Visible;
-        SubHeading.Text = _fields.Count > 0 ? "Profil wählen und Werte für diesen Start eingeben." : "Mit welchem Profil starten?";
+        SubHeading.Text = _fields.Count > 0 ? L.T("Profil wählen und Werte für diesen Start eingeben.") : L.T("Mit welchem Profil starten?");
         ProfileBox.ItemsSource = profiles;
         ProfileBox.SelectedItem = selected;
         ProfileBox.SelectionChanged += (_, _) => UpdateProfileHint();
@@ -84,8 +85,8 @@ public partial class PlaceholderWindow : Window
         var p = ProfileBox.SelectedItem as LaunchProfile;
         var parts = new List<string>();
         if (p == null) { ProfileHint.Text = string.Empty; return; }
-        if (p.IsDefault) parts.Add("Standardprofil");
-        if (p.RunAsAdmin) parts.Add("als Administrator");
+        if (p.IsDefault) parts.Add(L.T("Standardprofil"));
+        if (p.RunAsAdmin) parts.Add(L.T("als Administrator"));
         if (p.Machines.Count > 0) parts.Add(string.Join(", ", p.Machines.Take(4)) + (p.Machines.Count > 4 ? " …" : string.Empty));
         ProfileHint.Text = string.Join(" · ", parts);
         ProfileHint.Visibility = parts.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
