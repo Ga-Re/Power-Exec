@@ -1,0 +1,16 @@
+{
+  "Entry": {
+    "Name": "GitLab Issue",
+    "Kind": "Url",
+    "Target": "{{$GitLabUrl}}/{{Projekt}}/-/issues/{{IssueNr}}",
+    "Description": "Sprung in ein GitLab-Ticket; die Serveradresse steht in {{$GitLabUrl}}.",
+    "Icon": "fluent:bug"
+  },
+  "Variables": [
+    {
+      "Name": "GitLabUrl",
+      "Description": "Adresse des GitLab-Servers (ohne / am Ende)",
+      "Example": "https://gitlab.firma.local"
+    }
+  ]
+}

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:c="clr-namespace:PowerExec.Controls"
         xmlns:v="clr-namespace:PowerExec.Views"
+        xmlns:vm="clr-namespace:PowerExec.ViewModels;assembly=PowerExec.UI.Core"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Power-Exec – Einstellungen" Style="{StaticResource AppWindow}"
         Width="1120" Height="800" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
@@ -1069,11 +1070,11 @@
                 </StackPanel>
                 </Grid>
 
-                <!-- Marktplatz: Einträge, Pakete, Designs und Scripte aus dem Power-Exec-Repository -->
+                <!-- Marktplatz: Einträge, Scripte und Designs aus Git-Ordnern -->
                 <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=marketplace}" DataContext="{Binding MarketplacePage}">
                     <TextBlock Text="Marktplatz" Style="{StaticResource PageTitle}"/>
                     <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
-                               Text="Fertige Einträge, Pakete, Designs und Scripte zum Herunterladen – aus dem mitgelieferten Marktplatz und aus eigenen Quellen. Vor jeder Installation siehst du, was übernommen wird; benötigte Variablen fragt Power-Exec einmal ab. Ändert sich ein installiertes Element, steht hier „Update verfügbar“."/>
+                               Text="Fertige Einträge, Scripte und Designs aus Git-Ordnern – aus dem mitgelieferten Marktplatz und aus eigenen Quellen. Ordner aufklappen, einzelne Dateien oder ganze Ordner anhaken und herunterladen. Einträge und Scripte landen in den eigenen Einträgen in der Gruppe deiner Wahl; benötigte Variablen fragt Power-Exec einmal ab."/>
                     <DockPanel Margin="0,16,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding RefreshCommand}" Margin="8,0,0,0" ToolTip="Marktplatz neu laden">
                             <StackPanel Orientation="Horizontal">
@@ -1138,55 +1139,121 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </c:SettingsExpander>
-                    <WrapPanel Margin="0,0,0,8">
-                        <ComboBox Width="190" Margin="0,0,8,4" ItemsSource="{Binding SourceChoices}" SelectedValue="{Binding SourceFilter}"
+                    <!-- Tabs nach Art; Ordner aufklappbar, Häkchen auf Ordnern und Dateien -->
+                    <DockPanel Margin="0,0,0,8">
+                        <ComboBox DockPanel.Dock="Right" Width="190" Margin="8,0,0,0" ItemsSource="{Binding SourceChoices}" SelectedValue="{Binding SourceFilter}"
                                   DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="Quelle"
                                   Visibility="{Binding HasSeveralSources, Converter={StaticResource Vis}}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Alle" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Pakete" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Package}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Einträge" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Entry}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Designs" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Design}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Scripte" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=Script}"/>
-                        <RadioButton Style="{StaticResource Chip}" Content="Updates" GroupName="MarketType" IsChecked="{Binding TypeFilter, Converter={StaticResource Eq}, ConverterParameter=updates}"/>
-                        <TextBlock Text="{Binding UpdateSummary}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    </WrapPanel>
-                    <c:InfoBar Message="{Binding Status}" Severity="{Binding StatusSeverity}"/>
+                        <WrapPanel>
+                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding EntryTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Entry}"/>
+                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding ScriptTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Script}"/>
+                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding DesignTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Design}"/>
+                            <RadioButton Style="{StaticResource TabHeader}" Content="{Binding InstalledTabText}" GroupName="MarketTab" IsChecked="{Binding Tab, Converter={StaticResource Eq}, ConverterParameter=Installed}"/>
+                        </WrapPanel>
+                    </DockPanel>
+                    <c:InfoBar Severity="Error" Message="{Binding Error}"/>
+                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                            Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+                        <WrapPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                            <ui:Button Style="{StaticResource Btn.Accent}" Content="{Binding InstallSelectedText}" Command="{Binding InstallSelectedCommand}" Margin="0,2,6,2"/>
+                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{Binding UninstallSelectedText}" Command="{Binding UninstallSelectedCommand}" Margin="0,2,6,2"/>
+                            <ui:Button Style="{StaticResource Btn.Subtle}" Content="Auswahl aufheben" Command="{Binding ClearSelectionCommand}" Margin="0,2,0,2"/>
+                        </WrapPanel>
+                    </Border>
                     <ui:ProgressRing IsIndeterminate="True" Width="28" Height="28" HorizontalAlignment="Left" Margin="4,8"
                                      Visibility="{Binding IsLoading, Converter={StaticResource Vis}}"/>
                     <TextBlock Text="Keine Treffer." Style="{StaticResource Caption}" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
-                    <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <c:SettingsCard Icon="{Binding Glyph}" Header="{Binding Name}">
-                                    <c:SettingsCard.Description>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding Details}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                    </c:SettingsCard.Description>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding StateText}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                        <ui:Button Command="{Binding InstallCommand}" Content="{Binding ActionText}" MinWidth="120">
-                                            <ui:Button.Style>
-                                                <Style TargetType="ui:Button" BasedOn="{StaticResource Btn.Standard}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsInstalled}" Value="False">
-                                                            <Setter Property="Appearance" Value="Primary"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding HasUpdate}" Value="True">
-                                                            <Setter Property="Appearance" Value="Primary"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </ui:Button.Style>
-                                        </ui:Button>
-                                    </StackPanel>
-                                </c:SettingsCard>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}, ConverterParameter=invert}">
+                        <ItemsControl ItemsSource="{Binding Rows}" Focusable="False">
+                            <ItemsControl.Resources>
+                                <!-- Ordner -->
+                                <DataTemplate DataType="{x:Type vm:MarketplaceFolderRow}">
+                                    <Border x:Name="FolderRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,3" Background="Transparent">
+                                        <DockPanel>
+                                            <CheckBox DockPanel.Dock="Left" Width="28" IsThreeState="False" IsChecked="{Binding IsChecked}" VerticalAlignment="Center" AutomationProperties.Name="Ordner auswählen"/>
+                                            <Border DockPanel.Dock="Left" Width="{Binding Indent}"/>
+                                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding InstallCommand}" ToolTip="Alle Dateien des Ordners herunterladen"
+                                                       Padding="8,0" MinHeight="28" Height="28">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Ordner laden" FontSize="12"/>
+                                                </StackPanel>
+                                            </ui:Button>
+                                            <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleCommand}"
+                                                       ToolTip="Auf-/zuklappen" AutomationProperties.Name="Auf- oder zuklappen">
+                                                <TextBlock x:Name="Chevron" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="10"/>
+                                            </ui:Button>
+                                            <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="4,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Cursor="Hand">
+                                                <TextBlock.InputBindings>
+                                                    <MouseBinding Gesture="LeftClick" Command="{Binding ToggleCommand}"/>
+                                                </TextBlock.InputBindings>
+                                                <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                <Run Text="  "/><Run Text="{Binding CountText, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"/>
+                                            </TextBlock>
+                                        </DockPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                            <Setter TargetName="Chevron" Property="Text" Value="&#xE70D;"/>
+                                        </DataTrigger>
+                                        <Trigger SourceName="FolderRow" Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="FolderRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                        </Trigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                                <!-- Datei -->
+                                <DataTemplate DataType="{x:Type vm:MarketplaceItemRow}">
+                                    <Border x:Name="ItemRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,4" Background="Transparent">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="130"/>
+                                                <ColumnDefinition Width="76"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" AutomationProperties.Name="Auswählen"/>
+                                            <Border Grid.Column="1" Width="{Binding Indent}"/>
+                                            <DockPanel Grid.Column="2" Margin="32,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}"/>
+                                                    <TextBlock Text="{Binding Needs}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding Needs, Converter={StaticResource Vis}}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                            <TextBlock x:Name="State" Grid.Column="3" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding InstallCommand}" ToolTip="{Binding InstallText}"
+                                                           AutomationProperties.Name="{Binding InstallText}" Visibility="{Binding CanInstall, Converter={StaticResource Vis}}">
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                </ui:Button>
+                                                <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding UninstallCommand}" ToolTip="Deinstallieren"
+                                                           AutomationProperties.Name="Deinstallieren" Visibility="{Binding IsInstalled, Converter={StaticResource Vis}}">
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                </ui:Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                            <Setter TargetName="State" Property="Foreground" Value="{DynamicResource Accent}"/>
+                                        </DataTrigger>
+                                        <Trigger SourceName="ItemRow" Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ItemRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsChecked}" Value="True">
+                                            <Setter TargetName="ItemRow" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.Resources>
+                        </ItemsControl>
+                    </Border>
                 </StackPanel>
-
                 <!-- Variablen: {{$Name}} in Texten, Links, Befehlen und Code -->
                 <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=variables}" DataContext="{Binding VariablesPage}">
                     <TextBlock Text="Variablen" Style="{StaticResource PageTitle}"/>
@@ -2081,6 +2148,25 @@
                                Foreground="{DynamicResource InfoBar.Success.Icon}"/>
                     <TextBlock x:Name="SaveHint" Style="{StaticResource Caption}" VerticalAlignment="Center" Text="Alle Änderungen gespeichert"/>
                 </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Snackbar: kurze Rückmeldung unten, blendet nach einigen Sekunden aus -->
+        <Border x:Name="SnackbarHost" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20"
+                Padding="16,10" CornerRadius="8" BorderThickness="1" Visibility="Collapsed" Opacity="0" MaxWidth="640" Panel.ZIndex="100"
+                Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+            <Border.RenderTransform><TranslateTransform x:Name="SnackbarShift" Y="12"/></Border.RenderTransform>
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"
+                           Foreground="{DynamicResource InfoBar.Success.Icon}"/>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" MinHeight="28" Margin="12,0,0,0" Click="SnackbarClose_Click"
+                           ToolTip="Schließen" AutomationProperties.Name="Meldung schließen">
+                    <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>
+                </ui:Button>
+                <TextBlock x:Name="SnackbarText" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
             </DockPanel>
         </Border>
     </Grid>

@@ -7,6 +7,15 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 27, 0), "Marktplatz aus Git-Ordnern, Variablen-Tabelle, Snackbars", new[]
+        {
+            "Marktplatz: statt Paketen Ordner aus dem Git-Repository – aufklappbar, mit Tabs Einträge · Scripte · Designs · Installiert und kompakter Liste",
+            "Ganze Ordner oder einzelne Dateien per Häkchen herunterladen oder deinstallieren; Einträge und Scripte landen in den eigenen Einträgen in der Gruppe deiner Wahl (vorgeschlagen: der Ordnername)",
+            "Deinstallieren entfernt Einträge, Designs und Script-Dateien wieder; selbst geänderte Einträge nur nach Rückfrage. Updates bleiben in ihrer Gruppe",
+            "Variablen als kompakte Tabelle mit Suche, Häkchen und eigenem Bearbeiten-Dialog; eingebaute Variablen heißen jetzt {{$Date}}, {{$Time}}, {{$User}}, {{$Computer}} und {{$Clipboard}}",
+            "Erfolgsmeldungen erscheinen kurz als Snackbar und verschwinden wieder; Fehler bleiben stehen",
+            "Der Favoriten-Stern folgt der Akzentfarbe"
+        }),
         new ReleaseNote(new Version(0, 26, 0), "Eigene Marktplatz-Quellen", new[]
         {
             "Marktplatz › Quellen: weitere Marktplätze einfach per Repository-URL hinzufügen (GitHub oder GitLab, auch Unterordner) – z. B. den Katalog deines Teams",

@@ -1,31 +1,29 @@
 # Power-Exec Marktplatz
 
-Dieser Ordner ist die Standardquelle des Marktplatzes in Power-Exec (Einstellungen › Inhalte › Marktplatz).
-Eigene Marktplätze sind genauso aufgebaut: ein Ordner (oder Repository) mit einer `index.json`. In Power-Exec unter
-Marktplatz › Quellen › „Quelle hinzufügen …“ die Repository-URL eintragen, z. B. `https://github.com/firma/px-katalog`
-oder einen Unterordner `https://github.com/firma/px-katalog/tree/main/marktplatz` (GitLab: `…/-/tree/main/ordner`).
-Das Repository muss öffentlich lesbar sein. Vor der ersten Installation aus einer neuen Quelle fragt Power-Exec einmal,
-ob du ihr vertraust.
+Dieser Ordner ist die mitgelieferte Quelle des Marktplatzes (Einstellungen › Inhalte › Marktplatz).
+Eigene Quellen sind genauso aufgebaut: ein öffentliches GitHub- oder GitLab-Repository (oder ein Ordner darin).
+In Power-Exec unter Marktplatz › Quellen › „Quelle hinzufügen …“ die URL eintragen, z. B.
+`https://github.com/firma/px-katalog` oder `https://github.com/firma/px-katalog/tree/main/marktplatz`
+(GitLab: `…/-/tree/main/ordner`).
 
-## index.json
+## Aufbau
 
-```json
-{
-  "Name": "Mein Marktplatz",
-  "Items": [
-    { "Id": "ticket", "Type": "Package", "Name": "Ticket-Paket", "Description": "…", "Category": "Pakete",
-      "Version": "1", "File": "packages/ticket.json",
-      "Variables": [ { "Name": "TicketUrl", "Description": "Adresse des Ticketsystems", "Example": "https://tickets.firma.local" } ] }
-  ]
-}
+Power-Exec liest die Ordner direkt – ein Index ist nicht nötig. **Eine Datei je Eintrag**, Ordner gruppieren
+(beim Herunterladen wird der Ordnername als Gruppe vorgeschlagen):
+
+```
+Links/Google-Sofortsuche.pxentry.json
+Matrix42/Ticket-aufrufen.pxentry.json
+Scripte/System/Get-SystemInfo.ps1
+Designs/Ozean.design.json
 ```
 
-| Type | Datei |
-|---|---|
-| `Entry`, `Package` | Export eigener Einträge (Rechtsklick › Exportieren, `*.pxentries.json`) |
-| `Design` | Designvorlage als JSON (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor …) |
-| `Script` | PowerShell-Script (`.ps1`) |
+| Datei | Inhalt | Landet in |
+|---|---|---|
+| `*.pxentry.json` | `{ "Entry": { … eigener Eintrag … }, "Variables": [ … ] }` | Eigene Einträge |
+| `*.ps1` | PowerShell-Script (`.SYNOPSIS` = Beschreibung) | Dokumente\Power-Exec\Marktplatz + Eigene Einträge |
+| `*.design.json` | Designvorlage (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor …) | Designvorlagen |
 
-- `File` ist relativ zur `index.json` (auch `../` ist erlaubt).
-- `Version` bei jeder Änderung erhöhen – installierte Elemente zeigen dann „Update verfügbar“.
-- `Variables`: Variablen, die beim Installieren abgefragt werden, falls es sie noch nicht gibt (`{{$Name}}` in den Einträgen).
+- `Variables` nennt Variablen (`{{$Name}}`), die der Eintrag braucht – Power-Exec fragt sie beim Herunterladen ab,
+  falls es sie noch nicht gibt: `{ "Name": "Matrix42Url", "Description": "…", "Example": "https://m42.firma.local" }`.
+- Updates erkennt Power-Exec automatisch, sobald sich eine Datei im Repository ändert.

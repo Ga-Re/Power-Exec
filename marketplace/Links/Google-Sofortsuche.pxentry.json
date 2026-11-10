@@ -1,0 +1,10 @@
+{
+  "Entry": {
+    "Name": "Google Sofortsuche",
+    "Kind": "Url",
+    "Target": "https://www.google.com/search?q={{Suchbegriff}}",
+    "Description": "Fragt den Begriff ab und öffnet die Treffer sofort im Standardbrowser.",
+    "Icon": "fluent:search"
+  },
+  "Variables": []
+}

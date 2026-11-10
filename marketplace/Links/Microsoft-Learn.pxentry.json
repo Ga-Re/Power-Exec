@@ -1,0 +1,10 @@
+{
+  "Entry": {
+    "Name": "Microsoft Learn / PS-Hilfe",
+    "Kind": "Url",
+    "Target": "https://learn.microsoft.com/en-us/search/?terms={{Cmdlet_oder_Fehler}}",
+    "Description": "PowerShell-Cmdlets oder Fehlercodes (z. B. 0x80070005) nachschlagen.",
+    "Icon": "fluent:book"
+  },
+  "Variables": []
+}

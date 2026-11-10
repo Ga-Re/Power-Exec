@@ -161,7 +161,7 @@ public sealed class VariableRowViewModel : ObservableObject
         });
         EditCommand = new RelayCommand(() => Edit(isNew: false));
         TestCommand = new RelayCommand(async () => await TestAsync(), () => !_testing);
-        CopyTokenCommand = new RelayCommand(() => { _page.CopyText(Token); Status = Token + " in die Zwischenablage kopiert."; });
+        CopyTokenCommand = new RelayCommand(() => { _page.CopyText(Token); Snackbar.Show(Token + " in die Zwischenablage kopiert."); });
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         WorkspaceValues = _page.WorkspaceNames.Select(n => new WorkspaceValueRow(this, n)).ToList();
     }

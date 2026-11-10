@@ -94,6 +94,8 @@ public partial class SettingsWindow : Window
     {
         Infrastructure.NavigationMotion.Attach(Nav); // weiches Auf-/Zuklappen, gleitender Auswahlbalken
         Infrastructure.QuietScrollBar.Attach(PageScroll); // Scrollbalken nur, wenn nötig und gerade gebraucht
+        Snackbar.Shown += OnSnackbar;
+        Closed += (_, _) => Snackbar.Shown -= OnSnackbar;
         Nav.Loaded += (_, _) => SyncNavigation();
         // Klick auf einen Eintrag oder „Zurück“: Abschnitt umschalten
         Nav.SelectionChanged += (_, _) =>
@@ -212,7 +214,41 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private ScrollViewer? FindScroll()
+    private DispatcherTimer? _snackbarTimer;
+
+    /// <summary>Für den Selbsttest: gerade sichtbare Snackbar-Meldung oder null.</summary>
+    internal string? SnackbarForTest => SnackbarHost.Visibility == Visibility.Visible ? SnackbarText.Text : null;
+
+    /// <summary>Kurze Rückmeldung unten einblenden und nach einigen Sekunden wieder ausblenden.</summary>
+    private void OnSnackbar(string message) => Dispatcher.BeginInvoke(() =>
+    {
+        SnackbarText.Text = message;
+        SnackbarHost.Visibility = Visibility.Visible;
+        var duration = SystemParameters.ClientAreaAnimation ? TimeSpan.FromMilliseconds(180) : TimeSpan.Zero;
+        SnackbarHost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, duration));
+        SnackbarShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(0, duration)
+        {
+            EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+        });
+        _snackbarTimer?.Stop();
+        _snackbarTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Math.Clamp(2.5 + message.Length / 30.0, 3.5, 8)) };
+        _snackbarTimer.Tick += (_, _) => HideSnackbar();
+        _snackbarTimer.Start();
+    });
+
+    private void HideSnackbar()
+    {
+        _snackbarTimer?.Stop();
+        var duration = SystemParameters.ClientAreaAnimation ? TimeSpan.FromMilliseconds(220) : TimeSpan.Zero;
+        var fade = new System.Windows.Media.Animation.DoubleAnimation(0, duration);
+        fade.Completed += (_, _) => { if (SnackbarHost.Opacity < 0.05) SnackbarHost.Visibility = Visibility.Collapsed; };
+        SnackbarHost.BeginAnimation(OpacityProperty, fade);
+        SnackbarShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(12, duration));
+    }
+
+    private void SnackbarClose_Click(object sender, RoutedEventArgs e) => HideSnackbar();
+
+        private ScrollViewer? FindScroll()
     {
         static ScrollViewer? Find(DependencyObject d)
         {

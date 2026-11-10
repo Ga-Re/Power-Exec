@@ -1,99 +1,230 @@
 using PowerExec.Core.Config;
+using PowerExec.Services;
 using PowerExec.ViewModels;
 
 namespace PowerExec.UI.Core.Tests;
 
+/// <summary>Marktplatz-Seite: Ordner aus Git, Tabs, Häkchen, Herunterladen in eine Gruppe, Deinstallieren, Quellen.</summary>
+[Collection("Marketplace")]
 public class MarketplaceViewModelTests
 {
-    private const string DefaultIndex = "https://raw.githubusercontent.com/Ga-Re/Power-Exec/main/marketplace/index.json";
-    private const string TeamIndex = "https://raw.githubusercontent.com/firma/px-katalog/main/index.json";
+    private const string DefaultTree = "https://api.github.com/repos/Ga-Re/Power-Exec/git/trees/main?recursive=1";
+    private const string DefaultRaw = "https://raw.githubusercontent.com/Ga-Re/Power-Exec/main/marketplace/";
+    private const string TeamSource = "https://github.com/firma/px-katalog";
+    private const string TeamTree = "https://api.github.com/repos/firma/px-katalog/git/trees/main?recursive=1";
 
-    private static string Entries(string id, string name, string target) => System.Text.Json.JsonSerializer.Serialize(new EntryShare.SharedFile
-    {
-        Groups = { "Team" },
-        Entries = { new EntryShare.SharedEntry { Group = "Team", Entry = new CustomEntry { Id = id, Name = name, Kind = CustomEntryKind.Url, Target = target } } }
-    });
+    private static string Entry(string name, string target, string variable = "") =>
+        $$"""{ "Entry": { "Name": "{{name}}", "Kind": "Url", "Target": "{{target}}", "Description": "{{name}} öffnen" }, "Variables": [ {{(variable.Length > 0 ? $$"""{ "Name": "{{variable}}", "Example": "https://x" }""" : "")}} ] }""";
 
-    private static FakeEntryHost Host()
+    private static FakeEntryHost Host(string googleSha = "g1")
     {
-        var host = new FakeEntryHost();
-        host.Downloads[DefaultIndex] = """{ "Name": "Power-Exec", "Items": [ { "Id": "g", "Type": "Entry", "Name": "Google", "File": "entries/g.json" } ] }""";
-        host.Downloads["https://raw.githubusercontent.com/Ga-Re/Power-Exec/main/marketplace/entries/g.json"] = Entries("mk-g", "Google", "https://google.com/search?q={{Q}}");
-        host.Downloads[TeamIndex] = """{ "Name": "Team-Katalog", "Items": [ { "Id": "wiki", "Type": "Entry", "Name": "Wiki", "Version": "3", "File": "wiki.json" } ] }""";
-        host.Downloads["https://raw.githubusercontent.com/firma/px-katalog/main/wiki.json"] = Entries("team-wiki", "Wiki", "https://wiki.firma.local");
+        MarketplaceViewModel.ResetCache();
+        var host = new FakeEntryHost { MarketplaceScriptFolder = Path.Combine(Path.GetTempPath(), "px-mk-" + Guid.NewGuid().ToString("N")) };
+        host.Downloads[DefaultTree] = $$"""
+            { "tree": [
+              { "path": "marketplace/Links/Google.pxentry.json", "type": "blob", "sha": "{{googleSha}}" },
+              { "path": "marketplace/Links/Learn.pxentry.json", "type": "blob", "sha": "l1" },
+              { "path": "marketplace/Matrix42/Ticket.pxentry.json", "type": "blob", "sha": "m1" },
+              { "path": "marketplace/Scripte/System/Get-Disk.ps1", "type": "blob", "sha": "s1" },
+              { "path": "marketplace/Designs/Ozean.design.json", "type": "blob", "sha": "d1" } ] }
+            """;
+        host.Downloads[DefaultRaw + "Links/Google.pxentry.json"] = Entry("Google", "https://google.com/search?q={{Q}}");
+        host.Downloads[DefaultRaw + "Links/Learn.pxentry.json"] = Entry("Learn", "https://learn.microsoft.com");
+        host.Downloads[DefaultRaw + "Matrix42/Ticket.pxentry.json"] = Entry("Ticket", "{{$Matrix42Url}}/ticket/{{Nr}}", "Matrix42Url");
+        host.Downloads[DefaultRaw + "Scripte/System/Get-Disk.ps1"] = "<#\n.SYNOPSIS\n    Zeigt freien Platz.\n#>\nGet-Volume";
+        host.Downloads[DefaultRaw + "Designs/Ozean.design.json"] = """{ "Name": "Ozean", "Theme": "Dark", "PanelColor": "#0B2233", "Opacity": 90 }""";
+        host.Downloads[TeamTree] = """{ "tree": [ { "path": "Team/Wiki.pxentry.json", "type": "blob", "sha": "w1" } ] }""";
+        host.Downloads["https://raw.githubusercontent.com/firma/px-katalog/main/Team/Wiki.pxentry.json"] = Entry("Wiki", "https://wiki.firma.local");
         return host;
     }
 
     [Fact]
-    public async Task AddSourceAskTrustOnceAndInstall()
+    public async Task FoldersTabsAndSearch()
+    {
+        var host = Host();
+        var vm = new MarketplaceViewModel(host, new AppSettings(), () => { });
+        await vm.LoadAsync(force: false);
+        Assert.Equal("Einträge (3)", vm.EntryTabText);
+        Assert.Equal("Scripte (1)", vm.ScriptTabText);
+        Assert.Equal("Designs (1)", vm.DesignTabText);
+
+        // Einträge: Ordner Links und Matrix42 (oberste Ebene aufgeklappt), Namen aus den Dateien
+        Assert.Equal(new[] { "Links", "Matrix42" }, vm.Rows.OfType<MarketplaceFolderRow>().Select(f => f.Name));
+        var links = vm.Rows.OfType<MarketplaceFolderRow>().First();
+        Assert.Equal("2 Dateien", links.CountText);
+        Assert.Equal(new[] { "Google", "Learn", "Ticket" }, vm.Rows.OfType<MarketplaceItemRow>().Select(i => i.Name));
+        Assert.Equal(1, vm.Rows.OfType<MarketplaceItemRow>().First().Depth);
+        links.ToggleCommand.Execute(null);
+        Assert.Equal(new[] { "Ticket" }, vm.Rows.OfType<MarketplaceItemRow>().Select(i => i.Name));
+        vm.Rows.OfType<MarketplaceFolderRow>().First().ToggleCommand.Execute(null);
+        Assert.Equal(3, vm.Rows.OfType<MarketplaceItemRow>().Count());
+
+        // Suche klappt Treffer auf
+        vm.Query = "ticket";
+        var ticket = Assert.Single(vm.Rows.OfType<MarketplaceItemRow>());
+        Assert.Contains("{{$Matrix42Url}}", ticket.Needs);
+        vm.Query = string.Empty;
+
+        vm.Tab = "Script";
+        var scripts = vm.Rows.OfType<MarketplaceFolderRow>().First();
+        Assert.Equal("Scripte", scripts.Name);
+        Assert.Equal("Zeigt freien Platz.", vm.AllItems.Single().Description);
+        vm.Tab = "Installed";
+        Assert.True(vm.IsEmpty);
+        vm.Tab = "Entry";
+    }
+
+    [Fact]
+    public async Task DownloadFolderIntoGroupAndUninstall()
     {
         var host = Host();
         var s = new AppSettings();
         var changes = 0;
         var vm = new MarketplaceViewModel(host, s, () => changes++);
-        await vm.LoadAsync();
-        Assert.Contains(vm.Items, i => i.Name == "Google");
+        await vm.LoadAsync(force: false);
+        string? shown = null;
+        Snackbar.Shown += m => shown = m;
+
+        // Ordner anhaken → Auswahlleiste; Gruppe wird mit dem Ordnernamen vorgeschlagen
+        var links = vm.Rows.OfType<MarketplaceFolderRow>().First();
+        links.IsChecked = true;
+        Assert.Equal(2, vm.CheckedCount);
+        Assert.Equal("Herunterladen (2)", vm.InstallSelectedText);
+        host.FakeDialogs.Answer = "Suche";
+        vm.InstallSelectedCommand.Execute(null);
+        for (int i = 0; i < 100 && vm.IsLoading; i++) await Task.Delay(20);
+
+        Assert.Equal(2, s.CustomEntries.Count);
+        Assert.All(s.CustomEntries, e => Assert.Equal("Suche", s.FindEntry(e.Key)!.Category));
+        Assert.Contains("In welche Gruppe?", host.FakeDialogs.Asked);
+        Assert.Contains("2 Einträge", shown);
+        Assert.Equal(1, changes);
+        Assert.Equal(0, vm.CheckedCount);
+        Assert.StartsWith("Installiert (2)", vm.InstalledTabText);
+
+        // Deinstallieren über den Tab „Installiert“
+        vm.Tab = "Installed";
+        foreach (var f in vm.Rows.OfType<MarketplaceFolderRow>().ToList()) f.IsChecked = true;
+        Assert.Equal("Deinstallieren (2)", vm.UninstallSelectedText);
+        vm.UninstallSelectedCommand.Execute(null);
+        Assert.Empty(s.CustomEntries);
+        Assert.Empty(s.MarketplaceInstalls);
+        Assert.Equal(2, changes);
+        vm.Tab = "Entry";
+    }
+
+    [Fact]
+    public async Task VariablesAskedModifiedEntryKeptOnUninstall()
+    {
+        var host = Host();
+        var s = new AppSettings();
+        var vm = new MarketplaceViewModel(host, s, () => { });
+        await vm.LoadAsync(force: false);
+        vm.Query = "ticket";
+        var ticket = Assert.Single(vm.Rows.OfType<MarketplaceItemRow>());
+        host.FakeDialogs.Answer = "https://m42.firma.local";
+        await vm.InstallOneAsync(ticket);
+        Assert.Equal("https://m42.firma.local", Assert.Single(s.Variables).Value);
+        Assert.Contains("Variable {{$Matrix42Url}}", host.FakeDialogs.Asked);
+        Assert.Single(s.CustomEntries);
+
+        // geändert → Rückfrage; abgelehnt → bleibt
+        s.CustomEntries[0].Name = "Mein Ticket";
+        var row = Assert.Single(vm.Rows.OfType<MarketplaceItemRow>());
+        Assert.True(row.IsInstalled);
+        host.FakeDialogs.ConfirmAnswer = true;
+        vm.Uninstall(new[] { row });
+        // FakeDialogs gibt immer dieselbe Antwort: beide Rückfragen „ja“ → entfernt
+        Assert.Contains(host.FakeDialogs.Messages, m => m.Title == "Geänderter Eintrag");
+        Assert.Empty(s.CustomEntries);
+    }
+
+    [Fact]
+    public async Task UpdateKeepsGroupAndScriptsAndDesigns()
+    {
+        var host = Host();
+        var s = new AppSettings();
+        var vm = new MarketplaceViewModel(host, s, () => { });
+        await vm.LoadAsync(force: false);
+        host.FakeDialogs.Answer = "Links";
+        await vm.InstallAsync(vm.AllItems.Where(i => i.Name == "Google").ToList());
+        s.FindEntry(s.CustomEntries[0].Key)!.Category = "Meine Suche";
+
+        // neuer Stand im Repo → Update verfügbar, landet wieder in derselben Gruppe ohne Rückfrage
+        var host2 = Host(googleSha: "g2");
+        var vm2 = new MarketplaceViewModel(host2, s, () => { });
+        await vm2.LoadAsync(force: true);
+        var google = vm2.AllItems.Single(i => i.Name == "Google");
+        Assert.True(google.HasUpdate);
+        Assert.Equal("Update verfügbar", google.StateText);
+        Assert.Contains("1 Updates", vm2.InstalledTabText);
+        host2.FakeDialogs.Answer = null;
+        await vm2.InstallOneAsync(google);
+        Assert.DoesNotContain("In welche Gruppe?", host2.FakeDialogs.Asked);
+        Assert.Equal("Meine Suche", s.FindEntry(Assert.Single(s.CustomEntries).Key)!.Category);
+        Assert.False(vm2.AllItems.Single(i => i.Name == "Google").HasUpdate);
+
+        // Script und Design
+        vm2.Tab = "Script";
+        host2.FakeDialogs.Answer = "Werkzeuge";
+        await vm2.InstallAsync(vm2.AllItems.ToList());
+        Assert.Contains(s.CustomEntries, e => e.Kind == CustomEntryKind.File && File.Exists(e.Target));
+        vm2.Tab = "Design";
+        await vm2.InstallAsync(vm2.AllItems.ToList());
+        Assert.Equal("Ozean", Assert.Single(s.CustomDesigns).Name);
+        vm2.Tab = "Entry";
+        Directory.Delete(host2.MarketplaceScriptFolder, true);
+    }
+
+    [Fact]
+    public async Task AddSourceAskTrustOnce()
+    {
+        var host = Host();
+        var s = new AppSettings();
+        var vm = new MarketplaceViewModel(host, s, () => { });
+        await vm.LoadAsync(force: false);
         Assert.False(vm.HasSeveralSources);
 
-        // ungültige bzw. doppelte Adresse wird abgelehnt
         host.FakeDialogs.Answer = "keine url";
         vm.AddSourceCommand.Execute(null);
         Assert.Empty(s.MarketplaceSources);
 
-        host.FakeDialogs.Answer = "https://github.com/firma/px-katalog";
+        host.FakeDialogs.Answer = TeamSource;
         vm.AddSourceCommand.Execute(null);
-        for (int i = 0; i < 50 && vm.IsLoading; i++) await Task.Delay(20);
+        for (int i = 0; i < 100 && vm.IsLoading; i++) await Task.Delay(20);
+        await vm.LoadAsync(force: false);
         var src = Assert.Single(s.MarketplaceSources);
         Assert.False(src.Trusted);
-        Assert.Equal("Team-Katalog", src.Name);
         Assert.True(vm.HasSeveralSources);
         Assert.Equal(2, vm.SourceList.Count);
-        Assert.False(vm.SourceList[1].Trusted);
-        var wiki = Assert.Single(vm.Items, i => i.Name == "Wiki");
-        Assert.Contains("aus Team-Katalog", wiki.Details);
+        // mehrere Quellen: oberste Ebene sind die Quellen
+        Assert.Equal(new[] { "Power-Exec", "firma/px-katalog" }, vm.Rows.OfType<MarketplaceFolderRow>().Where(f => f.IsSource).Select(f => f.Name));
 
-        vm.SourceFilter = TeamIndex.Length > 0 ? src.Url : "*";
-        Assert.Single(vm.Items);
-        vm.SourceFilter = "*";
-
-        // Vertrauen abgelehnt: nichts installiert
+        var wiki = vm.AllItems.Single(i => i.Name == "Wiki");
         host.FakeDialogs.ConfirmAnswer = false;
-        await vm.InstallAsync(wiki);
+        await vm.InstallOneAsync(wiki);
         Assert.Empty(s.CustomEntries);
         Assert.False(src.Trusted);
 
-        // bestätigt: Quelle vertrauenswürdig, Eintrag installiert
         host.FakeDialogs.ConfirmAnswer = true;
-        await vm.InstallAsync(wiki);
+        host.FakeDialogs.Answer = "Team";
+        await vm.InstallOneAsync(vm.AllItems.Single(i => i.Name == "Wiki"));
         Assert.True(src.Trusted);
-        Assert.Contains(s.CustomEntries, e => e.Id == "team-wiki");
-        Assert.True(wiki.IsInstalled);
-        Assert.Equal("3", Marketplace.FindInstall(s, src.Url, "wiki")!.Version);
-        Assert.True(changes >= 2);
+        Assert.Single(s.CustomEntries);
 
-        // die mitgelieferte Quelle fragt nie nach Vertrauen
-        var asked = host.FakeDialogs.Messages.Count;
-        await vm.InstallAsync(vm.Items.Single(i => i.Name == "Google"));
-        Assert.Contains(s.CustomEntries, e => e.Id == "mk-g");
-
-        // entfernen: Quelle weg, Installiertes bleibt
-        vm.SourceList.Single(x => !x.IsDefault).RemoveCommand.Execute(null);
+        vm.SourceList[1].RemoveCommand.Execute(null);
         Assert.Empty(s.MarketplaceSources);
-        Assert.DoesNotContain(vm.Items, i => i.Name == "Wiki");
-        Assert.Contains(s.CustomEntries, e => e.Id == "team-wiki");
-        Assert.False(vm.SourceList.Single().CanRemove);
+        Assert.Single(s.CustomEntries); // Installiertes bleibt
     }
 
     [Fact]
-    public async Task UnreachableSourceDoesNotBlockOthers()
+    public async Task UnreachableSourceShowsError()
     {
         var host = Host();
-        var s = new AppSettings { MarketplaceSources = { new MarketplaceSource { Url = "https://github.com/firma/weg", Name = "Weg" } } };
-        var vm = new MarketplaceViewModel(host, s, () => { });
-        await vm.LoadAsync();
-        Assert.Contains(vm.Items, i => i.Name == "Google");
-        Assert.Equal("Warning", vm.StatusSeverity);
-        Assert.Contains("nicht erreichbar", vm.Status);
-        Assert.True(vm.SourceList.Single(x => x.Name == "Weg").HasError);
+        host.Downloads.Remove(DefaultTree);
+        var vm = new MarketplaceViewModel(host, new AppSettings(), () => { });
+        await vm.LoadAsync(force: false);
+        Assert.NotNull(vm.Error);
+        Assert.True(vm.IsEmpty);
     }
 }

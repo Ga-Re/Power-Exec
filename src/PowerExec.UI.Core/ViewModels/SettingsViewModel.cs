@@ -1362,13 +1362,15 @@ public sealed class SettingsViewModel : ObservableObject
         if (folder == null) { SamplesStatus = "Der Beispielordner konnte nicht angelegt werden – Einzelheiten im Protokoll."; return; }
         if (Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))
         {
-            SamplesStatus = $"Beispiele liegen in {folder}; der Ordner ist schon eingebunden.";
+            SamplesStatus = null;
+            Snackbar.Show($"Beispiele liegen in {folder}; der Ordner ist schon eingebunden.");
             return;
         }
         var name = "Beispiele";
         for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = $"Beispiele {i}";
         AddGroup(new NewGroupSpec(name, IconRef.None, folder, string.Empty, null), name, null);
-        SamplesStatus = $"Gruppe „{name}“ mit den Beispielscripten aus {folder} hinzugefügt.";
+        SamplesStatus = null;
+        Snackbar.Show($"Gruppe „{name}“ mit den Beispielscripten aus {folder} hinzugefügt.");
     });
 
     private string? _samplesStatus;

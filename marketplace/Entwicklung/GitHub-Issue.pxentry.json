@@ -1,0 +1,10 @@
+{
+  "Entry": {
+    "Name": "GitHub Issue",
+    "Kind": "Url",
+    "Target": "https://github.com/{{Organisation}}/{{Repository}}/issues/{{IssueNr}}",
+    "Description": "Sprung in ein GitHub-Ticket.",
+    "Icon": "fluent:bug"
+  },
+  "Variables": []
+}

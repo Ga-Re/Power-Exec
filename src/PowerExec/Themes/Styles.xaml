@@ -83,6 +83,37 @@
         </Setter>
     </Style>
 
+    <!-- Tab-Kopf (Marktplatz): Text mit Akzent-Unterstrich -->
+    <Style x:Key="TabHeader" TargetType="RadioButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Text.Secondary}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,4,0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Padding="12,0">
+                        <Grid Height="36">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                            <Border x:Name="Line" Height="3" CornerRadius="2" Width="20" VerticalAlignment="Bottom" Margin="0,0,0,2"
+                                    Background="{DynamicResource Accent}" Visibility="Collapsed"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Line" Property="Visibility" Value="Visible"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Segment-Schaltfläche (Ausführen als / Ziel) -->
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
