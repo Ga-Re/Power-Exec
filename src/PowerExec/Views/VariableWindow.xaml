@@ -85,10 +85,11 @@
                                Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
                 </StackPanel>
             </DockPanel>
-            <DockPanel Style="{StaticResource SubSetting}">
-                <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
+            <DockPanel Style="{StaticResource SubSetting}" Margin="0,8,0,4">
+                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Beschreibung (optional)'}" Margin="0,0,0,6"/>
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" AcceptsReturn="True" TextWrapping="Wrap"
+                         MinHeight="64" MaxHeight="160" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
                          AutomationProperties.Name="{l:T 'Beschreibung'}"/>
-                <TextBlock Text="{l:T 'Beschreibung (optional)'}" VerticalAlignment="Center"/>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}">
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Jetzt ermitteln'}" Command="{Binding TestCommand}" VerticalAlignment="Center"

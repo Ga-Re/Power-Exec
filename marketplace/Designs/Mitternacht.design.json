@@ -1,0 +1,14 @@
+{
+  "Key": "",
+  "Name": "Mitternacht",
+  "Description": "Dunkelblau getönt",
+  "Theme": "Dark",
+  "PanelColor": "#14213D",
+  "Opacity": 95,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": ""
+}

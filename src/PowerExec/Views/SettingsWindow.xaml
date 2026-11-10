@@ -1744,8 +1744,10 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Width="150" Margin="0,0,8,8">
+                                        <!-- Feste Kachelgröße; das Löschen-Kreuz liegt innerhalb der Kachel oben rechts -->
+                                        <Grid Width="150" Height="150" Margin="0,0,8,8">
                                         <Button Command="{Binding ApplyCommand}" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
+                                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                                                 AutomationProperties.Name="{Binding Name}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
@@ -1760,7 +1762,7 @@
                                                                 </StackPanel>
                                                             </Border>
                                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding BackdropText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}"/>
+                                                            <TextBlock Text="{Binding BackdropText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
                                                         </StackPanel>
                                                     </Border>
@@ -1779,8 +1781,8 @@
                                             </Button.Template>
                                         </Button>
                                         <!-- Eigene Designs: löschen -->
-                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="24" Height="24" MinHeight="24" Padding="0" Margin="0,4,4,0"
-                                                   HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding DeleteCommand}"
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="24" Height="24" MinHeight="24" MinWidth="24" Padding="0" Margin="0,12,12,0"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding DeleteCommand}" Background="{DynamicResource Bg.CardAlt}"
                                                    ToolTip="{l:T 'Eigenes Design löschen'}" AutomationProperties.Name="{l:T 'Eigenes Design löschen'}"
                                                    Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
                                             <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>

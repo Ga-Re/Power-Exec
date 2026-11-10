@@ -195,6 +195,14 @@ public static class FluentTheme
         res["TextOnAccentFillColorSecondary"] = WithAlpha(onAccent, 0xB3);
         res["TextOnAccentFillColorPrimaryBrush"] = Solid(onAccent);
         res["TextOnAccentFillColorSecondaryBrush"] = Solid(WithAlpha(onAccent, 0xB3));
+        // Hintergrund der Akzent-Schaltflächen ausdrücklich setzen: in eigenständigen Dialogen (Eingabe, Variable) blieb er
+        // sonst auf der hellen Vorgabe von WPF UI – weiße Schrift auf fast weißem Grund
+        res["AccentFillColorPrimary"] = hover;
+        res["AccentFillColorPrimaryBrush"] = Solid(hover);
+        res["AccentButtonBackground"] = Solid(accent);
+        res["AccentButtonBackgroundPointerOver"] = Solid(WithAlpha(accent, 229));
+        res["AccentButtonBackgroundPressed"] = Solid(WithAlpha(accent, 204));
+        res["AccentButtonBorderBrushPressed"] = Solid(accent);
         res["AccentButtonForeground"] = Solid(onAccent);
         res["AccentButtonForegroundPointerOver"] = Solid(onAccent);
         res["AccentButtonForegroundPressed"] = Solid(WithAlpha(onAccent, 0xB3));

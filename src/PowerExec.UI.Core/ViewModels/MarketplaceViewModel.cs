@@ -402,10 +402,10 @@ public sealed class MarketplaceViewModel : ObservableObject
             {
                 var suggestion = folder.Length > 0 ? folder.Split('/')[^1] : L.T("Marktplatz");
                 var count = loaded.Count(l => l.Row.File.GroupFolder == folder && l.Row.File.Type != MarketplaceItemType.Design);
-                var group = _app.Dialogs.Ask(L.T("In welche Gruppe?"),
-                    L.F("{0} aus „{1}“ kommen zu den eigenen Einträgen in diese Gruppe (vorhandene oder neue, Untergruppen mit /):",
-                        count == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", count), folder.Length > 0 ? folder : L.T("oberste Ebene")), suggestion, L.T("Übernehmen"),
-                    g => GroupManager.Normalize(g).Length == 0 ? L.T("Bitte eine Gruppe angeben.") : null);
+                var group = _app.Dialogs.PickGroup(L.T("In welche Gruppe?"),
+                    L.F("{0} aus „{1}“ kommen zu den eigenen Einträgen in diese Gruppe.",
+                        count == 1 ? L.T("1 Eintrag") : L.F("{0} Einträge", count), folder.Length > 0 ? folder : L.T("oberste Ebene")),
+                    GroupManager.All(_s).ToList(), suggestion, _app.SettingsDialogOwner);
                 if (group == null) return;
                 groups[folder] = group;
             }

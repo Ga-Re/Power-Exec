@@ -222,7 +222,7 @@
                 <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top">
                     <TextBlock Text="{Binding PathText}" Style="{StaticResource Caption}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
                     <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Art ändern …'}" Command="{Binding ChangeKindCommand}" FontSize="12" Padding="6,0" MinHeight="26" Height="26"
-                            HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding HasEntry, Converter={StaticResource Vis}}" />
+                            HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding CanChangeKind, Converter={StaticResource Vis}}" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <TextBox x:Name="NameBox" Text="{Binding HeaderName, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding HeaderNameHint}" FontSize="18" FontWeight="SemiBold"

@@ -72,6 +72,9 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
     public string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) =>
         OuPickerWindow.Pick(roots, current, owner as Window);
 
+    public string? PickGroup(string heading, string prompt, IReadOnlyList<string> groups, string suggestion, object? owner = null) =>
+        testAnswer()?.Invoke() ?? GroupPickerWindow.Pick(heading, prompt, groups, suggestion, owner as Window);
+
     public bool EditVariable(object row, object? owner = null) =>
         row is ViewModels.VariableRowViewModel r && VariableWindow.Edit(r, owner as Window);
 

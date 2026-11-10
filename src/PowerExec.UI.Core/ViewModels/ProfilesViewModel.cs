@@ -342,7 +342,8 @@ public sealed class ProfilesViewModel : ObservableObject
         DeleteCommand = new RelayCommand(Delete, () => Profiles.Count > 1);
         SaveCommand = new RelayCommand(Save, () => !ShowKindPicker && (Entry == null || Entry.IsValid) && Profiles.All(p => p.Options?.OptionsValid != false));
         PickKindCommand = new RelayCommand(p => PickKind(p?.ToString()));
-        ChangeKindCommand = new RelayCommand(() => ShowKindPicker = true, () => Entry != null);
+        // Die Art lässt sich nur beim Anlegen wählen bzw. korrigieren – bestehende Einträge behalten ihre Art
+        ChangeKindCommand = new RelayCommand(() => ShowKindPicker = true, () => Entry != null && IsNew);
         BackToFormCommand = new RelayCommand(() => ShowKindPicker = false, () => !IsNew || _kindChosen);
         UseClipboardCommand = new RelayCommand(UseClipboard, () => ClipboardSuggestion != null);
         CatalogCommand = new RelayCommand(() => { AlternativeRequested = "catalog"; CloseRequested?.Invoke(); });
@@ -396,6 +397,8 @@ public sealed class ProfilesViewModel : ObservableObject
     public IReadOnlyList<KindTile> Tiles => CustomEntryViewModel.Tiles;
     public ICommand PickKindCommand { get; }
     public ICommand ChangeKindCommand { get; }
+    /// <summary>„Art ändern …“ nur bei neuen Einträgen.</summary>
+    public bool CanChangeKind => Entry != null && IsNew;
     public ICommand BackToFormCommand { get; }
     public ICommand UseClipboardCommand { get; }
     public ICommand CatalogCommand { get; }

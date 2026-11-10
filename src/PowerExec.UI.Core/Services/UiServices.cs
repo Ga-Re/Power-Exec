@@ -70,6 +70,14 @@ public interface IDialogs
     /// <summary>Organisationseinheit aus dem OU-Baum wählen (Distinguished Name); null = abgebrochen.</summary>
     string? PickOrganizationalUnit(IReadOnlyList<OuNode> roots, string? current, object? owner = null) => null;
 
+    /// <summary>
+    /// Gruppe wählen: eine vorhandene aus <paramref name="groups"/> oder eine neue (vorbelegt mit <paramref name="suggestion"/>).
+    /// null = abgebrochen. Ohne eigene Oberfläche: Texteingabe.
+    /// </summary>
+    string? PickGroup(string heading, string prompt, IReadOnlyList<string> groups, string suggestion, object? owner = null) =>
+        Ask(heading, prompt, suggestion, PowerExec.Core.Localization.L.T("Übernehmen"),
+            g => PowerExec.Core.Config.GroupManager.Normalize(g).Length == 0 ? PowerExec.Core.Localization.L.T("Bitte eine Gruppe angeben.") : null);
+
     /// <summary>Variable im Dialog bearbeiten (DataContext ist die Zeile). true = übernehmen.</summary>
     bool EditVariable(object row, object? owner = null) => true;
 

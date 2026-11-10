@@ -49,11 +49,13 @@ public class SettingsViewModelTests
         Assert.Equal("Aktuell: Glas", vm.CurrentPresetText);
         Assert.True(vm.DesignPresets.Single(p => p.Preset.Key == "glass").IsCurrent);
 
-        vm.DesignPresets.Single(p => p.Preset.Key == "nordic").ApplyCommand.Execute(null);
-        Assert.Equal("#88C0D0", vm.Panel.AccentColor);
-        Assert.False(vm.UseWindowsAccent);
+        vm.DesignPresets.Single(p => p.Preset.Key == "oled").ApplyCommand.Execute(null);
+        Assert.Equal("#000000", vm.Panel.PanelColor);
+        Assert.True(vm.UseWindowsAccent);
+        Assert.Equal(3, vm.DesignPresets.Count(p => !p.IsCustom)); // weitere Designs im Marktplatz
 
-        vm.Panel.PanelOpacity = 61;
+        vm.Panel.PanelOpacity = 61; // OLED ist Vollton – Deckkraft ändern reicht nicht, also zusätzlich die Farbe
+        vm.Panel.PanelColor = "#2E3440";
         Assert.Equal("Aktuell: eigene Einstellungen", vm.CurrentPresetText);
         host.FakeDialogs.Answer = "Mein Nord";
         vm.SaveDesignCommand.Execute(null);
