@@ -8,6 +8,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 28, 0), L.T("Englische Oberfläche"), new[]
+        {
+            L.T("Power-Exec gibt es jetzt auch auf Englisch: die Sprache folgt Windows (Deutsch bei deutschem Windows, sonst Englisch) und lässt sich unter Einstellungen › Allgemein › Sprache umstellen"),
+            L.T("Alle Fenster, Meldungen, Werkzeug-Vorlagen und Versionshinweise sind übersetzt; die Suche versteht englische Filter wie type:, group: und is: – die deutschen gehen weiter"),
+            L.T("Nach dem Umstellen der Sprache startet Power-Exec auf Knopfdruck neu")
+        }),
         new ReleaseNote(new Version(0, 27, 0), L.T("Marktplatz aus Git-Ordnern, Variablen-Tabelle, Snackbars"), new[]
         {
             L.T("Marktplatz: statt Paketen Ordner aus dem Git-Repository – aufklappbar, mit Tabs Einträge · Scripte · Designs · Installiert und kompakter Liste"),

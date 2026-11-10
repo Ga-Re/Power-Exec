@@ -285,8 +285,8 @@ public sealed class FolderViewModel : ObservableObject
         {
             var visible = Rows.Count(r => r.IsVisibleInPanel);
             var selectable = Rows.Count(r => !r.IsLocked);
-            return $"{(Recursive ? "Mit Unterordnern" : "Nur oberste Ebene")} · {selectable} gefunden · {visible} im Panel · neue Dateien: " +
-                   (RequireApproval ? L.T("nach Freigabe") : "automatisch");
+            return L.F("{0} · {1} gefunden · {2} im Panel · neue Dateien: {3}", Recursive ? L.T("Mit Unterordnern") : L.T("Nur oberste Ebene"),
+                selectable, visible, RequireApproval ? L.T("nach Freigabe") : L.T("automatisch"));
         }
     }
 
