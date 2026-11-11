@@ -99,6 +99,38 @@ jobs:
           retention-days: 5
           if-no-files-found: ignore
 
+      # Bildschirmfotos zusätzlich verkleinert ins Protokoll (JPEG, Base64) – für Umgebungen, die Artefakte nicht laden
+      # können (z. B. KI-Sitzungen mit eingeschränktem Netz). Nur wenn die Commit-Nachricht [screens] enthält.
+      - name: Bildschirmfotos ins Protokoll
+        if: always() && contains(github.event.head_commit.message, '[screens]')
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.Drawing
+          $dir = Join-Path $env:RUNNER_TEMP 'screens'
+          if (-not (Test-Path $dir)) { Write-Host 'Keine Bildschirmfotos vorhanden.'; exit 0 }
+          $codec = [System.Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object MimeType -eq 'image/jpeg'
+          $quality = New-Object System.Drawing.Imaging.EncoderParameters 1
+          $quality.Param[0] = New-Object System.Drawing.Imaging.EncoderParameter ([System.Drawing.Imaging.Encoder]::Quality, [long]72)
+          foreach ($file in Get-ChildItem $dir -Filter *.png | Sort-Object Name) {
+            $img = [System.Drawing.Image]::FromFile($file.FullName)
+            $scale = [Math]::Min(1.0, 1200 / [Math]::Max($img.Width, $img.Height))
+            $w = [Math]::Max(1, [int]($img.Width * $scale)); $h = [Math]::Max(1, [int]($img.Height * $scale))
+            $bmp = New-Object System.Drawing.Bitmap $w, $h
+            $g = [System.Drawing.Graphics]::FromImage($bmp)
+            $g.InterpolationMode = 'HighQualityBicubic'
+            $g.Clear([System.Drawing.Color]::FromArgb(96, 96, 104))   # durchsichtige Flächen neutral hinterlegen
+            $g.DrawImage($img, 0, 0, $w, $h)
+            $ms = New-Object System.IO.MemoryStream
+            $bmp.Save($ms, $codec, $quality)
+            $g.Dispose(); $bmp.Dispose(); $img.Dispose()
+            $b64 = [Convert]::ToBase64String($ms.ToArray())
+            Write-Host "::group::$($file.BaseName)"
+            Write-Host "SHOT-BEGIN $($file.BaseName) $w $h"
+            for ($i = 0; $i -lt $b64.Length; $i += 4000) { Write-Host ('SHOT-DATA ' + $b64.Substring($i, [Math]::Min(4000, $b64.Length - $i))) }
+            Write-Host "SHOT-END $($file.BaseName)"
+            Write-Host '::endgroup::'
+          }
+
       - name: Veröffentlichen (Programmordner für den Installer)
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
