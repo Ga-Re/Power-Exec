@@ -63,6 +63,30 @@ public class PanelSlideTests
     }
 
     [Fact]
+    public void StaleTargetIsClippedAgainstANewWorkArea()
+    {
+        // Taskleiste wandert nach rechts: der Arbeitsbereich wird schmaler. Eine Ziellage vom alten Stand ragt dann
+        // hinaus und würde am Ende des Ausfahrens zugeschnitten bleiben – deshalb wird die Geometrie vor jedem
+        // Ausfahren neu bestimmt.
+        var workRightTaskbar = new Rectangle(0, 0, 1872, 1080);
+        var visible = PanelSlide.Visible(Panel, workRightTaskbar);
+        Assert.NotEqual(Panel.Size, visible.Size);
+        Assert.Equal(new Rectangle(0, 0, 360, 1016), visible);
+    }
+
+    [Fact]
+    public void SettledAllowsOnlyRoundingDifferences()
+    {
+        Assert.True(PanelSlide.IsSettled(Panel, Panel, 0));
+        Assert.False(PanelSlide.IsSettled(Panel with { X = Panel.X + 60 }, Panel, 2));  // nicht ganz ausgefahren
+        Assert.False(PanelSlide.IsSettled(Panel with { Width = 500 }, Panel, 0));       // fremd bemessen
+        Assert.True(PanelSlide.IsSettled(Panel with { Width = 401, Height = 1015 }, Panel, 2));
+        Assert.True(PanelSlide.IsSettled(Panel with { X = Panel.X - 1 }, Panel, 2));
+        Assert.False(PanelSlide.IsSettled(Panel with { Width = 401 }, Panel, 0));
+        Assert.False(PanelSlide.IsSettled(Panel with { X = Panel.X - 1 }, Panel, 0));
+    }
+
+    [Fact]
     public void VisiblePartIsRelativeToTheWindow()
     {
         Assert.Equal(new Rectangle(0, 0, 400, 1016), PanelSlide.Visible(Panel, Work));

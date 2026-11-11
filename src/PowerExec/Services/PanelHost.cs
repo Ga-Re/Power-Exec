@@ -109,6 +109,17 @@ public sealed class PanelHost : IPanelView
         KeepTriggersClickable();
     }
 
+    /// <summary>
+    /// Anzeige geändert (siehe <see cref="DisplayTopology"/>): bei anderer Geometrie Hover-Zonen und Docks mit frischen
+    /// Monitordaten neu anlegen; das Panel in jedem Fall neu platzieren (Windows kann es verschoben haben).
+    /// </summary>
+    public void OnDisplayChanged(bool geometryChanged)
+    {
+        if (geometryChanged) CreateTriggers(_app);
+        Window.OnDisplayChanged();
+        KeepTriggersClickable();
+    }
+
     public PanelOpenState? OpenState =>
         Window.IsOpen && !Window.IsHiding && Window.CurrentMonitor is { } m ? new PanelOpenState(m.Index, Window.OpenedViaHotkey) : null;
 

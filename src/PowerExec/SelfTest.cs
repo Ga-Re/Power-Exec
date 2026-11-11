@@ -550,6 +550,8 @@ public sealed partial class SelfTestController : AppController
                         host.Window.ShowPanel(monitor, viaHotkey: false);
                         await Settle();
                         System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
+                        await Task.Delay(400);
+                        if (!host.Window.IsSettledForTest) Fail("Glas: Panel steht nach dem Ausfahren nicht an seiner Ziellage");
                         report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
                         host.Window.HidePanel();
                         await Settle();
@@ -621,6 +623,23 @@ public sealed partial class SelfTestController : AppController
                 var pinned = host.Config.Pinned;
                 host.Config.Pinned = true;
                 var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                await Task.Delay(500);
+                if (!host.Window.IsSettledForTest) Fail("Ausfahren: Panel steht danach nicht an seiner Ziellage");
+                // Fenster von außen verschoben (wie Windows nach Standby oder Monitorwechsel): das nächste Ausfahren
+                // muss trotzdem genau an der Ziellage enden
+                host.Window.HidePanel();
+                await Settle();
+                await Task.Delay(500);
+                host.Window.DisplaceForTest(37, 21);
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                await Task.Delay(500);
+                if (!host.Window.IsSettledForTest) Fail("Ausfahren: von außen verschobenes Panel endet nicht an seiner Ziellage");
+                host.Window.HidePanel();
+                await Settle();
+                await Task.Delay(500);
                 host.ShowFromTrigger(monitor);
                 await Settle();
                 host.ToggleFromTrigger(monitor); // direkt nach dem Ausfahren: gehört noch zum Öffnen
@@ -717,6 +736,9 @@ public sealed partial class SelfTestController : AppController
                     if (dock.IsVisible) Fail("Mini-Dock: bleibt sichtbar, während das Panel offen ist");
                     host.Window.HidePanel();
                     await Settle();
+                    await Task.Delay(500);
+                    // Auch bei Glas (Panel bleibt eingefahren sichtbar geparkt) muss das Dock zurückkommen
+                    if (!dock.IsVisible) Fail("Mini-Dock: erscheint nach dem Einfahren des Panels nicht wieder");
                 }
                 host.Config.ShowDock = false;
                 host.CreateTriggers(this);

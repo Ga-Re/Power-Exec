@@ -31,6 +31,14 @@ public static class ScreenService
         };
     }
 
+    /// <summary>
+    /// Aktueller Stand eines Monitors (Bereich, Arbeitsbereich). Ein <see cref="MonitorInfo"/> ist eine Momentaufnahme –
+    /// wer ihn länger hält (Hover-Zone, Panel), fragt vor dem Platzieren neu. Gibt es den Monitor nicht mehr, gilt der
+    /// erste Monitor des Panels.
+    /// </summary>
+    public static MonitorInfo Refresh(MonitorInfo monitor, PanelConfig s) =>
+        GetMonitors().FirstOrDefault(m => m.Index == monitor.Index) ?? TriggerMonitors(s)[0];
+
     public static MonitorInfo MonitorAtCursor()
     {
         NativeMethods.GetCursorPos(out var p);

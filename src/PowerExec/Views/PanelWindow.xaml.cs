@@ -29,7 +29,24 @@ public partial class PanelWindow : Window
     private DateTime? _outsideSince;
     private bool _hiding;
 
-    public bool IsOpen { get; private set; }
+    private bool _isOpen;
+
+    /// <summary>Ausgefahren (auch während des Ein-/Ausfahrens). Bei Glas bleibt das Fenster eingefahren sichtbar geparkt –
+    /// „offen“ ist deshalb nicht dasselbe wie <see cref="UIElement.IsVisible"/>.</summary>
+    public bool IsOpen
+    {
+        get => _isOpen;
+        private set
+        {
+            if (_isOpen == value) return;
+            _isOpen = value;
+            OpenChanged?.Invoke();
+        }
+    }
+
+    /// <summary>Das Panel wurde aus- bzw. ganz eingefahren.</summary>
+    public event Action? OpenChanged;
+
     public bool OpenedViaHotkey { get; private set; }
 
     public PanelWindow(AppController app, PanelHost host)
@@ -93,7 +110,7 @@ public partial class PanelWindow : Window
 
         Deactivated += (_, _) => OnDeactivated();
         PreviewKeyDown += OnPanelPreviewKeyDown;
-        DpiChanged += (_, _) => Dispatcher.BeginInvoke(() => { if (IsOpen) Place(); });
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(() => { if (IsOpen || IsParked) Place(); });
     }
 
     /// <summary>Tastenkürzel des Panels (am Fenster bzw. bei Glas am Inhalt im Kindfenster).</summary>
@@ -147,8 +164,13 @@ public partial class PanelWindow : Window
             return;
         }
 
-        var sameMonitor = _monitor?.Index == monitor.Index;
-        _monitor = monitor;
+        // Monitor immer frisch abfragen: Hover-Zonen reichen den Stand vom Anlegen weiter, Auflösung, Arbeitsbereich
+        // (Taskleiste) oder Skalierung können sich seither geändert haben.
+        var live = ScreenService.Refresh(monitor, Cfg);
+        var sameMonitor = _monitor?.Index == live.Index;
+        _monitor = live;
+        // Geparkt steht das Fenster nur dann schon richtig, wenn die Ziellage noch dieselbe ist
+        var geometryChanged = ScreenService.PanelRect(live, Cfg) != _rect;
         _hiding = false;
         // Für „Text einfügen“: das Fenster merken, in dem vorher gearbeitet wurde
         var fg = NativeMethods.GetForegroundWindow();
@@ -156,12 +178,12 @@ public partial class PanelWindow : Window
         if (_systemWindow && !IsVisible)
         {
             // Fenster beginnt eingefahren hinter dem Rand des Arbeitsbereichs
-            BeginAnimation(RevealProperty, null);
-            Reveal = 0;
+            SetRevealNow(0);
         }
         var wasVisible = IsVisible;
-        // Geparkt auf demselben Monitor steht das Fenster schon genau bei Reveal = 0 – kein SetWindowPos vor dem Start
-        if (!wasVisible || !sameMonitor)
+        // Geparkt auf demselben Monitor mit unveränderter Ziellage steht das Fenster schon genau bei Reveal = 0 –
+        // kein SetWindowPos vor dem Start
+        if (!wasVisible || !sameMonitor || geometryChanged)
         {
             Place();
             if (!wasVisible)
@@ -199,6 +221,7 @@ public partial class PanelWindow : Window
     {
         if (IsOpen && !_hiding)
         {
+            SettleOpen();
             Vm.OnShown();
             // Per Tastenkürzel geöffnet: Fokus ins Suchfeld erst jetzt – während des Gleitens bleibt der UI-Thread frei
             if (OpenedViaHotkey) FocusSearch();
@@ -677,10 +700,18 @@ public partial class PanelWindow : Window
         // Beim Gleiten liegt das Fenster kurz auf dem Nachbarmonitor (dort weggeschnitten). Hat der eine andere
         // Skalierung, meldet Windows einen DPI-Wechsel – WPF würde Fenster und Inhalt mitten im Gleiten umskalieren.
         // Das Panel gehört aber zu seinem Monitor: Wechsel während des Gleitens übergehen.
+        // Eine echte Änderung der Skalierung des eigenen Monitors (neuer Wert = dessen Skalierung, aber nicht die, mit der
+        // WPF gerade zeichnet) geht dagegen an WPF; DpiChanged platziert danach neu.
         if (msg == WM_DPICHANGED && _clipSlide && IsSliding)
         {
-            handled = true;
-            return IntPtr.Zero;
+            var announced = (int)((long)wParam & 0xFFFF);
+            var home = _monitor != null ? (int)Math.Round(_monitor.Scale * 96) : announced;
+            var current = (int)Math.Round(VisualTreeHelper.GetDpi(this).PixelsPerInchX);
+            if (announced != home || announced == current)
+            {
+                handled = true;
+                return IntPtr.Zero;
+            }
         }
         return IntPtr.Zero;
     }
@@ -838,7 +869,9 @@ public partial class PanelWindow : Window
         if (_monitor == null) return;
         _hidden = PanelSlide.Hidden(_rect, _monitor.WorkArea, Cfg.Edge);
         _clipSlide = PanelSlide.NeedsClip(_rect, _monitor.WorkArea, Cfg.Edge, ScreenService.GetMonitors().Select(m => m.Bounds));
-        if (_appliedSize != _rect.Size) _appliedSize = System.Drawing.Size.Empty; // Größe neu setzen nur, wenn sie sich geändert hat
+        // Größe bei jedem Platzieren ausdrücklich setzen: hat WPF oder Windows das Fenster inzwischen anders bemessen,
+        // bliebe das sonst unbemerkt (SWP_NOSIZE gilt nur für die Einzelbilder der Bewegung)
+        _appliedSize = System.Drawing.Size.Empty;
         _regionApplied = false;
     }
 
@@ -905,6 +938,90 @@ public partial class PanelWindow : Window
     private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
         Dispatcher.BeginInvoke(() => { if (IsParked) Hide(); });
 
+    /// <summary>
+    /// Monitore, Arbeitsbereich oder Skalierung haben sich geändert (auch nach Standby oder Entsperren, wenn Windows
+    /// Fenster verschoben haben kann): Monitor neu bestimmen und ein offenes bzw. geparktes Panel neu platzieren.
+    /// </summary>
+    public void OnDisplayChanged()
+    {
+        if (_monitor == null) return;
+        _monitor = ScreenService.Refresh(_monitor, Cfg);
+        if (IsParked || (IsOpen && !_hiding))
+        {
+            Place();
+            UpdatePeekWindow();
+        }
+    }
+
+    /// <summary>
+    /// Endlage nach dem Ausfahren absichern. Die Lage entsteht sonst nur aus den Einzelbildern der Bewegung: hat
+    /// inzwischen jemand das Fenster verschoben oder anders bemessen (Windows nach Standby oder Monitorwechsel, WPF
+    /// beim ersten Anzeigen) oder ist das Kindfenster verrutscht, bliebe das bis zum nächsten <see cref="Place"/> so –
+    /// das Panel stünde nur teilweise im Bild. Abweichungen werden protokolliert.
+    /// </summary>
+    private void SettleOpen()
+    {
+        if (_hwnd == IntPtr.Zero || _monitor == null || _rect.Width <= 0) return;
+        if (_systemWindow)
+        {
+            SetRevealNow(1);
+            if (!PanelSlide.IsSettled(WindowRect(), _rect, tolerance: 0))
+            {
+                AppLog.Warn($"Panel: corrected end position, window at {WindowRect()}, expected {_rect}");
+                NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, _rect.X, _rect.Y, _rect.Width, _rect.Height,
+                    NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
+                _appliedSize = _rect.Size;
+            }
+            _regionApplied = false;
+            SetSlideRegion(null, _rect.Size);
+            SetCloaked(false);
+            ResizeContentHost(); // Kindfenster (Glas) wieder bei (0, 0) in voller Größe
+            return;
+        }
+        // Klarglas: Inhalt steht im Fenster an seinem Platz – Endwerte als feste Werte, nicht nur als Rest der Animation
+        Slide.X = 0;
+        Slide.Y = 0;
+        Slide.BeginAnimation(TranslateTransform.XProperty, null);
+        Slide.BeginAnimation(TranslateTransform.YProperty, null);
+        PanelBorder.Opacity = 1;
+        PanelBorder.BeginAnimation(OpacityProperty, null);
+        // WPF rechnet die Fenstergröße über DIP um: bis zu 2 px Abweichung sind Rundung
+        if (!PanelSlide.IsSettled(WindowRect(), _rect, tolerance: 2))
+        {
+            AppLog.Warn($"Panel: corrected end position, window at {WindowRect()}, expected {_rect}");
+            ScreenService.Place(_hwnd, _rect);
+        }
+    }
+
+    /// <summary>Tatsächliche Lage des Fensters in Pixeln.</summary>
+    private System.Drawing.Rectangle WindowRect()
+    {
+        NativeMethods.GetWindowRect(_hwnd, out var rc);
+        return System.Drawing.Rectangle.FromLTRB(rc.Left, rc.Top, rc.Right, rc.Bottom);
+    }
+
+    /// <summary>Für den Selbsttest: Fenster von außen verschieben, wie es Windows nach Standby oder Monitorwechsel tut.</summary>
+    internal void DisplaceForTest(int dx, int dy)
+    {
+        if (_hwnd == IntPtr.Zero || !IsVisible) return;
+        var r = WindowRect();
+        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X + dx, r.Y + dy, 0, 0,
+            NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER);
+    }
+
+    /// <summary>Für den Selbsttest: steht das ausgefahrene Fenster genau an seiner Ziellage?</summary>
+    internal bool IsSettledForTest => PanelSlide.IsSettled(WindowRect(), _rect, _systemWindow ? 0 : 2);
+
+    /// <summary>
+    /// <see cref="Reveal"/> sofort auf einen festen Wert setzen. Erst der Wert, dann die Animation entfernen: umgekehrt
+    /// fiele die Eigenschaft für einen Augenblick auf ihren alten festen Wert zurück und das Fenster spränge dorthin.
+    /// </summary>
+    private void SetRevealNow(double value)
+    {
+        Reveal = value;
+        BeginAnimation(RevealProperty, null);
+    }
+
     /// <summary>Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     private bool IsSliding => _systemWindow && IsVisible && Reveal < 1;
 
@@ -918,8 +1035,7 @@ public partial class PanelWindow : Window
         PanelBorder.Opacity = 1;
         if (duration == TimeSpan.Zero)
         {
-            BeginAnimation(RevealProperty, null);
-            Reveal = show ? 1 : 0;
+            SetRevealNow(show ? 1 : 0);
             if (!show) FinishHide();
             else OnSlideInFinished();
             return;
@@ -992,8 +1108,7 @@ public partial class PanelWindow : Window
         if (ParkWhenHidden)
         {
             // Animation sauber beenden: geparkt steht das Fenster genau bei Reveal = 0
-            BeginAnimation(RevealProperty, null);
-            Reveal = 0.0;
+            SetRevealNow(0);
             // Glas: hinter dem Rand stehen lassen (siehe ParkWhenHidden); den Fokus aber abgeben
             if (IsActive) Services.ForegroundTracker.ReturnFocus();
         }

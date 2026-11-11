@@ -98,14 +98,14 @@ public partial class DockWindow : Window
         _hoverTimer.Tick += (_, _) => { _hoverTimer.Stop(); OpenPanel(); };
 
         host.ViewModel.QuickItemsChanged += Rebuild;
-        host.Window.IsVisibleChanged += OnPanelVisibleChanged;
+        host.Window.OpenChanged += UpdateVisibility;
         // Nach dem Schließen (Dock ausgeschaltet, Panels neu erzeugt) nicht mehr reagieren
         Closed += (_, _) =>
         {
             _closed = true;
             _hoverTimer.Stop();
             host.ViewModel.QuickItemsChanged -= Rebuild;
-            host.Window.IsVisibleChanged -= OnPanelVisibleChanged;
+            host.Window.OpenChanged -= UpdateVisibility;
         };
 
         SourceInitialized += (_, _) =>
@@ -125,8 +125,6 @@ public partial class DockWindow : Window
     private void OpenPanel() => _host.ShowFromTrigger(_monitor);
 
     /// <summary>Favoriten neu einlesen (Reihenfolge wie in der Gruppe „Favoriten“).</summary>
-    private void OnPanelVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility();
-
     public void Rebuild()
     {
         if (_closed) return;
@@ -157,7 +155,8 @@ public partial class DockWindow : Window
     private void UpdateVisibility()
     {
         if (_closed) return;
-        if (_suspended || _host.Window.IsVisible) { _hoverTimer.Stop(); Hide(); }
+        // „Offen“ statt „sichtbar“: ein Glas-Panel bleibt eingefahren sichtbar geparkt
+        if (_suspended || _host.Window.IsOpen) { _hoverTimer.Stop(); Hide(); }
         else { Show(); Place(); }
     }
 
