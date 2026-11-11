@@ -50,24 +50,24 @@ public static class Schedules
             case ScheduleKind.Once:
                 return s.OnceAt > afterLocal ? s.OnceAt : null;
             case ScheduleKind.Interval:
-            {
-                var minutes = Math.Max(MinIntervalMinutes, s.IntervalMinutes);
-                var basis = s.LastRunLocal ?? afterLocal;
-                var next = basis.AddMinutes(minutes);
-                while (next <= afterLocal) next = next.AddMinutes(minutes);
-                return next;
-            }
-            default:
-            {
-                for (int d = 0; d <= 7; d++)
                 {
-                    var day = afterLocal.Date.AddDays(d);
-                    if (s.Days.Count > 0 && !s.Days.Contains(day.DayOfWeek)) continue;
-                    var at = day + s.TimeOfDay;
-                    if (at > afterLocal) return at;
+                    var minutes = Math.Max(MinIntervalMinutes, s.IntervalMinutes);
+                    var basis = s.LastRunLocal ?? afterLocal;
+                    var next = basis.AddMinutes(minutes);
+                    while (next <= afterLocal) next = next.AddMinutes(minutes);
+                    return next;
                 }
-                return null;
-            }
+            default:
+                {
+                    for (int d = 0; d <= 7; d++)
+                    {
+                        var day = afterLocal.Date.AddDays(d);
+                        if (s.Days.Count > 0 && !s.Days.Contains(day.DayOfWeek)) continue;
+                        var at = day + s.TimeOfDay;
+                        if (at > afterLocal) return at;
+                    }
+                    return null;
+                }
         }
     }
 

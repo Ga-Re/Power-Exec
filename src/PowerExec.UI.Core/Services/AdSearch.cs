@@ -18,7 +18,8 @@ public static class AdSearch
             var result = new List<string>();
             if (root.Properties["distinguishedName"] is { Count: > 0 } d && d[0] is string domain) result.Add(domain);
             using var searcher = new DirectorySearcher(root, "(|(objectCategory=organizationalUnit)(&(objectCategory=container)(cn=Computers)))",
-                new[] { "distinguishedName" }) { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
+                new[] { "distinguishedName" })
+            { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
             using var results = searcher.FindAll();
             foreach (SearchResult r in results)
             {
@@ -53,7 +54,7 @@ public static class AdSearch
             }
             using (root)
             using (var searcher = new DirectorySearcher(root, filter, new[] { "name", "dNSHostName" })
-                   { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree })
+            { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree })
             using (var results = searcher.FindAll())
             {
                 var names = new List<string>();
@@ -72,7 +73,7 @@ public static class AdSearch
         {
             using var root = string.IsNullOrWhiteSpace(searchBase) ? new DirectoryEntry() : new DirectoryEntry("LDAP://" + searchBase.Trim());
             using var searcher = new DirectorySearcher(root, ldapFilter, new[] { "name" })
-                { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
+            { PageSize = 500, SizeLimit = MaxResults, SearchScope = SearchScope.Subtree };
             using var results = searcher.FindAll();
             var names = new List<string>();
             foreach (SearchResult r in results)

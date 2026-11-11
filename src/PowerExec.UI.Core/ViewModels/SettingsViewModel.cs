@@ -721,7 +721,9 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
+#pragma warning disable CA2011 // gewollt: „marketplace“ leitet einmalig auf die erste Unterseite weiter, keine Endlosschleife
             if (value == "marketplace") { Section = "market-entries"; return; }
+#pragma warning restore CA2011
             if (value.StartsWith("market-", StringComparison.Ordinal))
             {
                 MarketplacePage.Tab = value switch
@@ -1091,7 +1093,8 @@ public sealed class SettingsViewModel : ObservableObject
     private void RebuildCategoryTree()
     {
         if (_treeSuspended) return;
-        var children = Categories.ToDictionary(c => c, _ => new List<CategoryItemViewModel>(), ReferenceEqualityComparer.Instance);
+        var children = new Dictionary<CategoryItemViewModel, List<CategoryItemViewModel>>(ReferenceEqualityComparer.Instance);
+        foreach (var c in Categories) children[c] = new List<CategoryItemViewModel>();
         var roots = new List<CategoryItemViewModel>();
         foreach (var c in Categories)
         {

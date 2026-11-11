@@ -108,7 +108,9 @@ public sealed partial class SelfTestController : AppController
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
             Settings.MachineGroups.Add(new MachineGroup
             {
-                Name = "Server-AD", Machines = ["SRV-DC1", "SRV-FS1"], LastSyncUtc = DateTime.UtcNow.AddHours(-1),
+                Name = "Server-AD",
+                Machines = ["SRV-DC1", "SRV-FS1"],
+                LastSyncUtc = DateTime.UtcNow.AddHours(-1),
                 AdQuery = new AdGroupQuery
                 {
                     Blocks =
@@ -121,10 +123,12 @@ public sealed partial class SelfTestController : AppController
             File.WriteAllText(Path.Combine(dir, "rechner.csv"), "Hostname;Standort\nSRV-B1;Berlin\nSRV-H1;Hamburg\nSRV-B2;Berlin\n");
             Settings.MachineGroups.Add(new MachineGroup
             {
-                Name = "Berlin", Machines = ["SRV-B1", "SRV-B2"],
+                Name = "Berlin",
+                Machines = ["SRV-B1", "SRV-B2"],
                 ListQuery = new ListGroupQuery
                 {
-                    Path = Path.Combine(dir, "rechner.csv"), NameColumn = "Hostname",
+                    Path = Path.Combine(dir, "rechner.csv"),
+                    NameColumn = "Hostname",
                     Filters = { new ListFilter { Column = "Standort", Operator = AdOperator.Equals, Value = "Berlin" } }
                 }
             });
@@ -1060,7 +1064,7 @@ public sealed partial class SelfTestController : AppController
             var wsRow = settingsVm.Workspaces.FirstOrDefault(w => w.IsActive);
             if (wsRow == null || wsRow.Groups.Count(g => !g.IsFixed) != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
             if (wsRow != null && wsRow.Groups.Count(g => g.IsFixed) != FixedGroups.Keys.Count) Fail("Arbeitsbereiche: feste Gruppen fehlen in der Auswahl");
-            else
+            else if (wsRow != null)
             {
                 wsRow.IsExpanded = true;
                 var choice = wsRow.Groups.First(g => g.Path == "Leer");
@@ -1546,15 +1550,25 @@ public sealed partial class SelfTestController : AppController
     {
         var brush = new System.Windows.Media.DrawingBrush
         {
-            TileMode = System.Windows.Media.TileMode.Tile, Viewport = new Rect(0, 0, 4, 4), ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute,
+            TileMode = System.Windows.Media.TileMode.Tile,
+            Viewport = new Rect(0, 0, 4, 4),
+            ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute,
             Drawing = new System.Windows.Media.GeometryDrawing(System.Windows.Media.Brushes.Black, null, new System.Windows.Media.RectangleGeometry(new Rect(0, 0, 2, 4)))
         };
         var scale = Interop.NativeMethods.ScaleForPoint(px.Left + 1, px.Top + 1);
         return new Window
         {
-            WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, ShowInTaskbar = false, ShowActivated = false,
-            Background = System.Windows.Media.Brushes.White, Content = new System.Windows.Controls.Border { Background = brush },
-            Left = px.Left / scale - 40, Top = px.Top / scale - 40, Width = px.Width / scale + 80, Height = px.Height / scale + 80, Title = "Streifen"
+            WindowStyle = WindowStyle.None,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            ShowActivated = false,
+            Background = System.Windows.Media.Brushes.White,
+            Content = new System.Windows.Controls.Border { Background = brush },
+            Left = px.Left / scale - 40,
+            Top = px.Top / scale - 40,
+            Width = px.Width / scale + 80,
+            Height = px.Height / scale + 80,
+            Title = "Streifen"
         };
     }
 
@@ -1593,12 +1607,12 @@ public sealed partial class SelfTestController : AppController
             using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(x, y, 0, 0, bmp.Size);
             double sum = 0; int n = 0;
             for (int yy = 0; yy < bmp.Height; yy += 4)
-            for (int xx = 0; xx < bmp.Width - 1; xx++)
-            {
-                var a = bmp.GetPixel(xx, yy); var c = bmp.GetPixel(xx + 1, yy);
-                sum += Math.Abs((a.R + a.G + a.B) / 3.0 - (c.R + c.G + c.B) / 3.0);
-                n++;
-            }
+                for (int xx = 0; xx < bmp.Width - 1; xx++)
+                {
+                    var a = bmp.GetPixel(xx, yy); var c = bmp.GetPixel(xx + 1, yy);
+                    sum += Math.Abs((a.R + a.G + a.B) / 3.0 - (c.R + c.G + c.B) / 3.0);
+                    n++;
+                }
             return n == 0 ? -1 : sum / n;
         }
         catch { return -1; }

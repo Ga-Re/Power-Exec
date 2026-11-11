@@ -70,44 +70,44 @@ public static class CommandBuilder
         switch (item.Type)
         {
             case ItemType.PowerShell:
-            {
-                var exe = EngineExe(r.Engine);
-                var flags = PowerShellFlags(r);
-                var command = ScriptInvocation(path, Config.Placeholders.ApplyVariables(r.Parameters));
-                var args = flags + " -EncodedCommand " + Encode(doneFile != null ? command + DoneSuffix(doneFile) : command);
-                return new LocalLaunchSpec
                 {
-                    FileName = exe,
-                    Arguments = args.Trim(),
-                    UseShellExecute = r.Mode == ExecutionMode.Administrator,
-                    Verb = r.Mode == ExecutionMode.Administrator ? "runas" : null,
-                    RequiresCredential = r.Mode == ExecutionMode.OtherUser,
-                    WorkingDirectory = workDir,
-                    Preview = $"{exe} {flags.Trim()} -Command {command}".Replace("  ", " ")
-                };
-            }
-            case ItemType.Batch:
-            {
-                // cmd /k ""C:\Pfad mit Leerzeichen\x.cmd"" – die äußeren Anführungszeichen entfernt cmd selbst.
-                var extra = r.ExtraArguments.Trim();
-                var cmdArgs = (r.NoExit ? "/k " : "/c ") + "\"\"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) + "\"";
-                if (doneFile != null)
-                {
-                    // „call“, damit es nach dem Batch weitergeht; „if errorlevel“ wird erst zur Laufzeit ausgewertet
-                    cmdArgs = "/k \"call \"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) +
-                              " & if errorlevel 1 (>\"" + doneFile + "\" echo E) else (>\"" + doneFile + "\" echo 0)\"";
+                    var exe = EngineExe(r.Engine);
+                    var flags = PowerShellFlags(r);
+                    var command = ScriptInvocation(path, Config.Placeholders.ApplyVariables(r.Parameters));
+                    var args = flags + " -EncodedCommand " + Encode(doneFile != null ? command + DoneSuffix(doneFile) : command);
+                    return new LocalLaunchSpec
+                    {
+                        FileName = exe,
+                        Arguments = args.Trim(),
+                        UseShellExecute = r.Mode == ExecutionMode.Administrator,
+                        Verb = r.Mode == ExecutionMode.Administrator ? "runas" : null,
+                        RequiresCredential = r.Mode == ExecutionMode.OtherUser,
+                        WorkingDirectory = workDir,
+                        Preview = $"{exe} {flags.Trim()} -Command {command}".Replace("  ", " ")
+                    };
                 }
-                return new LocalLaunchSpec
+            case ItemType.Batch:
                 {
-                    FileName = "cmd.exe",
-                    Arguments = cmdArgs,
-                    UseShellExecute = r.Mode != ExecutionMode.OtherUser,
-                    Verb = r.Mode == ExecutionMode.Administrator ? "runas" : null,
-                    RequiresCredential = r.Mode == ExecutionMode.OtherUser,
-                    WorkingDirectory = workDir,
-                    Preview = "cmd.exe " + cmdArgs
-                };
-            }
+                    // cmd /k ""C:\Pfad mit Leerzeichen\x.cmd"" – die äußeren Anführungszeichen entfernt cmd selbst.
+                    var extra = r.ExtraArguments.Trim();
+                    var cmdArgs = (r.NoExit ? "/k " : "/c ") + "\"\"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) + "\"";
+                    if (doneFile != null)
+                    {
+                        // „call“, damit es nach dem Batch weitergeht; „if errorlevel“ wird erst zur Laufzeit ausgewertet
+                        cmdArgs = "/k \"call \"" + path + "\"" + (extra.Length > 0 ? " " + extra : string.Empty) +
+                                  " & if errorlevel 1 (>\"" + doneFile + "\" echo E) else (>\"" + doneFile + "\" echo 0)\"";
+                    }
+                    return new LocalLaunchSpec
+                    {
+                        FileName = "cmd.exe",
+                        Arguments = cmdArgs,
+                        UseShellExecute = r.Mode != ExecutionMode.OtherUser,
+                        Verb = r.Mode == ExecutionMode.Administrator ? "runas" : null,
+                        RequiresCredential = r.Mode == ExecutionMode.OtherUser,
+                        WorkingDirectory = workDir,
+                        Preview = "cmd.exe " + cmdArgs
+                    };
+                }
             case ItemType.Executable:
                 return Program(r, path, r.ExtraArguments.Trim(), workDir);
             case ItemType.ConsoleSnapIn:

@@ -241,7 +241,9 @@ public class V016Tests
     {
         var item = new LaunchItem
         {
-            FullPath = @"C:\s\Reset.ps1", RootFolder = @"C:\s", Type = ItemType.PowerShell,
+            FullPath = @"C:\s\Reset.ps1",
+            RootFolder = @"C:\s",
+            Type = ItemType.PowerShell,
             Parameters = new[]
             {
                 new ScriptParameter { Name = "User", TypeName = "string" },
@@ -294,7 +296,9 @@ public class V016Tests
     {
         var item = new LaunchItem
         {
-            FullPath = @"C:\s\New-User.ps1", RootFolder = @"C:\s", Type = ItemType.PowerShell,
+            FullPath = @"C:\s\New-User.ps1",
+            RootFolder = @"C:\s",
+            Type = ItemType.PowerShell,
             Parameters = new[] { new ScriptParameter { Name = "Name", TypeName = "string" }, new ScriptParameter { Name = "Credential", TypeName = "pscredential" } }
         };
         var s = new AppSettings();
@@ -319,7 +323,8 @@ public class V016Tests
     {
         var wf = new CustomEntry
         {
-            Kind = CustomEntryKind.Workflow, Name = "Outlook reparieren",
+            Kind = CustomEntryKind.Workflow,
+            Name = "Outlook reparieren",
             Steps = new List<WorkflowStep> { new() { Path = @"C:\s\Stop.ps1", Name = "Stop" }, new() { Path = @"C:\s\Cache.ps1" }, new() { Path = "custom:1", Name = "Start" } }
         };
         var item = wf.ToLaunchItem();
@@ -340,8 +345,12 @@ public class V016Tests
     public void ScheduleNextRunAndDescription()
     {
         var wed = new DateTime(2026, 11, 4, 8, 0, 0); // Mittwoch
-        var workdays = new Schedule { Kind = ScheduleKind.Daily, TimeOfDay = new TimeSpan(7, 0, 0),
-            Days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday } };
+        var workdays = new Schedule
+        {
+            Kind = ScheduleKind.Daily,
+            TimeOfDay = new TimeSpan(7, 0, 0),
+            Days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday }
+        };
         Assert.Equal(new DateTime(2026, 11, 5, 7, 0, 0), Schedules.Next(workdays, wed)); // heute 07:00 vorbei → Donnerstag
         Assert.Equal(new DateTime(2026, 11, 9, 7, 0, 0), Schedules.Next(workdays, new DateTime(2026, 11, 7, 8, 0, 0))); // Samstag → Montag
         Assert.Equal("Mo–Fr 07:00", Schedules.Describe(workdays));

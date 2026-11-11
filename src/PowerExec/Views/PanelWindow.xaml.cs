@@ -64,8 +64,11 @@ public partial class PanelWindow : Window
             WindowStyle = WindowStyle.SingleBorderWindow;
             System.Windows.Shell.WindowChrome.SetWindowChrome(this, new System.Windows.Shell.WindowChrome
             {
-                CaptionHeight = 0, GlassFrameThickness = new Thickness(-1), ResizeBorderThickness = new Thickness(0),
-                CornerRadius = new CornerRadius(0), UseAeroCaptionButtons = false
+                CaptionHeight = 0,
+                GlassFrameThickness = new Thickness(-1),
+                ResizeBorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(0),
+                UseAeroCaptionButtons = false
             });
             // Größe bestimmt allein das Fenster (immer so groß wie das Panel, beim Ein-/Ausfahren wird es nur verschoben)
             ClearValue(WidthProperty);

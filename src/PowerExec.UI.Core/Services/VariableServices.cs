@@ -86,8 +86,12 @@ public static class VariableCommandRunner
         var psi = new ProcessStartInfo(CommandBuilder.EngineExe(Launcher.EffectiveEngine(engine)),
             "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand " + CommandBuilder.Encode(script))
         {
-            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
         };
         using var p = Process.Start(psi) ?? throw new InvalidOperationException(L.T("PowerShell couldn't be started."));
         var stdout = p.StandardOutput.ReadToEndAsync();

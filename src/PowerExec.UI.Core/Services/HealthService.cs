@@ -111,19 +111,19 @@ public sealed class HealthService
                     : new HealthResult(false, L.T(".rdp file not found"), now);
             case CustomEntryKind.Rdp:
             case CustomEntryKind.Ssh:
-            {
-                var host = target;
-                int port = e.Port > 0 ? e.Port : e.Kind == CustomEntryKind.Rdp ? 3389 : 22;
-                var colon = host.LastIndexOf(':');
-                if (colon > 0 && int.TryParse(host[(colon + 1)..], out var p)) { port = p; host = host[..colon]; }
-                using var tcp = new TcpClient();
-                var connect = tcp.ConnectAsync(host, port);
-                var done = await Task.WhenAny(connect, Task.Delay(3000));
-                if (done == connect && !connect.IsFaulted && tcp.Connected) return new HealthResult(true, L.F("Port {0} reachable", port), now);
-                return new HealthResult(false, connect.IsFaulted
-                    ? L.F("{0}:{1} unreachable ({2})", host, port, connect.Exception?.GetBaseException().Message)
-                    : L.F("{0}:{1} doesn't respond", host, port), now);
-            }
+                {
+                    var host = target;
+                    int port = e.Port > 0 ? e.Port : e.Kind == CustomEntryKind.Rdp ? 3389 : 22;
+                    var colon = host.LastIndexOf(':');
+                    if (colon > 0 && int.TryParse(host[(colon + 1)..], out var p)) { port = p; host = host[..colon]; }
+                    using var tcp = new TcpClient();
+                    var connect = tcp.ConnectAsync(host, port);
+                    var done = await Task.WhenAny(connect, Task.Delay(3000));
+                    if (done == connect && !connect.IsFaulted && tcp.Connected) return new HealthResult(true, L.F("Port {0} reachable", port), now);
+                    return new HealthResult(false, connect.IsFaulted
+                        ? L.F("{0}:{1} unreachable ({2})", host, port, connect.Exception?.GetBaseException().Message)
+                        : L.F("{0}:{1} doesn't respond", host, port), now);
+                }
             case CustomEntryKind.Command:
             case CustomEntryKind.Tool:
                 if (target.Contains(':') && !Path.IsPathRooted(target)) return new HealthResult(true, L.T("Opened by Windows"), now);

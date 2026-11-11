@@ -238,25 +238,25 @@ public static class Marketplace
         switch (file.Type)
         {
             case MarketplaceItemType.Entry:
-            {
-                var f = ParseEntry(payload);
-                var e = f.Entry;
-                var what = e.Kind == CustomEntryKind.Snippet ? e.Code : (e.Target + " " + e.Arguments).Trim();
-                return new MarketplaceDetails(e.Name.Length > 0 ? e.Name : file.DefaultName, e.Description, f.Variables, Trim(what)) { Entry = e };
-            }
+                {
+                    var f = ParseEntry(payload);
+                    var e = f.Entry;
+                    var what = e.Kind == CustomEntryKind.Snippet ? e.Code : (e.Target + " " + e.Arguments).Trim();
+                    return new MarketplaceDetails(e.Name.Length > 0 ? e.Name : file.DefaultName, e.Description, f.Variables, Trim(what)) { Entry = e };
+                }
             case MarketplaceItemType.Design:
-            {
-                var d = ParseDesign(payload, file);
-                var text = L.F("{0}, panel color {1}, {2}, opacity {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("of the design"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
-                           + (d.AccentColor.Length > 0 ? L.F(", accent {0}", d.AccentColor) : string.Empty);
-                return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text) { Design = d };
-            }
+                {
+                    var d = ParseDesign(payload, file);
+                    var text = L.F("{0}, panel color {1}, {2}, opacity {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("of the design"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
+                               + (d.AccentColor.Length > 0 ? L.F(", accent {0}", d.AccentColor) : string.Empty);
+                    return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text) { Design = d };
+                }
             default:
-            {
-                var synopsis = Regex.Match(payload, @"\.SYNOPSIS\s*\r?\n\s*(.+)");
-                return new MarketplaceDetails(file.DefaultName, synopsis.Success ? synopsis.Groups[1].Value.Trim() : string.Empty,
-                    Array.Empty<MarketplaceVariable>(), Trim(payload));
-            }
+                {
+                    var synopsis = Regex.Match(payload, @"\.SYNOPSIS\s*\r?\n\s*(.+)");
+                    return new MarketplaceDetails(file.DefaultName, synopsis.Success ? synopsis.Groups[1].Value.Trim() : string.Empty,
+                        Array.Empty<MarketplaceVariable>(), Trim(payload));
+                }
         }
     }
 
@@ -290,8 +290,10 @@ public static class Marketplace
               .GroupBy(v => Variables.Normalize(v.Name), StringComparer.CurrentCultureIgnoreCase).Select(g => g.First()).ToList();
 
     /// <summary>Gleiche Datei = gleiche Kennung: ein Update ersetzt den Eintrag statt ihn zu verdoppeln.</summary>
+#pragma warning disable CA5350 // SHA-1 nur als kurze, stabile Kennung (kein Schutz); ein anderer Algorithmus würde vorhandene Einträge verdoppeln
     public static string StableId(string key) =>
         "mk" + Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(key.ToLowerInvariant())))[..14].ToLowerInvariant();
+#pragma warning restore CA5350
 
     private static string Fingerprint(CustomEntry e) => JsonSerializer.Serialize(e, Json);
 
@@ -311,39 +313,42 @@ public static class Marketplace
         switch (file.Type)
         {
             case MarketplaceItemType.Entry:
-            {
-                var entry = ParseEntry(payload).Entry.Clone();
-                entry.Id = StableId(source.Trim().TrimEnd('/') + "|" + file.Path);
-                AddOrReplace(s, entry, group);
-                record.EntryIds = new List<string> { entry.Id };
-                record.Fingerprint = Fingerprint(entry);
-                break;
-            }
-            case MarketplaceItemType.Design:
-            {
-                var d = ParseDesign(payload, file);
-                s.CustomDesigns.RemoveAll(x => x.Key == d.Key);
-                s.CustomDesigns.Add(d);
-                record.DesignKey = d.Key;
-                break;
-            }
-            default:
-            {
-                var folder = file.GroupFolder.Length > 0 ? Path.Combine(new[] { scriptFolder }.Concat(file.GroupFolder.Split('/').Select(SafeName)).ToArray()) : scriptFolder;
-                Directory.CreateDirectory(folder);
-                var path = Path.Combine(folder, SafeName(file.FileName));
-                File.WriteAllText(path, payload, new UTF8Encoding(true));
-                var entry = new CustomEntry
                 {
-                    Id = StableId(source.Trim().TrimEnd('/') + "|" + file.Path), Kind = CustomEntryKind.File, Target = path, Name = file.DefaultName,
-                    Description = Describe(file, payload).Description
-                };
-                AddOrReplace(s, entry, group);
-                record.EntryIds = new List<string> { entry.Id };
-                record.ScriptPath = path;
-                record.Fingerprint = Fingerprint(entry);
-                break;
-            }
+                    var entry = ParseEntry(payload).Entry.Clone();
+                    entry.Id = StableId(source.Trim().TrimEnd('/') + "|" + file.Path);
+                    AddOrReplace(s, entry, group);
+                    record.EntryIds = new List<string> { entry.Id };
+                    record.Fingerprint = Fingerprint(entry);
+                    break;
+                }
+            case MarketplaceItemType.Design:
+                {
+                    var d = ParseDesign(payload, file);
+                    s.CustomDesigns.RemoveAll(x => x.Key == d.Key);
+                    s.CustomDesigns.Add(d);
+                    record.DesignKey = d.Key;
+                    break;
+                }
+            default:
+                {
+                    var folder = file.GroupFolder.Length > 0 ? Path.Combine(new[] { scriptFolder }.Concat(file.GroupFolder.Split('/').Select(SafeName)).ToArray()) : scriptFolder;
+                    Directory.CreateDirectory(folder);
+                    var path = Path.Combine(folder, SafeName(file.FileName));
+                    File.WriteAllText(path, payload, new UTF8Encoding(true));
+                    var entry = new CustomEntry
+                    {
+                        Id = StableId(source.Trim().TrimEnd('/') + "|" + file.Path),
+                        Kind = CustomEntryKind.File,
+                        Target = path,
+                        Name = file.DefaultName,
+                        Description = Describe(file, payload).Description
+                    };
+                    AddOrReplace(s, entry, group);
+                    record.EntryIds = new List<string> { entry.Id };
+                    record.ScriptPath = path;
+                    record.Fingerprint = Fingerprint(entry);
+                    break;
+                }
         }
         record.Version = file.Sha;
         record.InstalledUtc = DateTime.UtcNow;

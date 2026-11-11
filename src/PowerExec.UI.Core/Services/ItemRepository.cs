@@ -138,7 +138,10 @@ public sealed class ItemRepository : IItemSource, IDisposable
             statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.Excluded, null) { Duration = sw.Elapsed });
             _cached[folder.Path] = new CachedFolder
             {
-                Path = folder.Path, ScannedUtc = DateTime.UtcNow, Items = folderItems, Excluded = result.Excluded.ToList()
+                Path = folder.Path,
+                ScannedUtc = DateTime.UtcNow,
+                Items = folderItems,
+                Excluded = result.Excluded.ToList()
             };
             AppLog.Info(L.F("Folder {0}: {1} files, {2} excluded by pattern, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
         }

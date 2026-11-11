@@ -46,7 +46,10 @@ internal sealed class DragFeedback : IDisposable
         stack.Children.Add(_reason);
         var border = new Border
         {
-            Child = stack, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(10, 6, 10, 6),
+            Child = stack,
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(10, 6, 10, 6),
             Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = 0.3 }
         };
         border.SetResourceReference(Border.BackgroundProperty, "Bg.Card");
@@ -54,8 +57,12 @@ internal sealed class DragFeedback : IDisposable
 
         _popup = new Popup
         {
-            Child = border, AllowsTransparency = true, Placement = PlacementMode.AbsolutePoint,
-            IsHitTestVisible = false, Focusable = false, StaysOpen = true
+            Child = border,
+            AllowsTransparency = true,
+            Placement = PlacementMode.AbsolutePoint,
+            IsHitTestVisible = false,
+            Focusable = false,
+            StaysOpen = true
         };
         Refresh();
     }

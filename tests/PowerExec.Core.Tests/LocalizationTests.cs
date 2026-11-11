@@ -22,7 +22,13 @@ public class LocalizationTests
 
     private static string UnescapeCs(string s) => Regex.Replace(s, @"\\(u[0-9a-fA-F]{4}|.)", m => m.Groups[1].Value switch
     {
-        "n" => "\n", "t" => "\t", "r" => "\r", "0" => "\0", "\\" => "\\", "\"" => "\"", "'" => "'",
+        "n" => "\n",
+        "t" => "\t",
+        "r" => "\r",
+        "0" => "\0",
+        "\\" => "\\",
+        "\"" => "\"",
+        "'" => "'",
         var u when u.Length == 5 && u[0] == 'u' => ((char)Convert.ToInt32(u[1..], 16)).ToString(),
         var x => "\\" + x
     });

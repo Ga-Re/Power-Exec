@@ -136,7 +136,9 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     public ListGroupQuery ListQuery() => new()
     {
-        Path = _listPath.Trim(), NameColumn = (_table is { IsCsv: true } ? NameColumn : _nameColumn).Trim(), Filters = ListFilters.Select(f => f.ToFilter()).ToList()
+        Path = _listPath.Trim(),
+        NameColumn = (_table is { IsCsv: true } ? NameColumn : _nameColumn).Trim(),
+        Filters = ListFilters.Select(f => f.ToFilter()).ToList()
     };
 
     private void ChooseList()
@@ -377,7 +379,8 @@ public sealed class MachineGroupViewModel : ObservableObject
 
     public MachineGroup ToGroup() => new()
     {
-        Name = _name.Trim(), Machines = Parse().ToList(),
+        Name = _name.Trim(),
+        Machines = Parse().ToList(),
         AdQuery = _isDynamic ? Query() : null,
         ListQuery = _isList && !_isDynamic ? ListQuery() : null,
         LastSyncUtc = _isDynamic || _isList ? _lastSyncUtc : null,

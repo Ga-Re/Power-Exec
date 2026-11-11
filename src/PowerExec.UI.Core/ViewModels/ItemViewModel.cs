@@ -217,14 +217,14 @@ public sealed class ItemViewModel : ObservableObject
 
     public string BadgeText => Item.Source is { Kind: CustomEntryKind.Snippet, Language: SnippetLanguage.Text } ? "TXT"
         : Item.CustomKind is { } ck and not CustomEntryKind.File ? EntryBadge.For(ck, Item.Source?.Target ?? string.Empty) : Item.Type switch
-    {
-        ItemType.PowerShell => "PS1",
-        ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
-        ItemType.Executable => "EXE",
-        ItemType.Shortcut => "LNK",
-        ItemType.ConsoleSnapIn => "MSC",
-        _ => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant()
-    };
+        {
+            ItemType.PowerShell => "PS1",
+            ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
+            ItemType.Executable => "EXE",
+            ItemType.Shortcut => "LNK",
+            ItemType.ConsoleSnapIn => "MSC",
+            _ => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant()
+        };
 
     public string Meta
     {

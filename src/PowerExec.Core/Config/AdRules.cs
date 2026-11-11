@@ -103,8 +103,8 @@ public static class AdRules
         var rules = q.Blocks.SelectMany(b => b.Rules).ToList();
         if (rules.Count == 0) return L.T("Create at least one rule.");
         foreach (var (block, i) in q.Blocks.Select((b, i) => (b, i)))
-        foreach (var r in block.Rules)
-            if (Validate(r) is { } e) return (q.Blocks.Count > 1 ? L.F("Block {0}: ", i + 1) : string.Empty) + e;
+            foreach (var r in block.Rules)
+                if (Validate(r) is { } e) return (q.Blocks.Count > 1 ? L.F("Block {0}: ", i + 1) : string.Empty) + e;
         var sb = q.SearchBase.Trim();
         if (sb.Length > 0 && !sb.Contains("DC=", StringComparison.OrdinalIgnoreCase) && !sb.Contains("OU=", StringComparison.OrdinalIgnoreCase))
             return L.T("Enter the OU as a distinguished name, e.g. OU=Server,DC=company,DC=local.");
@@ -141,20 +141,20 @@ public static class AdRules
                 const string disabled = "(userAccountControl:1.2.840.113556.1.4.803:=2)";
                 return ParseYesNo(v) == false ? disabled : "(!" + disabled + ")";
             case LastLogonDays:
-            {
-                var days = int.TryParse(v, out var d) ? d : 30;
-                var ft = nowUtc.AddDays(-days).ToFileTimeUtc().ToString(CultureInfo.InvariantCulture);
-                // innerhalb von N Tagen: Zeitstempel neuer als die Grenze; länger her: älter oder nie angemeldet
-                return r.Operator == AdOperator.AtLeast
-                    ? $"(|(lastLogonTimestamp<={ft})(!(lastLogonTimestamp=*)))"
-                    : $"(lastLogonTimestamp>={ft})";
-            }
+                {
+                    var days = int.TryParse(v, out var d) ? d : 30;
+                    var ft = nowUtc.AddDays(-days).ToFileTimeUtc().ToString(CultureInfo.InvariantCulture);
+                    // innerhalb von N Tagen: Zeitstempel neuer als die Grenze; länger her: älter oder nie angemeldet
+                    return r.Operator == AdOperator.AtLeast
+                        ? $"(|(lastLogonTimestamp<={ft})(!(lastLogonTimestamp=*)))"
+                        : $"(lastLogonTimestamp>={ft})";
+                }
             case MemberOf:
-            {
-                // verschachtelte Mitgliedschaft (LDAP_MATCHING_RULE_IN_CHAIN)
-                var t = $"(memberOf:1.2.840.113556.1.4.1941:={Escape(v)})";
-                return r.Operator == AdOperator.NotEquals ? "(!" + t + ")" : t;
-            }
+                {
+                    // verschachtelte Mitgliedschaft (LDAP_MATCHING_RULE_IN_CHAIN)
+                    var t = $"(memberOf:1.2.840.113556.1.4.1941:={Escape(v)})";
+                    return r.Operator == AdOperator.NotEquals ? "(!" + t + ")" : t;
+                }
         }
         var e = Escape(v);
         return r.Operator switch

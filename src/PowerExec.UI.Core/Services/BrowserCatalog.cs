@@ -39,15 +39,15 @@ public static class BrowserCatalog
     {
         if (b == BrowserChoice.Default) return true;
         if (OperatingSystem.IsWindows())
-        try
-        {
-            foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+            try
             {
-                using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" + Exe(b));
-                if (key?.GetValue(null) is string path && File.Exists(path.Trim('"'))) return true;
+                foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+                {
+                    using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" + Exe(b));
+                    if (key?.GetValue(null) is string path && File.Exists(path.Trim('"'))) return true;
+                }
             }
-        }
-        catch { }
+            catch { }
         var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);

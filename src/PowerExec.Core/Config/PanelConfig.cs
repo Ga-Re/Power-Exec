@@ -107,13 +107,41 @@ public sealed class PanelConfig
 
     public PanelConfig Clone() => new()
     {
-        Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
-        HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
-        PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor, AccentColor = AccentColor, GroupStyle = GroupStyle,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, GlassBlur = GlassBlur, GlassSaturation = GlassSaturation, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
-        ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
-        Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
-        Folders = new List<string>(Folders), Categories = new List<string>(Categories)
+        Id = Id,
+        Name = Name,
+        Edge = Edge,
+        MonitorMode = MonitorMode,
+        MonitorIndex = MonitorIndex,
+        HotZone = HotZone,
+        HotZoneThickness = HotZoneThickness,
+        HotZoneLength = HotZoneLength,
+        PanelWidth = PanelWidth,
+        PanelHeightPercent = PanelHeightPercent,
+        PanelAlignment = PanelAlignment,
+        PanelColor = PanelColor,
+        AccentColor = AccentColor,
+        GroupStyle = GroupStyle,
+        PanelOpacity = PanelOpacity,
+        Acrylic = Acrylic,
+        Backdrop = Backdrop,
+        Frost = Frost,
+        GlassBlur = GlassBlur,
+        GlassSaturation = GlassSaturation,
+        ShowDock = ShowDock,
+        HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        ShowJumpRail = ShowJumpRail,
+        ShowScrollBar = ShowScrollBar,
+        DockCount = DockCount,
+        Hotkey = Hotkey,
+        DefaultFilter = DefaultFilter,
+        Pinned = Pinned,
+        Compact = Compact,
+        Layout = Layout,
+        ShowRecent = ShowRecent,
+        ShowFavorites = ShowFavorites,
+        ItemSize = ItemSize,
+        Folders = new List<string>(Folders),
+        Categories = new List<string>(Categories)
     };
 
     /// <summary>Übernimmt die Panel-Einstellungen aus Versionen vor 0.7 (ein Panel, globale Felder).</summary>
@@ -131,10 +159,20 @@ public sealed class PanelConfig
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
         Name = L.T("Main panel"),
-        Edge = s.Edge, MonitorMode = s.MonitorMode, MonitorIndex = s.MonitorIndex, HotZone = s.HotZone,
-        HotZoneThickness = s.HotZoneThickness, HotZoneLength = s.HotZoneLength, PanelWidth = s.PanelWidth,
-        PanelHeightPercent = s.PanelHeightPercent, PanelAlignment = s.PanelAlignment, PanelColor = s.PanelColor,
-        PanelOpacity = s.PanelOpacity, Hotkey = s.Hotkey, DefaultFilter = s.DefaultFilter, Pinned = s.Pinned
+        Edge = s.Edge,
+        MonitorMode = s.MonitorMode,
+        MonitorIndex = s.MonitorIndex,
+        HotZone = s.HotZone,
+        HotZoneThickness = s.HotZoneThickness,
+        HotZoneLength = s.HotZoneLength,
+        PanelWidth = s.PanelWidth,
+        PanelHeightPercent = s.PanelHeightPercent,
+        PanelAlignment = s.PanelAlignment,
+        PanelColor = s.PanelColor,
+        PanelOpacity = s.PanelOpacity,
+        Hotkey = s.Hotkey,
+        DefaultFilter = s.DefaultFilter,
+        Pinned = s.Pinned
     };
 
     public void Normalize()

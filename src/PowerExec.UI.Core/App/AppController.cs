@@ -1150,9 +1150,16 @@ public partial class AppController : IDisposable
                 SaveSettings();
                 StartRemote(new ExecutionRequest
                 {
-                    Item = request.Item, Mode = request.Mode, Engine = Requirements.EngineFor(item, profile.Engine), NoExit = request.NoExit, NoProfile = request.NoProfile,
-                    ExecutionPolicy = request.ExecutionPolicy, Parameters = request.Parameters, ResolvedPath = request.ResolvedPath,
-                    Targets = targets.ToList(), CopyFolder = item.CopyFolderByDefault
+                    Item = request.Item,
+                    Mode = request.Mode,
+                    Engine = Requirements.EngineFor(item, profile.Engine),
+                    NoExit = request.NoExit,
+                    NoProfile = request.NoProfile,
+                    ExecutionPolicy = request.ExecutionPolicy,
+                    Parameters = request.Parameters,
+                    ResolvedPath = request.ResolvedPath,
+                    Targets = targets.ToList(),
+                    CopyFolder = item.CopyFolderByDefault
                 }, null, raw, profile);
             }
             else

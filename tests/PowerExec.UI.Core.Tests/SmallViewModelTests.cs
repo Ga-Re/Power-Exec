@@ -24,8 +24,12 @@ public class HistoryRowViewModelTests
 {
     private static HistoryEntry Entry() => new()
     {
-        Name = "Reset", ProfileName = "Standard", StartUtc = DateTime.UtcNow, EndUtc = DateTime.UtcNow.AddSeconds(4.2),
-        Result = HistoryResult.Success, Summary = "Exit 0",
+        Name = "Reset",
+        ProfileName = "Standard",
+        StartUtc = DateTime.UtcNow,
+        EndUtc = DateTime.UtcNow.AddSeconds(4.2),
+        Result = HistoryResult.Success,
+        Summary = "Exit 0",
         Parameters = new(StringComparer.OrdinalIgnoreCase) { ["User"] = "lena", ["Force"] = "true" }
     };
 
@@ -175,7 +179,8 @@ public class WorkflowEditorViewModelTests
         host.Items[@"C:\s\Start.ps1"] = new LaunchItem { FullPath = @"C:\s\Start.ps1", RootFolder = @"C:\s", Type = ItemType.PowerShell };
         var wf = new CustomEntry
         {
-            Name = "Neustart", Kind = CustomEntryKind.Workflow,
+            Name = "Neustart",
+            Kind = CustomEntryKind.Workflow,
             Steps = new()
             {
                 new WorkflowStep { Path = @"C:\s\Stop.ps1", Name = "Stop" },

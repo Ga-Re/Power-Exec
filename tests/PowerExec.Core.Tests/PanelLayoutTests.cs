@@ -52,7 +52,10 @@ public class PanelLayoutTests
     {
         var s = new PanelConfig
         {
-            Edge = ScreenEdge.Right, HotZone = HotZoneMode.FirstHalf, PanelHeightPercent = 40, PanelAlignment = PanelAlignment.HotZone
+            Edge = ScreenEdge.Right,
+            HotZone = HotZoneMode.FirstHalf,
+            PanelHeightPercent = 40,
+            PanelAlignment = PanelAlignment.HotZone
         };
         var r = PanelLayout.Panel(Bounds, Work, s, 1.0);
         var zone = PanelLayout.HotZone(Bounds, Work, s, 1.0);

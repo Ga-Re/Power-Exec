@@ -312,7 +312,11 @@ public sealed class MachineGroup
 
     public MachineGroup Clone() => new()
     {
-        Name = Name, Machines = new List<string>(Machines), AdQuery = AdQuery?.Clone(), ListQuery = ListQuery?.Clone(),
-        LastSyncUtc = LastSyncUtc, LastSyncError = LastSyncError
+        Name = Name,
+        Machines = new List<string>(Machines),
+        AdQuery = AdQuery?.Clone(),
+        ListQuery = ListQuery?.Clone(),
+        LastSyncUtc = LastSyncUtc,
+        LastSyncError = LastSyncError
     };
 }

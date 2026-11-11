@@ -48,19 +48,19 @@ public static class SearchSuggestions
         var list = new List<SearchSuggestion>();
         if (src.Tags.Count > 0)
             list.Add(new SearchSuggestion("#", L.T("Tag"), Examples(src.Tags.OrderByDescending(t => t.Value).ThenBy(t => t.Key).Select(t => "#" + t.Key), src.Tags.Count), src.Tags.Count)
-                { IsCategory = true, Glyph = "\uE8EC" });
+            { IsCategory = true, Glyph = "\uE8EC" });
         var kinds = src.Kinds.Where(k => k.Value > 0 && KindNames.ContainsKey(k.Key)).OrderByDescending(k => k.Value).ToList();
         if (kinds.Count > 0)
             list.Add(new SearchSuggestion(TypeKey, L.T("Type"), Examples(kinds.Select(k => KindNames[k.Key].Label), kinds.Count), kinds.Count)
-                { IsCategory = true, Glyph = "\uE7C3" });
+            { IsCategory = true, Glyph = "\uE7C3" });
         var groups = src.Groups.Where(g => g.Value > 0 && g.Key.Length > 0).ToList();
         if (groups.Count > 0)
             list.Add(new SearchSuggestion(GroupKey, L.T("Group"), Examples(groups.OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => g.Key), groups.Count), groups.Count)
-                { IsCategory = true, Glyph = "\uE8B7" });
+            { IsCategory = true, Glyph = "\uE8B7" });
         var flags = Flags(src).Where(f => f.Count > 0).ToList();
         if (flags.Count > 0)
             list.Add(new SearchSuggestion(FlagKey, L.T("Property"), Examples(flags.Select(f => f.Label), flags.Count), flags.Count)
-                { IsCategory = true, Glyph = "\uE734" });
+            { IsCategory = true, Glyph = "\uE734" });
         return list;
     }
 

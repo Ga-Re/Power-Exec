@@ -249,7 +249,7 @@ public partial class SettingsWindow : Window
 
     private void SnackbarClose_Click(object sender, RoutedEventArgs e) => HideSnackbar();
 
-        private ScrollViewer? FindScroll()
+    private ScrollViewer? FindScroll()
     {
         static ScrollViewer? Find(DependencyObject d)
         {

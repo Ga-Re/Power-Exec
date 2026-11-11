@@ -89,15 +89,24 @@ public static class MessageDialog
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var icon = new TextBlock
         {
-            Text = glyph, FontSize = 22, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top,
+            Text = glyph,
+            FontSize = 22,
+            Margin = new Thickness(0, 0, 14, 0),
+            VerticalAlignment = VerticalAlignment.Top,
             FontFamily = (FontFamily)Application.Current.FindResource("IconFont")
         };
         icon.SetResourceReference(TextBlock.ForegroundProperty, brush);
         var text = new System.Windows.Controls.TextBox
         {
-            Text = message, TextWrapping = TextWrapping.Wrap, IsReadOnly = true, BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent, Padding = new Thickness(0), MaxHeight = 420,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            IsReadOnly = true,
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            Padding = new Thickness(0),
+            MaxHeight = 420,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Focusable = false
         };
         text.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Text.Primary");
         Grid.SetColumn(text, 1);

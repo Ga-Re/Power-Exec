@@ -176,8 +176,20 @@ public sealed class PerfDataset
 
     private static string VerbText(string name) => name[..name.IndexOf('-')] switch
     {
-        "Get" => "Zeigt", "Set" => "Setzt", "Reset" => "Setzt zurück", "New" => "Legt an", "Remove" => "Entfernt",
-        "Test" => "Prüft", "Start" => "Startet", "Stop" => "Stoppt", "Restart" => "Startet neu", "Export" => "Exportiert",
-        "Import" => "Importiert", "Sync" => "Gleicht ab", "Clear" => "Leert", "Update" => "Aktualisiert", _ => "Führt aus"
+        "Get" => "Zeigt",
+        "Set" => "Setzt",
+        "Reset" => "Setzt zurück",
+        "New" => "Legt an",
+        "Remove" => "Entfernt",
+        "Test" => "Prüft",
+        "Start" => "Startet",
+        "Stop" => "Stoppt",
+        "Restart" => "Startet neu",
+        "Export" => "Exportiert",
+        "Import" => "Importiert",
+        "Sync" => "Gleicht ab",
+        "Clear" => "Leert",
+        "Update" => "Aktualisiert",
+        _ => "Führt aus"
     };
 }

@@ -106,9 +106,14 @@ public sealed class DesignPreview : Border
         var winBar = winDark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xE9, 0xE9, 0xE9);
         var window = new Border
         {
-            Background = new SolidColorBrush(winBg), CornerRadius = new CornerRadius(3),
-            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(8, 10, 0, 0), Width = 64, Height = 42, Opacity = 0.97,
+            Background = new SolidColorBrush(winBg),
+            CornerRadius = new CornerRadius(3),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(8, 10, 0, 0),
+            Width = 64,
+            Height = 42,
+            Opacity = 0.97,
             Child = new StackPanel
             {
                 Children =
@@ -124,7 +129,8 @@ public sealed class DesignPreview : Border
         // Taskleiste
         _root.Children.Add(new Border
         {
-            Height = 9, VerticalAlignment = VerticalAlignment.Bottom,
+            Height = 9,
+            VerticalAlignment = VerticalAlignment.Bottom,
             Background = new SolidColorBrush(winDark ? Color.FromArgb(0xD0, 0x1C, 0x1C, 0x1C) : Color.FromArgb(0xD0, 0xEE, 0xEE, 0xEE))
         });
 
@@ -153,10 +159,13 @@ public sealed class DesignPreview : Border
         content.Children.Add(buttons);
         _panel = new Border
         {
-            HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 11),
-            CornerRadius = new CornerRadius(4, 0, 0, 4), ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 4, 0, 11),
+            CornerRadius = new CornerRadius(4, 0, 0, 4),
+            ClipToBounds = true,
             Background = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), panel.R, panel.G, panel.B)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, ink.R, ink.G, ink.B)), BorderThickness = new Thickness(0.6, 0.6, 0, 0.6),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, ink.R, ink.G, ink.B)),
+            BorderThickness = new Thickness(0.6, 0.6, 0, 0.6),
             Child = content
         };
         _root.Children.Add(_panel);
@@ -164,8 +173,11 @@ public sealed class DesignPreview : Border
         // Hover-Zone: leuchtet am rechten Rand
         _root.Children.Add(new Border
         {
-            Width = 2.5, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
-            Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(1.5, 0, 0, 1.5),
+            Width = 2.5,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(accent),
+            CornerRadius = new CornerRadius(1.5, 0, 0, 1.5),
             Effect = new DropShadowEffect { Color = accent, BlurRadius = 6, ShadowDepth = 0, Opacity = 0.9 }
         });
         UpdateLayoutParts();

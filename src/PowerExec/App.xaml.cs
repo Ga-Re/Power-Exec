@@ -42,7 +42,8 @@ public partial class App : Application
         {
             while (_showEvent.WaitOne())
                 Dispatcher.BeginInvoke(() => _controller?.ShowPanelFromHotkey());
-        }) { IsBackground = true, Name = "PowerExec.ShowEvent" };
+        })
+        { IsBackground = true, Name = "PowerExec.ShowEvent" };
         thread.Start();
     }
 

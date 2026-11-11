@@ -120,7 +120,9 @@ public sealed class VariablesViewModel : ObservableObject
         if (Variables.Find(_s, name) != null) return true;
         var v = new UserVariable
         {
-            Name = name, Kind = kind, Description = description,
+            Name = name,
+            Kind = kind,
+            Description = description,
             // Geheimes nie vorbelegen (wird verschlüsselt gespeichert); sonst Vorschlag bzw. Befehl übernehmen
             Value = kind == VariableKind.Secret ? string.Empty : suggestion
         };

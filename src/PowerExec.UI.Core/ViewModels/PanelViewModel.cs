@@ -898,8 +898,14 @@ public sealed class PanelViewModel : ObservableObject
 
         GroupSpec MakeGroup(string key, string title, string kind, string? folderPath, IEnumerable<LaunchItem> items, string? error = null) => new()
         {
-            Key = key, Title = title, Kind = kind, IsFavorites = kind == "fav", FolderPath = folderPath, Error = error,
-            Expanded = searching || !collapsed.Contains(key), AllowReorder = !searching,
+            Key = key,
+            Title = title,
+            Kind = kind,
+            IsFavorites = kind == "fav",
+            FolderPath = folderPath,
+            Error = error,
+            Expanded = searching || !collapsed.Contains(key),
+            AllowReorder = !searching,
             Items = Arrange(key, items).Select(i => ItemVm(i, key)).ToList()
         };
 
@@ -908,7 +914,11 @@ public sealed class PanelViewModel : ObservableObject
         if (query.HasTerms && pool.Count > BestHitsCount)
             groups.Add(new GroupSpec
             {
-                Key = "best", Title = L.T("Best matches"), Kind = "best", Expanded = true, AllowReorder = false,
+                Key = "best",
+                Title = L.T("Best matches"),
+                Kind = "best",
+                Expanded = true,
+                AllowReorder = false,
                 Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
             });
         // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
@@ -936,8 +946,12 @@ public sealed class PanelViewModel : ObservableObject
                 if (recent.Count > 0)
                     fixedSpecs[FixedGroups.Recent] = new GroupSpec
                     {
-                        Key = "recent", Title = L.T("Recently run"), Kind = "recent", Expanded = !collapsed.Contains("recent"),
-                        AllowReorder = false, Items = recent
+                        Key = "recent",
+                        Title = L.T("Recently run"),
+                        Kind = "recent",
+                        Expanded = !collapsed.Contains("recent"),
+                        AllowReorder = false,
+                        Items = recent
                     };
             }
 

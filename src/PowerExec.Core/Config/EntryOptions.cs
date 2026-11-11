@@ -41,11 +41,28 @@ public sealed class EntryOptions
 
     public static EntryOptions From(CustomEntry e) => new()
     {
-        Browser = e.Browser, BrowserProfile = e.BrowserProfile, Private = e.Private, AppWindow = e.AppWindow,
-        User = e.User, Screen = e.Screen, ScreenWidth = e.ScreenWidth, ScreenHeight = e.ScreenHeight, AllMonitors = e.AllMonitors,
-        AdminSession = e.AdminSession, Gateway = e.Gateway, Client = e.Client, RemoteCommand = e.RemoteCommand, JumpHost = e.JumpHost,
-        PortForward = e.PortForward, TerminalProfile = e.TerminalProfile, OpenWith = e.OpenWith, OpenWithProgram = e.OpenWithProgram,
-        WorkingDirectory = e.WorkingDirectory, WindowState = e.WindowState, PasteAfterCopy = e.PasteAfterCopy, CopyAsHtml = e.CopyAsHtml
+        Browser = e.Browser,
+        BrowserProfile = e.BrowserProfile,
+        Private = e.Private,
+        AppWindow = e.AppWindow,
+        User = e.User,
+        Screen = e.Screen,
+        ScreenWidth = e.ScreenWidth,
+        ScreenHeight = e.ScreenHeight,
+        AllMonitors = e.AllMonitors,
+        AdminSession = e.AdminSession,
+        Gateway = e.Gateway,
+        Client = e.Client,
+        RemoteCommand = e.RemoteCommand,
+        JumpHost = e.JumpHost,
+        PortForward = e.PortForward,
+        TerminalProfile = e.TerminalProfile,
+        OpenWith = e.OpenWith,
+        OpenWithProgram = e.OpenWithProgram,
+        WorkingDirectory = e.WorkingDirectory,
+        WindowState = e.WindowState,
+        PasteAfterCopy = e.PasteAfterCopy,
+        CopyAsHtml = e.CopyAsHtml
     };
 
     public void ApplyTo(CustomEntry e)

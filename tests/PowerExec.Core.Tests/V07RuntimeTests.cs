@@ -8,8 +8,11 @@ public class V07RuntimeTests
 {
     private static LaunchItem Script(bool admin = false, string version = "") => new()
     {
-        FullPath = @"C:\Scripts\a.ps1", RootFolder = @"C:\Scripts", Type = ItemType.PowerShell,
-        RequiresAdmin = admin, RequiredPsVersion = version
+        FullPath = @"C:\Scripts\a.ps1",
+        RootFolder = @"C:\Scripts",
+        Type = ItemType.PowerShell,
+        RequiresAdmin = admin,
+        RequiredPsVersion = version
     };
 
     [Theory]
@@ -50,7 +53,9 @@ public class V07RuntimeTests
         var item = new CustomEntry { Kind = CustomEntryKind.Rdp, Target = "SRV-01", Arguments = "/admin" }.ToLaunchItem();
         var spec = CommandBuilder.BuildLocal(new ExecutionRequest
         {
-            Item = item, ResolvedPath = item.LaunchTarget, ExtraArguments = item.LaunchArguments
+            Item = item,
+            ResolvedPath = item.LaunchTarget,
+            ExtraArguments = item.LaunchArguments
         });
         Assert.Equal("mstsc.exe", spec.FileName);
         Assert.Equal("/v:SRV-01 /admin", spec.Arguments);

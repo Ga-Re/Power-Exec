@@ -478,7 +478,11 @@ public sealed class ProfilesViewModel : ObservableObject
     public bool IsScannedFile => Entry == null;
     public string FileKindText => Item.IsPowerShell ? L.T("PowerShell script") : Item.Type switch
     {
-        ItemType.Batch => L.T("Batch script"), ItemType.Shortcut => L.T("Shortcut"), ItemType.ConsoleSnapIn => "Snap-in", ItemType.Executable => L.T("Program"), _ => L.T("File")
+        ItemType.Batch => L.T("Batch script"),
+        ItemType.Shortcut => L.T("Shortcut"),
+        ItemType.ConsoleSnapIn => "Snap-in",
+        ItemType.Executable => L.T("Program"),
+        _ => L.T("File")
     };
     public string FileInfo => Item.ParseError ?? (Item.Synopsis.Length > 0 ? Item.Synopsis : L.T("No description in the script (comment-based help .SYNOPSIS)."));
     public string FileParametersText => Item.Parameters.Count == 0 ? L.T("No parameters") : L.T("Parameters: ") + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? L.T(" (required)") : string.Empty)));

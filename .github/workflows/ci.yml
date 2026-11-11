@@ -9,6 +9,19 @@ permissions:
   contents: read
 
 jobs:
+  format:
+    # Formatierung nach .editorconfig (Einrückung, Leerzeichen). Unter Linux: dort sind die Zeilenenden wie im Repository.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Formatierung prüfen
+        run: dotnet format whitespace PowerExec.sln --verify-no-changes
+
   build:
     runs-on: windows-latest
     steps:
