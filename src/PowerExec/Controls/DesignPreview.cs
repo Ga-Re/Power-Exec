@@ -9,6 +9,7 @@ using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
 using PowerExec.Desktop.Services;
 using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Controls;
 
@@ -87,11 +88,11 @@ public sealed class DesignPreview : Border
 
         var winDark = ThemeService.SystemUsesDarkTheme();
         var dark = d.Theme switch { ThemeMode.Light => false, ThemeMode.Dark => true, _ => winDark };
-        var panel = PanelColors.TryParse(d.PanelColor, out var pc) ? Color.FromRgb(pc.R, pc.G, pc.B)
+        var panel = PanelColors.TryParse(d.PanelColor, out var pc) ? pc.ToColor()
             : dark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3);
         var light = (0.299 * panel.R + 0.587 * panel.G + 0.114 * panel.B) > 150;
         var ink = light ? Color.FromRgb(0x1B, 0x1B, 0x1B) : Colors.White;
-        var accent = PanelColors.TryParse(d.AccentColor, out var ac) ? Color.FromRgb(ac.R, ac.G, ac.B)
+        var accent = PanelColors.TryParse(d.AccentColor, out var ac) ? ac.ToColor()
             : TryFindResource("Accent") is SolidColorBrush ab ? ab.Color : Color.FromRgb(0x00, 0x78, 0xD4);
         var opacity = d.Backdrop == PanelBackdrop.Solid ? 1.0 : Math.Clamp(d.Opacity / 100.0, 0.2, 1.0);
 

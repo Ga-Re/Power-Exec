@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Desktop.Interop;
 using PowerExec.Desktop.Services;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Views;
 
@@ -46,10 +47,10 @@ public sealed class EdgeTriggerWindow : Window
         Brush outline = Brushes.Transparent;
         if (!app.Settings.UseWindowsAccent && (PanelColors.TryParse(settings.AccentColor, out var rgb) || PanelColors.TryParse(settings.PanelColor, out rgb)))
         {
-            fill = new SolidColorBrush(Color.FromRgb(rgb.R, rgb.G, rgb.B));
+            fill = rgb.ToBrush();
             // Feiner Rand, damit auch sehr dunkle oder sehr helle Farben auf dem Desktop sichtbar bleiben
             var border = PanelColors.Blend(rgb, PanelColors.IsLight(rgb) ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), 0.35);
-            outline = new SolidColorBrush(Color.FromRgb(border.R, border.G, border.B));
+            outline = border.ToBrush();
         }
         else
         {

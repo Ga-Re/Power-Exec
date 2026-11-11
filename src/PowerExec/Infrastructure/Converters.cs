@@ -65,7 +65,7 @@ public sealed class HexBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         Core.Config.PanelColors.TryParse(value as string, out var c)
-            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(c.R, c.G, c.B))
+            ? c.ToBrush()
             : System.Windows.Media.Brushes.Transparent;
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
@@ -82,7 +82,7 @@ public sealed class TagBrushConverter : IValueConverter
         var hex = value is string tag ? Lookup?.Invoke(tag) ?? string.Empty : string.Empty;
         bool has = Core.Config.PanelColors.TryParse(hex, out var c);
         if (parameter as string == "has") return has;
-        return has ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x60, c.R, c.G, c.B)) : System.Windows.Media.Brushes.Transparent;
+        return has ? c.ToBrush(0x60 / 255.0) : System.Windows.Media.Brushes.Transparent;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
