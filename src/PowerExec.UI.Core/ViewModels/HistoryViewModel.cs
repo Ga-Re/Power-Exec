@@ -2,9 +2,9 @@ using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Eine Zeile im Verlauf.</summary>
 public sealed class HistoryRowViewModel

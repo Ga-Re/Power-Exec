@@ -1,8 +1,8 @@
 using PowerExec.Core.Localization;
 using System.Windows;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 public partial class CredentialWindow : Window
 {

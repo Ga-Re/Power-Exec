@@ -1,7 +1,7 @@
 using Microsoft.Win32;
 using PowerExec.Core.Updates;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Welche Version von Power-Exec ist über den Installer installiert (Eintrag in „Apps &amp; Features“)?</summary>
 public static class InstalledVersion

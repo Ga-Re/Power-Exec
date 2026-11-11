@@ -1,9 +1,9 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Dynamische Rechnergruppen: beim Start und danach im eingestellten Intervall aus dem Active Directory aktualisieren.

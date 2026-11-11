@@ -4,9 +4,9 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using Path = System.Windows.Shapes.Path;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Zeigt ein Symbol aus <see cref="IconRef"/>-Text an: Fluent (gefüllter Pfad), Heroicons (Linien),

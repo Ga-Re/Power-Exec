@@ -1,8 +1,8 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Updates;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was das Einstellungsfenster (<see cref="SettingsViewModel"/>) als Ganzes von der App braucht.</summary>
 public interface ISettingsWindowHost : ICustomEntryListHost, IProfilesHost

@@ -1,12 +1,12 @@
 using PowerExec.Core.Localization;
 using System.Collections.Concurrent;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
 public sealed class ItemRepository : IItemSource, IDisposable

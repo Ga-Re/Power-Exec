@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Media;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
 using Wpf.Ui.Markup;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Fluent-Bedienelemente von WPF UI für einzelne Fenster (zunächst das Einstellungsfenster). Die Ressourcen von

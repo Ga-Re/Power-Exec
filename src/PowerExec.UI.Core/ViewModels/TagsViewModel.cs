@@ -2,9 +2,9 @@ using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Ein Schlagwort in der Verwaltung (Anzahl, Einträge, Farbe, Umbenennen, Löschen).</summary>
 public sealed class TagRowViewModel : ObservableObject

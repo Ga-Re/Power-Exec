@@ -1,6 +1,6 @@
 using System.DirectoryServices;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Sucht Computerkonten im Active Directory (mit dem angemeldeten Konto, ohne gespeicherte Anmeldedaten).</summary>
 public static class AdSearch

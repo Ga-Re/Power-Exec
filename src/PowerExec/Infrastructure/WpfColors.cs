@@ -2,8 +2,9 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>Neutrale Farben (<see cref="ArgbColor"/>) als WPF-Pinsel.</summary>
 public static class WpfColors

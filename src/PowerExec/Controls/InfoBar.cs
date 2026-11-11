@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 public enum InfoBarSeverity { Info, Success, Warning, Error }
 

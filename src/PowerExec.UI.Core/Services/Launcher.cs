@@ -6,7 +6,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Startet Scripte und Programme lokal.</summary>
 public sealed class Launcher

@@ -2,8 +2,9 @@ using System.Text.Json;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Ein Symbol in der Auswahl.</summary>
 public sealed record IconChoice(IconRef Ref, string Name, string Search);

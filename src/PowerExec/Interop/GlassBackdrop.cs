@@ -4,7 +4,7 @@ using System.Runtime.Versioning;
 using Windows.UI.Composition;
 using Windows.UI.Composition.Desktop;
 
-namespace PowerExec.Interop;
+namespace PowerExec.Desktop.Interop;
 
 /// <summary>
 /// Glas (eigener Weichzeichner): Windows-Composition direkt im Panelfenster. Hinter dem WPF-Inhalt liegt ein

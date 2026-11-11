@@ -17,8 +17,10 @@ Diese Regeln gelten für alle Änderungen – von Hand oder mit KI-Unterstützun
 |---|---|---|---|
 | `PowerExec.Core` | `PowerExec.Core.*` | Modelle, Einstellungen, Suche, Layout-Berechnung – reine Logik | – |
 | `PowerExec.UI.Core` | `PowerExec.UI.*` | `AppController`, ViewModels, Dienste ohne WPF | Core |
-| `PowerExec` | `PowerExec.Wpf.*` | Fenster, Controls, Themes, Win32 | Core, UI.Core |
+| `PowerExec` | `PowerExec.Desktop.*` | Fenster, Controls, Themes, Win32 | Core, UI.Core |
 
+- Die App heißt im Namensraum `Desktop`, nicht `Wpf`: die Bibliothek WPF UI belegt `Wpf.Ui`, ein eigener Namensraum
+  `PowerExec.Wpf` würde deren Typen in jedem Fenster verdecken.
 - Logik, die sich ohne Fenster prüfen lässt, gehört nach Core bzw. UI.Core und bekommt einen Test.
 - ViewModels kennen keine WPF-Typen. Was die Oberfläche können muss, steht als Schnittstelle in UI.Core (`IAppUi`, `IPanelView`, …).
 

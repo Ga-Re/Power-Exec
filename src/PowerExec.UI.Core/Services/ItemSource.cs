@@ -1,7 +1,7 @@
 using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Ergebnis des Einlesens eines Ordners.</summary>
 public sealed record FolderStatus(string Path, int Count, IReadOnlyList<ExcludedFile> ExcludedFiles, string? Error)

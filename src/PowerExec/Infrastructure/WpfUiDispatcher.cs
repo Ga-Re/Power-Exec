@@ -1,6 +1,7 @@
 using System.Windows.Threading;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary><see cref="IUiDispatcher"/> für WPF.</summary>
 public sealed class WpfUiDispatcher(Dispatcher dispatcher) : IUiDispatcher

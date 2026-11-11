@@ -7,9 +7,9 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Vorschau eines Designs als kleine Desktop-Szene: echtes Windows-Hintergrundbild, ein Fenster im Windows-Design

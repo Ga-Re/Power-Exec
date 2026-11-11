@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Eingabe für Rechnernamen: beim Tippen von „@“ erscheinen die Rechnergruppen als Vorschläge,

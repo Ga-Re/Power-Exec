@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Vorschläge beim Tippen von <c>{{$</c> in einem Textfeld: Liste der Variablen, Pfeiltasten wählen, Enter/Tab fügt ein,

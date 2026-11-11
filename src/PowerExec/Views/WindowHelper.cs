@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 internal static class WindowHelper
 {

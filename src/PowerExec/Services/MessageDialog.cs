@@ -6,7 +6,7 @@ using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 using TextBlock = System.Windows.Controls.TextBlock;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Art einer Meldung (Symbol und Farbe).</summary>
 public enum MessageKind { Info, Warning, Question, Error }

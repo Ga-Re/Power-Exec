@@ -7,7 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Eingabe für Schlagworte als Chips: Enter, Komma oder Semikolon fügt hinzu, × bzw. Rücktaste (leeres Feld) entfernt.

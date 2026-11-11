@@ -1,9 +1,9 @@
-<Window x:Class="PowerExec.Views.CatalogWindow"
-        xmlns:l="clr-namespace:PowerExec.Localization"
+<Window x:Class="PowerExec.Desktop.Views.CatalogWindow"
+        xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        xmlns:c="clr-namespace:PowerExec.Controls"
+        xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
         Title="{l:T 'Add from templates'}" Style="{StaticResource AppWindow}"
         Width="680" Height="640" MinWidth="480" MinHeight="420" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">

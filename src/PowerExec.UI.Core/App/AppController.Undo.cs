@@ -1,10 +1,10 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Rückgängig für Änderungen im Panel (Ausblenden, Entfernen, Verschieben, Gruppen …):

@@ -5,9 +5,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using PowerExec.Core.Config;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Schild am Mauszeiger beim Ziehen einer Gruppe: Name, Farbe und Zahl der Untergruppen (Option „Ziehbild“)

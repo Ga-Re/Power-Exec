@@ -2,9 +2,9 @@ using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Wo an dieser Gruppe beim Ziehen einer anderen die Lücke aufgeht.</summary>
 public enum GroupDropSlot { None, Before, After, Inside }

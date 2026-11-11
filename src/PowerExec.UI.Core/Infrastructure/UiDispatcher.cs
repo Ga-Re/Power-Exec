@@ -1,4 +1,4 @@
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>
 /// UI-Thread der Oberfläche ohne Framework-Bezug (WPF: <c>Dispatcher</c>/<c>DispatcherTimer</c>; in Tests eine Attrappe).

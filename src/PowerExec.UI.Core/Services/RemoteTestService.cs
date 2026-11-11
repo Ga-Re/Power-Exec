@@ -5,7 +5,7 @@ using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Führt den Verbindungstest (WinRM, Anmeldung, PowerShell 7) für mehrere Rechner aus.</summary>
 public static class RemoteTestService

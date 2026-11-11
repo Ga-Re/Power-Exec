@@ -4,7 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Farbwähler: Sättigung/Helligkeit-Feld, Farbton-Leiste, Vorlagen und #RRGGBB-Feld.</summary>
 public partial class ColorPickerWindow : Window

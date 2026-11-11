@@ -1,9 +1,9 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Team-Kataloge (D3): eine Exportdatei auf einer Freigabe abonnieren. Power-Exec prüft beim Start und alle 30 Minuten,

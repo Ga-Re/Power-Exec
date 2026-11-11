@@ -1,8 +1,8 @@
 using PowerExec.Core.Updates;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>Einführungs-Assistent und „Neu in dieser Version“.</summary>
 public partial class AppController

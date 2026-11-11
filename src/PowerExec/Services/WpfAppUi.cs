@@ -1,10 +1,12 @@
 using System.Windows;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.Infrastructure;
+using PowerExec.Desktop.Infrastructure;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary><see cref="IAppUi"/> für WPF: Fenster, Panels, Tray (WinForms-NotifyIcon), Tastenkürzel und Design.</summary>
 public sealed class WpfAppUi : IAppUi

@@ -6,10 +6,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Einstellungen werden live übernommen: Jede Eingabe startet einen kurzen Zeitgeber, danach gehen die Änderungen

@@ -1,7 +1,7 @@
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Farbauswahl für Gruppen und Schlagworte (Auswahlliste: Wert = #RRGGBB, Text = Name).</summary>
 public static class ColorChoices

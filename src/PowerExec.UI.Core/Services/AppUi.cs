@@ -2,10 +2,10 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Die Oberfläche aus Sicht des App-Kerns (<c>AppController</c>): Fenster, Panels, Tray, Tastenkürzel und Design.

@@ -1,8 +1,10 @@
 using System.Windows;
 using PowerExec.Core.Config;
-using PowerExec.Views;
+using PowerExec.Desktop.Views;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary><see cref="IShell"/> für Windows/WPF.</summary>
 public sealed class WpfShell(IDialogs dialogs) : IShell
@@ -76,7 +78,7 @@ public sealed class WpfDialogs(Func<Func<string?>?> testAnswer) : IDialogs
         testAnswer()?.Invoke() ?? GroupPickerWindow.Pick(heading, prompt, groups, suggestion, owner as Window);
 
     public bool EditVariable(object row, object? owner = null) =>
-        row is ViewModels.VariableRowViewModel r && VariableWindow.Edit(r, owner as Window);
+        row is VariableRowViewModel r && VariableWindow.Edit(r, owner as Window);
 
     public string? PickFolder(string? title = null, object? owner = null)
     {

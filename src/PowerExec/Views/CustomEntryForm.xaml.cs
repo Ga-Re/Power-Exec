@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Felder eines eigenen Eintrags je Art; DataContext ist ein <see cref="CustomEntryViewModel"/>.</summary>
 public partial class CustomEntryForm : UserControl

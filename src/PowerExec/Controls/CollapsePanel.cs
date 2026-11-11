@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Klappt seinen Inhalt weich auf und zu (Höhe 0 ↔ volle Höhe). Zugeklappt ist der Inhalt <see cref="Visibility.Collapsed"/>,

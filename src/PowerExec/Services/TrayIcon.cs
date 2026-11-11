@@ -1,9 +1,10 @@
 using PowerExec.Core.Localization;
 using System.Windows;
+using PowerExec.UI.Services;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Symbol im Infobereich mit Menü (Panel öffnen, Einstellungen, Beenden).</summary>
 public sealed class TrayIcon : IDisposable

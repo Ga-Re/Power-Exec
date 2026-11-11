@@ -3,10 +3,10 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Einstellungen eines Panels im Einstellungsfenster (Arbeitskopie von <see cref="PanelConfig"/>).</summary>
 public sealed class PanelSettingsViewModel : ObservableObject

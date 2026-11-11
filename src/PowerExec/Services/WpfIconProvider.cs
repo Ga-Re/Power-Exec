@@ -2,8 +2,9 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Data;
 using System.Windows.Media;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary><see cref="IIconProvider"/> über den <see cref="IconService"/>; je Bild genau ein Griff.</summary>
 public sealed class WpfIconProvider(IconService icons) : IIconProvider

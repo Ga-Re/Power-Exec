@@ -1,6 +1,6 @@
 using PowerExec.Core.Search;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>Ein Textabschnitt; <see cref="IsHit"/> = Treffer der Suche.</summary>
 public sealed record TextPart(string Text, bool IsHit)

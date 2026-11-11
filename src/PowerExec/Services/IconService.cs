@@ -7,8 +7,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>
 /// Lädt Symbole: Programmsymbole und Dateisymbole über die Windows-Shell, das Ordnersymbol und Favicons von Webseiten.

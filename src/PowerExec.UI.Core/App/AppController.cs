@@ -5,11 +5,11 @@ using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
 using PowerExec.Core.Search;
 using PowerExec.Core.Updates;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Zentrale Steuerung (App-Kern): Einstellungen, Panels, Aktionen, Updates. Ohne Oberflächen-Typen:

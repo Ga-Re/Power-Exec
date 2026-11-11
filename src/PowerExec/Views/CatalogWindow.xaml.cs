@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Vorlagen-Katalog mit Suche und Mehrfachauswahl.</summary>
 public partial class CatalogWindow : Window

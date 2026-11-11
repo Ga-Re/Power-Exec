@@ -7,10 +7,10 @@ using System.Text.RegularExpressions;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Kachel im ersten Schritt des Eintragsdialogs.</summary>
 public sealed record KindTile(string Key, string Label, string Glyph);

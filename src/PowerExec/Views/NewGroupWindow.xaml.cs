@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Dialog „Neue Gruppe“: Name, Symbol oder Bild, optional ein Ordner (dann smarte Gruppe), Farbe und Darstellung.

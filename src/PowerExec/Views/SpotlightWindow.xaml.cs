@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Input;
 using PowerExec.Core.Execution;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Schwebende Suche in der Bildschirmmitte (Spotlight-Modus); schließt bei Esc oder Klick daneben.</summary>
 public partial class SpotlightWindow : Window

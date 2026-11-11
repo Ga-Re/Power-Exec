@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>OU-Baum des Active Directory: eine Organisationseinheit für „Ab OU“ wählen (Doppelklick oder Übernehmen).</summary>
 public partial class OuPickerWindow : Window

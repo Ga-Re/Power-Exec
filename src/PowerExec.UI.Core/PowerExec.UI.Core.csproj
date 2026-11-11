@@ -5,7 +5,7 @@
   -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>PowerExec</RootNamespace>
+    <RootNamespace>PowerExec.UI</RootNamespace>
     <!-- Registry, AD und Win32 werden nur unter Windows erreicht (beide Oberflächen sind Windows-Apps);
          die Tests unter Linux berühren nur die neutralen Teile. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>

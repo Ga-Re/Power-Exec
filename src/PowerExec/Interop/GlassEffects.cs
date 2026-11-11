@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace PowerExec.Interop;
+namespace PowerExec.Desktop.Interop;
 
 // Eigene Composition-Effekte ohne Win2D. Die Windows-Composition nimmt eine Effektbeschreibung als
 // Windows.Graphics.Effects.IGraphicsEffect entgegen und fragt über IGraphicsEffectD2D1Interop nach dem Direct2D-Effekt

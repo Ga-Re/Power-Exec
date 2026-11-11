@@ -1,7 +1,7 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was der Ablauf-Editor (<see cref="WorkflowEditorViewModel"/>) von der App braucht.</summary>
 public interface IWorkflowHost

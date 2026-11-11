@@ -1,8 +1,8 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Core.Updates;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.ViewModels;
 
 namespace PowerExec.UI.Core.Tests;
 

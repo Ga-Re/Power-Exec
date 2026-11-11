@@ -1,8 +1,8 @@
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was der Eintragsdialog (<see cref="CustomEntryViewModel"/>) von der App braucht.</summary>
 public interface ICustomEntryHost

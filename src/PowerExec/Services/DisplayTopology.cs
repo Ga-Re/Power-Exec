@@ -1,7 +1,8 @@
 using System.Windows.Threading;
 using Microsoft.Win32;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>
 /// Meldet Änderungen an Monitoren, Arbeitsbereich (Taskleiste) und Skalierung – und Momente, in denen Windows Fenster

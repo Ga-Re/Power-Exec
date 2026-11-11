@@ -4,7 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Scrollbalken wie in den Windows-11-Einstellungen: nur sichtbar, wenn es etwas zu scrollen gibt und gerade gescrollt

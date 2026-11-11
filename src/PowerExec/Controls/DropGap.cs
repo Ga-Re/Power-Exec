@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Lücke für das Verschieben von Gruppen: geschlossen 0 px hoch, geöffnet ein gestrichelter Platzhalter mit Farbpunkt

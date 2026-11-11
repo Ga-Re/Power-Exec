@@ -3,7 +3,7 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>
 /// Tauscht das Farbschema (Dunkel/Hell) zur Laufzeit aus, übernimmt auf Wunsch die Windows-Akzentfarbe
@@ -58,7 +58,7 @@ public static class ThemeService
         var merged = Application.Current.Resources.MergedDictionaries;
         if (merged.Count > 0) merged[0] = dict;
         else merged.Insert(0, dict);
-        PowerExec.Views.WindowHelper.RefreshOpenWindows();
+        PowerExec.Desktop.Views.WindowHelper.RefreshOpenWindows();
         Infrastructure.FluentTheme.Refresh();
         Listen();
     }

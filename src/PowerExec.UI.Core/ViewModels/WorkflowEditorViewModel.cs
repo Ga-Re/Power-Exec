@@ -3,9 +3,9 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Ein Schritt im Ablauf-Editor.</summary>
 public sealed class WorkflowStepViewModel : ObservableObject

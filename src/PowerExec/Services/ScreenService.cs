@@ -2,10 +2,10 @@ using PowerExec.Core.Localization;
 using System.Drawing;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
 using Forms = System.Windows.Forms;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 public sealed record MonitorInfo(int Index, Rectangle Bounds, Rectangle WorkArea, bool IsPrimary)
 {

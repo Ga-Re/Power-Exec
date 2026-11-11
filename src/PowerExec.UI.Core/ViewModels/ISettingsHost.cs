@@ -1,7 +1,7 @@
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Was die Teile des Einstellungsfensters (Schlagworte, Panel-Darstellung, Rechnergruppen …) von der App brauchen.

@@ -1,4 +1,4 @@
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Findet Programme wie die Windows-Shell: absoluter Pfad, System32, Windows, PATH, WindowsApps.</summary>
 public static class ProgramResolver

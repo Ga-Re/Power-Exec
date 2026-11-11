@@ -1,10 +1,10 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Geplante Ausführung (D4): Einträge einmalig, täglich (an Wochentagen) oder im Intervall starten.

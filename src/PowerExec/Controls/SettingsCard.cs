@@ -1,8 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>Einstellungskarte wie in PowerToys: Symbol, Titel und Beschreibung links, Steuerelement (Content) rechts.</summary>
 public class SettingsCard : ContentControl
@@ -32,7 +33,7 @@ public sealed class SettingsExpander : SettingsCard
 
     static SettingsExpander() => DefaultStyleKeyProperty.OverrideMetadata(typeof(SettingsExpander), new FrameworkPropertyMetadata(typeof(SettingsExpander)));
 
-    public SettingsExpander() => ToggleCommand = new Infrastructure.RelayCommand(() => IsExpanded = !IsExpanded);
+    public SettingsExpander() => ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
 
     public ICommand ToggleCommand { get; }
 }

@@ -1,6 +1,7 @@
 using System.Windows.Input;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>Bindet <see cref="RelayCommand"/> an den CommandManager von WPF (schwache Handler, Neuprüfung bei Fokus/Eingabe).</summary>
 public sealed class WpfCommandRequery : ICommandRequeryBackend

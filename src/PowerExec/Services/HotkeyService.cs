@@ -1,9 +1,11 @@
 using PowerExec.Core.Localization;
 using System.Windows.Input;
 using System.Windows.Interop;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
+using PowerExec.UI.Services;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Globales Tastenkürzel über RegisterHotKey.</summary>
 public sealed class HotkeyService : IHotkeys
@@ -85,7 +87,7 @@ public sealed class HotkeyService : IHotkeys
     }
 
     /// <summary>Anzeige auf Deutsch: "Strg+Alt+Leertaste".</summary>
-    public static string Display(string hotkey) => Infrastructure.DisplayText.Hotkey(hotkey);
+    public static string Display(string hotkey) => DisplayText.Hotkey(hotkey);
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {

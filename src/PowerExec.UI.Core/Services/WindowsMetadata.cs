@@ -4,7 +4,7 @@ using System.Text;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Liest Dateibeschreibung von EXE-Dateien und Ziel/Kommentar von Verknüpfungen.</summary>
 public sealed class WindowsMetadata : IPlatformMetadata

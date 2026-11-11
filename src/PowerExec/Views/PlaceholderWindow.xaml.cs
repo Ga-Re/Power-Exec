@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Fragt die Platzhalter eines eigenen Eintrags ab ({{Name}}), mit Verlauf.</summary>
 public partial class PlaceholderWindow : Window

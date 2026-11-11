@@ -1,8 +1,8 @@
-<Application x:Class="PowerExec.App"
+<Application x:Class="PowerExec.Desktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:infra="clr-namespace:PowerExec.Infrastructure"
-             xmlns:svc="clr-namespace:PowerExec.Services"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
+             xmlns:svc="clr-namespace:PowerExec.Desktop.Services"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>

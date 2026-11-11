@@ -1,6 +1,6 @@
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Gemeinsamer Stand des Update-Hinweises für alle Panels und das Einstellungsfenster.

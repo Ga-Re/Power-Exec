@@ -1,8 +1,9 @@
 using PowerExec.Core.Config;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>WPF-Oberfläche eines Panels: Panelfenster, Hover-Zonen bzw. Mini-Docks (je Monitor).</summary>
 public sealed class PanelHost : IPanelView

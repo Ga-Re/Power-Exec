@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace PowerExec.Interop;
+namespace PowerExec.Desktop.Interop;
 
 internal static class NativeMethods
 {

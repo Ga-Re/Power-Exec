@@ -7,12 +7,13 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Infrastructure;
-using PowerExec.Interop;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.Desktop.Infrastructure;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Ein Platz im Mini-Dock: Favorit (Klick startet) oder „⋯“ (öffnet das Panel).</summary>
 public sealed class DockSlot : ObservableObject

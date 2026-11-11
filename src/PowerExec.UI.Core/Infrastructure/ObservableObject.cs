@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 public abstract class ObservableObject : INotifyPropertyChanged
 {

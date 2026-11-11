@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Input;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 public partial class RunWindow : Window
 {

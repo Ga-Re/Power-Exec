@@ -7,10 +7,10 @@ using PowerExec.Core.Profiles;
 using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 using PowerExec.Core.Updates;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ExclusionViewModel
 {

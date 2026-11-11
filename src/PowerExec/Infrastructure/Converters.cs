@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>true → Visible. Mit Parameter "invert" umgekehrt. Auch für Strings (nicht leer) und Zahlen (> 0).</summary>
 public sealed class VisibilityConverter : IValueConverter

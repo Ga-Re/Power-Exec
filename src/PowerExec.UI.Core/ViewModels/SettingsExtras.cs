@@ -1,10 +1,10 @@
 using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 
 /// <summary>Eine Rechnergruppe („@Name“) im Einstellungsfenster.</summary>

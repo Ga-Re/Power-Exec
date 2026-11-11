@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.Win32;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Installierte Browser (App Paths bzw. bekannte Ordner) und ihre Profile (Local State / profiles.ini).</summary>
 public static class BrowserCatalog

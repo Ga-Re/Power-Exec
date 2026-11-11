@@ -10,7 +10,7 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <RootNamespace>PowerExec</RootNamespace>
+    <RootNamespace>PowerExec.Desktop</RootNamespace>
     <AssemblyName>PowerExec</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\PowerExec.ico</ApplicationIcon>
@@ -27,6 +27,8 @@
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
     <Using Include="System.IO" />
+    <!-- App-Kern (AppController, AppPanel) -->
+    <Using Include="PowerExec.UI" />
     <!-- Seit .NET 9 gibt es System.Windows.ThemeMode (Fluent-Theme von WPF); gemeint ist immer die eigene Einstellung -->
     <Using Include="PowerExec.Core.Config.ThemeMode" Alias="ThemeMode" />
   </ItemGroup>

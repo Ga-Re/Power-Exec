@@ -1,4 +1,4 @@
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>Anzeigetexte, die mehrere Oberflächen gleich formatieren.</summary>
 public static class DisplayText

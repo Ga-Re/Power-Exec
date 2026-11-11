@@ -6,10 +6,10 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
-using PowerExec.Interop;
-using PowerExec.Services;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Schmale, fast unsichtbare Hover-Zone am Bildschirmrand. Nach der Verweilzeit fährt das Panel aus.

@@ -3,9 +3,9 @@ using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Ein Feld im Parameter-Formular direkt im Panel.</summary>
 public sealed class InlineParameterViewModel : ObservableObject

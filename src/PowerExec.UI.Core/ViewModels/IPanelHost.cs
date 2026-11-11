@@ -3,9 +3,9 @@ using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
 using PowerExec.Core.Updates;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Ein Panel der Oberfläche: seine Einstellungen und sein ViewModel (WPF: <c>PanelHost</c>).</summary>
 public interface IPanelContext

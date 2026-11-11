@@ -1,4 +1,4 @@
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>
 /// Quelle für „CanExecute neu prüfen“ aller <see cref="RelayCommand"/>s. Die Oberfläche setzt beim Start

@@ -1,9 +1,9 @@
-<UserControl x:Class="PowerExec.Views.CustomEntryForm"
-        xmlns:l="clr-namespace:PowerExec.Localization"
+<UserControl x:Class="PowerExec.Desktop.Views.CustomEntryForm"
+        xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-             xmlns:c="clr-namespace:PowerExec.Controls">
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls">
     <UserControl.Resources>
       <ResourceDictionary>
         <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->

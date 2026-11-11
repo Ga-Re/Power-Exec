@@ -5,7 +5,7 @@ using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Geheime Variablenwerte verschlüsseln: unter Windows mit dem Datenschutz des angemeldeten Benutzers (DPAPI) – nur dieser

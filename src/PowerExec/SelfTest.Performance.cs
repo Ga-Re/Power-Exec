@@ -7,9 +7,10 @@ using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Diagnostics;
 using PowerExec.Core.Search;
-using PowerExec.Services;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec;
+namespace PowerExec.Desktop;
 
 /// <summary>
 /// Leistungsmessung im Selbsttest: Testbestand mit 500 Einträgen (siehe <see cref="PerfDataset"/>) einlesen,

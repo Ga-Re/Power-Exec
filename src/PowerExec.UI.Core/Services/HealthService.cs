@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Net.Sockets;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 public sealed record HealthResult(bool Ok, string Message, DateTime CheckedUtc);
 

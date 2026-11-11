@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Fortschritt eines Remote-/Massenlaufs, wie ihn die Aktivitäten-Leiste anzeigt

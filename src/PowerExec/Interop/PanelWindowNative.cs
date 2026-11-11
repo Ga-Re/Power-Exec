@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace PowerExec.Interop;
+namespace PowerExec.Desktop.Interop;
 
 /// <summary>
 /// Fenster-Hilfen für das Panel: Fensterbereich (abgerundet, beim Gleiten beschnitten) und die Vorbereitung eines

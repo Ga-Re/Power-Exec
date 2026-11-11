@@ -3,11 +3,12 @@ using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
 using PowerExec.Core.Execution;
-using PowerExec.Services;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
 
-namespace PowerExec;
+namespace PowerExec.Desktop;
 
 /// <summary>
 /// Oberflächen-Selbsttest für die CI (Aufruf: PowerExec.exe --selftest &lt;Ergebnisdatei&gt;).

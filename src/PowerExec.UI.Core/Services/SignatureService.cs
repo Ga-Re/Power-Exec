@@ -2,7 +2,7 @@ using PowerExec.Core.Localization;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Prüft die digitale Signatur (Authenticode) von Scripten und Programmen über WinVerifyTrust.</summary>
 public static class SignatureService

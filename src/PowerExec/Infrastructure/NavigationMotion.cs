@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Wpf.Ui.Controls;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Bewegung für die Navigationsleiste (WPF UI) wie in den Windows-Einstellungen:

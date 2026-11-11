@@ -5,10 +5,10 @@ using System.Text;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ResultRowViewModel : ObservableObject
 {

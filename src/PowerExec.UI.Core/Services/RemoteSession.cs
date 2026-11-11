@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Führt ein Script über den Remote-Runner (Windows PowerShell 5.1) auf einem oder mehreren Rechnern aus.

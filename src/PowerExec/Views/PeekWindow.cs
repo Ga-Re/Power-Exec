@@ -5,9 +5,9 @@ using System.Windows.Documents;
 using System.Windows.Interop;
 using System.Windows.Media;
 using PowerExec.Core.Config;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Vorschau (Leertaste) als eigenes Fenster neben dem Panel. Es nimmt keinen Fokus: ↑/↓ und Leertaste wirken weiter im

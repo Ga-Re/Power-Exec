@@ -1,9 +1,9 @@
-<Window x:Class="PowerExec.Views.NewGroupWindow"
-        xmlns:l="clr-namespace:PowerExec.Localization"
+<Window x:Class="PowerExec.Desktop.Views.NewGroupWindow"
+        xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        xmlns:c="clr-namespace:PowerExec.Controls"
+        xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
         Title="{l:T 'Power-Exec'}" Style="{StaticResource AppWindow}"
         Width="480" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">

@@ -10,17 +10,19 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Infrastructure;
-using PowerExec.Interop;
-using PowerExec.Services;
+using PowerExec.Desktop.Infrastructure;
+using PowerExec.Desktop.Interop;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 public partial class PanelWindow : Window
 {
     private readonly AppController _app;
     private readonly PanelHost _host;
-    private ViewModels.PanelViewModel Vm => _host.ViewModel;
+    private PanelViewModel Vm => _host.ViewModel;
     private PanelConfig Cfg => _host.Config;
     private readonly DispatcherTimer _poll;
     private IntPtr _hwnd;
@@ -252,8 +254,8 @@ public partial class PanelWindow : Window
         PeekCloseButton.Command = Vm.ClosePeekCommand;
         Vm.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(ViewModels.PanelViewModel.ShowPeek) or nameof(ViewModels.PanelViewModel.Peek)) UpdatePeekWindow();
-            else if (e.PropertyName == nameof(ViewModels.PanelViewModel.IsPinned) && !Cfg.Pinned) WatchCursor(); // gelöst: wieder auf Verlassen achten
+            if (e.PropertyName is nameof(PanelViewModel.ShowPeek) or nameof(PanelViewModel.Peek)) UpdatePeekWindow();
+            else if (e.PropertyName == nameof(PanelViewModel.IsPinned) && !Cfg.Pinned) WatchCursor(); // gelöst: wieder auf Verlassen achten
         };
     }
 
@@ -1213,19 +1215,19 @@ public partial class PanelWindow : Window
 
     private const string DragFormat = "PowerExec.Item";
     private Point _dragStart;
-    private ViewModels.ItemViewModel? _dragCandidate;
+    private ItemViewModel? _dragCandidate;
 
     private void Row_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         // Strg+Klick: zur Mehrfachauswahl hinzufügen bzw. entfernen (statt aufklappen oder starten)
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (sender as FrameworkElement)?.DataContext is ViewModels.ItemViewModel checkedItem)
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && (sender as FrameworkElement)?.DataContext is ItemViewModel checkedItem)
         {
             Vm.ToggleChecked(checkedItem);
             e.Handled = true;
             return;
         }
         _dragStart = e.GetPosition(this);
-        _dragCandidate = (sender as FrameworkElement)?.DataContext as ViewModels.ItemViewModel;
+        _dragCandidate = (sender as FrameworkElement)?.DataContext as ItemViewModel;
     }
 
     private void Row_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -1246,7 +1248,7 @@ public partial class PanelWindow : Window
         : e.GetPosition(row).Y > row.ActualHeight / 2;
 
     private Thickness InsertMarker(FrameworkElement row, DragEventArgs e) =>
-        (row.DataContext is ViewModels.ItemViewModel item && GroupOf(item) is { } g ? g.IsGrid : Vm.IsGrid)
+        (row.DataContext is ItemViewModel item && GroupOf(item) is { } g ? g.IsGrid : Vm.IsGrid)
         ? (InsertAfter(row, e) ? new Thickness(0, 0, 2, 0) : new Thickness(2, 0, 0, 0))
         : (InsertAfter(row, e) ? new Thickness(0, 0, 0, 2) : new Thickness(0, 2, 0, 0));
 
@@ -1265,7 +1267,7 @@ public partial class PanelWindow : Window
         }
     }
 
-    private ViewModels.GroupViewModel? GroupOf(ViewModels.ItemViewModel item) => Vm.AllGroups.FirstOrDefault(g => g.Items.Contains(item));
+    private GroupViewModel? GroupOf(ItemViewModel item) => Vm.AllGroups.FirstOrDefault(g => g.Items.Contains(item));
 
     private void ClearSelection_Click(object sender, RoutedEventArgs e) => Vm.ClearSelection();
 
@@ -1273,12 +1275,12 @@ public partial class PanelWindow : Window
 
     private const string GroupDragFormat = "PowerExec.Group";
     private Point _groupDragStart;
-    private ViewModels.GroupViewModel? _groupDragCandidate;
+    private GroupViewModel? _groupDragCandidate;
 
     private void GroupHeader_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _groupDragStart = e.GetPosition(this);
-        _groupDragCandidate = (sender as FrameworkElement)?.DataContext is ViewModels.GroupViewModel { CanDrag: true } g ? g : null;
+        _groupDragCandidate = (sender as FrameworkElement)?.DataContext is GroupViewModel { CanDrag: true } g ? g : null;
     }
 
     private void GroupHeader_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -1339,7 +1341,7 @@ public partial class PanelWindow : Window
     private void GroupHeader_DragOver(object sender, DragEventArgs e)
     {
         if (sender is not Border header || !e.Data.GetDataPresent(GroupDragFormat)) return; // Einträge/Dateien: übernimmt die Gruppe
-        if (header.DataContext is not ViewModels.GroupViewModel target) return;
+        if (header.DataContext is not GroupViewModel target) return;
         ApplyGroupPlan(Vm.PreviewGroupDrop(target, GroupZone(header, e), LevelOffset(e)), e);
     }
 
@@ -1372,7 +1374,7 @@ public partial class PanelWindow : Window
     private void Row_DragOver(object sender, DragEventArgs e)
     {
         if (sender is not Border row) return;
-        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel over && GroupOf(over) is { AcceptsItems: true } overGroup)
+        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ItemViewModel over && GroupOf(over) is { AcceptsItems: true } overGroup)
         {
             e.Effects = DragDropEffects.Move;
             SetInsertMarker(row, overGroup.Kind != "fav" ? InsertMarker(row, e) : null);
@@ -1380,8 +1382,8 @@ public partial class PanelWindow : Window
             return;
         }
         if (!e.Data.GetDataPresent(DragFormat)) return; // Dateien aus dem Explorer: übernimmt die Gruppe
-        var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
-        var target = row.DataContext as ViewModels.ItemViewModel;
+        var source = (ItemViewModel)e.Data.GetData(DragFormat)!;
+        var target = row.DataContext as ItemViewModel;
         var group = target != null ? GroupOf(target) : null;
         bool sameGroup = group != null && group.Items.Contains(source);
         bool allowed = target != null && !ReferenceEquals(source, target) && group != null &&
@@ -1401,15 +1403,15 @@ public partial class PanelWindow : Window
     {
         if (sender is not Border row) return;
         SetInsertMarker(row, null);
-        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ViewModels.ItemViewModel dropTarget && GroupOf(dropTarget) is { } dropGroup)
+        if (e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) && row.DataContext is ItemViewModel dropTarget && GroupOf(dropTarget) is { } dropGroup)
         {
             e.Handled = true;
             if (e.Data.GetData(SettingsWindow.EntryDragFormat) is string key)
                 Vm.MoveKeyToGroup(key, dropGroup, dropGroup.Kind == "fav" ? null : dropTarget, InsertAfter(row, e));
             return;
         }
-        if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ViewModels.ItemViewModel target) return;
-        var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
+        if (!e.Data.GetDataPresent(DragFormat) || row.DataContext is not ItemViewModel target) return;
+        var source = (ItemViewModel)e.Data.GetData(DragFormat)!;
         var group = GroupOf(target);
         e.Handled = true;
         if (group == null || ReferenceEquals(source, target)) return;
@@ -1425,7 +1427,7 @@ public partial class PanelWindow : Window
 
     private void Group_DragOver(object sender, DragEventArgs e)
     {
-        if (sender is not Border box || box.DataContext is not ViewModels.GroupViewModel group) return;
+        if (sender is not Border box || box.DataContext is not GroupViewModel group) return;
         bool allowed;
         if (e.Data.GetDataPresent(GroupDragFormat))
         {
@@ -1434,7 +1436,7 @@ public partial class PanelWindow : Window
         }
         if (e.Data.GetDataPresent(DragFormat))
         {
-            var source = (ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!;
+            var source = (ItemViewModel)e.Data.GetData(DragFormat)!;
             allowed = group.AcceptsItems && !group.Items.Contains(source);
             e.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
         }
@@ -1467,7 +1469,7 @@ public partial class PanelWindow : Window
 
     private void Group_Drop(object sender, DragEventArgs e)
     {
-        if (sender is not Border box || box.DataContext is not ViewModels.GroupViewModel group) return;
+        if (sender is not Border box || box.DataContext is not GroupViewModel group) return;
         Group_DragLeave(sender, e);
         e.Handled = true;
         if (e.Data.GetDataPresent(GroupDragFormat))
@@ -1477,7 +1479,7 @@ public partial class PanelWindow : Window
         }
         if (e.Data.GetDataPresent(DragFormat))
         {
-            Vm.MoveToGroup((ViewModels.ItemViewModel)e.Data.GetData(DragFormat)!, group);
+            Vm.MoveToGroup((ItemViewModel)e.Data.GetData(DragFormat)!, group);
             return;
         }
         if (e.Data.GetData(SettingsWindow.EntryDragFormat) is string entryKey)
@@ -1526,7 +1528,7 @@ public partial class PanelWindow : Window
     private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton != MouseButton.Left) return;
-        if (sender is FrameworkElement { DataContext: ViewModels.ItemViewModel item })
+        if (sender is FrameworkElement { DataContext: ItemViewModel item })
         {
             e.Handled = true;
             item.RunCommand.Execute(null);
@@ -1536,7 +1538,7 @@ public partial class PanelWindow : Window
     /// <summary>Pfeil am Ausführen-Knopf: Menü mit allen Startprofilen.</summary>
     private void ProfileMenuButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button { DataContext: ViewModels.ItemViewModel item } button) return;
+        if (sender is not Button { DataContext: ItemViewModel item } button) return;
         var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
         foreach (var p in item.ProfileMenu)
         {
@@ -1596,7 +1598,7 @@ public partial class PanelWindow : Window
         // Leertaste: Vorschau (im Suchfeld nur, solange es leer ist – sonst ist es ein Leerzeichen)
         if (key == Key.Space && mods == ModifierKeys.None)
         {
-            var onItem = Keyboard.FocusedElement is FrameworkElement { DataContext: ViewModels.ItemViewModel };
+            var onItem = Keyboard.FocusedElement is FrameworkElement { DataContext: ItemViewModel };
             if (Vm.ShowPeek || onItem || (inSearch && SearchBox.Text.Length == 0)) return Vm.TogglePeek();
         }
         if (Vm.ShowPeek && mods == ModifierKeys.None && key is Key.Up or Key.Down)
@@ -1646,18 +1648,18 @@ public partial class PanelWindow : Window
         });
     }
 
-    private List<(ViewModels.GroupViewModel Group, FrameworkElement Element)>? _groupContainers;
+    private List<(GroupViewModel Group, FrameworkElement Element)>? _groupContainers;
 
-    private List<(ViewModels.GroupViewModel Group, FrameworkElement Element)> GroupContainers()
+    private List<(GroupViewModel Group, FrameworkElement Element)> GroupContainers()
     {
         if (_groupContainers != null) return _groupContainers;
-        var list = new List<(ViewModels.GroupViewModel Group, FrameworkElement Element)>();
+        var list = new List<(GroupViewModel Group, FrameworkElement Element)>();
         void Walk(DependencyObject parent)
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is ContentPresenter { Content: ViewModels.GroupViewModel g } cp) list.Add((g, cp));
+                if (child is ContentPresenter { Content: GroupViewModel g } cp) list.Add((g, cp));
                 Walk(child);
             }
         }
@@ -1672,7 +1674,7 @@ public partial class PanelWindow : Window
     {
         if (!IsLoaded || ListScroll.VerticalOffset < 1) { Vm.StickyGroup = null; return; }
         const double headerHeight = 34;
-        ViewModels.GroupViewModel? best = null;
+        GroupViewModel? best = null;
         double bestTop = double.MinValue;
         foreach (var (group, element) in GroupContainers())
         {
@@ -1705,7 +1707,7 @@ public partial class PanelWindow : Window
         if (StickyHeader.Margin != margin) StickyHeader.Margin = margin;
     }
 
-    private void ScrollToGroup(ViewModels.GroupViewModel group)
+    private void ScrollToGroup(GroupViewModel group)
     {
         // Nach dem Aufklappen erst das Layout abwarten
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
@@ -1754,7 +1756,7 @@ public partial class PanelWindow : Window
     internal ContextMenu ItemMenu => (ContextMenu)FindResource("ItemMenu");
 
     /// <summary>Kontextmenü eines Eintrags per Tastatur öffnen (erster Menüpunkt hat den Fokus).</summary>
-    internal bool OpenItemMenu(ViewModels.ItemViewModel item)
+    internal bool OpenItemMenu(ItemViewModel item)
     {
         var container = FindContainer(ListScroll, item) ?? FindContainer(this, item);
         var button = container == null ? null : FindDescendant<Button>(container, b => b.ContextMenu != null);
