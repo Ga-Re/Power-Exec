@@ -18,12 +18,14 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         CommandRequery.Backend = new Infrastructure.WpfCommandRequery();
+#if SELFTEST
         if (e.Args.Length > 0 && e.Args[0] == "--selftest")
         {
             base.OnStartup(e);
             RunSelfTest(e.Args.Length > 1 ? e.Args[1] : Path.Combine(Path.GetTempPath(), "PowerExec-selftest.txt"));
             return;
         }
+#endif
         _mutex = new Mutex(true, MutexName, out var isFirst);
         if (!isFirst)
         {
@@ -49,7 +51,11 @@ public partial class App : Application
         thread.Start();
     }
 
-    /// <summary>Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung.</summary>
+#if SELFTEST
+    /// <summary>
+    /// Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung. Nur in Builds mit
+    /// <c>-p:SelfTest=true</c> (CI) bzw. Debug enthalten – die ausgelieferte EXE trägt den Testcode nicht.
+    /// </summary>
     private void RunSelfTest(string resultFile)
     {
         var selfTest = new SelfTestController();
@@ -63,6 +69,7 @@ public partial class App : Application
             Shutdown(error == null ? 0 : 1);
         });
     }
+#endif
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {

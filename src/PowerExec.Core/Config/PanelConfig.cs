@@ -153,8 +153,8 @@ public sealed class PanelConfig
         current.Id == updated.Id && current.EffectiveBackdropSetting == updated.EffectiveBackdropSetting;
 
     /// <summary>Alles, was Hover-Zonen und Mini-Docks betrifft (ändert es sich, werden sie neu angelegt).</summary>
-    public string TriggerKey =>
-        $"{Edge}|{MonitorMode}|{MonitorIndex}|{HotZone}|{HotZoneThickness}|{HotZoneLength}|{PanelWidth}|{PanelHeightPercent}|{PanelAlignment}|{PanelColor}|{AccentColor}|{PanelOpacity}|{Backdrop}|{ShowDock}|{DockCount}";
+    public TriggerSettings TriggerKey => new(Edge, MonitorMode, MonitorIndex, HotZone, HotZoneThickness, HotZoneLength, PanelWidth,
+        PanelHeightPercent, PanelAlignment, PanelColor, AccentColor, PanelOpacity, Backdrop, ShowDock, DockCount);
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
@@ -200,3 +200,11 @@ public sealed class PanelConfig
         if (!PanelColors.TryParse(PanelColor, out _)) PanelColor = string.Empty;
     }
 }
+
+/// <summary>
+/// Die Einstellungen eines Panels, von denen Lage und Aussehen der Hover-Zonen und Mini-Docks abhängen – als Wert mit
+/// Gleichheit über alle Felder (siehe <see cref="PanelConfig.TriggerKey"/>).
+/// </summary>
+public readonly record struct TriggerSettings(ScreenEdge Edge, MonitorMode MonitorMode, int MonitorIndex, HotZoneMode HotZone, int HotZoneThickness,
+    int HotZoneLength, int PanelWidth, int PanelHeightPercent, PanelAlignment PanelAlignment, string PanelColor, string AccentColor, int PanelOpacity,
+    PanelBackdrop? Backdrop, bool ShowDock, int DockCount);

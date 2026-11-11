@@ -40,7 +40,7 @@ jobs:
       - name: Veröffentlichen (portabel)
         run: >
           dotnet publish src/PowerExec/PowerExec.csproj -c Release -r win-x64
-          --self-contained true -p:PublishSingleFile=true -p:Version=0.0.0-ci -o out
+          --self-contained true -p:PublishSingleFile=true -p:Version=0.0.0-ci -p:SelfTest=true -o out
 
       - name: Oberflächen-Selbsttest (Panels, Einstellungen, Dialoge)
         shell: pwsh

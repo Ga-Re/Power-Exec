@@ -20,6 +20,17 @@
     <!-- WFAC010/WFO0003 (neuer Name ab .NET 9) betreffen WinForms-Apps; für WPF ist die DPI-Angabe im Manifest richtig. -->
     <NoWarn>$(NoWarn);WFAC010;WFO0003</NoWarn>
   </PropertyGroup>
+  <!--
+    Oberflächen-Selbsttest (SelfTest/, Aufruf mit dem Schalter „selftest“): in Debug-Builds und in der CI (Eigenschaft SelfTest=true)
+    enthalten, nicht in der ausgelieferten EXE.
+  -->
+  <PropertyGroup>
+    <SelfTest Condition="'$(SelfTest)' == '' and '$(Configuration)' == 'Debug'">true</SelfTest>
+    <DefineConstants Condition="'$(SelfTest)' == 'true'">$(DefineConstants);SELFTEST</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SelfTest)' != 'true'">
+    <Compile Remove="SelfTest\**" />
+  </ItemGroup>
   <!-- Einzeldatei-Veröffentlichung (siehe .github/workflows/release.yml) -->
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>

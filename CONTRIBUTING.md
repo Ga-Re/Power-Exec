@@ -52,6 +52,7 @@ Diese Regeln gelten für alle Änderungen – von Hand oder mit KI-Unterstützun
 - Testdateien heißen nach dem Thema (`SearchTests`, `WorkflowTests`), nicht nach der Version.
 - `dotnet test tests/PowerExec.Core.Tests` und `dotnet test tests/PowerExec.UI.Core.Tests` laufen auch unter Linux.
 - Die Oberfläche prüft der Selbsttest (`PowerExec.exe --selftest <Datei>`) in der CI unter Windows; dort entstehen auch Bildschirmfotos.
+  Sein Code (`src/PowerExec/SelfTest/`) ist nur in Debug-Builds und mit `-p:SelfTest=true` enthalten, nicht in der ausgelieferten EXE.
 
 ## Format und Analyse
 
