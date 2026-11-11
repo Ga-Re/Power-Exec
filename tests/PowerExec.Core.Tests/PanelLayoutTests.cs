@@ -1,6 +1,9 @@
 using System.Drawing;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Models;
+using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Tests;
 
@@ -76,5 +79,19 @@ public class PanelLayoutTests
         Assert.Equal(8, r.Top);
         Assert.Equal((int)Math.Round(1016 * 0.6), r.Height);
         Assert.Equal(1920 - 8 - 500, r.Left);
+    }
+
+    [Fact]
+    public void DockSitsAtWorkAreaEdgeCentered()
+    {
+        var work = new System.Drawing.Rectangle(0, 0, 1920, 1040); // Taskleiste unten
+        var right = PowerExec.Core.Layout.PanelLayout.Dock(work, new PanelConfig { Edge = ScreenEdge.Right }, 1.0, 4);
+        Assert.Equal(1920, right.Right);
+        Assert.Equal(PowerExec.Core.Layout.PanelLayout.DockThickness, right.Width);
+        Assert.Equal(4 * 36 + 16, right.Height);
+        Assert.Equal((1040 - right.Height) / 2, right.Top);
+        var bottom = PowerExec.Core.Layout.PanelLayout.Dock(work, new PanelConfig { Edge = ScreenEdge.Bottom }, 1.5, 2);
+        Assert.Equal(1040, bottom.Bottom); // über der Taskleiste
+        Assert.Equal(60, bottom.Height);
     }
 }
