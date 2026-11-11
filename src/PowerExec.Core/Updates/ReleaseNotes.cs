@@ -8,6 +8,10 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 31, 1), L.T("No frame next to the retracted panel"), new[]
+        {
+            L.T("When retracted, the panel no longer leaves a frame on a neighboring monitor or over the taskbar")
+        }),
         new ReleaseNote(new Version(0, 31, 0), L.T("New design preview on your own desktop"), new[]
         {
             L.T("Design previews show your real desktop background, a window in the Windows theme and the panel on the right with search box, lines, buttons, accent color and glowing hover zone – the same under Appearance and in the marketplace"),

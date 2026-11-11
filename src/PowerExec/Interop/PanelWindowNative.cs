@@ -87,6 +87,17 @@ internal static class PanelWindowNative
         if (hwnd != IntPtr.Zero) Set(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, 1);
     }
 
+    private const int DWMWA_CLOAK = 13;
+
+    /// <summary>
+    /// Fenster für Windows unsichtbar machen, ohne es zu verstecken (Hintergrund, Composition und Kindfenster bleiben
+    /// aufgebaut). Für das eingefahrene Panel: Windows zeichnet Schatten und Rand auch bei leerem Fensterbereich.
+    /// </summary>
+    public static void SetCloaked(IntPtr hwnd, bool cloaked)
+    {
+        if (hwnd != IntPtr.Zero) Set(hwnd, DWMWA_CLOAK, cloaked ? 1 : 0);
+    }
+
     private static void Set(IntPtr hwnd, int attr, int value)
     {
         try { DwmSetWindowAttribute(hwnd, attr, ref value, sizeof(int)); }

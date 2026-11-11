@@ -863,7 +863,22 @@ public partial class PanelWindow : Window
         NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, r.X, r.Y, r.Width, r.Height, flags);
         _appliedSize = r.Size;
         if (!shrinking) SetSlideRegion(region, r.Size);
+        // Ganz eingefahren mit Zuschnitt (Nachbarmonitor oder Taskleiste an der Kante): Windows zeichnet Schatten und
+        // Rand des geparkten Fensters trotz leerem Fensterbereich – dort als Rahmen sichtbar. Dann ausblenden (Cloak).
+        SetCloaked(_clipSlide && Reveal <= 0);
     }
+
+    private bool _cloaked;
+
+    private void SetCloaked(bool cloaked)
+    {
+        if (cloaked == _cloaked) return;
+        _cloaked = cloaked;
+        Interop.PanelWindowNative.SetCloaked(_hwnd, cloaked);
+    }
+
+    /// <summary>Für den Selbsttest: eingefahrenes Fenster für Windows ausgeblendet?</summary>
+    internal bool IsCloaked => _cloaked;
 
     private void SetSlideRegion(System.Drawing.Rectangle? region, System.Drawing.Size size)
     {
