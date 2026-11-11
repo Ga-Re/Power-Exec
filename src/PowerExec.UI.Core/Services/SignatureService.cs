@@ -1,6 +1,7 @@
 using PowerExec.Core.Localization;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
+using PowerExec.UI.Interop;
 
 namespace PowerExec.UI.Services;
 
@@ -65,18 +66,18 @@ public static class SignatureService
 
     private static int Verify(string path)
     {
-        var fileInfo = new WINTRUST_FILE_INFO
+        var fileInfo = new NativeMethods.WINTRUST_FILE_INFO
         {
-            cbStruct = (uint)Marshal.SizeOf<WINTRUST_FILE_INFO>(),
+            cbStruct = (uint)Marshal.SizeOf<NativeMethods.WINTRUST_FILE_INFO>(),
             pcwszFilePath = path
         };
-        var pFile = Marshal.AllocHGlobal(Marshal.SizeOf<WINTRUST_FILE_INFO>());
+        var pFile = Marshal.AllocHGlobal(Marshal.SizeOf<NativeMethods.WINTRUST_FILE_INFO>());
         try
         {
             Marshal.StructureToPtr(fileInfo, pFile, false);
-            var data = new WINTRUST_DATA
+            var data = new NativeMethods.WINTRUST_DATA
             {
-                cbStruct = (uint)Marshal.SizeOf<WINTRUST_DATA>(),
+                cbStruct = (uint)Marshal.SizeOf<NativeMethods.WINTRUST_DATA>(),
                 dwUIChoice = 2,           // WTD_UI_NONE
                 fdwRevocationChecks = 0,  // WTD_REVOKE_NONE – keine Netzwerkzugriffe
                 dwUnionChoice = 1,        // WTD_CHOICE_FILE
@@ -85,41 +86,11 @@ public static class SignatureService
                 dwProvFlags = 0x00001000  // WTD_CACHE_ONLY_URL_RETRIEVAL
             };
             var action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE"); // WINTRUST_ACTION_GENERIC_VERIFY_V2
-            return WinVerifyTrust(IntPtr.Zero, ref action, ref data);
+            return NativeMethods.WinVerifyTrust(IntPtr.Zero, ref action, ref data);
         }
         finally
         {
             Marshal.FreeHGlobal(pFile);
         }
     }
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct WINTRUST_FILE_INFO
-    {
-        public uint cbStruct;
-        [MarshalAs(UnmanagedType.LPWStr)] public string pcwszFilePath;
-        public IntPtr hFile;
-        public IntPtr pgKnownSubject;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct WINTRUST_DATA
-    {
-        public uint cbStruct;
-        public IntPtr pPolicyCallbackData;
-        public IntPtr pSIPClientData;
-        public uint dwUIChoice;
-        public uint fdwRevocationChecks;
-        public uint dwUnionChoice;
-        public IntPtr pFile;
-        public uint dwStateAction;
-        public IntPtr hWVTStateData;
-        public IntPtr pwszURLReference;
-        public uint dwProvFlags;
-        public uint dwUIContext;
-        public IntPtr pSignatureSettings;
-    }
-
-    [DllImport("wintrust.dll", CharSet = CharSet.Unicode)]
-    private static extern int WinVerifyTrust(IntPtr hwnd, ref Guid action, ref WINTRUST_DATA data);
 }

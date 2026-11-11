@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using PowerExec.UI.Services;
+using PowerExec.Desktop.Interop;
 
 namespace PowerExec.Desktop.Services;
 
@@ -241,19 +242,18 @@ public sealed class IconService : IDisposable
 
     private static ImageSource? LoadShell(string path, uint attributes, uint extraFlags)
     {
-        var info = new SHFILEINFO();
         // Großes Symbol (32 px), ohne Verknüpfungspfeil
-        var result = SHGetFileInfo(path, attributes, ref info, (uint)Marshal.SizeOf<SHFILEINFO>(), SHGFI_ICON | SHGFI_LARGEICON | extraFlags);
-        if (result == IntPtr.Zero || info.hIcon == IntPtr.Zero) return null;
+        var icon = NativeMethods.GetShellIcon(path, attributes, SHGFI_ICON | SHGFI_LARGEICON | extraFlags);
+        if (icon == IntPtr.Zero) return null;
         try
         {
-            var source = Imaging.CreateBitmapSourceFromHIcon(info.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            var source = Imaging.CreateBitmapSourceFromHIcon(icon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             source.Freeze();
             return source;
         }
         finally
         {
-            DestroyIcon(info.hIcon);
+            NativeMethods.DestroyIcon(icon);
         }
     }
 
@@ -263,20 +263,4 @@ public sealed class IconService : IDisposable
     private const uint SHGFI_LARGEICON = 0x000000000;
     private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct SHFILEINFO
-    {
-        public IntPtr hIcon;
-        public int iIcon;
-        public uint dwAttributes;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)] public string szTypeName;
-    }
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyIcon(IntPtr hIcon);
 }

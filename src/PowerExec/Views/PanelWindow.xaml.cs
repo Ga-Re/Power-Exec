@@ -89,8 +89,8 @@ public partial class PanelWindow : Window
 
         _hwnd = new WindowInteropHelper(this).EnsureHandle();
         NativeMethods.MakeToolWindow(_hwnd, noActivate: false);
-        Interop.PanelWindowNative.DisableTransitions(_hwnd);
-        if (_systemWindow) Interop.NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
+        PanelWindowNative.DisableTransitions(_hwnd);
+        if (_systemWindow) NativeMethods.RemoveCaptionButtons(_hwnd); // keine Fensterknöpfe von Windows (Schließen-X)
         if (_systemWindow && HwndSource.FromHwnd(_hwnd) is { } src)
         {
             if (src.CompositionTarget != null)
@@ -205,7 +205,7 @@ public partial class PanelWindow : Window
             PanelBorder.UpdateLayout();
             Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
         }
-        if (_systemWindow) Interop.PanelWindowNative.SendMessage(_hwnd, 0x0086, (IntPtr)1, IntPtr.Zero); // Hintergrund wie aktiv
+        if (_systemWindow) PanelWindowNative.ShowAsActive(_hwnd);
         IsOpen = true;
         _poll.Start();
         if (!wasVisible && _contentHost is { IsDisposed: false } && !_skipNextAnimation)
@@ -493,7 +493,7 @@ public partial class PanelWindow : Window
     private void ApplyBackdrop()
     {
         if (_hwnd == IntPtr.Zero || !_systemWindow) return;
-        Interop.PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
+        PanelWindowNative.PrepareSystemWindow(_hwnd, Vm.IsDarkSurface);
         EnsureTransparentBackground();
         if (_backdrop != PanelBackdrop.Glass || GlassError != null || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
         try
@@ -557,11 +557,10 @@ public partial class PanelWindow : Window
     {
         if (_contentHost != null || Content is not FrameworkElement root) return;
         NativeMethods.GetClientRect(_hwnd, out var rc);
-        const int WS_CHILD = 0x40000000, WS_VISIBLE = 0x10000000, WS_CLIPSIBLINGS = 0x04000000;
         var parameters = new HwndSourceParameters("PowerExecPanelInhalt")
         {
             ParentWindow = _hwnd,
-            WindowStyle = WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS,
+            WindowStyle = NativeMethods.WS_CHILD | NativeMethods.WS_VISIBLE | NativeMethods.WS_CLIPSIBLINGS,
             PositionX = 0,
             PositionY = 0,
             Width = Math.Max(1, rc.Right - rc.Left),
@@ -620,13 +619,11 @@ public partial class PanelWindow : Window
     /// <summary>Kindfenster immer so groß wie der Fensterinhalt.</summary>
     private IntPtr ChildHostHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int WM_SIZE = 0x0005;
-        if (msg == WM_SIZE && _contentHost is { IsDisposed: false } host)
+        if (msg == NativeMethods.WM_SIZE && _contentHost is { IsDisposed: false } host)
         {
             var w = (int)((long)lParam & 0xFFFF);
             var h = (int)(((long)lParam >> 16) & 0xFFFF);
-            const uint SWP_NOZORDER = 0x0004, SWP_NOACTIVATE = 0x0010;
-            NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, Math.Max(1, w), Math.Max(1, h), SWP_NOZORDER | SWP_NOACTIVATE);
+            NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, 0, 0, Math.Max(1, w), Math.Max(1, h), NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
         }
         return IntPtr.Zero;
     }
@@ -696,18 +693,17 @@ public partial class PanelWindow : Window
     /// </summary>
     private IntPtr SystemWindowHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        const int WM_NCACTIVATE = 0x0086, WM_DPICHANGED = 0x02E0;
-        if (msg == WM_NCACTIVATE && wParam == IntPtr.Zero)
+        if (msg == NativeMethods.WM_NCACTIVATE && wParam == IntPtr.Zero)
         {
             handled = true;
-            return Interop.PanelWindowNative.DefWindowProc(hwnd, msg, (IntPtr)1, lParam);
+            return NativeMethods.DefWindowProc(hwnd, msg, 1, lParam);
         }
         // Beim Gleiten liegt das Fenster kurz auf dem Nachbarmonitor (dort weggeschnitten). Hat der eine andere
         // Skalierung, meldet Windows einen DPI-Wechsel – WPF würde Fenster und Inhalt mitten im Gleiten umskalieren.
         // Das Panel gehört aber zu seinem Monitor: Wechsel während des Gleitens übergehen.
         // Eine echte Änderung der Skalierung des eigenen Monitors (neuer Wert = dessen Skalierung, aber nicht die, mit der
         // WPF gerade zeichnet) geht dagegen an WPF; DpiChanged platziert danach neu.
-        if (msg == WM_DPICHANGED && _clipSlide && IsSliding)
+        if (msg == NativeMethods.WM_DPICHANGED && _clipSlide && IsSliding)
         {
             var announced = (int)((long)wParam & 0xFFFF);
             var home = _monitor != null ? (int)Math.Round(_monitor.Scale * 96) : announced;
@@ -912,7 +908,7 @@ public partial class PanelWindow : Window
     {
         if (cloaked == _cloaked) return;
         _cloaked = cloaked;
-        Interop.PanelWindowNative.SetCloaked(_hwnd, cloaked);
+        PanelWindowNative.SetCloaked(_hwnd, cloaked);
     }
 
     /// <summary>Für den Selbsttest: eingefahrenes Fenster für Windows ausgeblendet?</summary>
@@ -923,9 +919,9 @@ public partial class PanelWindow : Window
         if (_regionApplied && Nullable.Equals(region, _region)) return; // unverändert: kein Fensterbereich pro Bild
         _region = region;
         _regionApplied = true;
-        if (region is not { } v) { Interop.PanelWindowNative.ClearRegion(_hwnd); return; }
+        if (region is not { } v) { PanelWindowNative.ClearRegion(_hwnd); return; }
         var radius = (int)Math.Round(PanelBorder.CornerRadius.TopLeft * _dpiScaleX);
-        Interop.PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
+        PanelWindowNative.SetClippedRoundedRegion(_hwnd, size.Width, size.Height, radius, v.Left, v.Top, v.Right, v.Bottom);
     }
 
     /// <summary>

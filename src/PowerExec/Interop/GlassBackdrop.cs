@@ -12,7 +12,7 @@ namespace PowerExec.Desktop.Interop;
 /// Es gibt kein zweites Fenster: der Effekt gehört zum Panelfenster, gleitet mit und wird vom Fensterbereich beschnitten.
 /// </summary>
 [SupportedOSPlatform("windows10.0.22000.0")]
-internal sealed class GlassBackdrop : IDisposable
+internal sealed partial class GlassBackdrop : IDisposable
 {
     // ---- Composition auf dem UI-Thread ----------------------------------------------------------
 
@@ -24,8 +24,8 @@ internal sealed class GlassBackdrop : IDisposable
         public int ApartmentType;  // DQTAT_COM_STA = 2
     }
 
-    [DllImport("CoreMessaging.dll")]
-    private static extern int CreateDispatcherQueueController(DispatcherQueueOptions options, out IntPtr controller);
+    [LibraryImport("CoreMessaging.dll")]
+    private static partial int CreateDispatcherQueueController(DispatcherQueueOptions options, out IntPtr controller);
 
     /// <summary>Hält den DispatcherQueueController des UI-Threads am Leben (Voraussetzung für den Compositor).</summary>
     private static IntPtr _queueController;
@@ -52,11 +52,6 @@ internal sealed class GlassBackdrop : IDisposable
         [PreserveSig] int EnsureOnThread(uint threadId);
     }
 
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-
-    private const int DWMWA_USE_HOSTBACKDROPBRUSH = 17;
-
     private delegate int CreateEffectFactoryFn(IntPtr self, IntPtr effect, out IntPtr factory);
 
     // ---- Instanz ---------------------------------------------------------------------------------
@@ -69,7 +64,7 @@ internal sealed class GlassBackdrop : IDisposable
     public GlassBackdrop(IntPtr hwnd)
     {
         int on = 1;
-        Marshal.ThrowExceptionForHR(DwmSetWindowAttribute(hwnd, DWMWA_USE_HOSTBACKDROPBRUSH, ref on, sizeof(int)));
+        Marshal.ThrowExceptionForHR(NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_HOSTBACKDROPBRUSH, ref on, sizeof(int)));
         var compositor = Compositor;
 
         var unknown = ((WinRT.IWinRTObject)compositor).NativeObject.ThisPtr;

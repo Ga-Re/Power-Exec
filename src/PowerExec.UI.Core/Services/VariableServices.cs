@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
+using PowerExec.UI.Interop;
 
 namespace PowerExec.UI.Services;
 
@@ -36,29 +37,17 @@ public static class SecretProtector
         return stored;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct DataBlob { public int Size; public IntPtr Data; }
-
-    [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern bool CryptProtectData(ref DataBlob input, string? description, IntPtr entropy, IntPtr reserved, IntPtr prompt, int flags, ref DataBlob output);
-
-    [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern bool CryptUnprotectData(ref DataBlob input, IntPtr description, IntPtr entropy, IntPtr reserved, IntPtr prompt, int flags, ref DataBlob output);
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr LocalFree(IntPtr mem);
-
     private static byte[] Dpapi(byte[] data, bool protect)
     {
-        var input = new DataBlob { Size = data.Length, Data = Marshal.AllocHGlobal(data.Length) };
-        var output = new DataBlob();
+        var input = new NativeMethods.DataBlob { Size = data.Length, Data = Marshal.AllocHGlobal(data.Length) };
+        var output = new NativeMethods.DataBlob();
         try
         {
             Marshal.Copy(data, 0, input.Data, data.Length);
             const int uiForbidden = 0x1;
             bool ok = protect
-                ? CryptProtectData(ref input, "Power-Exec", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output)
-                : CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output);
+                ? NativeMethods.CryptProtectData(ref input, "Power-Exec", IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output)
+                : NativeMethods.CryptUnprotectData(ref input, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, uiForbidden, ref output);
             if (!ok) throw new InvalidOperationException(L.T("The secret value couldn't be ") + (protect ? L.T("encrypted") : L.T("decrypted")) +
                                                          L.F(" (error {0}). Please enter it again.", Marshal.GetLastWin32Error()));
             var result = new byte[output.Size];
@@ -68,7 +57,7 @@ public static class SecretProtector
         finally
         {
             Marshal.FreeHGlobal(input.Data);
-            if (output.Data != IntPtr.Zero) LocalFree(output.Data);
+            if (output.Data != IntPtr.Zero) NativeMethods.LocalFree(output.Data);
         }
     }
 }

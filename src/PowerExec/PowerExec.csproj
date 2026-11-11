@@ -11,6 +11,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RootNamespace>PowerExec.Desktop</RootNamespace>
+    <!-- LibraryImport erzeugt die Übergänge zu Win32 zur Übersetzungszeit (Interop/NativeMethods.cs) -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>PowerExec</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\PowerExec.ico</ApplicationIcon>

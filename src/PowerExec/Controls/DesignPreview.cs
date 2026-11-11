@@ -8,6 +8,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
 using PowerExec.Desktop.Services;
+using PowerExec.Desktop.Interop;
 
 namespace PowerExec.Desktop.Controls;
 
@@ -41,9 +42,6 @@ public sealed class DesignPreview : Border
     private static ImageSource? _wallpaper;
     private static bool _wallpaperLoaded;
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool SystemParametersInfo(uint action, uint param, StringBuilder value, uint winIni);
-
     /// <summary>Hintergrundbild von Windows (verkleinert); null, wenn es keins gibt (dann Farbverlauf).</summary>
     private static ImageSource? Wallpaper
     {
@@ -53,12 +51,12 @@ public sealed class DesignPreview : Border
             _wallpaperLoaded = true;
             try
             {
-                var sb = new StringBuilder(520);
-                if (SystemParametersInfo(0x0073 /* SPI_GETDESKWALLPAPER */, (uint)sb.Capacity, sb, 0) && File.Exists(sb.ToString()))
+                var path = NativeMethods.DesktopWallpaperPath();
+                if (File.Exists(path))
                 {
                     var bmp = new BitmapImage();
                     bmp.BeginInit();
-                    bmp.UriSource = new Uri(sb.ToString());
+                    bmp.UriSource = new Uri(path);
                     bmp.DecodePixelWidth = 480;
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.EndInit();

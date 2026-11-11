@@ -7,22 +7,23 @@ namespace PowerExec.Desktop.Interop;
 /// Fensters ohne Transparenz-Schicht, hinter dem Windows zeichnet (runde Ecken von Windows 11, kein farbiger Rand).
 /// Aero-Blur, Acrylic und Mica gibt es seit 0.21 nicht mehr.
 /// </summary>
-internal static class PanelWindowNative
+internal static partial class PanelWindowNative
 {
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateRoundRectRgn(int x1, int y1, int x2, int y2, int widthEllipse, int heightEllipse);
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr CreateRoundRectRgn(int x1, int y1, int x2, int y2, int widthEllipse, int heightEllipse);
 
-    [DllImport("gdi32.dll")]
-    private static extern IntPtr CreateRectRgn(int x1, int y1, int x2, int y2);
+    [LibraryImport("gdi32.dll")]
+    private static partial IntPtr CreateRectRgn(int x1, int y1, int x2, int y2);
 
-    [DllImport("user32.dll")]
-    private static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool redraw);
+    [LibraryImport("user32.dll")]
+    private static partial int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, [MarshalAs(UnmanagedType.Bool)] bool redraw);
 
-    [DllImport("gdi32.dll")]
-    private static extern int CombineRgn(IntPtr dest, IntPtr src1, IntPtr src2, int mode);
+    [LibraryImport("gdi32.dll")]
+    private static partial int CombineRgn(IntPtr dest, IntPtr src1, IntPtr src2, int mode);
 
-    [DllImport("gdi32.dll")]
-    private static extern bool DeleteObject(IntPtr obj);
+    [LibraryImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DeleteObject(IntPtr obj);
 
     private const int RGN_AND = 1;
 
@@ -54,7 +55,7 @@ internal static class PanelWindowNative
             }
             SetWindowRgn(hwnd, rgn, false); // Windows übernimmt rgn; false: kein synchrones GDI-Neuzeichnen pro Bild beim Gleiten
         }
-        catch (EntryPointNotFoundException) { }
+        catch (EntryPointNotFoundException) { } // Fensterbereich ist Optik: ohne die Funktion bleibt das Fenster unbeschnitten
         catch (DllNotFoundException) { }
     }
 
@@ -63,47 +64,19 @@ internal static class PanelWindowNative
     {
         if (hwnd == IntPtr.Zero) return;
         try { SetWindowRgn(hwnd, IntPtr.Zero, false); } // ohne synchrones Neuzeichnen
-        catch (EntryPointNotFoundException) { }
+        catch (EntryPointNotFoundException) { }       // siehe SetClippedRoundedRegion
     }
-
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref Margins margins);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Margins { public int Left, Right, Top, Bottom; }
-
-    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20, DWMWA_WINDOW_CORNER_PREFERENCE = 33, DWMWA_BORDER_COLOR = 34;
-    private const int DWMWCP_ROUND = 2;
-    private const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
-
-    private const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
 
     /// <summary>Ein-/Ausblend-Übergänge von Windows abschalten: das Panel gleitet selbst, beim Neuaufbau soll nichts aufblitzen.</summary>
-    public static void DisableTransitions(IntPtr hwnd)
-    {
-        if (hwnd != IntPtr.Zero) Set(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, 1);
-    }
-
-    private const int DWMWA_CLOAK = 13;
+    public static void DisableTransitions(IntPtr hwnd) =>
+        NativeMethods.SetDwmAttribute(hwnd, NativeMethods.DWMWA_TRANSITIONS_FORCEDISABLED, 1);
 
     /// <summary>
     /// Fenster für Windows unsichtbar machen, ohne es zu verstecken (Hintergrund, Composition und Kindfenster bleiben
     /// aufgebaut). Für das eingefahrene Panel: Windows zeichnet Schatten und Rand auch bei leerem Fensterbereich.
     /// </summary>
-    public static void SetCloaked(IntPtr hwnd, bool cloaked)
-    {
-        if (hwnd != IntPtr.Zero) Set(hwnd, DWMWA_CLOAK, cloaked ? 1 : 0);
-    }
-
-    private static void Set(IntPtr hwnd, int attr, int value)
-    {
-        try { DwmSetWindowAttribute(hwnd, attr, ref value, sizeof(int)); }
-        catch (DllNotFoundException) { }
-        catch (EntryPointNotFoundException) { }
-    }
+    public static void SetCloaked(IntPtr hwnd, bool cloaked) =>
+        NativeMethods.SetDwmAttribute(hwnd, NativeMethods.DWMWA_CLOAK, cloaked ? 1 : 0);
 
     /// <summary>
     /// Fenster für einen Hintergrund von Windows vorbereiten: Rahmen in den Inhalt erweitern (Windows zeichnet hinter
@@ -114,18 +87,16 @@ internal static class PanelWindowNative
         if (hwnd == IntPtr.Zero) return;
         try
         {
-            var m = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-            DwmExtendFrameIntoClientArea(hwnd, ref m);
+            var m = new NativeMethods.Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+            NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref m);
         }
-        catch (DllNotFoundException) { }
-        Set(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, dark ? 1 : 0);
-        Set(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND);
-        Set(hwnd, DWMWA_BORDER_COLOR, DWMWA_COLOR_NONE);
+        catch (DllNotFoundException) { } // ohne DWM bleibt der Rahmen, wie er ist
+        NativeMethods.SetDarkTitleBar(hwnd, dark);
+        NativeMethods.SetDwmAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, NativeMethods.DWMWCP_ROUND);
+        NativeMethods.SetDwmAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, NativeMethods.DWMWA_COLOR_NONE);
     }
 
-    [DllImport("user32.dll")]
-    public static extern IntPtr DefWindowProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+    /// <summary>Hintergrund eines Systemfensters wie bei einem aktiven Fenster zeichnen lassen.</summary>
+    public static void ShowAsActive(IntPtr hwnd) =>
+        NativeMethods.SendMessage(hwnd, NativeMethods.WM_NCACTIVATE, 1, IntPtr.Zero);
 }
