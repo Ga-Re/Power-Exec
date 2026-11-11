@@ -4,6 +4,7 @@ using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Profiles;
 using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
 namespace PowerExec.UI.ViewModels;
 
@@ -56,7 +57,7 @@ public sealed class WorkflowEditorViewModel : ObservableObject
         MoveDownCommand = new RelayCommand(p => Move(p as WorkflowStepViewModel, 1));
         RemoveCommand = new RelayCommand(p => { if (p is WorkflowStepViewModel s) { Steps.Remove(s); Renumber(); } });
         SaveCommand = new RelayCommand(Save, () => CanSave);
-        RunCommand = new RelayCommand(() => { Save(); _ = _app.RunWorkflowAsync(_name.Trim(), Steps.Select(s => s.ToStep()).ToList(), _stopOnError); });
+        RunCommand = new RelayCommand(() => { Save(); _app.RunWorkflowAsync(_name.Trim(), Steps.Select(s => s.ToStep()).ToList(), _stopOnError).Forget(); });
     }
 
     public ObservableCollection<WorkflowStepViewModel> Steps { get; } = new();

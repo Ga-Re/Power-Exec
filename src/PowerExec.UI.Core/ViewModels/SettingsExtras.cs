@@ -25,7 +25,7 @@ public sealed class MachineGroupViewModel : ObservableObject
         _machines = string.Join(Environment.NewLine, group.Machines);
         RemoveCommand = new RelayCommand(() => remove(this));
         ImportCommand = new RelayCommand(Import);
-        AdSearchCommand = new RelayCommand(() => _ = SearchAdAsync(), () => !_searching && _adQuery.Trim().Length > 0);
+        AdSearchCommand = new RelayCommand(() => SearchAdAsync().Forget(), () => !_searching && _adQuery.Trim().Length > 0);
         SortCommand = new RelayCommand(() => Machines = string.Join(Environment.NewLine, Parse().OrderBy(n => n, StringComparer.OrdinalIgnoreCase)));
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         _isExpanded = group.Machines.Count == 0 && group.AdQuery == null; // neue Gruppen offen, vorhandene eingeklappt
@@ -37,9 +37,9 @@ public sealed class MachineGroupViewModel : ObservableObject
         _lastSyncError = group.LastSyncError;
         foreach (var b in group.AdQuery?.Blocks ?? new List<AdRuleBlock>()) Blocks.Add(new AdBlockViewModel(this, b));
         AddBlockCommand = new RelayCommand(() => { Blocks.Add(new AdBlockViewModel(this, NewBlock())); RulesChanged(); });
-        SyncNowCommand = new RelayCommand(() => _ = SyncNowAsync(), () => !_searching && (_isDynamic || _isList));
+        SyncNowCommand = new RelayCommand(() => SyncNowAsync().Forget(), () => !_searching && (_isDynamic || _isList));
         ExportCommand = new RelayCommand(Export);
-        PickOuCommand = new RelayCommand(() => _ = PickOuAsync(), () => !_searching);
+        PickOuCommand = new RelayCommand(() => PickOuAsync().Forget(), () => !_searching);
 
         // Dynamisch aus einer Liste (Text oder CSV mit Filtern)
         _isList = group.ListQuery != null;

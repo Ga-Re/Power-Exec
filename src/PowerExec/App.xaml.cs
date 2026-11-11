@@ -28,7 +28,7 @@ public partial class App : Application
         if (!isFirst)
         {
             // Zweiter Start: laufende Instanz bitten, das Panel zu zeigen.
-            try { EventWaitHandle.OpenExisting(ShowEventName).Set(); } catch { }
+            try { EventWaitHandle.OpenExisting(ShowEventName).Set(); } catch { /* laufende Instanz antwortet nicht mehr – der zweite Start endet ohnehin */ }
             Shutdown();
             return;
         }
@@ -59,7 +59,7 @@ public partial class App : Application
             string? error;
             try { error = await selfTest.RunSelfTestAsync(resultFile + ".progress"); }
             catch (Exception ex) { error = ex.ToString(); }
-            try { File.WriteAllText(resultFile, error ?? "OK"); } catch { }
+            try { File.WriteAllText(resultFile, error ?? "OK"); } catch { /* ohne Ergebnisdatei wertet die CI den Lauf als fehlgeschlagen */ }
             Shutdown(error == null ? 0 : 1);
         });
     }
@@ -71,9 +71,9 @@ public partial class App : Application
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec");
             Directory.CreateDirectory(dir);
             File.AppendAllText(Path.Combine(dir, "error.log"), $"{DateTime.Now:u} {e.Exception}{Environment.NewLine}");
-            AppLog.Error(L.T("Unexpected error"), e.Exception);
+            AppLog.Error("Unexpected error", e.Exception);
         }
-        catch { }
+        catch { /* Protokoll nicht schreibbar – die Meldung unten zeigt den Fehler trotzdem */ }
         e.Handled = true;
         // Beim Beenden (z. B. für ein Update) nur protokollieren – keine Meldung, die das Update aufhält
         if (_controller?.IsExiting == true) return;
@@ -95,7 +95,7 @@ public partial class App : Application
     {
         _controller?.Dispose();
         _showEvent?.Dispose();
-        try { _mutex?.ReleaseMutex(); } catch { }
+        try { _mutex?.ReleaseMutex(); } catch { /* Mutex schon frei oder von einem anderen Thread gehalten – beim Beenden ohne Belang */ }
         _mutex?.Dispose();
         base.OnExit(e);
     }

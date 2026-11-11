@@ -76,7 +76,7 @@ public partial class AppController
     public void SaveHistory()
     {
         try { _history?.Save(HistoryPath); }
-        catch (Exception ex) { AppLog.Error(L.T("History couldn't be saved"), ex); }
+        catch (Exception ex) { AppLog.Error("History couldn't be saved", ex); }
     }
 
     /// <summary>Lauf mit denselben Werten wiederholen (bei Remote wahlweise nur die fehlgeschlagenen Rechner).</summary>
@@ -100,7 +100,7 @@ public partial class AppController
             activity.State switch { ActivityState.Error => HistoryResult.Error, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Success },
             activity.Detail, activity.ExitCode));
         // Programme, Webseiten, Ordner …: nur „gestartet“, kein Ende
-        if (track == null) CompleteHistory(entry, HistoryResult.Started, "gestartet");
+        if (track == null) CompleteHistory(entry, HistoryResult.Started, L.T("started"));
         return track;
     }
 }

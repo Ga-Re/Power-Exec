@@ -42,7 +42,7 @@ public static class ExternalDrop
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Drag & drop couldn't be read"), ex);
+            AppLog.Error("Drag & drop couldn't be read", ex);
         }
         return result;
     }

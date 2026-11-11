@@ -555,8 +555,8 @@ public sealed class SettingsViewModel : ObservableObject
             .ToList();
 
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
-        CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
-        InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
+        CheckUpdatesCommand = new RelayCommand(() => CheckUpdatesAsync().Forget(), () => !_isChecking);
+        InstallUpdateCommand = new RelayCommand(() => _app.InstallUpdateAsync().Forget(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.AvailableUpdate is { } r) _app.Shell.OpenUrl(r.HtmlUrl); });
         ShowWelcomeCommand = new RelayCommand(() => _app.ShowWelcome());
         CurrentReleaseNotesCommand = new RelayCommand(() => _app.Shell.OpenUrl(
@@ -734,7 +734,7 @@ public sealed class SettingsViewModel : ObservableObject
                     "market-sources" => "Sources",
                     _ => "Entry"
                 };
-                _ = MarketplacePage.EnsureLoadedAsync();
+                MarketplacePage.EnsureLoadedAsync().Forget();
             }
             OnPropertyChanged(nameof(IsMarketplaceSection));
         }
@@ -1610,7 +1610,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             File.WriteAllText(file, SettingsTransfer.Export(_app.Settings));
-            AppLog.Info(L.F("Settings exported: {0}", file));
+            AppLog.Info(string.Format("Settings exported: {0}", file));
             _app.Dialogs.Inform(L.T("The saved settings were exported.\nPasswords are not included."), L.T("Export"));
         }
         catch (Exception ex)
@@ -1641,7 +1641,7 @@ public sealed class SettingsViewModel : ObservableObject
         var result = merge == true ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
         result.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         _app.ApplySettings(result);
-        AppLog.Info($"Einstellungen importiert ({(merge == true ? "zusammengeführt" : "ersetzt")}): {file}");
+        AppLog.Info($"Settings imported ({(merge == true ? "merged" : "replaced")}): {file}");
         ReopenRequested?.Invoke();
     }
 

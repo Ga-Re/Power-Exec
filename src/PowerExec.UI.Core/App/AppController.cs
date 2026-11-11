@@ -70,7 +70,7 @@ public partial class AppController : IDisposable
         Repository.Changed += (_, _) =>
         {
             UpdateKnownFiles();
-            _ = MaintainPathsAsync();
+            MaintainPathsAsync().Forget();
             RebuildPanels();
         };
 
@@ -83,10 +83,10 @@ public partial class AppController : IDisposable
 
         Ui.CreateTray();
 
-        AppLog.Info(L.F("Power-Exec {0} started ({1} folders)", UpdateService.CurrentVersionText, Settings.Folders.Count));
+        AppLog.Info(string.Format("Power-Exec {0} started ({1} folders)", UpdateService.CurrentVersionText, Settings.Folders.Count));
         Repository.LoadCache();
         Repository.SetupWatchers();
-        _ = Repository.ScanAsync();
+        Repository.ScanAsync().Forget();
         AutostartService.Apply(Settings.StartWithWindows);
 
         // Neu in dieser Version: nach einem Update einmal im Panel zeigen
@@ -111,7 +111,7 @@ public partial class AppController : IDisposable
         }
 
         if (Settings.CheckUpdatesOnStart)
-            _ = CheckUpdatesAsync(manual: false, includePrereleases: Settings.IncludePrereleases);
+            CheckUpdatesAsync(manual: false, includePrereleases: Settings.IncludePrereleases).Forget();
     }
 
     public void SaveSettings()
@@ -186,7 +186,7 @@ public partial class AppController : IDisposable
     {
         if (!Settings.Variables.Any(v => v.Kind == VariableKind.PowerShell && v.Refresh != VariableRefresh.EveryUse)) return;
         var resolver = VariableResolver;
-        _ = Task.Run(resolver.Warm);
+        Task.Run(resolver.Warm).Forget();
     }
 
     /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
@@ -338,7 +338,7 @@ public partial class AppController : IDisposable
         if (!WorkspaceManager.Switch(Settings, name)) return;
         ClearUndo();
         SaveSettings();
-        AppLog.Info(L.F("Switched workspace: {0}", Settings.ActiveWorkspace));
+        AppLog.Info(string.Format("Switched workspace: {0}", Settings.ActiveWorkspace));
         Repository.UpdateSettings(Settings);
         RebuildPanels();
         _settingsWindow?.Close(); // Einstellungen zeigen sonst noch den alten Arbeitsbereich
@@ -408,7 +408,7 @@ public partial class AppController : IDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Snippet couldn't be prepared"), ex);
+            AppLog.Error("Snippet couldn't be prepared", ex);
             return item;
         }
     }
@@ -427,10 +427,10 @@ public partial class AppController : IDisposable
                 File.Delete(probe);
                 CustomEntry.SnippetFolder = dir;
                 foreach (var f in Directory.EnumerateFiles(dir, "*-run-*.ps1"))
-                    try { if (DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > TimeSpan.FromDays(1)) File.Delete(f); } catch { }
+                    try { if (DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > TimeSpan.FromDays(1)) File.Delete(f); } catch { /* alte Laufdatei noch in Benutzung – beim nächsten Start erneut */ }
                 return;
             }
-            catch { }
+            catch { /* Ordner nicht beschreibbar: nächsten Kandidaten versuchen */ }
         }
     }
 
@@ -505,7 +505,7 @@ public partial class AppController : IDisposable
             Shell.CopyToClipboard(resolved.Source.Code, resolved.Source.CopyAsHtml);
             if (record) RecordRun(item, ProfileResolver.GetDefault(Settings, item));
             HidePanels();
-            if (resolved.Source.PasteAfterCopy) _ = PasteAsync(item.DisplayName);
+            if (resolved.Source.PasteAfterCopy) PasteAsync(item.DisplayName).Forget();
             else Ui.Notify(L.T("Copied to the clipboard"), item.DisplayName);
         }
         catch (Exception ex)
@@ -685,7 +685,7 @@ public partial class AppController : IDisposable
         var scanned = new HashSet<string>(Repository.Items.Select(i => i.FullPath), StringComparer.OrdinalIgnoreCase);
         var keys = DropClassifier.AddToSettings(Settings, targets, group, scanned.Contains);
         CommitUserChange();
-        AppLog.Info($"Per Drag & Drop hinzugefügt{(group != null ? " (Gruppe " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
+        AppLog.Info($"Added by drag & drop{(group != null ? " (group " + group + ")" : string.Empty)}: {string.Join(", ", targets.Select(t => t.Target))}");
         if (group == null && keys.Count > 0 && Hosts.Any(h => !h.Config.ShowsFolder(PanelConfig.CustomEntriesKey)))
             Ui.Notify(L.T("Added"), L.T("The entries are under “Custom entries”. Panels with their own content selection only show them if “Custom entries” is checked."));
     }
@@ -722,7 +722,7 @@ public partial class AppController : IDisposable
         Repository.UpdateSettings(Settings);
         CommitUserChange();
         ShowUndoToast(L.F("Folder added as group “{0}”", GroupManager.LeafOf(path)));
-        AppLog.Info(L.F("Folder added by drag & drop as smart group: {0} → {1}", folderPath, path));
+        AppLog.Info(string.Format("Folder added by drag & drop as smart group: {0} → {1}", folderPath, path));
     }
 
     /// <summary>Neuer Eintrag aus einem Menü: Art-Schlüssel („Url“, „TextSnippet“ …) oder null = Art im Dialog wählen.</summary>
@@ -834,7 +834,7 @@ public partial class AppController : IDisposable
             }
             text = Shell.GetClipboardText();
         }
-        catch { }
+        catch { /* Zwischenablage gerade von einem anderen Programm gesperrt: wie leer behandeln */ }
         if (string.IsNullOrWhiteSpace(text))
         {
             Ui.Notify(L.T("Clipboard empty"), L.T("Copy an address, a path, a computer name or code and try again."));
@@ -914,7 +914,7 @@ public partial class AppController : IDisposable
         try
         {
             File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
-            AppLog.Info(L.F("{0} custom entries exported: {1}", entries.Count, fileName));
+            AppLog.Info(string.Format("{0} custom entries exported: {1}", entries.Count, fileName));
             Ui.Notify(L.T("Exported"), (entries.Count == 1 ? L.T("1 entry saved.") : L.F("{0} entries saved.", entries.Count)));
         }
         catch (Exception ex)
@@ -936,7 +936,7 @@ public partial class AppController : IDisposable
             var file = EntryShare.Parse(File.ReadAllText(fileName));
             var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
             CommitUserChange();
-            AppLog.Info(L.F("Custom entries imported ({0} new, {1} updated): {2}", added, updated, fileName));
+            AppLog.Info(string.Format("Custom entries imported ({0} new, {1} updated): {2}", added, updated, fileName));
             Dialogs.Inform(L.F("{0} new and {1} updated entries imported.", added, updated), L.T("Import"), owner);
             return added + updated > 0;
         }
@@ -1062,7 +1062,7 @@ public partial class AppController : IDisposable
             {
                 PathMigration.Apply(Settings, m);
                 History.Rename(m.OldPath, m.NewPath);
-                AppLog.Info(L.F("Renamed/moved detected: {0} → {1} (profiles and favorite carried over)", m.OldPath, m.NewPath));
+                AppLog.Info(string.Format("Renamed/moved detected: {0} → {1} (profiles and favorite carried over)", m.OldPath, m.NewPath));
             }
             Settings.Fingerprints = snapshot.Fingerprints;
             SaveSettings();
@@ -1076,7 +1076,7 @@ public partial class AppController : IDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Matching renamed files failed"), ex);
+            AppLog.Error("Matching renamed files failed", ex);
         }
         finally
         {
@@ -1142,7 +1142,7 @@ public partial class AppController : IDisposable
             if (!ConfirmRun(item, profile, targets.Count, null)) return;
             HidePanels();
             if (record) RecordRun(item, profile);
-            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name} · {(remote ? targets.Count + " Rechner" : "lokal")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+            AppLog.Info($"Launch: {item.FullPath} · profile {profile.Name} · {(remote ? targets.Count + " computers" : "local")}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             if (remote)
             {
                 // Gruppenmitglieder nicht in „Zuletzt verwendet“ übernehmen, nur direkt eingetragene Rechner.
@@ -1173,13 +1173,13 @@ public partial class AppController : IDisposable
         if (!ConfirmRun(item, profile, 0, null)) return;
         HidePanels();
         try { item.Source?.PrepareLaunch(); } // z. B. .rdp-Datei mit Benutzer/Gateway (ohne Kennwort)
-        catch (Exception ex) { AppLog.Error(L.T("Preparing the launch failed"), ex); }
+        catch (Exception ex) { AppLog.Error("Preparing the launch failed", ex); }
         var plainOrigin = HistoryOrigin;
         if (StartLocalTracked(item, BuildRequest(item, profile, mode, new Dictionary<string, object>()),
                 () => BeginHistory(item, profile, mode, PsEngine.WindowsPowerShell, null, null, plainOrigin), null))
         {
             if (record) RecordRun(item, profile);
-            AppLog.Info($"Start: {item.FullPath} · Profil {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+            AppLog.Info($"Launch: {item.FullPath} · profile {profile.Name}{(mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
         }
     }
 
@@ -1211,9 +1211,9 @@ public partial class AppController : IDisposable
     {
         if (WindowsMetadata.Unblock(item.FullPath))
         {
-            AppLog.Info(L.F("Unblocked: {0}", item.FullPath));
+            AppLog.Info(string.Format("Unblocked: {0}", item.FullPath));
             Repository.Reload(item);
-            _ = Repository.ScanAsync();
+            Repository.ScanAsync().Forget();
         }
         else
         {
@@ -1394,7 +1394,7 @@ public partial class AppController : IDisposable
         }
         catch (Exception ex)
         {
-            AppLog.Error("Neustart fehlgeschlagen", ex);
+            AppLog.Error("Restart failed", ex);
             return;
         }
         Exit();

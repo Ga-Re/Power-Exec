@@ -507,7 +507,7 @@ public partial class PanelWindow : Window
             var frame = new System.Diagnostics.StackTrace(ex).GetFrames().FirstOrDefault(f => f.GetMethod()?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true)
                         ?? new System.Diagnostics.StackTrace(ex).GetFrame(0);
             GlassError = $"{ex.GetType().Name}: {ex.Message} (in {frame?.GetMethod()?.DeclaringType?.Name}.{frame?.GetMethod()?.Name})";
-            AppLog.Error(L.T("Glass blur not available, falling back to frosted glass"), ex);
+            AppLog.Error("Glass blur not available, falling back to frosted glass", ex);
             DisposeGlass();
         }
     }
@@ -1146,8 +1146,8 @@ public partial class PanelWindow : Window
             _outsideSince = null;
             return;
         }
-        _outsideSince ??= DateTime.Now;
-        if ((DateTime.Now - _outsideSince.Value).TotalMilliseconds >= _app.Settings.CollapseDelayMs)
+        _outsideSince ??= DateTime.UtcNow;
+        if ((DateTime.UtcNow - _outsideSince.Value).TotalMilliseconds >= _app.Settings.CollapseDelayMs)
             HidePanel();
     }
 

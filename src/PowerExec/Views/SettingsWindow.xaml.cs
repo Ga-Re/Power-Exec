@@ -182,7 +182,7 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Settings couldn't be applied"), ex);
+            AppLog.Error("Settings couldn't be applied", ex);
             ShowSaveState(SaveState.Error, L.T("Not saved: ") + ex.Message);
         }
     }

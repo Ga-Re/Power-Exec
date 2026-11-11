@@ -42,12 +42,12 @@ public class LocalizationTests
         foreach (var f in SourceFiles("*.xaml"))
             foreach (Match m in xaml.Matches(File.ReadAllText(f)))
                 yield return (Path.GetFileName(f), UnescapeXaml(m.Groups[1].Value));
-        // Emoji-Namen der Symbolauswahl werden zur Laufzeit übersetzt (Liste in IconLibrary.cs)
+        // Namen der Segoe-Symbole und der Emoji in der Symbolauswahl werden zur Laufzeit übersetzt (Listen in IconLibrary.cs)
         var icons = SourceFiles("IconLibrary.cs").FirstOrDefault();
         if (icons != null)
         {
             var text = File.ReadAllText(icons);
-            var start = text.IndexOf("[] EmojiList", StringComparison.Ordinal);
+            var start = text.IndexOf("[] SegoeGlyphs", StringComparison.Ordinal);
             foreach (Match m in new Regex(@"\(""[^""]+"", ""([^""]+)""\)").Matches(text[start..]))
                 yield return ("IconLibrary.cs", m.Groups[1].Value);
         }

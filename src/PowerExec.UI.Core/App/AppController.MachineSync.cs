@@ -19,10 +19,10 @@ public partial class AppController
 
     private void StartMachineSync()
     {
-        _adSyncTimer ??= UiDispatcher.CreateTimer(TimeSpan.FromMinutes(10), () => _ = SyncDueMachineGroupsAsync());
+        _adSyncTimer ??= UiDispatcher.CreateTimer(TimeSpan.FromMinutes(10), () => SyncDueMachineGroupsAsync().Forget());
         _adSyncTimer.Start();
         // Kurz nach dem Start, damit der Start selbst nicht auf das AD wartet
-        _ = Task.Delay(TimeSpan.FromSeconds(15)).ContinueWith(_ => UiDispatcher.Post(() => _ = SyncDueMachineGroupsAsync()));
+        Task.Delay(TimeSpan.FromSeconds(15)).ContinueWith(_ => UiDispatcher.Post(() => SyncDueMachineGroupsAsync().Forget())).Forget();
     }
 
     /// <summary>Alle fälligen dynamischen Gruppen aktualisieren (nie synchronisiert oder älter als das Intervall).</summary>
@@ -58,14 +58,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(L.F("Computer group @{0}: {1} computers from AD", g.Name, names.Count));
+            AppLog.Info(string.Format("Computer group @{0}: {1} computers from AD", g.Name, names.Count));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow; // nicht jede Minute erneut versuchen
-            AppLog.Info(L.F("Computer group @{0}: AD unreachable ({1})", g.Name, ex.Message));
+            AppLog.Info(string.Format("Computer group @{0}: AD unreachable ({1})", g.Name, ex.Message));
             return null;
         }
     }
@@ -81,14 +81,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(L.F("Computer group @{0}: {1} computers from {2}", g.Name, names.Count, q.Path));
+            AppLog.Info(string.Format("Computer group @{0}: {1} computers from {2}", g.Name, names.Count, q.Path));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow;
-            AppLog.Info(L.F("Computer group @{0}: list not readable ({1})", g.Name, ex.Message));
+            AppLog.Info(string.Format("Computer group @{0}: list not readable ({1})", g.Name, ex.Message));
             return null;
         }
     }

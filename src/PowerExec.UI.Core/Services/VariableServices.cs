@@ -87,7 +87,7 @@ public static class VariableCommandRunner
         var stderr = p.StandardError.ReadToEndAsync();
         if (!p.WaitForExit((int)Timeout.TotalMilliseconds))
         {
-            try { p.Kill(entireProcessTree: true); } catch { }
+            try { p.Kill(entireProcessTree: true); } catch { /* Prozess inzwischen von selbst beendet */ }
             throw new TimeoutException(L.F("The command didn't respond after {0:0} s.", Timeout.TotalSeconds));
         }
         var error = CleanError(stderr.Result);

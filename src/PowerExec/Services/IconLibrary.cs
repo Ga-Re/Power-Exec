@@ -34,7 +34,7 @@ public static class IconLibrary
         }
         catch (Exception ex)
         {
-            AppLog.Error("Symbole konnten nicht geladen werden", ex);
+            AppLog.Error("Icons could not be loaded", ex);
             return (new(), new());
         }
     }
@@ -61,7 +61,7 @@ public static class IconLibrary
                 }
                 catch (Exception ex)
                 {
-                    AppLog.Error($"Symbol {key} ist ungültig", ex);
+                    AppLog.Error($"Icon {key} is invalid", ex);
                 }
             }
             GeometryCache[key] = geometry;
@@ -94,7 +94,7 @@ public static class IconLibrary
                     }
                 }
             }
-            catch { }
+            catch { /* kein lesbares Bild: der Eintrag zeigt das Standardsymbol */ }
             ImageCache[path] = img;
             return img;
         }
@@ -109,7 +109,7 @@ public static class IconLibrary
         Data.Value.Hero.Keys.Select(k => new IconChoice(new IconRef(IconSource.Hero, k), Pretty(k), k.Replace('-', ' ')));
 
     public static IEnumerable<IconChoice> Glyphs() => SegoeGlyphs.Select(g =>
-        new IconChoice(new IconRef(IconSource.Glyph, g.Code), g.Name, g.Name));
+        new IconChoice(new IconRef(IconSource.Glyph, g.Code), PowerExec.Core.Localization.L.T(g.Name), g.Name + " " + PowerExec.Core.Localization.L.T(g.Name)));
 
     public static IEnumerable<IconChoice> Emoji() => EmojiList.Select(e =>
         new IconChoice(new IconRef(IconSource.Emoji, e.Char), PowerExec.Core.Localization.L.T(e.Name), e.Name + " " + PowerExec.Core.Localization.L.T(e.Name)));
@@ -120,31 +120,34 @@ public static class IconLibrary
         return s.Length > 0 ? char.ToUpperInvariant(s[0]) + s[1..] : s;
     }
 
-    /// <summary>Segoe Fluent Icons / MDL2 Assets (auf Windows 10 und 11 vorhanden).</summary>
+    /// <summary>
+    /// Segoe Fluent Icons / MDL2 Assets (auf Windows 10 und 11 vorhanden). Der Name ist englisch und wird wie bei den
+    /// Emoji zur Laufzeit übersetzt; gesucht wird im englischen und im übersetzten Namen.
+    /// </summary>
     private static readonly (string Code, string Name)[] SegoeGlyphs =
     {
-        ("E8B7", "Ordner folder"), ("E838", "Ordner öffnen folder open"), ("E8A5", "Dokument document"), ("E756", "Konsole terminal command"),
-        ("E943", "Code"), ("E713", "Einstellungen settings"), ("E90F", "Werkzeug wrench repair"), ("E7EF", "Admin shield"),
-        ("E72E", "Schloss lock"), ("E8D7", "Berechtigung permissions"), ("E77B", "Person user"), ("E716", "Personen people group"),
-        ("E7F4", "Server desktop pc"), ("E977", "PC monitor"), ("E8AF", "Remote verbinden connect"), ("E774", "Welt globe web"),
-        ("E71B", "Link"), ("E968", "Netzwerk network"), ("E701", "WLAN wifi"), ("E839", "Ethernet"),
-        ("EDA2", "Festplatte hard drive"), ("E8F1", "Datenbank library"), ("E753", "Cloud"), ("E896", "Download"),
-        ("E898", "Upload"), ("E72C", "Aktualisieren refresh"), ("E768", "Start play"), ("E71A", "Stopp stop"),
-        ("E7BA", "Warnung warning"), ("E946", "Info"), ("E897", "Hilfe help"), ("E734", "Stern favorite"),
-        ("E8EC", "Etikett tag"), ("E8F4", "Neuer Ordner new folder"), ("E710", "Hinzufügen add"), ("E74D", "Löschen delete"),
-        ("E70F", "Bearbeiten edit"), ("E8C8", "Kopieren copy"), ("E721", "Suchen search"), ("E715", "Mail"),
-        ("E717", "Telefon phone"), ("E787", "Kalender calendar"), ("E823", "Uhr clock"), ("E81C", "Verlauf history"),
-        ("E9D9", "Diagramm chart"), ("E9F9", "Bericht report"), ("E8F2", "Chat"), ("E8BD", "Nachricht message"),
-        ("E749", "Drucker print"), ("E7F8", "Gerät device"), ("E772", "Kamera camera"), ("E767", "Lautstärke volume"),
-        ("E83F", "Batterie battery"), ("E945", "Blitz lightning"), ("E706", "Sonne brightness"), ("E7E8", "Energie power"),
-        ("E8CB", "Sortieren sort"), ("E71C", "Filter"), ("E8FD", "Liste list"), ("E80A", "Raster grid"),
-        ("E8A7", "App öffnen open"), ("E7C3", "Seite page"), ("E8E5", "Datei öffnen open file"), ("E8B5", "Import"),
-        ("EDE1", "Export"), ("E7B8", "Paket package"), ("E9CE", "Teamarbeit"), ("E8A1", "Vorschau preview"),
-        ("E7AD", "Drehen rotate"), ("E8D2", "Schrift font"), ("E790", "Farbe color"), ("E8B9", "Bild picture"),
-        ("E714", "Video"), ("E8D6", "Musik music"), ("E7FC", "Spiel game"), ("E8A0", "Zuhause home"),
-        ("E80F", "Haus home"), ("E7C1", "Markierung flag"), ("E707", "Ort map pin"), ("E909", "Karte map"),
-        ("E7BE", "Bildung education"), ("E8F3", "Buch book"), ("E73E", "Häkchen check"), ("E711", "Schließen close"),
-        ("E8BB", "Abbrechen cancel"), ("E9E9", "Zahnrad settings gear"), ("EA86", "Puzzle"), ("E95E", "Rakete rocket"),
+        ("E8B7", "Folder"), ("E838", "Folder open"), ("E8A5", "Document"), ("E756", "Terminal command"),
+        ("E943", "Code"), ("E713", "Settings"), ("E90F", "Wrench repair"), ("E7EF", "Admin shield"),
+        ("E72E", "Lock"), ("E8D7", "Permissions"), ("E77B", "User"), ("E716", "People group"),
+        ("E7F4", "Server desktop pc"), ("E977", "PC monitor"), ("E8AF", "Remote connect"), ("E774", "Globe web"),
+        ("E71B", "Link"), ("E968", "Network"), ("E701", "Wifi"), ("E839", "Ethernet"),
+        ("EDA2", "Hard drive"), ("E8F1", "Database library"), ("E753", "Cloud"), ("E896", "Download"),
+        ("E898", "Upload"), ("E72C", "Refresh"), ("E768", "Play"), ("E71A", "Stop"),
+        ("E7BA", "Warning"), ("E946", "Info"), ("E897", "Help"), ("E734", "Favorite star"),
+        ("E8EC", "Tag"), ("E8F4", "New folder"), ("E710", "Add"), ("E74D", "Delete"),
+        ("E70F", "Edit"), ("E8C8", "Copy"), ("E721", "Search"), ("E715", "Mail"),
+        ("E717", "Phone"), ("E787", "Calendar"), ("E823", "Clock"), ("E81C", "History"),
+        ("E9D9", "Chart"), ("E9F9", "Report"), ("E8F2", "Chat"), ("E8BD", "Message"),
+        ("E749", "Printer"), ("E7F8", "Device"), ("E772", "Camera"), ("E767", "Volume"),
+        ("E83F", "Battery"), ("E945", "Lightning"), ("E706", "Sun brightness"), ("E7E8", "Power"),
+        ("E8CB", "Sort"), ("E71C", "Filter"), ("E8FD", "List"), ("E80A", "Grid"),
+        ("E8A7", "Open app"), ("E7C3", "Page"), ("E8E5", "Open file"), ("E8B5", "Import"),
+        ("EDE1", "Export"), ("E7B8", "Package"), ("E9CE", "Teamwork"), ("E8A1", "Preview"),
+        ("E7AD", "Rotate"), ("E8D2", "Font"), ("E790", "Color"), ("E8B9", "Picture"),
+        ("E714", "Video"), ("E8D6", "Music"), ("E7FC", "Game"), ("E8A0", "Home"),
+        ("E80F", "House home"), ("E7C1", "Flag"), ("E707", "Map pin"), ("E909", "Map"),
+        ("E7BE", "Education"), ("E8F3", "Book"), ("E73E", "Check"), ("E711", "Close"),
+        ("E8BB", "Cancel"), ("E9E9", "Settings gear"), ("EA86", "Puzzle"), ("E95E", "Rocket"),
     };
 
     private static readonly (string Char, string Name)[] EmojiList =

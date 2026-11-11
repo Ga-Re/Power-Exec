@@ -37,7 +37,7 @@ public sealed class SettingsStore
         catch
         {
             // Beschädigte Datei sichern, damit nichts stillschweigend verloren geht.
-            try { File.Copy(FilePath, FilePath + ".defekt", overwrite: true); } catch { }
+            try { File.Copy(FilePath, FilePath + ".defekt", overwrite: true); } catch { /* Sicherung der beschädigten Datei gelingt nicht (Rechte, Platz): weiter mit Standardwerten */ }
         }
         return new AppSettings();
     }

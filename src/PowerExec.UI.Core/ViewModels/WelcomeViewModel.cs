@@ -147,7 +147,7 @@ public sealed class WelcomeViewModel : ObservableObject
             SmartGroups.Add(s, samples, name, null);
         }
         _app.ApplySettings(s);
-        AppLog.Info($"Einführung abgeschlossen: Rand {_edge}, Ordner {folder ?? "–"}, Beispiele {samples ?? "–"}");
+        AppLog.Info($"Welcome finished: edge {_edge}, folder {folder ?? "–"}, samples {samples ?? "–"}");
         CloseRequested?.Invoke(true);
     }
 
@@ -175,7 +175,7 @@ public sealed class WelcomeViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Sample folder couldn't be created"), ex);
+            AppLog.Error("Sample folder couldn't be created", ex);
             return null;
         }
     }

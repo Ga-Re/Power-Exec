@@ -23,7 +23,7 @@ public sealed class ActivityViewModel : ObservableObject
         Title = title;
         _detail = detail;
         Badge = badge;
-        Started = DateTime.Now;
+        Started = DateTime.UtcNow;
         OpenAction = open;
         CancelAction = cancel;
         OpenCommand = new RelayCommand(() => OpenAction?.Invoke(), () => OpenAction != null);
@@ -42,7 +42,9 @@ public sealed class ActivityViewModel : ObservableObject
     public string Title { get; }
     /// <summary>Typ-Kürzel wie im Panel (PS, CMD …).</summary>
     public string Badge { get; }
+    /// <summary>Beginn (UTC – Laufzeiten werden daraus berechnet; angezeigt wird die Ortszeit).</summary>
     public DateTime Started { get; }
+    /// <summary>Ende (UTC) oder null, solange es läuft.</summary>
     public DateTime? Finished => _finished;
 
     public Action? OpenAction { get; set; }
@@ -96,9 +98,9 @@ public sealed class ActivityViewModel : ObservableObject
     {
         get
         {
-            if (IsRunning) return L.T("since ") + Format(DateTime.Now - Started);
-            var end = _finished ?? DateTime.Now;
-            return $"{end:HH:mm} · {Format(end - Started)}";
+            if (IsRunning) return L.T("since ") + Format(DateTime.UtcNow - Started);
+            var end = _finished ?? DateTime.UtcNow;
+            return $"{end.ToLocalTime():HH:mm} · {Format(end - Started)}";
         }
     }
 
@@ -118,7 +120,7 @@ public sealed class ActivityViewModel : ObservableObject
     public void Complete(ActivityState state, string? detail = null)
     {
         if (!IsRunning) return;
-        _finished = DateTime.Now;
+        _finished = DateTime.UtcNow;
         if (detail != null) Detail = detail;
         State = state;
         OnPropertyChanged(nameof(HasProgress));
@@ -184,7 +186,7 @@ public sealed class ActivityList
 
     private void Trim()
     {
-        var old = Items.Where(a => !a.IsRunning && a.Finished is { } f && DateTime.Now - f > KeepFinished).ToList();
+        var old = Items.Where(a => !a.IsRunning && a.Finished is { } f && DateTime.UtcNow - f > KeepFinished).ToList();
         foreach (var a in old) Items.Remove(a);
         foreach (var a in Items.Where(a => !a.IsRunning).Skip(MaxFinished).ToList()) Items.Remove(a);
     }
@@ -207,7 +209,7 @@ public sealed class ActivityList
         catch (Exception ex)
         {
             // Kein Zugriff auf den Prozess (z. B. anderes Konto): nicht weiter verfolgen
-            AppLog.Info(L.F("Process isn't tracked: {0}", ex.Message));
+            AppLog.Info(string.Format("Process isn't tracked: {0}", ex.Message));
             activity.Complete(ActivityState.Success, detail + L.T(" · started"));
             process.Dispose();
         }

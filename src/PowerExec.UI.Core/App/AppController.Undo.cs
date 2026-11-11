@@ -78,7 +78,7 @@ public partial class AppController
         try { ApplySettings(restored); }
         finally { _undoing = false; }
         SettingsChangedOutside?.Invoke();
-        AppLog.Info(L.F("Undo: {0}", step.Description));
+        AppLog.Info(string.Format("Undo: {0}", step.Description));
         UndoToast = null;
         _undoTimer?.Stop();
         RefreshUndo();

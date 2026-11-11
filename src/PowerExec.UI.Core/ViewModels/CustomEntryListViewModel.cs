@@ -143,7 +143,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
         MoveSelectedCommand = new RelayCommand(MoveSelected, () => Selected.Any());
         ClearSelectionCommand = new RelayCommand(() => { foreach (var r in Selected.ToList()) r.IsSelected = false; });
         SelectAllCommand = new RelayCommand(() => { foreach (var r in VisibleRows.ToList()) r.IsSelected = true; });
-        CheckCommand = new RelayCommand(() => _ = CheckAsync(), () => !_checking);
+        CheckCommand = new RelayCommand(() => CheckAsync().Forget(), () => !_checking);
         SetKindFilterCommand = new RelayCommand(p => KindFilter = p?.ToString() ?? "all");
     }
 

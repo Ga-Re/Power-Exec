@@ -75,7 +75,7 @@ public sealed class Launcher
         if (started != null && CommandBuilder.SupportsDoneFile(request))
         {
             try { doneFile = NewDoneFile(); }
-            catch (Exception ex) { AppLog.Info(L.F("Completion marker not possible: {0}", ex.Message)); }
+            catch (Exception ex) { AppLog.Info(string.Format("Completion marker not possible: {0}", ex.Message)); }
         }
         var spec = CommandBuilder.BuildLocal(request, doneFile);
         RunCredential? cred = null;
@@ -147,7 +147,7 @@ public sealed class Launcher
         } : ex.Message;
 
         if (cred != null && PathResolver.IsNetworkPath(path) && !hint.Contains(PathResolver.ServerShare(path)))
-            hint += $"\n\nHinweis: Das Script liegt auf {PathResolver.ServerShare(path)}. Prüfe, ob {cred.Account} dort Leserechte hat.";
+            hint += L.F("\n\nNote: The script is on {0}. Check whether {1} has read access there.", PathResolver.ServerShare(path), cred.Account);
 
         var title = L.F("{0} couldn't be started", r.Item.DisplayName);
         _dialogs.Warn(hint, title, owner);
@@ -197,6 +197,6 @@ public sealed class Launcher
 
     public static void OpenUrl(string url)
     {
-        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose(); } catch { }
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true })?.Dispose(); } catch (Exception ex) { AppLog.Warn($"Could not open {url}: {ex.Message}"); }
     }
 }

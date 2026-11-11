@@ -32,7 +32,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(_workspaces);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Opening += (_, _) => RebuildQuickMenus();
-        menu.Items.Add(L.T("Rescan folders"), null, (_, _) => _ = app.Repository.ScanAsync());
+        menu.Items.Add(L.T("Rescan folders"), null, (_, _) => app.Repository.ScanAsync().Forget());
         menu.Items.Add(L.T("Settings"), null, (_, _) => app.ShowSettings());
         menu.Items.Add(L.T("Check for updates"), null, async (_, _) =>
         {
@@ -134,7 +134,7 @@ public sealed class TrayIcon : IDisposable
                 return new Drawing.Icon(s, Forms.SystemInformation.SmallIconSize);
             }
         }
-        catch { }
+        catch (Exception ex) { AppLog.Warn($"Tray icon could not be loaded, using the default application icon: {ex.Message}"); }
         return Drawing.SystemIcons.Application;
     }
 
@@ -143,7 +143,7 @@ public sealed class TrayIcon : IDisposable
     public void ShowBalloon(string title, string text, Action? onClick = null, bool warning = false)
     {
         _balloonClick = onClick;
-        try { _icon.ShowBalloonTip(6000, title, text, warning ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info); } catch { }
+        try { _icon.ShowBalloonTip(6000, title, text, warning ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info); } catch { /* Benachrichtigungen können in Windows abgeschaltet sein – dann erscheint keine */ }
     }
 
     public void Dispose()

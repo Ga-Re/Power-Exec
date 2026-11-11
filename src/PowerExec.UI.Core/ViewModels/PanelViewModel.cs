@@ -31,8 +31,8 @@ public sealed class PanelViewModel : ObservableObject
         SetLayoutCommand = new RelayCommand(p => { if (Enum.TryParse<ItemLayout>(p?.ToString(), out var l)) Layout = l; });
         SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
-        RescanCommand = new RelayCommand(() => _ = _app.Repository.ScanAsync());
-        UpdateNowCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => !UpdateBusy);
+        RescanCommand = new RelayCommand(() => _app.Repository.ScanAsync().Forget());
+        UpdateNowCommand = new RelayCommand(() => _app.InstallUpdateAsync().Forget(), () => !UpdateBusy);
         UpdateLaterCommand = new RelayCommand(() => { _updateDismissed = true; OnPropertyChanged(nameof(UpdateVisible)); });
         _app.Update.PropertyChanged += OnUpdateChanged;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
@@ -173,7 +173,7 @@ public sealed class PanelViewModel : ObservableObject
         if (_app.Health == null) return;
         var keys = new HashSet<string>(AllItems.Where(i => i.Item.Source != null).Select(i => i.Item.FullPath), StringComparer.OrdinalIgnoreCase);
         var entries = _app.Settings.CustomEntries.Where(c => keys.Contains(c.Key)).ToList();
-        if (entries.Count > 0) _ = _app.Health.CheckAsync(entries);
+        if (entries.Count > 0) _app.Health.CheckAsync(entries).Forget();
     }
 
     // Arbeitsbereiche
@@ -616,7 +616,7 @@ public sealed class PanelViewModel : ObservableObject
         if (items.Count == 0) return;
         var steps = items.Select(i => new WorkflowStep { Path = i.FullPath, Name = i.DisplayName }).ToList();
         ClearChecked();
-        _ = _app.RunWorkflowAsync(L.F("{0} entries one after another", steps.Count), steps, stopOnError: true);
+        _app.RunWorkflowAsync(L.F("{0} entries one after another", steps.Count), steps, stopOnError: true).Forget();
     });
     public ICommand SaveCheckedAsWorkflowCommand => _saveWorkflowCommand ??= new RelayCommand(() =>
     {
@@ -692,7 +692,7 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Gemeldete, noch nicht übernommene Katalog-Änderungen.</summary>
     public string? CatalogPending => _app.Settings.Catalogs.Where(c => c.PendingSummary.Length > 0)
         .Select(c => L.F("Team catalog “{0}”: {1}", c.Name, c.PendingSummary)).FirstOrDefault();
-    public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _ = _app.ApplyPendingCatalogsAsync());
+    public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _app.ApplyPendingCatalogsAsync().Forget());
     private ICommand? _applyCatalogsCommand;
     public void RefreshCatalogs() => OnPropertyChanged(nameof(CatalogPending));
 

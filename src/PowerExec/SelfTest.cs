@@ -27,7 +27,7 @@ public sealed partial class SelfTestController : AppController
     private void Step(string name)
     {
         if (_progressFile == null) return;
-        try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { }
+        try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { /* Fortschrittsdatei ist nur Hilfe bei einem Hänger */ }
     }
 
     /// <summary>Sammelt WPF-Bindungsfehler „Eigenschaft nicht gefunden“ – z. B. falscher DataContext.</summary>
@@ -413,8 +413,8 @@ public sealed partial class SelfTestController : AppController
                         else if (!act.IsError || !act.Detail.Contains("Fehler") || !act.WindowStillOpen) Fail($"Aktivitäten: Ergebnis bei offenem Fenster falsch ({act.State}, {act.Detail})");
                         if (!act.CanRestart) Fail("Aktivitäten: „Erneut starten“ fehlt nach dem Ende");
                     }
-                    try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { }
-                    try { Directory.Delete(doneDir, true); } catch { }
+                    try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { /* Prozess inzwischen beendet */ }
+                    try { Directory.Delete(doneDir, true); } catch { /* Aufräumen im Temp-Ordner – darf scheitern */ }
                 }
                 var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
                 remoteDemo.Progress = 0.7;

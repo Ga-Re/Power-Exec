@@ -21,9 +21,9 @@ public partial class AppController
 
     public void StartCatalogs()
     {
-        _catalogTimer ??= UiDispatcher.CreateTimer(CatalogInterval, () => _ = CheckCatalogsAsync());
+        _catalogTimer ??= UiDispatcher.CreateTimer(CatalogInterval, () => CheckCatalogsAsync().Forget());
         _catalogTimer.Start();
-        if (Settings.Catalogs.Count > 0) _ = CheckCatalogsAsync();
+        if (Settings.Catalogs.Count > 0) CheckCatalogsAsync().Forget();
     }
 
     /// <summary>Katalogdatei lesen (mit Zeitlimit, Freigaben können hängen).</summary>
@@ -74,7 +74,7 @@ public partial class AppController
             sub.LastHash = hash;
             changed = true;
             if (!diff.IsEmpty) messages.Add($"{sub.Name}: {diff.Summary}");
-            AppLog.Info(L.F("Catalog {0} ({1}): {2}", sub.Name, sub.Path, diff.Summary));
+            AppLog.Info(string.Format("Catalog {0} ({1}): {2}", sub.Name, sub.Path, diff.Summary));
         }
         SaveSettings();
         if (changed) CommitUserChange();

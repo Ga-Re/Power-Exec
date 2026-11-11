@@ -367,7 +367,7 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         if (Entry == null || p.Options == null) return Item;
         var item = Entry.Current.WithProfile(p).ToLaunchItem();
-        if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { } }
+        if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { /* unvollständiger Code beim Tippen: Parameter bleiben leer */ } }
         return item;
     }
     private string _lastParams = string.Empty;
@@ -528,7 +528,7 @@ public sealed class ProfilesViewModel : ObservableObject
         if (Entry.IsPsSnippet)
         {
             item.LaunchTarget = Entry.Current.SnippetPath;
-            try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { }
+            try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { /* unvollständiger Code beim Tippen: Parameter bleiben leer */ }
         }
         Item = item;
         var sig = ParamSignature(item);

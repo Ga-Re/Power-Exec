@@ -47,7 +47,7 @@ public static class BrowserCatalog
                     if (key?.GetValue(null) is string path && File.Exists(path.Trim('"'))) return true;
                 }
             }
-            catch { }
+            catch { /* Registry nicht lesbar: weiter mit den üblichen Installationsordnern */ }
         var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -97,7 +97,7 @@ public static class BrowserCatalog
             }
             catch (Exception ex)
             {
-                AppLog.Info(L.F("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
+                AppLog.Info(string.Format("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
             }
             _profiles[b] = result;
             return result;

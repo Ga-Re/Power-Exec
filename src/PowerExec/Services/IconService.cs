@@ -64,7 +64,7 @@ public sealed class IconService : IDisposable
         var list = _pending.GetOrAdd(cacheKey, _ => { first = true; return new List<Action<ImageSource>>(); });
         lock (list) list.Add(onLoaded);
         if (!first) return null;
-        if (web) _ = Task.Run(() => LoadWebAsync(cacheKey, key[(key.IndexOf('|') + 1)..]));
+        if (web) Task.Run(() => LoadWebAsync(cacheKey, key[(key.IndexOf('|') + 1)..])).Forget();
         else if (!_queue.IsAddingCompleted) _queue.Add(key);
         return null;
     }
@@ -91,7 +91,7 @@ public sealed class IconService : IDisposable
                 if (key == "dir:") image = LoadShell("folder", FILE_ATTRIBUTE_DIRECTORY, SHGFI_USEFILEATTRIBUTES);
                 else if (key.StartsWith("file:")) image = LoadShell(key[5..key.LastIndexOf('|')], 0, 0);
             }
-            catch { }
+            catch { /* Shell liefert kein Symbol (Datei weg, Freigabe offline): Standardsymbol */ }
             Complete(key, image);
         }
     }
@@ -125,7 +125,7 @@ public sealed class IconService : IDisposable
                 if (File.Exists(file) && DateTime.UtcNow - File.GetLastWriteTimeUtc(file) < TimeSpan.FromDays(14))
                     bytes = await File.ReadAllBytesAsync(file);
             }
-            catch { }
+            catch { /* Zwischenspeicher nicht lesbar: Favicon wird neu geladen */ }
             image = bytes is { Length: > 0 } ? Decode(bytes) : null;
             if (image == null)
             {
@@ -138,11 +138,11 @@ public sealed class IconService : IDisposable
                         Directory.CreateDirectory(FaviconFolder);
                         await File.WriteAllBytesAsync(file, bytes);
                     }
-                    catch { }
+                    catch { /* Zwischenspeicher nicht schreibbar: Favicon wird beim nächsten Start neu geladen */ }
                 }
             }
         }
-        catch { }
+        catch { /* Favicon ist Zierde – ohne Netz bleibt das Standardsymbol */ }
         finally
         {
             _webLimit.Release();
@@ -169,7 +169,7 @@ public sealed class IconService : IDisposable
                 }
             }
         }
-        catch { }
+        catch { /* Seite nicht lesbar: weiter mit /favicon.ico */ }
         var ico = await TryGetBytesAsync(origin.TrimEnd('/') + "/favicon.ico");
         return ico != null && Decode(ico) != null ? ico : null;
     }

@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
 namespace PowerExec.UI.ViewModels;
 
@@ -40,7 +41,7 @@ public sealed class GroupViewModel : ObservableObject
             AnimateExpand = false;
         });
         OpenInExplorerCommand = new RelayCommand(() => { if (FolderPath != null) app.Shell.OpenLocation(FolderPath, isFolder: true); }, () => FolderPath != null);
-        RescanCommand = new RelayCommand(() => _ = app.Repository.ScanAsync());
+        RescanCommand = new RelayCommand(() => app.Repository.ScanAsync().Forget());
         CollapseOthersCommand = new RelayCommand(() => _panel.CollapseAllExcept(this));
         CollapseAllCommand = new RelayCommand(() => _panel.SetAllExpanded(false));
         ExpandAllCommand = new RelayCommand(() => _panel.SetAllExpanded(true));
