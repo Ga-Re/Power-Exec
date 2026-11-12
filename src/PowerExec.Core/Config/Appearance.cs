@@ -12,7 +12,29 @@ public sealed record AccentColors(Rgb Accent, Rgb Hover, Rgb Pressed, Rgb OnAcce
 /// </summary>
 public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, int Frost,
     bool WindowsAccent, PanelBackdrop Backdrop = PanelBackdrop.Clear, int GlassBlur = 50, int GlassSaturation = 100, string AccentColor = "",
-    bool IsCustom = false);
+    bool IsCustom = false, CornerStyle? Corners = null);
+
+/// <summary>Form der Ecken in allen Fenstern (Einstellung „Ecken“).</summary>
+public enum CornerStyle
+{
+    /// <summary>Wie Windows 11: Bedienelemente 4, Karten 6, Panel und Kacheln 8, schwebende Fenster 12.</summary>
+    Standard,
+    /// <summary>Weicher: Bedienelemente 8, Karten 12, Panel und Kacheln 12, schwebende Fenster 16.</summary>
+    Rounded,
+    /// <summary>Ohne Rundung.</summary>
+    Square
+}
+
+/// <summary>Eckenradien in DIP für die vier Stufen der Design-Tokens (<c>Radius.Control/Card/Tile/Window</c>).</summary>
+public readonly record struct CornerRadii(double Control, double Card, double Tile, double Window)
+{
+    public static CornerRadii Of(CornerStyle style) => style switch
+    {
+        CornerStyle.Rounded => new(8, 12, 12, 16),
+        CornerStyle.Square => new(0, 0, 0, 0),
+        _ => new(4, 6, 8, 12)
+    };
+}
 
 public static class Appearance
 {
@@ -57,6 +79,7 @@ public static class Appearance
     {
         s.Theme = p.Theme;
         s.UseWindowsAccent = p.WindowsAccent;
+        if (p.Corners is { } corners) s.Corners = corners; // Designs ohne Angabe lassen die Ecken, wie sie sind
         foreach (var panel in s.Panels) Apply(panel, p);
     }
 

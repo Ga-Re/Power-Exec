@@ -121,4 +121,34 @@ public class AppearanceDesignTests
         s.Panels[0].PanelOpacity = 60;
         Assert.Null(Appearance.Current(s));
     }
+
+    [Fact]
+    public void CornerStylesMapToTheFourTokenLevels()
+    {
+        Assert.Equal(new CornerRadii(4, 6, 8, 12), CornerRadii.Of(CornerStyle.Standard));
+        Assert.Equal(new CornerRadii(8, 12, 12, 16), CornerRadii.Of(CornerStyle.Rounded));
+        Assert.Equal(new CornerRadii(0, 0, 0, 0), CornerRadii.Of(CornerStyle.Square));
+    }
+
+    [Fact]
+    public void DesignCarriesCornersOnlyWhenItNamesThem()
+    {
+        var s = new AppSettings { Corners = CornerStyle.Square };
+        s.Panels.Add(new PanelConfig());
+        // Design ohne Angabe: die Ecken bleiben, wie der Benutzer sie eingestellt hat
+        Appearance.Apply(s, Appearance.Presets[0]);
+        Assert.Equal(CornerStyle.Square, s.Corners);
+        Appearance.Apply(s, Appearance.Presets[0] with { Corners = CornerStyle.Rounded });
+        Assert.Equal(CornerStyle.Rounded, s.Corners);
+    }
+
+    [Fact]
+    public void MarketplaceDesignMayNameCorners()
+    {
+        const string json = """{ "Name": "Weich", "Theme": "Dark", "PanelColor": "#202020", "Opacity": 100, "Frost": 0, "WindowsAccent": true, "Corners": "Rounded" }""";
+        var design = System.Text.Json.JsonSerializer.Deserialize<DesignPreset>(json, Marketplace.Json)!;
+        Assert.Equal(CornerStyle.Rounded, design.Corners);
+        const string without = """{ "Name": "Alt", "Theme": "Dark", "PanelColor": "", "Opacity": 100, "Frost": 0, "WindowsAccent": true }""";
+        Assert.Null(System.Text.Json.JsonSerializer.Deserialize<DesignPreset>(without, Marketplace.Json)!.Corners);
+    }
 }

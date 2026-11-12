@@ -1041,6 +1041,25 @@ public sealed partial class SelfTestController : AppController
             settingsWindow.ApplyNowForTest();
             if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
 
+            // Ecken: die Einstellung überschreibt die Radius-Tokens für alle Fenster und kehrt sauber zurück
+            Step("Ecken");
+            {
+                var sectionBefore = settingsVm.Section;
+                settingsVm.Section = "look";
+                settingsVm.Corners = CornerStyle.Rounded;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 12 }) Fail("Ecken: „Rund“ setzt den Karten-Radius nicht auf 12");
+                if (settingsWindow.Content is FrameworkElement cornersRoot) Screenshot(cornersRoot, "settings-ecken-rund");
+                settingsVm = settingsWindow.CurrentViewModel;
+                settingsVm.Corners = CornerStyle.Standard;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 6 }) Fail("Ecken: „Standard“ stellt den Karten-Radius nicht wieder her");
+                settingsVm = settingsWindow.CurrentViewModel;
+                settingsVm.Section = sectionBefore;
+            }
+
             // Änderung im Panel (Eintrag in Gruppe ziehen) → Einstellungsfenster zeigt den neuen Stand
             Step("Änderung im Panel");
             var entryKey = Settings.CustomEntries.First(c => c.Name == "Intranet").Key;

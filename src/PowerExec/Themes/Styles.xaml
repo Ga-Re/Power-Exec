@@ -172,7 +172,7 @@
     </Style>
 
     <!-- Eckenradius der Eingabefelder (Themes/Fluent.xaml); Suchfelder setzen ihn in ihren Resources größer -->
-    <CornerRadius x:Key="TextBox.CornerRadius">4</CornerRadius>
+    <StaticResource x:Key="TextBox.CornerRadius" ResourceKey="Radius.Control"/>
 
     <!-- Karte für Einstellungszeilen -->
     <Style x:Key="Card" TargetType="Border">

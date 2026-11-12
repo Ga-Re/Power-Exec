@@ -44,7 +44,11 @@ Diese Regeln gelten für alle Änderungen – von Hand oder mit KI-Unterstützun
 ## Oberfläche
 
 - Farben, Radien, Schriftgrößen, Höhen und Animationsdauern kommen aus den Design-Tokens (`Themes/Tokens.xaml`, in C# `Tokens`). Keine Zahlen in Vorlagen oder im Code-Behind.
-- Eigene Controls sind „lookless“: Verhalten in C#, Aussehen als Vorlage in `Themes/Generic.xaml`.
+- Eigene Controls sind „lookless“: Verhalten in C#, Aussehen als Vorlage in `Themes/Controls.xaml`.
+- Die Fluent-Stile (WPF UI) stehen einmal in den App-Ressourcen (`Themes/Fluent.xaml`); Fenster binden sie nicht selbst ein.
+  `FluentTheme.Attach` legt je Fenster nur das Design (hell/dunkel/Akzent) darüber.
+- Ganz runde Chips und Abzeichen: `infra:Pill.IsEnabled="True"` statt eines festen Radius.
+- Einstellungsseiten liegen einzeln unter `Views/Settings/`; gemeinsame Stile in `Themes/Settings.xaml`.
 - Geometrie von Monitoren ist eine Momentaufnahme (`MonitorInfo`). Vor dem Platzieren neu abfragen (`ScreenService.Refresh`); Änderungen meldet `DisplayTopology`.
 
 ## Tests

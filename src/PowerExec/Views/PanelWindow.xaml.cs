@@ -51,6 +51,9 @@ public partial class PanelWindow : Window
 
     public bool OpenedViaHotkey { get; private set; }
 
+    /// <summary>Radius, mit dem Windows 11 die Ecken eines Fensters rundet (DWMWCP_ROUND).</summary>
+    private const double DwmCornerRadius = 8;
+
     public PanelWindow(AppController app, PanelHost host)
     {
         _app = app;
@@ -74,6 +77,8 @@ public partial class PanelWindow : Window
                 CornerRadius = new CornerRadius(0),
                 UseAeroCaptionButtons = false
             });
+            // Windows rundet das Fenster selbst (8 px, unabhängig von der Einstellung „Ecken“): der Panelrahmen folgt dem
+            PanelBorder.CornerRadius = new CornerRadius(DwmCornerRadius);
             // Größe bestimmt allein das Fenster (immer so groß wie das Panel, beim Ein-/Ausfahren wird es nur verschoben)
             ClearValue(WidthProperty);
             ClearValue(HeightProperty);

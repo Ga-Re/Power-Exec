@@ -147,6 +147,9 @@
         <c:SettingsCard Icon="&#xE790;" Header="{l:T 'Design'}" Description="{l:T 'Light or dark for all windows. If a Windows contrast theme is active, Power-Exec uses its colors automatically.'}">
                 <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
         </c:SettingsCard>
+        <c:SettingsCard Icon="&#xF16B;" Header="{l:T 'Corners'}" Description="{l:T 'How strongly buttons, cards, the panel and floating windows are rounded.'}">
+                <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding CornerStyles}" SelectedValue="{Binding Corners}"/>
+        </c:SettingsCard>
         <c:SettingsCard Icon="&#xE8D3;" Header="{l:T 'Font and item size'}" Description="{l:T 'Enlarges text and controls in the panel and all windows (in addition to Windows scaling).'}">
                 <StackPanel Orientation="Horizontal">
                     <Slider Width="180" Minimum="80" Maximum="150" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding UiScalePercent}" VerticalAlignment="Center"

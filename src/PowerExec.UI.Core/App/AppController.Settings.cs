@@ -90,7 +90,8 @@ public partial class AppController
     }
 
     /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
-    private static (ThemeMode Theme, bool UseWindowsAccent, int UiScalePercent) AppearanceKey(AppSettings s) => (s.Theme, s.UseWindowsAccent, s.UiScalePercent);
+    private static (ThemeMode Theme, bool UseWindowsAccent, int UiScalePercent, CornerStyle Corners) AppearanceKey(AppSettings s) =>
+        (s.Theme, s.UseWindowsAccent, s.UiScalePercent, s.Corners);
 
     /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
     private void OnSystemThemeChanged()

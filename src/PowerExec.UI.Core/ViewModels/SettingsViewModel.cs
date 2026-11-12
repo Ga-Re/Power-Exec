@@ -649,6 +649,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("workspaces", L.T("Workspaces"), L.T("Workspaces"), L.T("customer profile switch")),
         new("workspaces", L.T("Workspaces"), L.T("Groups per workspace"), L.T("hide visible selection")),
         new("look", L.T("Appearance"), "Design", L.T("light dark theme color")),
+        new("look", L.T("Appearance"), L.T("Corners"), L.T("rounded square radius corner")),
         new("look", L.T("Appearance"), "Animation", L.T("slide out smooth fast")),
         new("look", L.T("Appearance"), L.T("Show icons"), L.T("icons favicon program icon")),
         new("look", L.T("Appearance"), L.T("List or grid"), L.T("tiles view")),
@@ -777,6 +778,15 @@ public sealed class SettingsViewModel : ObservableObject
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
+    /// <summary>Form der Ecken in allen Fenstern.</summary>
+    public CornerStyle Corners { get => _s.Corners; set { _s.Corners = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<CornerStyle, string>> CornerStyles { get; } = new[]
+    {
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Standard, L.T("Standard (like Windows 11)")),
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Rounded, L.T("Rounded")),
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Square, L.T("Square"))
+    };
+
     public bool IsHighContrast => _app.Theme.IsHighContrast;
 
     /// <summary>Designvorlagen und eigene Designs: Design, Panelfarbe, Deckkraft, Hintergrund, Milchglas und Akzent mit einem Klick.</summary>
@@ -813,6 +823,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Theme = p.Theme;
         UseWindowsAccent = p.WindowsAccent;
+        if (p.Corners is { } corners) Corners = corners;
         Panel.ApplyDesign(p);
         RaisePresets();
     }
