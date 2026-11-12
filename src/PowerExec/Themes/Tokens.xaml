@@ -1,0 +1,93 @@
+<!--
+    Design-Tokens: Radien, Abstände, Schriftgrößen, Höhen und Animationsdauern an einer Stelle.
+    Vorlagen und Fenster verwenden diese Schlüssel statt Zahlen; in C# liefert Infrastructure/Tokens dieselben Werte.
+
+    Radien werden mit DynamicResource eingebunden: die Einstellung „Ecken“ (Darstellung) überschreibt sie zur Laufzeit
+    (ThemeService.ApplyCorners). Schrift, Höhen und Dauern sind fest (StaticResource); die Größe von Schrift und
+    Bedienelementen regelt die Einstellung „Größe“ über eine Skalierung des ganzen Fensterinhalts.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- ── Radien ─────────────────────────────────────────────────────────────────────── -->
+    <!-- Markierungen und Fortschrittslinien -->
+    <CornerRadius x:Key="Radius.Bar">2</CornerRadius>
+    <!-- Bedienelemente: Schaltflächen, Eingabefelder, Listenzeilen -->
+    <CornerRadius x:Key="Radius.Control">4</CornerRadius>
+    <CornerRadius x:Key="Radius.Control.Left">4,0,0,4</CornerRadius>
+    <CornerRadius x:Key="Radius.Control.Right">0,4,4,0</CornerRadius>
+    <!-- Karten, Gruppen, Hinweisleisten, Menüs -->
+    <CornerRadius x:Key="Radius.Card">6</CornerRadius>
+    <CornerRadius x:Key="Radius.Card.Bottom">0,0,6,6</CornerRadius>
+    <CornerRadius x:Key="Radius.Card.Top">6,6,0,0</CornerRadius>
+    <!-- Fläche innerhalb eines Kartenrahmens (Radius.Card minus Rahmen) -->
+    <CornerRadius x:Key="Radius.Card.Top.Inner">5,5,0,0</CornerRadius>
+    <!-- Panel, Kacheln, Mini-Dock -->
+    <CornerRadius x:Key="Radius.Tile">8</CornerRadius>
+    <!-- Fläche innerhalb des Panelrahmens (Radius.Tile minus Rahmen) -->
+    <CornerRadius x:Key="Radius.Tile.Inner">7</CornerRadius>
+    <CornerRadius x:Key="Radius.Tile.Top">8,8,0,0</CornerRadius>
+    <CornerRadius x:Key="Radius.Tile.Top.Inner">7,7,0,0</CornerRadius>
+    <CornerRadius x:Key="Radius.Tile.BottomLeft">0,0,0,8</CornerRadius>
+    <!-- Eck-Markierung „ausgewählt“ in einem Farbfeld (oben rechts, folgt dem Radius des Felds) -->
+    <CornerRadius x:Key="Radius.Control.CornerMark">0,4,0,4</CornerRadius>
+    <!-- Schwebende Fenster und Popups: Spotlight, Vorschläge, Dialogkarten -->
+    <CornerRadius x:Key="Radius.Window">12</CornerRadius>
+    <!-- Chips, Abzeichen, runde Farbfelder: immer ganz rund, unabhängig von der Höhe -->
+    <CornerRadius x:Key="Radius.Pill">100</CornerRadius>
+    <!-- Dieselben Werte als Zahl (RadiusX/RadiusY von Rechtecken) -->
+    <sys:Double x:Key="Radius.Control.Value">4</sys:Double>
+    <sys:Double x:Key="Radius.Card.Value">6</sys:Double>
+
+    <!-- ── Abstände (4er-Raster) ──────────────────────────────────────────────────────── -->
+    <Thickness x:Key="Space.XS">4</Thickness>
+    <Thickness x:Key="Space.S">8</Thickness>
+    <Thickness x:Key="Space.M">12</Thickness>
+    <Thickness x:Key="Space.L">16</Thickness>
+    <Thickness x:Key="Space.XL">24</Thickness>
+    <!-- Innenabstände von Bausteinen -->
+    <Thickness x:Key="Inset.Card">16,12</Thickness>
+    <Thickness x:Key="Inset.InfoBar">12,9</Thickness>
+    <Thickness x:Key="Inset.Chip">12,0</Thickness>
+    <Thickness x:Key="Inset.Popup">4</Thickness>
+
+    <!-- ── Schrift ────────────────────────────────────────────────────────────────────── -->
+    <!-- Nur für Abzeichen und Tastenkürzel (kein Lesetext) -->
+    <sys:Double x:Key="Font.Micro">10</sys:Double>
+    <!-- Kleinste Größe für Lesetext: Hinweise, Zusatzinfos -->
+    <sys:Double x:Key="Font.Caption">11</sys:Double>
+    <sys:Double x:Key="Font.Body">12</sys:Double>
+    <sys:Double x:Key="Font.BodyStrong">13</sys:Double>
+    <sys:Double x:Key="Font.Subtitle">14</sys:Double>
+    <sys:Double x:Key="Font.Large">16</sys:Double>
+    <sys:Double x:Key="Font.Title">18</sys:Double>
+    <sys:Double x:Key="Font.Header">20</sys:Double>
+    <sys:Double x:Key="Font.Display">26</sys:Double>
+
+    <!-- ── Symbole (Segoe Fluent Icons) ───────────────────────────────────────────────── -->
+    <sys:Double x:Key="Icon.XS">9</sys:Double>
+    <sys:Double x:Key="Icon.S">11</sys:Double>
+    <sys:Double x:Key="Icon.M">12</sys:Double>
+    <sys:Double x:Key="Icon.L">14</sys:Double>
+    <sys:Double x:Key="Icon.XL">16</sys:Double>
+    <sys:Double x:Key="Icon.XXL">18</sys:Double>
+    <!-- Symbol einer Einstellungskarte bzw. Auswahlzeile -->
+    <sys:Double x:Key="Icon.Card">20</sys:Double>
+    <sys:Double x:Key="Icon.Hero">26</sys:Double>
+
+    <!-- ── Höhen ──────────────────────────────────────────────────────────────────────── -->
+    <sys:Double x:Key="Height.Chip">24</sys:Double>
+    <sys:Double x:Key="Height.ControlSmall">28</sys:Double>
+    <sys:Double x:Key="Height.Control">32</sys:Double>
+    <sys:Double x:Key="Height.Row">36</sys:Double>
+    <sys:Double x:Key="Height.Card">66</sys:Double>
+
+    <!-- ── Bewegung ───────────────────────────────────────────────────────────────────── -->
+    <!-- Auf- und Zuklappen, Hover, kleine Wechsel -->
+    <Duration x:Key="Motion.Fast">0:0:0.15</Duration>
+    <!-- Wechsel von Ansichten, Ein- und Ausblenden -->
+    <Duration x:Key="Motion.Normal">0:0:0.25</Duration>
+    <!-- Panel ein- und ausfahren -->
+    <Duration x:Key="Motion.Slow">0:0:0.32</Duration>
+</ResourceDictionary>

@@ -9,6 +9,7 @@ using PowerExec.Core.Config;
 using PowerExec.UI.Services;
 using PowerExec.Desktop.Services;
 using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Views;
 
@@ -226,7 +227,7 @@ public partial class SettingsWindow : Window
     {
         SnackbarText.Text = message;
         SnackbarHost.Visibility = Visibility.Visible;
-        var duration = SystemParameters.ClientAreaAnimation ? TimeSpan.FromMilliseconds(180) : TimeSpan.Zero;
+        var duration = SystemParameters.ClientAreaAnimation ? Tokens.MotionFast : TimeSpan.Zero;
         SnackbarHost.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, duration));
         SnackbarShift.BeginAnimation(System.Windows.Media.TranslateTransform.YProperty, new System.Windows.Media.Animation.DoubleAnimation(0, duration)
         {
@@ -241,7 +242,7 @@ public partial class SettingsWindow : Window
     private void HideSnackbar()
     {
         _snackbarTimer?.Stop();
-        var duration = SystemParameters.ClientAreaAnimation ? TimeSpan.FromMilliseconds(220) : TimeSpan.Zero;
+        var duration = SystemParameters.ClientAreaAnimation ? Tokens.MotionNormal : TimeSpan.Zero;
         var fade = new System.Windows.Media.Animation.DoubleAnimation(0, duration);
         fade.Completed += (_, _) => { if (SnackbarHost.Opacity < 0.05) SnackbarHost.Visibility = Visibility.Collapsed; };
         SnackbarHost.BeginAnimation(OpacityProperty, fade);

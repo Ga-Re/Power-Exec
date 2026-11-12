@@ -6,13 +6,9 @@
         Title="{l:T 'Power-Exec'}" Style="{StaticResource AppWindow}"
         Width="720" SizeToContent="Height" MinWidth="560" WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
     <DockPanel Margin="24,20,24,20">
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-            <TextBlock FontSize="18" FontWeight="SemiBold">
+            <TextBlock FontSize="{StaticResource Font.Title}" FontWeight="SemiBold">
                 <Run x:Name="Heading" Text="{l:T 'Edit variable'}"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Accent}"/>
             </TextBlock>
             <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
@@ -28,7 +24,7 @@
                          AutomationProperties.Name="{l:T 'Variable name'}"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{l:T 'Name'}"/>
-                    <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Status.Error}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"
                                Visibility="{Binding HasNameError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </DockPanel>
@@ -43,11 +39,11 @@
                          AcceptsReturn="{Binding IsPowerShell}" TextWrapping="Wrap" MaxHeight="120" VerticalScrollBarVisibility="Auto"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{Binding ValueLabel}"/>
-                    <TextBlock Text="{l:T 'e.g. (Get-ADDomain).DNSRoot – the output becomes the value.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'e.g. (Get-ADDomain).DNSRoot – the output becomes the value.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"
                                Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{l:T 'Name of the Windows environment variable, e.g. USERDNSDOMAIN.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'Name of the Windows environment variable, e.g. USERDNSDOMAIN.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"
                                Visibility="{Binding IsEnvironment, Converter={StaticResource Vis}}"/>
-                    <TextBlock Text="{l:T 'Applies to workspaces without their own value.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Text="{l:T 'Applies to workspaces without their own value.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"
                                Visibility="{Binding IsWorkspace, Converter={StaticResource Vis}}"/>
                 </StackPanel>
             </DockPanel>
@@ -56,7 +52,7 @@
                              AutomationProperties.Name="{l:T 'Secret value'}"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{l:T 'Secret value'}"/>
-                    <TextBlock Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"
+                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"
                                Text="{l:T 'Stored encrypted with your Windows account – only you can read it on this PC. Enter it again to change it.'}"/>
                 </StackPanel>
             </DockPanel>
@@ -82,7 +78,7 @@
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{l:T 'When to run'}"/>
                     <TextBlock Text="{l:T 'Cache: remember the result for the given time – launches don\'t wait for PowerShell every time.'}"
-                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                               Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                 </StackPanel>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}" Margin="0,8,0,4">

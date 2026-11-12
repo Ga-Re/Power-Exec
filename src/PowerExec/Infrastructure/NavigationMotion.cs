@@ -20,8 +20,8 @@ namespace PowerExec.Desktop.Infrastructure;
 /// </summary>
 public static class NavigationMotion
 {
-    private static readonly Duration ExpandDuration = new(TimeSpan.FromMilliseconds(220));
-    private static readonly Duration MoveDuration = new(TimeSpan.FromMilliseconds(260));
+    private static readonly Duration ExpandDuration = new(Tokens.MotionNormal);
+    private static readonly Duration MoveDuration = new(Tokens.MotionNormal);
 
     /// <summary>Animationen nach der Einstellung von Power-Exec (Einstellungen › Verhalten › Animation).</summary>
     private static bool Animate => Views.WindowHelper.Settings?.Invoke() is not { } s || s.Animation != Core.Config.AnimationMode.Off;

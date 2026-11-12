@@ -6,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using PowerExec.Core.Config;
 using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Views;
 
@@ -38,7 +39,7 @@ internal sealed class DragFeedback : IDisposable
         row.Children.Add(name);
         _nameRow = row;
 
-        _reason = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 280, FontSize = 12, Margin = new Thickness(0, 4, 0, 0), Visibility = Visibility.Collapsed };
+        _reason = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 280, FontSize = Tokens.FontBody, Margin = new Thickness(0, 4, 0, 0), Visibility = Visibility.Collapsed };
         _reason.SetResourceReference(TextBlock.ForegroundProperty, "Status.Error");
 
         var stack = new StackPanel();
@@ -47,7 +48,7 @@ internal sealed class DragFeedback : IDisposable
         var border = new Border
         {
             Child = stack,
-            CornerRadius = new CornerRadius(6),
+            CornerRadius = Tokens.RadiusCard,
             BorderThickness = new Thickness(1),
             Padding = new Thickness(10, 6, 10, 6),
             Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = 0.3 }

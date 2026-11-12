@@ -7,23 +7,19 @@
         xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
         Title="{l:T 'Power-Exec search'}" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize" SizeToContent="Height" Width="640">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
-    <Border Margin="16" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}" BorderThickness="1" CornerRadius="10" Padding="10">
+    <Border Margin="16" Background="{DynamicResource Bg.Panel}" BorderBrush="{DynamicResource Border.Panel}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Window}" Padding="10">
         <Border.Effect>
             <DropShadowEffect BlurRadius="28" ShadowDepth="6" Opacity="0.45" Color="{DynamicResource ShadowColor}"/>
         </Border.Effect>
         <StackPanel>
             <Grid>
-                <TextBox x:Name="SearchBox" Height="44" FontSize="16" Padding="38,0,10,0" Tag="{l:T 'Search …'}"
+                <TextBox x:Name="SearchBox" Height="44" FontSize="{StaticResource Font.Large}" Padding="38,0,10,0" Tag="{l:T 'Search …'}"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" PreviewKeyDown="SearchBox_PreviewKeyDown"
                          AutomationProperties.Name="{l:T 'Search'}"/>
-                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="16" HorizontalAlignment="Left" Margin="13,0,0,0" IsHitTestVisible="False"
+                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XL}" HorizontalAlignment="Left" Margin="13,0,0,0" IsHitTestVisible="False"
                            Foreground="{DynamicResource Text.Secondary}"/>
             </Grid>
-            <TextBlock Text="{Binding Heading}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="6,10,0,4"/>
+            <TextBlock Text="{Binding Heading}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="6,10,0,4"/>
             <TextBlock Text="{Binding EmptyText}" Style="{StaticResource Caption}" Margin="6,6,6,10" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
             <ItemsControl ItemsSource="{Binding Results}" Focusable="False">
                 <ItemsControl.ItemTemplate>
@@ -32,7 +28,7 @@
                                 Focusable="False" Cursor="Hand" ToolTip="{Binding ToolTipText}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Row" CornerRadius="6" Padding="8,6" Background="Transparent">
+                                    <Border x:Name="Row" CornerRadius="{DynamicResource Radius.Card}" Padding="8,6" Background="Transparent">
                                         <ContentPresenter/>
                                     </Border>
                                     <ControlTemplate.Triggers>
@@ -42,26 +38,26 @@
                                 </ControlTemplate>
                             </Button.Template>
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Right" Text="↵" FontSize="12" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" Margin="8,0,4,0"
+                                <TextBlock DockPanel.Dock="Right" Text="↵" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" Margin="8,0,4,0"
                                            Visibility="{Binding IsSelected, Converter={StaticResource Vis}}"/>
                                 <Grid Width="32" Margin="0,0,10,0" VerticalAlignment="Center">
-                                    <Border CornerRadius="4" Width="32" Height="20" Background="{DynamicResource Bg.Chip}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
-                                        <TextBlock Text="{Binding BadgeText}" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Border CornerRadius="{DynamicResource Radius.Control}" Width="32" Height="20" Background="{DynamicResource Bg.Chip}" Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
+                                        <TextBlock Text="{Binding BadgeText}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="22" Height="22" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" RenderOptions.BitmapScalingMode="HighQuality"/>
                                     <c:IconPresenter Icon="{Binding CustomIcon}" Size="20" HorizontalAlignment="Center" Foreground="{DynamicResource Text.Primary}"
                                                      Visibility="{Binding HasCustomIcon, Converter={StaticResource Vis}}"/>
                                 </Grid>
                                 <StackPanel>
-                                    <TextBlock infra:Highlight.Parts="{Binding NameParts}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock infra:Highlight.Parts="{Binding SynopsisParts}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock infra:Highlight.Parts="{Binding NameParts}" FontSize="{StaticResource Font.Subtitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock infra:Highlight.Parts="{Binding SynopsisParts}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </DockPanel>
                         </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <WrapPanel Margin="6,8,0,0" TextElement.FontSize="11" TextElement.Foreground="{DynamicResource Text.Tertiary}">
+            <WrapPanel Margin="6,8,0,0" TextElement.FontSize="{StaticResource Font.Caption}" TextElement.Foreground="{DynamicResource Text.Tertiary}">
                 <TextBlock Text="{l:T '↵ Run'}" Margin="0,0,14,0"/>
                 <TextBlock Text="{l:T 'Ctrl+↵ Admin'}" Margin="0,0,14,0"/>
                 <TextBlock Text="{l:T 'Ctrl+Shift+↵ Different user'}" Margin="0,0,14,0"/>

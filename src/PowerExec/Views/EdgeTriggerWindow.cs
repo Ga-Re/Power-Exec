@@ -63,7 +63,7 @@ public sealed class EdgeTriggerWindow : Window
             BorderBrush = outline,
             BorderThickness = new Thickness(thicknessDip >= 4 ? 1 : 0),
             Opacity = Math.Max(0.55, settings.EffectiveOpacity / 100.0 * 0.85),
-            CornerRadius = new CornerRadius(Math.Min(4, thicknessDip / 2)),
+            CornerRadius = new CornerRadius(Math.Min(Tokens.RadiusControl.TopLeft, thicknessDip / 2)),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };

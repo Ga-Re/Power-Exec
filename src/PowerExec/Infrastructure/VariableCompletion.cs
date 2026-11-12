@@ -24,7 +24,7 @@ public static class VariableCompletion
             {
                 Child = list,
                 Padding = new Thickness(4),
-                CornerRadius = new CornerRadius(6),
+                CornerRadius = Tokens.RadiusCard,
                 BorderThickness = new Thickness(1)
             }
         };

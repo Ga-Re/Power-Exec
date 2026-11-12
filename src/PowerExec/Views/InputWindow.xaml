@@ -6,15 +6,11 @@
         Title="{l:T 'Power-Exec'}" Style="{StaticResource AppWindow}"
         Width="400" SizeToContent="Height" ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
     <StackPanel Margin="24,20,24,20">
-        <TextBlock x:Name="Heading" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock x:Name="Heading" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"/>
         <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,12" TextWrapping="Wrap"/>
         <TextBox x:Name="ValueBox"/>
-        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,8,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" />
             <ui:Button x:Name="OkButton" Style="{StaticResource Btn.Accent}" Content="{l:T 'OK'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />

@@ -522,8 +522,10 @@ public sealed partial class SelfTestController : AppController
                         if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
                             Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
                         // Fluent-Stile im Kindfenster festgehalten (sonst „defaultDestinationValue“-Absturz beim Neuaufbau)
-                        if (!Infrastructure.FluentTheme.IsPinnedForTest(host.Window.SearchBox))
-                            Fail("Glas: Bedienelemente im Kindfenster halten ihren Fluent-Stil nicht fest");
+                        // Die Fluent-Stile kommen aus den App-Ressourcen: auch im Kindfenster gilt derselbe Stil wie überall
+                        if (!ReferenceEquals(host.Window.SearchBox.TryFindResource(typeof(System.Windows.Controls.TextBox)),
+                                Application.Current.TryFindResource(typeof(System.Windows.Controls.TextBox))))
+                            Fail("Glas: Bedienelemente im Kindfenster nutzen nicht die Fluent-Stile der App");
                         // Leere Flächen müssen Klicks und Ablegen annehmen (Deckkraft 0 fiele im Kindfenster durch)
                         if (host.Window.PanelBorder.Background is not System.Windows.Media.SolidColorBrush { Color.A: > 0 })
                             Fail("Glas: Panelfläche ohne Deckkraft – Klicks auf leere Flächen fielen durch");

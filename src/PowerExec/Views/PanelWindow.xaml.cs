@@ -125,8 +125,8 @@ public partial class PanelWindow : Window
     private TimeSpan AnimationDuration => _app.Settings.Animation switch
     {
         AnimationMode.Off => TimeSpan.Zero,
-        AnimationMode.Fast => TimeSpan.FromMilliseconds(150),
-        _ => TimeSpan.FromMilliseconds(320)
+        AnimationMode.Fast => Tokens.MotionFast,
+        _ => Tokens.MotionSlow
     };
 
     public void ShowPanel(MonitorInfo monitor, bool viaHotkey)

@@ -6,10 +6,10 @@ using Wpf.Ui.Markup;
 namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
-/// Fluent-Bedienelemente von WPF UI für einzelne Fenster (zunächst das Einstellungsfenster). Die Ressourcen von
-/// WPF UI hängen am Fenster, nicht an der App – Panel und übrige Fenster behalten ihr bisheriges Aussehen.
-/// Design (hell/dunkel/Kontrast) und Akzentfarbe kommen aus dem <see cref="ThemeService"/>; die eigenen Farben
-/// (Karten, Texte) zeigen im Fenster auf die passenden Fluent-Farben, damit alles aus einem Guss wirkt.
+/// Design der Fluent-Bedienelemente (WPF UI) je Fenster. Die Stile selbst stehen einmal in den App-Ressourcen
+/// (<c>Themes/Fluent.xaml</c>); hier bekommt jedes Fenster sein Design darüber gelegt: hell/dunkel/Kontrast und
+/// Akzentfarbe aus dem <see cref="ThemeService"/> – ein Panel mit eigener Panelfarbe darf davon abweichen. Die eigenen
+/// Farben (Karten, Texte) zeigen im Fenster auf die passenden Fluent-Farben, damit alles aus einem Guss wirkt.
 /// </summary>
 public static class FluentTheme
 {
@@ -37,62 +37,9 @@ public static class FluentTheme
 
     private static readonly List<Entry> Attached = new();
 
-    static FluentTheme()
-    {
-        // Das Kontrollkästchen von WPF UI animiert „Tag“ (Wert null). Verlässt es den Baum eines Fluent-Fensters
-        // (z. B. beim Neuaufbau einer Liste), fiele es auf den App-Stil zurück, die Vorlage würde mitten in der
-        // Animation getauscht – WPF wirft dann ArgumentNullException. Daher den Stil beim Laden fest setzen.
-        // Gleiches gilt für andere animierte Bedienelemente in Listen (Optionsfelder, Auswahllisten, Eingabefelder)
-        foreach (var type in new[] { typeof(System.Windows.Controls.Primitives.ToggleButton), typeof(System.Windows.Controls.ComboBox), typeof(System.Windows.Controls.TextBox) })
-            EventManager.RegisterClassHandler(type, FrameworkElement.LoadedEvent, new RoutedEventHandler((s, _) => PinStyle((FrameworkElement)s)));
-    }
-
-    /// <summary>Impliziten Fluent-Stil eines Elements in einem Fluent-Fenster lokal festschreiben.</summary>
-    private static void PinStyle(FrameworkElement e)
-    {
-        if (e.ReadLocalValue(FrameworkElement.StyleProperty) != DependencyProperty.UnsetValue) return;
-        // Innere Teile einer Steuerelement-Vorlage (z. B. das versteckte Eingabefeld und der Pfeil-Knopf einer Auswahlliste)
-        // gehören zu ihrem Steuerelement – sie bekämen sonst den eigenständigen Stil und würden sichtbar. Inhalte von
-        // Datenvorlagen (Listenzeilen, TemplatedParent = ContentPresenter) werden dagegen festgehalten.
-        if (e.TemplatedParent is System.Windows.Controls.Control) return;
-        if (!IsInFluentRoot(e)) return;
-        if (e.TryFindResource(e.GetType()) is Style s) e.Style = s;
-    }
-
-    private static bool IsInFluentRoot(DependencyObject e)
-    {
-        // Fenster mit WPF UI – oder ein eigener Darstellungsbereich darin (Panelinhalt bei Glas im Kindfenster)
-        var root = (FrameworkElement?)Window.GetWindow(e) ?? (PresentationSource.FromDependencyObject(e)?.RootVisual as FrameworkElement);
-        if (root == null) return false;
-        lock (Attached)
-            return Attached.Any(a => a.Root.TryGetTarget(out var r) && ReferenceEquals(r, root))
-                   || ExtraRoots.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, root));
-    }
-
-    /// <summary>Weitere Wurzeln mit WPF-UI-Bedienelementen, die kein eigenes Fenster sind (Kindfenster des Glas-Panels).</summary>
-    private static readonly List<WeakReference<FrameworkElement>> ExtraRoots = new();
-
     /// <summary>
-    /// Wurzel eines Kindfensters mit WPF-UI-Bedienelementen anmelden (Design hängt am übergeordneten Fenster). Ohne das
-    /// fiele z. B. ein Kontrollkästchen beim Neuaufbau der Liste mitten in seiner Animation auf den App-Stil zurück –
-    /// „Value cannot be null (defaultDestinationValue)“.
-    /// </summary>
-    public static void RegisterRoot(FrameworkElement root)
-    {
-        lock (Attached)
-        {
-            ExtraRoots.RemoveAll(w => !w.TryGetTarget(out _));
-            if (!ExtraRoots.Any(w => w.TryGetTarget(out var r) && ReferenceEquals(r, root))) ExtraRoots.Add(new WeakReference<FrameworkElement>(root));
-        }
-    }
-
-    /// <summary>Für den Selbsttest: hält dieses Element seinen Fluent-Stil fest?</summary>
-    internal static bool IsPinnedForTest(FrameworkElement e) => IsInFluentRoot(e);
-
-    /// <summary>
-    /// Fenster (oder anderes Element) mit WPF UI ausstatten. Das XAML bindet <c>ui:ThemesDictionary</c> und
-    /// <c>ui:ControlsDictionary</c> bereits ein (für <c>BasedOn</c>-Stile); hier werden Design und Farben angepasst
-    /// und bei jedem Designwechsel nachgezogen.
+    /// Design und Farben der Fluent-Bedienelemente für ein Fenster (oder anderes Element) festlegen und bei jedem
+    /// Designwechsel nachziehen. Die Stile kommen aus den App-Ressourcen.
     /// </summary>
     /// <param name="dark">Eigenes Hell/Dunkel (z. B. Panel mit heller Panelfarbe im dunklen Design); null = wie das Programm.</param>
     /// <param name="mapPalette">Eigene Farben (Karten, Texte, Flächen) auf Fluent-Farben umlenken. Das Panel setzt seine Flächenfarben selbst.</param>
@@ -125,9 +72,8 @@ public static class FluentTheme
         var merged = res.MergedDictionaries;
         var themeUri = new Uri(ThemePath + ThemeFile(entry.Dark?.Invoke() ?? ThemeService.IsDark) + ".xaml", UriKind.Absolute);
         // Das aktuelle Design liegt als letztes Wörterbuch direkt am Fenster und überdeckt das dunkle Vorgabe-Design
-        // aus Themes/Fluent.xaml. Verschachtelt ausgetauschte Wörterbücher meldet WPF nicht zuverlässig weiter –
-        // Bedienelemente behielten sonst Farben des alten Designs (helle Schrift auf hellem Grund).
-        if (!AllDictionaries(res).OfType<ControlsDictionary>().Any()) merged.Add(new ControlsDictionary());
+        // aus Themes/Fluent.xaml (App-Ressourcen). Verschachtelt ausgetauschte Wörterbücher meldet WPF nicht zuverlässig
+        // weiter – Bedienelemente behielten sonst Farben des alten Designs (helle Schrift auf hellem Grund).
         var current = merged.LastOrDefault(IsTheme);
         if (current == null) merged.Add(new ResourceDictionary { Source = themeUri });
         else if (current.Source != themeUri)
@@ -220,15 +166,6 @@ public static class FluentTheme
 
     private static bool IsTheme(ResourceDictionary d) =>
         d is ThemesDictionary || d.Source?.OriginalString.StartsWith(ThemePath, StringComparison.OrdinalIgnoreCase) == true;
-
-    private static IEnumerable<ResourceDictionary> AllDictionaries(ResourceDictionary d)
-    {
-        foreach (var m in d.MergedDictionaries)
-        {
-            yield return m;
-            foreach (var mm in AllDictionaries(m)) yield return mm;
-        }
-    }
 
     private static object? FindIn(IEnumerable<ResourceDictionary> dictionaries, string key)
     {

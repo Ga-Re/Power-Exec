@@ -86,12 +86,13 @@ public partial class DockWindow : Window
         Infrastructure.FluentTheme.Attach(this);
         Orientation = host.Config.Edge is ScreenEdge.Left or ScreenEdge.Right ? Orientation.Vertical : Orientation.Horizontal;
         // Abgerundet nur zur Bildschirmmitte hin
+        var r = Tokens.RadiusTile.TopLeft;
         DockBorder.CornerRadius = host.Config.Edge switch
         {
-            ScreenEdge.Left => new CornerRadius(0, 8, 8, 0),
-            ScreenEdge.Top => new CornerRadius(0, 0, 8, 8),
-            ScreenEdge.Bottom => new CornerRadius(8, 8, 0, 0),
-            _ => new CornerRadius(8, 0, 0, 8)
+            ScreenEdge.Left => new CornerRadius(0, r, r, 0),
+            ScreenEdge.Top => new CornerRadius(0, 0, r, r),
+            ScreenEdge.Bottom => new CornerRadius(r, r, 0, 0),
+            _ => new CornerRadius(r, 0, 0, r)
         };
         DockBorder.Opacity = Math.Max(0.6, host.Config.EffectiveOpacity / 100.0);
 

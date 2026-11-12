@@ -7,8 +7,6 @@
         Width="1040" Height="700" MinWidth="700" MinHeight="420" WindowStartupLocation="CenterScreen">
     <Window.Resources>
       <ResourceDictionary>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
         <Style x:Key="FilterChip" TargetType="RadioButton" BasedOn="{StaticResource Chip}"/>
       </ResourceDictionary>
     </Window.Resources>
@@ -25,31 +23,31 @@
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding CancelCommand}" Margin="0,0,8,0"
                                 Visibility="{Binding IsRunning, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
                                 <TextBlock Text="{l:T 'Cancel'}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ToggleLogCommand}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,6,0"/>
                                 <TextBlock Text="{Binding LogLabel}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ExportCsvCommand}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,6,0"/>
                                 <TextBlock Text="{l:T 'Export CSV'}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding RetryFailedCommand}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
                                 <TextBlock Text="{l:T 'Retry failed'}"/>
                             </StackPanel>
                         </ui:Button>
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
                         <TextBlock Text="{Binding Meta}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </DockPanel>
@@ -60,19 +58,19 @@
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=ok}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Status.Success}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Success}" Margin="0,0,6,0"/>
                             <TextBlock Text="{Binding SuccessCount, StringFormat={}{0} erfolgreich}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=err}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Status.Error}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Error}" Margin="0,0,6,0"/>
                             <TextBlock Text="{Binding ErrorCount, StringFormat={}{0} Fehler}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=off}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE738;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE738;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
                             <TextBlock Text="{Binding UnreachableCount, StringFormat={}{0} nicht erreichbar}"/>
                         </StackPanel>
                     </RadioButton>
@@ -81,14 +79,14 @@
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowList, Mode=OneWay}"
                                  Command="{Binding SetViewCommand}" CommandParameter="list" ToolTip="{l:T 'List with output per computer'}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
                             <TextBlock Text="{l:T 'List'}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowTiles, Mode=OneWay}"
                                  Command="{Binding SetViewCommand}" CommandParameter="tiles" ToolTip="{l:T 'One tile per computer – status at a glance'}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE80A;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE80A;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
                             <TextBlock Text="{l:T 'Tiles'}"/>
                         </StackPanel>
                     </RadioButton>
@@ -97,9 +95,9 @@
                 <ProgressBar Height="4" Margin="0,12,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
                              Foreground="{DynamicResource Accent}" Background="{DynamicResource Bg.Chip}" BorderThickness="0"/>
                 <TextBlock Text="{Binding StatusLine}" Style="{StaticResource Caption}" Margin="0,6,0,0"/>
-                <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="6" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
+                <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
                         Visibility="{Binding RunnerError, Converter={StaticResource Vis}}">
-                    <TextBlock Text="{Binding RunnerError}" FontSize="12" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding RunnerError}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                 </Border>
             </StackPanel>
         </Border>
@@ -120,9 +118,9 @@
                             <TextBlock Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding StatusText, StringFormat=' · {0}'}" Foreground="{DynamicResource Text.Secondary}"/>
                         </DockPanel>
-                        <Border Padding="12,10" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4">
+                        <Border Padding="12,10" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                     FontFamily="{StaticResource MonoFont}" FontSize="12" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
                                      Foreground="{DynamicResource Text.Secondary}"/>
                         </Border>
                     </DockPanel>
@@ -139,11 +137,11 @@
                                         AutomationProperties.Name="{Binding TileToolTip}">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Tile" CornerRadius="5" Background="{DynamicResource Bg.Chip}" BorderThickness="2" BorderBrush="Transparent" Padding="6,2">
+                                            <Border x:Name="Tile" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Chip}" BorderThickness="2" BorderBrush="Transparent" Padding="6,2">
                                                 <StackPanel VerticalAlignment="Center">
-                                                    <TextBlock x:Name="TileName" Text="{Binding Computer}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                    <TextBlock x:Name="TileName" Text="{Binding Computer}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                                                                Foreground="{DynamicResource Text.Primary}"/>
-                                                    <TextBlock x:Name="TileStatus" Text="{Binding StatusText}" FontSize="10" TextTrimming="CharacterEllipsis"
+                                                    <TextBlock x:Name="TileStatus" Text="{Binding StatusText}" FontSize="{StaticResource Font.Caption}" TextTrimming="CharacterEllipsis"
                                                                Foreground="{DynamicResource Text.Secondary}"/>
                                                 </StackPanel>
                                             </Border>
@@ -188,10 +186,10 @@
                         <ColumnDefinition Width="80"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="1" Text="{l:T 'Computer'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="2" Text="{l:T 'Status'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="3" Text="{l:T 'Duration'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="4" Text="{l:T 'Output'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{l:T 'Computer'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{l:T 'Status'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="3" Text="{l:T 'Duration'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="4" Text="{l:T 'Output'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                 </Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
@@ -209,14 +207,14 @@
                                                     <ColumnDefinition Width="80"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}" RenderTransformOrigin="0.5,0.5">
                                                     <TextBlock.RenderTransform>
                                                         <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
                                                     </TextBlock.RenderTransform>
                                                 </TextBlock>
                                                 <TextBlock Grid.Column="1" Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock x:Name="StatusIcon" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0" Text="&#xE916;"
+                                                    <TextBlock x:Name="StatusIcon" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0" Text="&#xE916;"
                                                                Foreground="{DynamicResource Text.Secondary}"/>
                                                     <TextBlock x:Name="StatusLabel" Text="{Binding StatusText}" Foreground="{DynamicResource Text.Secondary}"/>
                                                 </StackPanel>
@@ -225,9 +223,9 @@
                                             </Grid>
                                         </ui:Button>
                                         <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="48,0,16,12" Padding="12,10"
-                                                Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4">
+                                                Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                                     FontFamily="{StaticResource MonoFont}" FontSize="12" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
+                                                     FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
                                         </Border>
                                     </StackPanel>
                                 </Border>
@@ -258,11 +256,11 @@
                     Visibility="{Binding ShowLog, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <DockPanel DockPanel.Dock="Top" Margin="14,8,8,8">
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Open log folder'}" FontSize="12" Command="{Binding OpenLogFolderCommand}" />
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Open log folder'}" FontSize="{StaticResource Font.Body}" Command="{Binding OpenLogFolderCommand}" />
                         <TextBlock Text="{l:T 'Log'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="14,4,14,14"
-                             FontFamily="{StaticResource MonoFont}" FontSize="11" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                             FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
                 </DockPanel>
             </Border>

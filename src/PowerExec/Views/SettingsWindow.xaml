@@ -10,8 +10,6 @@
         Width="1120" Height="800" MinWidth="760" MinHeight="520" WindowStartupLocation="CenterScreen">
     <Window.Resources>
       <ResourceDictionary>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="/Themes/Fluent.xaml"/></ResourceDictionary.MergedDictionaries>
 
         <!-- Löschen-Kreuz auf Design-Kacheln: beim Darüberfahren sanft rot -->
         <Style x:Key="DeleteDesignButton" TargetType="Button">
@@ -22,8 +20,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" CornerRadius="12" Background="{DynamicResource Bg.CardAlt}" BorderThickness="1" BorderBrush="Transparent">
-                            <TextBlock x:Name="Glyph" Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                        <Border x:Name="Bd" CornerRadius="{DynamicResource Radius.Window}" Background="{DynamicResource Bg.CardAlt}" BorderThickness="1" BorderBrush="Transparent">
+                            <TextBlock x:Name="Glyph" Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Foreground="{DynamicResource Text.Secondary}"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -31,18 +29,18 @@
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#33E81123" Duration="0:0:0.18"/>
-                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#80E81123" Duration="0:0:0.18"/>
-                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#E81123" Duration="0:0:0.18"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#33E81123" Duration="{StaticResource Motion.Fast}"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" To="#80E81123" Duration="{StaticResource Motion.Fast}"/>
+                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" To="#E81123" Duration="{StaticResource Motion.Fast}"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard FillBehavior="Stop">
-                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
-                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
-                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" Duration="0:0:0.25"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" Duration="{StaticResource Motion.Normal}"/>
+                                            <ColorAnimation Storyboard.TargetName="Bd" Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)" Duration="{StaticResource Motion.Normal}"/>
+                                            <ColorAnimation Storyboard.TargetName="Glyph" Storyboard.TargetProperty="(TextBlock.Foreground).(SolidColorBrush.Color)" Duration="{StaticResource Motion.Normal}"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
@@ -54,7 +52,7 @@
         </Style>
 
         <Style x:Key="RowTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}"/>
         </Style>
         <Style x:Key="RowDesc" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,2,0,0"/>
@@ -66,12 +64,12 @@
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Grid Width="46" Height="46">
-                            <Border x:Name="Swatch" CornerRadius="4" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
+                            <Border x:Name="Swatch" CornerRadius="{DynamicResource Radius.Control}" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                     BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"/>
-                            <Border x:Name="Ring" CornerRadius="4" BorderThickness="2" BorderBrush="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
-                            <Border x:Name="Check" Width="18" Height="18" CornerRadius="0,4,0,4" HorizontalAlignment="Right" VerticalAlignment="Top"
+                            <Border x:Name="Ring" CornerRadius="{DynamicResource Radius.Control}" BorderThickness="2" BorderBrush="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
+                            <Border x:Name="Check" Width="18" Height="18" CornerRadius="{DynamicResource Radius.Control.CornerMark}" HorizontalAlignment="Right" VerticalAlignment="Top"
                                     Background="{DynamicResource Text.Primary}" Visibility="Collapsed">
-                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="{DynamicResource Bg.Window}"
+                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Bg.Window}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
@@ -95,7 +93,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <Style x:Key="PageTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="26"/>
+            <Setter Property="FontSize" Value="{StaticResource Font.Display}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
@@ -132,13 +130,13 @@
                                                     <MenuItem Header="{l:T 'Choose icon …'}" Command="{Binding ChooseIconCommand}"/>
                                                 </ContextMenu>
                                             </DockPanel.ContextMenu>
-                                            <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="12" Margin="2,0,0,0"
+                                            <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="2,0,0,0"
                                                        VerticalAlignment="Center" Foreground="{DynamicResource Text.Tertiary}" RenderTransformOrigin="0.5,0.5">
                                                 <TextBlock.RenderTransform><RotateTransform Angle="90"/></TextBlock.RenderTransform>
                                             </TextBlock>
                                             <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}"
                                                     ToolTip="{l:T 'Expand/collapse folders and entries'}" Visibility="{Binding IsSmart, Converter={StaticResource Vis}, ConverterParameter=hidden}">
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
                                                     <TextBlock.RenderTransform>
                                                         <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
                                                     </TextBlock.RenderTransform>
@@ -148,14 +146,14 @@
                                                     ToolTip="{l:T 'Choose icon'}" Margin="4,0,12,0">
                                                 <Grid>
                                                     <c:IconPresenter Icon="{Binding Icon}" Size="18" Foreground="{DynamicResource Text.Primary}" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
-                                                    <TextBlock x:Name="DefaultGlyph" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="14" Foreground="{DynamicResource Text.Tertiary}"
+                                                    <TextBlock x:Name="DefaultGlyph" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Text.Tertiary}"
                                                                Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                                 </Grid>
                                             </ui:Button>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Border Height="22" Padding="8,0" CornerRadius="11" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}"
+                                                <Border Height="22" Padding="8,0" CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}"
                                                         BorderThickness="1" Margin="0,0,8,0" Visibility="{Binding Folder.HasPending, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
-                                                    <TextBlock Text="{Binding Folder.PendingCount, StringFormat={}{0} neu}" FontSize="11" Foreground="{DynamicResource Status.Warning}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding Folder.PendingCount, StringFormat={}{0} neu}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Warning}" VerticalAlignment="Center"/>
                                                 </Border>
                                                 <ComboBox Width="150" Margin="0,0,4,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding ColorOwn}" SelectedValuePath="Key"
                                                           ToolTip="{l:T 'Group color (subgroups inherit it)'}">
@@ -170,20 +168,20 @@
                                                     </ComboBox.ItemTemplate>
                                                 </ComboBox>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Command="{Binding CustomColorCommand}" ToolTip="{l:T 'Pick your own color in the color picker'}">
-                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                                 <ComboBox Width="125" Margin="4,0,8,0" ItemsSource="{Binding LayoutList}" SelectedValue="{Binding Layout}"
                                                           DisplayMemberPath="Value" SelectedValuePath="Key" ToolTip="{l:T 'How this group looks in the panel'}"/>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="{l:T 'Rename (display name)'}">
-                                                    <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Delete group (after confirmation)'}">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                             </StackPanel>
                                             <StackPanel VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Display}" FontSize="14" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding KindText}" Style="{StaticResource Caption}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Display}" FontSize="{StaticResource Font.Subtitle}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding KindText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </DockPanel>
 
@@ -224,7 +222,7 @@
                                                                         <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="220"
                                                                                  Tag="{l:T 'empty = default; e.g. .ps1; .cmd'}" FontFamily="{StaticResource MonoFont}"
                                                                                  ToolTip="{l:T 'Separated by semicolons, e.g. .ps1; .cmd; .exe'}"/>
-                                                                        <TextBlock Text="{Binding ExtensionsError}" FontSize="11" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" MaxWidth="220"
+                                                                        <TextBlock Text="{Binding ExtensionsError}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" MaxWidth="220"
                                                                                    Visibility="{Binding ExtensionsError, Converter={StaticResource Vis}}"/>
                                                                     </StackPanel>
                                                                 </WrapPanel>
@@ -237,8 +235,8 @@
                                                         <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="16,12,16,14">
                                                             <StackPanel>
                                     <WrapPanel Margin="0,0,0,10">
-                                        <TextBlock Text="{l:T 'New files:'}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="12" Foreground="{DynamicResource Text.Secondary}"/>
-                                        <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="1" Width="330">
+                                        <TextBlock Text="{l:T 'New files:'}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="1" Width="330">
                                             <UniformGrid Columns="2">
                                                 <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Show automatically'}" IsChecked="{Binding AutoShow}" GroupName="{Binding Path, StringFormat={}{0}|mode}"/>
                                                 <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Only after approval'}" IsChecked="{Binding RequireApproval}" GroupName="{Binding Path, StringFormat={}{0}|mode}"/>
@@ -247,13 +245,13 @@
                                         <TextBlock Text="{Binding ModeHint}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                                     </WrapPanel>
 
-                                    <Border Visibility="{Binding HasPending, Converter={StaticResource Vis}}" Margin="0,0,0,10" Padding="12,8" CornerRadius="6"
+                                    <Border Visibility="{Binding HasPending, Converter={StaticResource Vis}}" Margin="0,0,0,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}"
                                             Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1">
                                         <DockPanel>
                                             <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="0,0,10,0"/>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                                <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Approve all'}" Command="{Binding ApproveAllCommand}" Height="30" MinHeight="30" FontSize="12" />
-                                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep hidden'}" Command="{Binding DismissPendingCommand}" Height="30" MinHeight="30" FontSize="12" Margin="8,0,0,0" />
+                                                <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Approve all'}" Command="{Binding ApproveAllCommand}" Height="30" MinHeight="30" FontSize="{StaticResource Font.Body}" />
+                                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep hidden'}" Command="{Binding DismissPendingCommand}" Height="30" MinHeight="30" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
                                             </StackPanel>
                                             <TextBlock Text="{Binding PendingText}" VerticalAlignment="Center"/>
                                         </DockPanel>
@@ -262,12 +260,12 @@
                                     <DockPanel Margin="0,0,0,8">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Show all'}" Command="{Binding AllOnCommand}" Height="28" MinHeight="28" FontSize="12" />
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'None'}" Command="{Binding AllOffCommand}" Height="28" MinHeight="28" FontSize="12" Margin="6,0,0,0" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Show all'}" Command="{Binding AllOnCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'None'}" Command="{Binding AllOffCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" Margin="6,0,0,0" />
                                         </StackPanel>
                                         <Grid Width="240" Margin="0,0,10,0" DockPanel.Dock="Left">
                                             <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" Padding="28,0,8,0" Tag="{l:T 'Search in this folder'}" Height="30" MinHeight="30"/>
-                                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="12" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False"
+                                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False"
                                                        Foreground="{DynamicResource Text.Secondary}"/>
                                         </Grid>
                                         <WrapPanel VerticalAlignment="Center">
@@ -289,10 +287,10 @@
                                             <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="44"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{l:T 'Panel'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                                        <TextBlock Grid.Column="2" Text="{l:T 'Entry'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="{l:T 'Launch profiles'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="4" Text="{l:T 'Admin'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{l:T 'Panel'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        <TextBlock Grid.Column="2" Text="{l:T 'Entry'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{l:T 'Launch profiles'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="4" Text="{l:T 'Admin'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                     </Grid>
                                     <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                                         <ItemsControl.ItemTemplate>
@@ -310,9 +308,9 @@
                                                         <CheckBox IsChecked="{Binding IsVisibleInPanel}" IsEnabled="{Binding CanToggle}" VerticalAlignment="Center" Margin="12,0,0,0"
                                                                   AutomationProperties.Name="{Binding Name, StringFormat={}{0} im Panel anzeigen}"/>
                                                         <Grid Grid.Column="1" VerticalAlignment="Center">
-                                                            <Border Width="36" Height="22" CornerRadius="4" Background="{DynamicResource Badge.Other.Bg}"
+                                                            <Border Width="36" Height="22" CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Badge.Other.Bg}"
                                                                     Visibility="{Binding HasIcon, Converter={StaticResource Vis}, ConverterParameter=invert}">
-                                                                <TextBlock Text="{Binding Badge}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                <TextBlock Text="{Binding Badge}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                                            Foreground="{DynamicResource Badge.Other.Fg}"/>
                                                             </Border>
                                                             <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="22" Height="22" HorizontalAlignment="Left" Margin="7,0,0,0"
@@ -321,29 +319,29 @@
                                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,6,12,6">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                                <Border Margin="8,0,0,0" Padding="6,0" CornerRadius="9" Background="{DynamicResource Accent}"
+                                                                <Border Margin="8,0,0,0" Padding="6,0" CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Accent}"
                                                                         Visibility="{Binding IsNew, Converter={StaticResource Vis}}">
-                                                                    <TextBlock Text="{l:T 'NEW'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource OnAccent}"/>
+                                                                    <TextBlock Text="{l:T 'NEW'}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource OnAccent}"/>
                                                                 </Border>
-                                                                <Border Margin="8,0,0,0" Padding="6,0" CornerRadius="9" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
+                                                                <Border Margin="8,0,0,0" Padding="6,0" CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
                                                                         Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}"
                                                                         ToolTip="{l:T 'Downloaded from the internet – approve it in the panel via “Unblock”'}">
-                                                                    <TextBlock Text="{l:T 'BLOCKED'}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource Status.Warning}"/>
+                                                                    <TextBlock Text="{l:T 'BLOCKED'}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource Status.Warning}"/>
                                                                 </Border>
                                                             </StackPanel>
-                                                            <TextBlock Text="{Binding Info}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                            <TextBlock Text="{Binding Info}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="3" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                            <TextBlock Text="{Binding ProfilesText}" FontSize="12" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding ProfileDetail}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                            <TextBlock Text="{Binding ProfilesText}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding ProfileDetail}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsAdmin, Converter={StaticResource Vis}}">
-                                                            <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="13" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
-                                                            <TextBlock Text="{l:T 'Yes'}" FontSize="12" Foreground="{DynamicResource Status.Warning}"/>
+                                                            <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="{l:T 'Yes'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Warning}"/>
                                                         </StackPanel>
                                                         <ui:Button Grid.Column="5" Style="{StaticResource Btn.Icon}" Width="34" Height="34" Command="{Binding ConfigureCommand}"
                                                                 ToolTip="{l:T 'Launch profiles'}" Visibility="{Binding CanToggle, Converter={StaticResource Vis}}">
-                                                            <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="15"/>
+                                                            <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XL}"/>
                                                         </ui:Button>
                                                     </Grid>
                                                 </Border>
@@ -367,21 +365,21 @@
                                                Visibility="{Binding HasNoEntries, Converter={StaticResource Vis}}"/>
 
                                     <WrapPanel Margin="0,12,0,0">
-                                        <TextBlock Text="{l:T 'Pattern exclusions:'}" VerticalAlignment="Center" Margin="0,0,8,6" FontSize="12" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <TextBlock Text="{l:T 'Pattern exclusions:'}" VerticalAlignment="Center" Margin="0,0,8,6" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
                                         <ItemsControl ItemsSource="{Binding Exclusions}" Focusable="False">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
-                                                    <Border Height="26" CornerRadius="13" Background="{DynamicResource Excl.Bg}" BorderBrush="{DynamicResource Excl.Border}"
+                                                    <Border Height="26" CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Excl.Bg}" BorderBrush="{DynamicResource Excl.Border}"
                                                             BorderThickness="1" Padding="10,0,2,0" Margin="0,0,6,6">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="{DynamicResource Excl.Text}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                                            <TextBlock Text="{Binding Value}" FontSize="11" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Kind}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Excl.Text}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="{Binding Value}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
                                                             <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
                                                                     ToolTip="{l:T 'Remove exclusion'}" Foreground="{DynamicResource Excl.Text}">
-                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="9"/>
+                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}"/>
                                                             </ui:Button>
                                                         </StackPanel>
                                                     </Border>
@@ -389,11 +387,11 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                         <TextBox Text="{Binding NewExclusion, UpdateSourceTrigger=PropertyChanged}" Width="200" Height="28" MinHeight="28" Margin="0,0,6,6"
-                                                 Tag="{l:T 'e.g. *.exe or *\\Archive\\*'}" FontSize="12"/>
+                                                 Tag="{l:T 'e.g. *.exe or *\\Archive\\*'}" FontSize="{StaticResource Font.Body}"/>
                                         <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ Pattern'}" Command="{Binding AddExclusionCommand}" Height="28" MinHeight="28"
-                                                FontSize="12" Margin="0,0,0,6" />
+                                                FontSize="{StaticResource Font.Body}" Margin="0,0,0,6" />
                                     </WrapPanel>
-                                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Text="{l:T 'Individual files are shown or hidden with the checkbox. Patterns apply immediately; the list updates after scanning.'}"/>
+                                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Text="{l:T 'Individual files are shown or hidden with the checkbox. Patterns apply immediately; the list updates after scanning.'}"/>
                                                             </StackPanel>
                                                         </Border>
                                                     </StackPanel>
@@ -453,12 +451,12 @@
                         <DockPanel Margin="6,6,12,6" MinHeight="44" Background="Transparent" Cursor="SizeAll"
                                    PreviewMouseLeftButtonDown="GroupCard_PreviewMouseDown" PreviewMouseMove="GroupCard_PreviewMouseMove"
                                    ToolTip="{l:T 'Fixed group – drag to move it. Show or hide per workspace.'}">
-                            <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="12" Margin="2,0,0,0"
+                            <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="2,0,0,0"
                                        VerticalAlignment="Center" Foreground="{DynamicResource Text.Tertiary}" RenderTransformOrigin="0.5,0.5">
                                 <TextBlock.RenderTransform><RotateTransform Angle="90"/></TextBlock.RenderTransform>
                             </TextBlock>
-                            <Border DockPanel.Dock="Left" Width="34" Height="34" Margin="34,0,12,0" CornerRadius="4">
-                                <TextBlock Text="{Binding FixedGlyph}" Style="{StaticResource Icon}" FontSize="15" Foreground="{DynamicResource Text.Secondary}"/>
+                            <Border DockPanel.Dock="Left" Width="34" Height="34" Margin="34,0,12,0" CornerRadius="{DynamicResource Radius.Control}">
+                                <TextBlock Text="{Binding FixedGlyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XL}" Foreground="{DynamicResource Text.Secondary}"/>
                             </Border>
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                                 <!-- Zuletzt ausgeführt: wie viele -->
@@ -473,10 +471,10 @@
                             <StackPanel VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding Display}" FontWeight="SemiBold"/>
-                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="11" Margin="8,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="8,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                VerticalAlignment="Center" ToolTip="{l:T 'Fixed group: cannot be deleted'}" AutomationProperties.Name="{l:T 'Fixed group'}"/>
                                 </StackPanel>
-                                <TextBlock Text="{Binding FixedDescription}" Style="{StaticResource Caption}" FontSize="11.5" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding FixedDescription}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </DockPanel>
                     </StackPanel>
@@ -608,15 +606,15 @@
             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
             <Popup IsOpen="{Binding HasSearchResults, Mode=OneWay}" PlacementTarget="{Binding ElementName=SettingsSearch}" Placement="Bottom" AllowsTransparency="True"
                    StaysOpen="True" Width="{Binding ActualWidth, ElementName=SettingsSearch}">
-                <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="6" Padding="4" Margin="0,4,0,0">
+                <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="4" Margin="0,4,0,0">
                     <ItemsControl ItemsSource="{Binding SearchResults}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalContentAlignment="Stretch" Padding="10,4" MinHeight="40"
                                         Command="{Binding DataContext.OpenSearchHitCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Title}" FontSize="13"/>
-                                        <TextBlock Text="{Binding Page}" FontSize="11" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.BodyStrong}"/>
+                                        <TextBlock Text="{Binding Page}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}"/>
                                     </StackPanel>
                                 </ui:Button>
                             </DataTemplate>
@@ -626,19 +624,19 @@
             </Popup>
         </Grid>
         <!-- Update-Hinweis: erscheint in allen Bereichen, sobald eine neue Version gefunden wurde -->
-        <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="14,12" CornerRadius="6" Background="{DynamicResource Info.Bg}"
+        <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="14,12" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}"
                 BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding HasUpdate, Converter={StaticResource Vis}}">
             <DockPanel>
-                <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="18" VerticalAlignment="Top" Margin="0,1,12,0"/>
+                <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="{StaticResource Icon.XXL}" VerticalAlignment="Top" Margin="0,1,12,0"/>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
                     <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Release notes'}" Command="{Binding ReleaseNotesCommand}" Margin="0,0,8,0" />
                     <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Update now'}" Command="{Binding InstallUpdateCommand}" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding UpdateBannerTitle}" FontWeight="SemiBold" FontSize="14"/>
-                    <TextBlock Text="{Binding Update.Subtitle}" FontSize="12" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding UpdateBannerTitle}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}"/>
+                    <TextBlock Text="{Binding Update.Subtitle}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                     <TextBlock Text="{l:T 'Power-Exec will be closed and restarted; unsaved changes here will be lost.'}"
-                               FontSize="11" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                               FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -656,8 +654,8 @@
                     <DockPanel Margin="0,0,0,8">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                             <ui:Button Style="{StaticResource Btn.Accent}" Click="NewEntryMenu_Click" Margin="8,0,0,0">
-                                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/>
-                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="9" Margin="6,0,0,0"/></StackPanel>
+                                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/>
+                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}" Margin="6,0,0,0"/></StackPanel>
                                 <Button.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="{l:T 'New entry …'}" Command="{Binding NewCommand}"/>
@@ -695,7 +693,7 @@
                     <DockPanel Margin="0,0,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding CheckCommand}"
                                 ToolTip="{l:T 'Check websites, folders, files, RDP/SSH ports and programs (selection or all visible)'}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
                         </ui:Button>
                         <StackPanel Orientation="Horizontal">
                             <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key">
@@ -724,7 +722,7 @@
                     </DockPanel>
 
                     <!-- Mehrfachauswahl -->
-                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                    <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                             Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
                         <WrapPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
@@ -752,10 +750,10 @@
                                     <ColumnDefinition Width="28"/>
                                     <ColumnDefinition Width="76"/>
                                 </Grid.ColumnDefinitions>
-                                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="11" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
+                                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="{StaticResource Font.Caption}" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
                                         Grid.ColumnSpan="2" HorizontalAlignment="Left" ToolTip="{l:T 'Select all visible'}" />
-                                <TextBlock Grid.Column="2" Text="{l:T 'Entry'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="{l:T 'Group / tags'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{l:T 'Entry'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{l:T 'Group / tags'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                             </Grid>
                             <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
@@ -774,9 +772,9 @@
                                                 </Grid.ColumnDefinitions>
                                                 <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
                                                 <Grid Grid.Column="1" Width="32" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                    <Border Width="32" Height="20" CornerRadius="4" Background="{DynamicResource Badge.Other.Bg}"
+                                                    <Border Width="32" Height="20" CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Badge.Other.Bg}"
                                                             Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
-                                                        <TextBlock Text="{Binding Badge}" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource Badge.Other.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Badge}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource Badge.Other.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     <Image Source="{Binding Image, Converter={StaticResource IconImage}}" Width="20" Height="20" HorizontalAlignment="Left" Margin="2,0,0,0"
                                                            Visibility="{Binding HasImage, Converter={StaticResource Vis}}"/>
@@ -785,26 +783,26 @@
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="320"/>
-                                                        <TextBlock Text="{Binding KindText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
-                                                        <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="11" Margin="6,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                                        <TextBlock Text="{Binding KindText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
+                                                        <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="6,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                                    ToolTip="{l:T 'Starts with one click'}" Visibility="{Binding SingleClick, Converter={StaticResource Vis}}"/>
-                                                        <TextBlock Text="{}{{…}}" FontSize="11" Margin="6,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="{l:T 'With placeholders'}"
+                                                        <TextBlock Text="{}{{…}}" FontSize="{StaticResource Font.Caption}" Margin="6,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="{l:T 'With placeholders'}"
                                                                    Visibility="{Binding HasPlaceholders, Converter={StaticResource Vis}}"/>
                                                     </StackPanel>
-                                                    <TextBlock Text="{Binding Detail}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Detail}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
                                                 <StackPanel Grid.Column="3" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding GroupText}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding GroupText}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
                                                     <ItemsControl ItemsSource="{Binding Tags}" ItemTemplate="{StaticResource TagChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
                                                 </StackPanel>
                                                 <Ellipse x:Name="Dot" Grid.Column="4" Width="9" Height="9" Fill="{DynamicResource Text.Disabled}" VerticalAlignment="Center" HorizontalAlignment="Center"
                                                          ToolTip="{Binding HealthText}"/>
                                                 <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding EditCommand}" ToolTip="{l:T 'Edit'}">
-                                                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                                                     </ui:Button>
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove'}">
-                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                     </ui:Button>
                                                 </StackPanel>
                                             </Grid>
@@ -837,11 +835,11 @@
                     <TextBlock Text="{l:T 'Groups bundle computers. In the Run dialog you pick a group with one click; in launch profiles you enter it as @Name (e.g. @Webservers). Groups are resolved at launch – changes apply immediately to all profiles.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddGroupCommand}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Add group'}"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Add group'}"/></StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ImportGroupFromListCommand}" Margin="8,0,0,0"
                                    ToolTip="{l:T 'New group from a name list or CSV file – dynamic, with filters'}">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Import group from list …'}"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Import group from list …'}"/></StackPanel>
                         </ui:Button>
                     </StackPanel>
                     <TextBlock Text="{l:T 'No groups yet.'}" Style="{StaticResource Caption}" Visibility="{Binding HasNoGroups, Converter={StaticResource Vis}}"/>
@@ -852,26 +850,26 @@
                                     <StackPanel>
                                         <DockPanel>
                                             <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="{l:T 'Show computers'}" Margin="0,0,6,0">
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
                                                     <TextBlock.RenderTransform><RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/></TextBlock.RenderTransform>
                                                 </TextBlock>
                                             </ui:Button>
                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Delete group'}">
-                                                <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                             </ui:Button>
                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding ExportCommand}"
                                                        ToolTip="{l:T 'Export group (CSV or text)'}" AutomationProperties.Name="{l:T 'Export'}">
-                                                <TextBlock Text="&#xEDE1;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                <TextBlock Text="&#xEDE1;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                             </ui:Button>
                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding SyncNowCommand}"
                                                        Visibility="{Binding CanSync, Converter={StaticResource Vis}}"
                                                        ToolTip="{l:T 'Sync now (read from AD or the list)'}" AutomationProperties.Name="{l:T 'Sync'}">
-                                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                             </ui:Button>
-                                            <TextBlock Text="@" FontSize="16" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
+                                            <TextBlock Text="@" FontSize="{StaticResource Font.Large}" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
                                             <TextBox Width="220" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'Group name'}"/>
                                             <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                            <TextBlock Text="{Binding Preview}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" FontSize="11" VerticalAlignment="Center"
+                                            <TextBlock Text="{Binding Preview}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center"
                                                        Margin="12,0,8,0" TextTrimming="CharacterEllipsis"
                                                        Visibility="{Binding IsExpanded, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                         </DockPanel>
@@ -882,7 +880,7 @@
                                                       DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Computer group source'}"/>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="{l:T 'Source'}" FontWeight="SemiBold"/>
-                                                <TextBlock Style="{StaticResource Caption}" FontSize="11" TextWrapping="Wrap"
+                                                <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap"
                                                            Text="{l:T 'Dynamic groups are refreshed at startup and regularly – the last found list also applies offline.'}"/>
                                             </StackPanel>
                                         </DockPanel>
@@ -891,7 +889,7 @@
                                             <DockPanel Margin="0,0,0,8">
                                                 <TextBlock Text="{l:T 'List'}" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
                                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose file …'}" Command="{Binding ChooseListCommand}" Margin="6,0,0,0"/>
-                                                <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                                          Tag="{l:T 'Text (one computer per line) or CSV with columns'}"/>
                                             </DockPanel>
                                             <DockPanel Margin="0,0,0,8" Visibility="{Binding IsCsv, Converter={StaticResource Vis}}">
@@ -900,14 +898,14 @@
                                                           AutomationProperties.Name="{l:T 'Column with the computer names'}"/>
                                             </DockPanel>
                                             <TextBlock Text="{l:T 'Filters – all must match (for a name list by name, for a CSV by every column)'}"
-                                                       Style="{StaticResource Caption}" FontSize="11" Margin="0,0,0,4" TextWrapping="Wrap"/>
+                                                       Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,0,0,4" TextWrapping="Wrap"/>
                                             <ItemsControl ItemsSource="{Binding ListFilters}" Focusable="False">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <DockPanel Margin="0,0,0,6">
                                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
                                                                        ToolTip="{l:T 'Remove filter'}" AutomationProperties.Name="{l:T 'Remove filter'}">
-                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                                             </ui:Button>
                                                             <ComboBox DockPanel.Dock="Left" Width="190" ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}"
                                                                       AutomationProperties.Name="{l:T 'Column'}"/>
@@ -921,13 +919,13 @@
                                             </ItemsControl>
                                             <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddFilterCommand}" Padding="6,0">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                                    <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
                                                     <TextBlock Text="{l:T 'Filter (AND)'}" Foreground="{DynamicResource Accent}"/>
                                                 </StackPanel>
                                             </ui:Button>
-                                            <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                                            <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                                        Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
                                         </StackPanel>
                                         <StackPanel Visibility="{Binding IsStatic, Converter={StaticResource Vis}}">
@@ -940,7 +938,7 @@
                                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Import CSV/text …'}" Command="{Binding ImportCommand}" Margin="8,0,0,0" />
                                             </StackPanel>
                                             <TextBox Text="{Binding AdQuery, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'AD: SRV-*  ·  OU=Server,DC=company,DC=local  ·  (operatingSystem=*Server*)'}"
-                                                     Width="380" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                                                     Width="380" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"/>
                                             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Add from AD'}" Command="{Binding AdSearchCommand}" Margin="8,0,0,0" HorizontalAlignment="Left" />
                                         </DockPanel>
                                         </StackPanel>
@@ -951,27 +949,27 @@
                                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding PickOuCommand}" Margin="6,0,0,0"
                                                            ToolTip="{l:T 'Show the OU tree from Active Directory and select an OU'}" AutomationProperties.Name="{l:T 'Select OU'}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
                                                         <TextBlock Text="{l:T 'Choose OU …'}"/>
                                                     </StackPanel>
                                                 </ui:Button>
-                                                <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                                          Tag="{l:T 'empty = whole domain · e.g. OU=Server,DC=company,DC=local'}"/>
                                             </DockPanel>
                                             <ItemsControl ItemsSource="{Binding Blocks}" Focusable="False">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <StackPanel>
-                                                            <TextBlock Text="{l:T 'OR'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="12,4,0,4"
+                                                            <TextBlock Text="{l:T 'OR'}" FontSize="{StaticResource Font.Caption}" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="12,4,0,4"
                                                                        Visibility="{Binding IsFirst, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
-                                                            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Padding="10,8" Background="{DynamicResource Bg.CardAlt}">
+                                                            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="10,8" Background="{DynamicResource Bg.CardAlt}">
                                                                 <StackPanel>
                                                                     <DockPanel Margin="0,0,0,6">
                                                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding RemoveCommand}"
                                                                                 ToolTip="{l:T 'Remove block'}" AutomationProperties.Name="{l:T 'Remove block'}">
-                                                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                                                         </ui:Button>
-                                                                        <TextBlock Text="{l:T 'All rules match'}" Style="{StaticResource Caption}" FontSize="11" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{l:T 'All rules match'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center"/>
                                                                     </DockPanel>
                                                                     <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
                                                                         <ItemsControl.ItemTemplate>
@@ -979,7 +977,7 @@
                                                                                 <DockPanel Margin="0,0,0,6">
                                                                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
                                                                                             ToolTip="{l:T 'Remove rule'}" AutomationProperties.Name="{l:T 'Remove rule'}">
-                                                                                        <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                                                        <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                                                                     </ui:Button>
                                                                                     <!-- Attribut: Vorgabe wählen oder eigenes LDAP-Attribut eintippen -->
                                                                                     <ComboBox DockPanel.Dock="Left" Width="190" IsEditable="True" ItemsSource="{Binding AttributeChoices}" DisplayMemberPath="Value"
@@ -994,7 +992,7 @@
                                                                     </ItemsControl>
                                                                     <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddRuleCommand}" Padding="6,0">
                                                                         <StackPanel Orientation="Horizontal">
-                                                                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                                                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
                                                                             <TextBlock Text="{l:T 'Rule (AND)'}" Foreground="{DynamicResource Accent}"/>
                                                                         </StackPanel>
                                                                     </ui:Button>
@@ -1007,37 +1005,37 @@
                                             <DockPanel Margin="0,8,0,0">
                                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding SyncNowCommand}" Padding="12,0">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
                                                         <TextBlock Text="{l:T 'Read from AD now'}"/>
                                                     </StackPanel>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Command="{Binding AddBlockCommand}">
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="10" Margin="0,0,6,0"/>
+                                                        <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
                                                         <TextBlock Text="{l:T 'Block (OR)'}"/>
                                                     </StackPanel>
                                                 </ui:Button>
                                             </DockPanel>
-                                            <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"
+                                            <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,6,0,0" TextWrapping="Wrap"
                                                        Visibility="{Binding HasRulesError, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"
+                                            <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                                        Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
-                                            <Expander Header="{l:T 'Show LDAP filter'}" Margin="0,6,0,0" FontSize="11">
-                                                <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                            <Expander Header="{l:T 'Show LDAP filter'}" Margin="0,6,0,0" FontSize="{StaticResource Font.Caption}">
+                                                <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}"
                                                          Padding="6,4" Margin="0,4,0,0"/>
                                             </Expander>
                                         </StackPanel>
                                         </StackPanel>
                                         <!-- Rückmeldung (Synchronisieren, Export, OU) – auch im eingeklappten Zustand -->
-                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="11" Margin="36,6,0,0" TextWrapping="Wrap"
+                                        <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="36,6,0,0" TextWrapping="Wrap"
                                                    Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"
+                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
                                Text="{l:T 'The AD search runs with your signed-in account. A name with * as wildcard, an OU (all computers in it) or your own LDAP filter in parentheses.'}"/>
                     <c:SettingsCard Icon="&#xE895;" Header="{l:T 'Refresh dynamic groups'}" Margin="0,12,0,0"
                                     Description="{l:T 'At Power-Exec startup and then at this interval in the background. Without a connection to AD, the last found list stays.'}">
@@ -1065,7 +1063,7 @@
                                     <StackPanel>
                                         <DockPanel Margin="6,6,8,6">
                                             <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="{l:T 'Show entries'}">
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
                                                     <TextBlock.RenderTransform><RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/></TextBlock.RenderTransform>
                                                 </TextBlock>
                                             </ui:Button>
@@ -1083,18 +1081,18 @@
                                                 </ComboBox>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="32" Margin="0,0,8,0" Command="{Binding CustomColorCommand}"
                                                         ToolTip="{l:T 'Pick your own color in the color picker'}" AutomationProperties.Name="{l:T 'Custom color'}">
-                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE790;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RenameCommand}" ToolTip="{l:T 'Rename or merge'}">
-                                                    <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE8AC;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding DeleteCommand}" ToolTip="{l:T 'Remove from all entries'}">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
-                                                <Border Background="{Binding ChipColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Chip}" CornerRadius="11" Padding="10,2,10,3">
-                                                    <TextBlock Text="{Binding Tag, StringFormat=#{0}}" FontSize="13"/>
+                                                <Border Background="{Binding ChipColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Chip}" CornerRadius="{DynamicResource Radius.Pill}" Padding="10,2,10,3">
+                                                    <TextBlock Text="{Binding Tag, StringFormat=#{0}}" FontSize="{StaticResource Font.BodyStrong}"/>
                                                 </Border>
                                                 <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                             </StackPanel>
@@ -1108,7 +1106,7 @@
                                                             <!-- ✕ nimmt nur diesem Eintrag das Schlagwort -->
                                                             <ui:Button x:Name="TagEntryRemove" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Opacity="0.55"
                                                                     Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove tag from this entry'}" AutomationProperties.Name="{l:T 'Remove'}">
-                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                                             </ui:Button>
                                                             <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                                         </DockPanel>
@@ -1174,8 +1172,8 @@
                                         </TextBlock>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock x:Name="SourceSummary" Text="{Binding Summary}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="SourceSummary" Text="{Binding Summary}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                     </DockPanel>
                                     <DataTemplate.Triggers>
@@ -1207,7 +1205,7 @@
                     </DockPanel>
                     <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" Margin="2,0,0,8" Visibility="{Binding HasRows, Converter={StaticResource Vis}}"/>
                     <c:InfoBar Severity="Error" Message="{Binding Error}"/>
-                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                    <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                             Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
                         <WrapPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
@@ -1231,13 +1229,13 @@
                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding InstallCommand}" ToolTip="{l:T 'Download all files in this folder'}"
                                                        Padding="8,0" MinHeight="28" Height="28">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="12" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="{l:T 'Load folder'}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{l:T 'Load folder'}" FontSize="{StaticResource Font.Body}"/>
                                                 </StackPanel>
                                             </ui:Button>
                                             <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding ToggleCommand}"
                                                        ToolTip="{l:T 'Expand/collapse'}" AutomationProperties.Name="{l:T 'Expand or collapse'}">
-                                                <TextBlock x:Name="Chevron" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="10"/>
+                                                <TextBlock x:Name="Chevron" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                             </ui:Button>
                                             <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="4,0,8,0" VerticalAlignment="Center"/>
                                             <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Cursor="Hand">
@@ -1245,7 +1243,7 @@
                                                     <MouseBinding Gesture="LeftClick" Command="{Binding ToggleCommand}"/>
                                                 </TextBlock.InputBindings>
                                                 <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold"/>
-                                                <Run Text="  "/><Run Text="{Binding CountText, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"/>
+                                                <Run Text="  "/><Run Text="{Binding CountText, Mode=OneWay}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}"/>
                                             </TextBlock>
                                         </DockPanel>
                                     </Border>
@@ -1277,40 +1275,40 @@
                                                 <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}"/>
-                                                    <TextBlock Text="{Binding Needs}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
+                                                    <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Description}"/>
+                                                    <TextBlock Text="{Binding Needs}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
                                                                Visibility="{Binding Needs, Converter={StaticResource Vis}}"/>
                                                 </StackPanel>
                                             </DockPanel>
                                             <!-- Design: dieselbe Vorschau wie unter Darstellung -->
                                             <c:DesignPreview Grid.Column="3" Width="150" Height="84" Margin="0,2,12,2" Design="{Binding DesignPreset}"
                                                              Visibility="{Binding HasDesign, Converter={StaticResource Vis}}" ToolTip="{Binding DesignBackdropText}"/>
-                                            <TextBlock x:Name="State" Grid.Column="4" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="State" Grid.Column="4" Text="{Binding StateText}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
                                             <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding TogglePreviewCommand}" ToolTip="{l:T 'Preview'}"
                                                            AutomationProperties.Name="{l:T 'Preview'}" Visibility="{Binding IsEntryOrScript, Converter={StaticResource Vis}}">
-                                                    <TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                    <TextBlock Text="&#xE7B3;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding InstallCommand}" ToolTip="{Binding InstallText}"
                                                            AutomationProperties.Name="{Binding InstallText}" Visibility="{Binding CanInstall, Converter={StaticResource Vis}}">
-                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                    <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                                                 </ui:Button>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding UninstallCommand}" ToolTip="{l:T 'Uninstall'}"
                                                            AutomationProperties.Name="{l:T 'Uninstall'}" Visibility="{Binding IsInstalled, Converter={StaticResource Vis}}">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                             </StackPanel>
                                         </Grid>
                                         <!-- Vorschau: Art, Ziel bzw. Code, benötigte Variablen mit Typ -->
-                                        <Border Margin="60,4,4,6" Padding="12,10" CornerRadius="6" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                                        <Border Margin="60,4,4,6" Padding="12,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
                                                 Visibility="{Binding IsPreviewOpen, Converter={StaticResource Vis}}">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding EntryKindText}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}"/>
-                                                <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="12"
+                                                <TextBlock Text="{Binding EntryKindText}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}"/>
+                                                <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                                          MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0" BorderThickness="0" Background="Transparent" Padding="0"/>
-                                                <TextBlock Text="{l:T 'Required variables'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,10,0,0"
+                                                <TextBlock Text="{l:T 'Required variables'}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,10,0,0"
                                                            Visibility="{Binding HasVariables, Converter={StaticResource Vis}}"/>
-                                                <TextBlock Text="{Binding VariablesText}" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"
+                                                <TextBlock Text="{Binding VariablesText}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Margin="0,2,0,0"
                                                            Visibility="{Binding HasVariables, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
                                         </Border>
@@ -1349,7 +1347,7 @@
                                             <TextBlock DockPanel.Dock="Right" Text="{Binding Preview}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"
                                                        MaxWidth="260" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock DockPanel.Dock="Left" Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" Width="190" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                         </DockPanel>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -1359,7 +1357,7 @@
                                           Text="{Binding DateFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Date format'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Format of \{\{$Date\}\}'}"/>
-                                    <TextBlock Text="{l:T '.NET format, e.g. dd.MM.yyyy or yyyy-MM-dd.'}" Style="{StaticResource Caption}" FontSize="12"/>
+                                    <TextBlock Text="{l:T '.NET format, e.g. dd.MM.yyyy or yyyy-MM-dd.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}">
@@ -1367,7 +1365,7 @@
                                           Text="{Binding TimeFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Time format'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Format of \{\{$Time\}\}'}"/>
-                                    <TextBlock Text="{l:T '.NET format, e.g. HH:mm or HH:mm:ss.'}" Style="{StaticResource Caption}" FontSize="12"/>
+                                    <TextBlock Text="{l:T '.NET format, e.g. HH:mm or HH:mm:ss.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/>
                                 </StackPanel>
                             </DockPanel>
                         </StackPanel>
@@ -1377,7 +1375,7 @@
                     <TextBlock Text="{l:T 'Custom variables'}" Style="{StaticResource SettingsSection}"/>
                     <DockPanel Margin="0,0,0,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding AddCommand}" Margin="8,0,0,0">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/></StackPanel>
                         </ui:Button>
                         <Grid>
                             <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search variables (name, value, description)'}"
@@ -1385,7 +1383,7 @@
                             <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
                         </Grid>
                     </DockPanel>
-                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                    <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                             Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
                         <WrapPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
@@ -1405,12 +1403,12 @@
                                     <ColumnDefinition Width="200"/>
                                     <ColumnDefinition Width="108"/>
                                 </Grid.ColumnDefinitions>
-                                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="11" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
+                                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="{StaticResource Font.Caption}" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
                                            HorizontalAlignment="Left" ToolTip="{l:T 'Select all visible'}"/>
-                                <TextBlock Grid.Column="1" Text="{l:T 'Variable'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="2" Text="{l:T 'Kind'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="{l:T 'Current value'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="4" Text="{Binding SummaryText}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{l:T 'Variable'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{l:T 'Kind'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="3" Text="{l:T 'Current value'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="4" Text="{Binding SummaryText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
                             <ItemsControl ItemsSource="{Binding VisibleItems}" Focusable="False">
                                 <ItemsControl.ItemTemplate>
@@ -1427,20 +1425,20 @@
                                                 <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Select'}"/>
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
                                                     <TextBlock Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
-                                                <TextBlock Grid.Column="2" Text="{Binding KindText}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Preview}" FontSize="12" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}"
+                                                <TextBlock Grid.Column="2" Text="{Binding KindText}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Preview}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}"
                                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Preview}"/>
                                                 <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding CopyTokenCommand}" ToolTip="{l:T 'Copy \{\{$Name\}\}'}">
-                                                        <TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                        <TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                     </ui:Button>
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding EditCommand}" ToolTip="{l:T 'Edit'}">
-                                                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="13"/>
+                                                        <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                                                     </ui:Button>
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Delete'}">
-                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                     </ui:Button>
                                                 </StackPanel>
                                             </Grid>
@@ -1473,22 +1471,22 @@
                                         <DockPanel Margin="6,8,12,8">
                                             <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}"
                                                     ToolTip="{l:T 'Choose the groups of this workspace'}" Margin="0,0,8,0">
-                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="11" RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
                                                     <TextBlock.RenderTransform>
                                                         <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
                                                     </TextBlock.RenderTransform>
                                                 </TextBlock>
                                             </ui:Button>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Border Background="{DynamicResource Info.Bg}" CornerRadius="4" Padding="8,2" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                <Border Background="{DynamicResource Info.Bg}" CornerRadius="{DynamicResource Radius.Control}" Padding="8,2" Margin="0,0,8,0" VerticalAlignment="Center"
                                                         Visibility="{Binding IsActive, Converter={StaticResource Vis}}">
-                                                    <TextBlock Text="{l:T 'Active'}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                    <TextBlock Text="{l:T 'Active'}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                                                 </Border>
                                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Groups …'}" Command="{Binding ToggleCommand}" Margin="0,0,8,0" />
                                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Switch'}" Command="{Binding ActivateCommand}" Margin="0,0,8,0"
                                                         ToolTip="{l:T 'Applies the settings and switches the workspace'}" />
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Delete'}">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                 </ui:Button>
                                             </StackPanel>
                                             <StackPanel VerticalAlignment="Center">
@@ -1510,11 +1508,11 @@
                                                                     <Grid Width="18" Margin="0,0,8,0">
                                                                         <c:IconPresenter Icon="{Binding Icon}" Size="15" Foreground="{DynamicResource Text.Primary}"
                                                                                          Visibility="{Binding Icon, Converter={StaticResource Vis}}"/>
-                                                                        <TextBlock x:Name="WsGlyph" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="13" Foreground="{DynamicResource Text.Tertiary}"
+                                                                        <TextBlock x:Name="WsGlyph" Text="&#xE8EC;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Text.Tertiary}"
                                                                                    Visibility="{Binding Icon, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                                                     </Grid>
                                                                     <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
-                                                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="10" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                                                    <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                                                VerticalAlignment="Center" ToolTip="{l:T 'Fixed group'}" Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                                                 </StackPanel>
                                                             </CheckBox>
@@ -1563,23 +1561,23 @@
                             <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="6" Background="{DynamicResource Bg.CardAlt}">
+                                        <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}">
                                             <DockPanel>
                                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" Command="{Binding ApplyCommand}" Foreground="{DynamicResource Accent}"
                                                             Visibility="{Binding HasPending, Converter={StaticResource Vis}}" />
-                                                    <CheckBox Content="{l:T 'apply automatically'}" IsChecked="{Binding AutoApply}" VerticalAlignment="Center" Margin="8,0" FontSize="12"/>
+                                                    <CheckBox Content="{l:T 'apply automatically'}" IsChecked="{Binding AutoApply}" VerticalAlignment="Center" Margin="8,0" FontSize="{StaticResource Font.Body}"/>
                                                     <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Unsubscribe (entries are removed)'}">
-                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                                     </ui:Button>
                                                 </StackPanel>
                                                 <StackPanel>
                                                     <TextBlock FontWeight="SemiBold">
-                                                        <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                                                        <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="{StaticResource Font.Caption}"/>
                                                         <Run Text="{Binding Name, Mode=OneWay}"/>
                                                     </TextBlock>
-                                                    <TextBlock Text="{Binding Path}" FontSize="11" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
-                                                    <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="{Binding Path}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
                                                 </StackPanel>
                                             </DockPanel>
                                         </Border>
@@ -1612,7 +1610,7 @@
                             <DockPanel Style="{StaticResource SubSetting}">
                                 <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding IncludePrereleases}" VerticalAlignment="Center" />
                                 <StackPanel VerticalAlignment="Center"><TextBlock Text="{l:T 'Include pre-releases'}"/>
-                                    <TextBlock Text="{l:T 'New features earlier – may still contain bugs.'}" Style="{StaticResource Caption}" FontSize="12"/></StackPanel>
+                                    <TextBlock Text="{l:T 'New features earlier – may still contain bugs.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/></StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}">
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{Binding RepoText}" Command="{Binding OpenRepoCommand}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
@@ -1626,7 +1624,7 @@
                         <ComboBox Width="190" ItemsSource="{Binding LanguageList}" SelectedValue="{Binding Language}" DisplayMemberPath="Value" SelectedValuePath="Key"
                                   AutomationProperties.Name="{l:T 'Display language'}"/>
                     </c:SettingsCard>
-                    <Border Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,4,0,0"
+                    <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Margin="0,4,0,0"
                             Visibility="{Binding LanguageChangePending, Converter={StaticResource Vis}}">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Restart now'}" Command="{Binding RestartCommand}" Margin="12,0,0,0"/>
@@ -1659,7 +1657,7 @@
                 <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}">
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="11" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New group'}"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New group'}"/></StackPanel>
                         </ui:Button>
                         <TextBlock Text="{l:T 'Groups'}" Style="{StaticResource PageTitle}"/>
                     </DockPanel>
@@ -1667,7 +1665,7 @@
                                Text="{l:T 'Groups organize the panel. Drag a group to another position or onto the middle of another group to make it a subgroup; right-click creates a subgroup. In the panel you drag entries into any group. Which groups a workspace shows is set under Workspaces.'}"/>
 
                     <TextBlock Text="{l:T 'Your groups'}" Style="{StaticResource SettingsSection}"/>
-                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="4,0,0,8" TextWrapping="Wrap"
+                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="4,0,0,8" TextWrapping="Wrap"
                                Text="{l:T 'Groups with a lock (Recently run, Favorites, Custom entries) are fixed: movable but not deletable. Whether they appear in the panel is set per workspace.'}"/>
                     <TextBlock Text="{l:T 'No groups yet – “New group” at the top right or right-click in the panel.'}" Style="{StaticResource Caption}" Margin="4,0,0,8"
                                Visibility="{Binding Categories.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
@@ -1676,14 +1674,14 @@
                             <v:CategoryTemplateSelector Group="{StaticResource CategoryCardTemplate}" Fixed="{StaticResource FixedCardTemplate}"/>
                         </ItemsControl.ItemTemplateSelector>
                     </ItemsControl>
-                    <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="2,2,0,0" TextWrapping="Wrap"
+                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="2,2,0,0" TextWrapping="Wrap"
                                Text="{l:T 'Deleting removes the group including subgroups (after confirmation). Entries dragged in reappear in their smart group or under “Custom entries”; files stay unchanged.'}"/>
 
                     <TextBlock Text="{l:T 'For all smart groups (folders)'}" Style="{StaticResource SettingsSection}"/>
                     <c:SettingsCard Icon="&#xE8A5;" Header="{l:T 'Default file extensions'}" Description="{l:T 'Applies to smart groups without their own setting. Separated by semicolons, e.g. .ps1; .cmd; .exe'}">
                             <StackPanel Width="300">
                                 <TextBox Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T '.ps1; .cmd; .exe'}"/>
-                                <TextBlock Text="{Binding DefaultExtensionsError}" FontSize="11" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                <TextBlock Text="{Binding DefaultExtensionsError}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,4,0,0"
                                            Visibility="{Binding DefaultExtensionsError, Converter={StaticResource Vis}}"/>
                             </StackPanel>
                     </c:SettingsCard>
@@ -1781,12 +1779,12 @@
                                                 AutomationProperties.Name="{Binding Name}">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Border x:Name="Card" CornerRadius="6" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
+                                                    <Border x:Name="Card" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                                         <StackPanel>
                                                             <c:DesignPreview Height="84" Design="{Binding Preset}"/>
                                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding BackdropText}" FontSize="11" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
-                                                            <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding BackdropText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
                                                         </StackPanel>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
@@ -1830,9 +1828,9 @@
                                 <TextBlock Text="{Binding UiScalePercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                             </StackPanel>
                     </c:SettingsCard>
-                    <Border Margin="0,0,0,4" Padding="12,8" CornerRadius="6" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1"
+                    <Border Margin="0,0,0,4" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}" BorderBrush="{DynamicResource Info.Border}" BorderThickness="1"
                             Visibility="{Binding IsHighContrast, Converter={StaticResource Vis}}">
-                        <TextBlock Text="{l:T 'Windows contrast theme is active: panel color, opacity, frosted glass and accent color are ignored so everything stays readable.'}" TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource Info.Text}"/>
+                        <TextBlock Text="{l:T 'Windows contrast theme is active: panel color, opacity, frosted glass and accent color are ignored so everything stays readable.'}" TextWrapping="Wrap" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Info.Text}"/>
                     </Border>
                     <c:SettingsCard Icon="&#xE916;" Header="{l:T 'Animation'}" Description="{l:T 'How the panel slides out and in.'}">
                             <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
@@ -1854,7 +1852,7 @@
                                         IsExpanded="{Binding ColorsExpanded, Mode=TwoWay}">
                         <c:SettingsExpander.HeaderContent>
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="40" Height="32" CornerRadius="4" Margin="0,0,12,0" VerticalAlignment="Center"
+                                <Border Width="40" Height="32" CornerRadius="{DynamicResource Radius.Control}" Margin="0,0,12,0" VerticalAlignment="Center"
                                         Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
                                         BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
                                 <ComboBox Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
@@ -1868,13 +1866,13 @@
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Use Windows accent color'}"/>
                                     <TextBlock Text="{l:T 'On: hover zone, selection and buttons in the Windows accent color (Personalization › Colors). Off: in the chosen panel color – lightened or darkened to match.'}"
-                                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                               Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}"
                                        Visibility="{Binding DataContext.UseWindowsAccent, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}, ConverterParameter=invert}">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Border Width="28" Height="28" CornerRadius="4" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
+                                    <Border Width="28" Height="28" CornerRadius="{DynamicResource Radius.Control}" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
                                             Background="{Binding AccentPreview, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
                                     <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose color'}" Command="{Binding PickAccentCommand}"/>
                                     <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'From panel color'}" Command="{Binding ResetAccentCommand}" Margin="6,0,0,0"
@@ -1882,7 +1880,7 @@
                                 </StackPanel>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Custom accent color'}"/>
-                                    <TextBlock Style="{StaticResource Caption}" FontSize="12">
+                                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}">
                                         <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding AccentText, Mode=OneWay}"/>
                                     </TextBlock>
                                 </StackPanel>
@@ -1911,7 +1909,7 @@
                                            VerticalAlignment="Center" ToolTip="{l:T 'Pick your own color in the color picker'}"/>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{l:T 'Custom colors'}"/>
-                                    <TextBlock Style="{StaticResource Caption}" FontSize="12">
+                                    <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}">
                                         <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
                                     </TextBlock>
                                 </StackPanel>
@@ -1932,7 +1930,7 @@
                                         Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Blur strength'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Blur strength'}"/>
-                                    <TextBlock Text="{l:T 'How strongly the desktop behind the panel is blurred.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'How strongly the desktop behind the panel is blurred.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
@@ -1941,7 +1939,7 @@
                                         Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Saturation'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Saturation'}"/>
-                                    <TextBlock Text="{l:T 'Color intensity of the desktop behind the glass (100 % = unchanged).'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'Color intensity of the desktop behind the glass (100 % = unchanged).'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}">
@@ -1950,7 +1948,7 @@
                                         Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Frosted glass'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Frosted glass'}"/>
-                                    <TextBlock Text="{Binding FrostDescription}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding FrostDescription}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowOpacity, Converter={StaticResource Vis}}">
@@ -1959,7 +1957,7 @@
                                         Value="{Binding PanelOpacity}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Opacity'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Opacity'}"/>
-                                    <TextBlock Text="{Binding OpacityDescription}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{Binding OpacityDescription}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </StackPanel>
@@ -1978,7 +1976,7 @@
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'How many favorites to show'}"/>
                                     <TextBlock Text="{l:T 'In the order of the “Favorites” group. The dock rests while the panel is open or a full-screen program runs.'}"
-                                               Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                               Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </StackPanel>
@@ -2012,7 +2010,7 @@
                                         AutomationProperties.Name="{l:T 'Height'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Height'}"/>
-                                    <TextBlock Text="{l:T 'Share of the screen height (without taskbar). 100 % = full height.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'Share of the screen height (without taskbar). 100 % = full height.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPartialHeight, Converter={StaticResource Vis}}">
@@ -2020,7 +2018,7 @@
                                           DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Position'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Position on the edge'}"/>
-                                    <TextBlock Text="{l:T 'Where the smaller panel appears along the edge.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'Where the smaller panel appears along the edge.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </StackPanel>
@@ -2046,7 +2044,7 @@
                                         AutomationProperties.Name="{l:T 'Hover zone length'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Length'}"/>
-                                    <TextBlock Text="{l:T 'Extent along the edge, centered.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'Extent along the edge, centered.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                             <DockPanel Style="{StaticResource SubSetting}">
@@ -2055,7 +2053,7 @@
                                         AutomationProperties.Name="{l:T 'Hover zone width'}"/>
                                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                                     <TextBlock Text="{l:T 'Width / sensitivity'}"/>
-                                    <TextBlock Text="{l:T 'How far the trigger area reaches from the edge into the screen. Wider = easier to hit, but more noticeable.'}" Style="{StaticResource Caption}" FontSize="12" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'How far the trigger area reaches from the edge into the screen. Wider = easier to hit, but more noticeable.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </DockPanel>
                         </StackPanel>
@@ -2176,9 +2174,9 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <DockPanel Margin="0,2">
-                                            <TextBlock x:Name="Info" DockPanel.Dock="Right" Text="{Binding Text}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="12,0,0,0"
+                                            <TextBlock x:Name="Info" DockPanel.Dock="Right" Text="{Binding Text}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" Margin="12,0,0,0"
                                                        TextTrimming="CharacterEllipsis" MaxWidth="420"/>
-                                            <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
                                         </DockPanel>
                                         <DataTemplate.Triggers>
                                             <DataTrigger Binding="{Binding IsProblem}" Value="True">
@@ -2197,21 +2195,21 @@
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Update'}" Command="{Binding RefreshLogCommand}" FontSize="12" />
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Copy log'}" Command="{Binding CopyLogCommand}" FontSize="12" Margin="8,0,0,0" />
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Open folder'}" Command="{Binding OpenAppLogFolderCommand}" FontSize="12" Margin="8,0,0,0" />
+                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Update'}" Command="{Binding RefreshLogCommand}" FontSize="{StaticResource Font.Body}" />
+                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Copy log'}" Command="{Binding CopyLogCommand}" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
+                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Open folder'}" Command="{Binding OpenAppLogFolderCommand}" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
                                 </StackPanel>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="{l:T 'Log'}" Style="{StaticResource RowTitle}"/>
-                                    <TextBlock Text="{Binding LogFile}" Style="{StaticResource Mono}" FontSize="11" Foreground="{DynamicResource Text.Tertiary}"/>
+                                    <TextBlock Text="{Binding LogFile}" Style="{StaticResource Mono}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}"/>
                                 </StackPanel>
                             </DockPanel>
-                            <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="4" Height="280">
+                            <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Height="280">
                                 <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="10,8"
-                                         FontFamily="{StaticResource MonoFont}" FontSize="11" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                                         FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
                                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
                             </Border>
-                            <TextBlock Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"
+                            <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0"
                                        Text="{l:T 'If there are problems, use “Copy log” and send the text along – it contains the version, folder status and the latest messages, but no passwords.'}"/>
                         </StackPanel>
                     </Border>
@@ -2230,7 +2228,7 @@
                         ToolTip="{l:T 'Restore the state from when settings were opened'}" />
                 <!-- Speicherstand: „Speichert …“ während der kurzen Wartezeit, danach „Alle Änderungen gespeichert“ -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="{l:T 'Changes are applied and saved automatically – there\'s no need for a Save button.'}">
-                    <TextBlock x:Name="SaveIcon" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"
+                    <TextBlock x:Name="SaveIcon" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" VerticalAlignment="Center" Margin="0,0,8,0"
                                Foreground="{DynamicResource InfoBar.Success.Icon}"/>
                     <TextBlock x:Name="SaveHint" Style="{StaticResource Caption}" VerticalAlignment="Center" Text="{l:T 'All changes saved'}"/>
                 </StackPanel>
@@ -2239,18 +2237,18 @@
 
         <!-- Snackbar: kurze Rückmeldung unten, blendet nach einigen Sekunden aus -->
         <Border x:Name="SnackbarHost" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20"
-                Padding="16,10" CornerRadius="8" BorderThickness="1" Visibility="Collapsed" Opacity="0" MaxWidth="640" Panel.ZIndex="100"
+                Padding="16,10" CornerRadius="{DynamicResource Radius.Tile}" BorderThickness="1" Visibility="Collapsed" Opacity="0" MaxWidth="640" Panel.ZIndex="100"
                 Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
             </Border.Effect>
             <Border.RenderTransform><TranslateTransform x:Name="SnackbarShift" Y="12"/></Border.RenderTransform>
             <DockPanel>
-                <TextBlock DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"
+                <TextBlock DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" VerticalAlignment="Center" Margin="0,0,10,0"
                            Foreground="{DynamicResource InfoBar.Success.Icon}"/>
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" MinHeight="28" Margin="12,0,0,0" Click="SnackbarClose_Click"
                            ToolTip="{l:T 'Close'}" AutomationProperties.Name="{l:T 'Close message'}">
-                    <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="10"/>
+                    <TextBlock Text="&#xE711;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}"/>
                 </ui:Button>
                 <TextBlock x:Name="SnackbarText" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
             </DockPanel>

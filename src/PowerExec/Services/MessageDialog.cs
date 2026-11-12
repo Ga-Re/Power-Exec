@@ -5,6 +5,7 @@ using PowerExec.Core.Localization;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 using TextBlock = System.Windows.Controls.TextBlock;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Services;
 
@@ -90,7 +91,7 @@ public static class MessageDialog
         var icon = new TextBlock
         {
             Text = glyph,
-            FontSize = 22,
+            FontSize = Tokens.IconCard,
             Margin = new Thickness(0, 0, 14, 0),
             VerticalAlignment = VerticalAlignment.Top,
             FontFamily = (FontFamily)Application.Current.FindResource("IconFont")
@@ -128,7 +129,6 @@ public static class MessageDialog
             ShowInTaskbar = owner == null;
             ResizeMode = ResizeMode.NoResize;
             Title = "Power-Exec";
-            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/PowerExec;component/Themes/Fluent.xaml") });
             Infrastructure.FluentTheme.Attach(this);
             Content = Host;
             if (owner is { IsVisible: true, ActualWidth: >= 420, ActualHeight: >= 300 } && owner.WindowState != WindowState.Minimized)

@@ -5,13 +5,9 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="{Binding Title, StringFormat=Planen – {0}}" Style="{StaticResource AppWindow}"
         Width="520" SizeToContent="Height" MaxHeight="760" ResizeMode="CanResize" WindowStartupLocation="CenterScreen">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24,20,24,16">
-            <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
             <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,14"
                        Text="{l:T 'Runs automatically as long as Power-Exec is running (so permanently with “Start with Windows”). The result appears in the history (Ctrl+H).'}"/>
 
@@ -24,17 +20,17 @@
                 <ItemsControl ItemsSource="{Binding Existing}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="10,6" Margin="0,0,0,4" CornerRadius="6" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1">
+                            <Border Padding="10,6" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1">
                                 <DockPanel>
                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove schedule'}">
-                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                        <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                     </ui:Button>
                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding EditCommand}" ToolTip="{l:T 'Edit'}">
-                                        <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}" FontSize="11"/>
+                                        <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                     </ui:Button>
                                     <StackPanel>
                                         <TextBlock Text="{Binding Text}" FontWeight="SemiBold"/>
-                                        <TextBlock Text="{Binding NextText}" FontSize="11.5" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <TextBlock Text="{Binding NextText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}"/>
                                     </StackPanel>
                                 </DockPanel>
                             </Border>

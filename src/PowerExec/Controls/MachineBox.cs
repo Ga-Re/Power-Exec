@@ -5,6 +5,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Controls;
 
@@ -57,7 +58,7 @@ public sealed class MachineBox : Control
             if (e.Key is Key.Enter or Key.Tab) { Pick(); e.Handled = true; }
             else if (e.Key == Key.Escape) { _popup!.IsOpen = false; _input.Focus(); e.Handled = true; }
         };
-        var border = new Border { Child = _list, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(4) };
+        var border = new Border { Child = _list, CornerRadius = Tokens.RadiusCard, BorderThickness = new Thickness(1), Padding = new Thickness(4) };
         border.SetResourceReference(Border.BackgroundProperty, "Bg.Menu");
         border.SetResourceReference(Border.BorderBrushProperty, "Border.Control");
         _popup = new Popup { Child = border, PlacementTarget = _input, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };

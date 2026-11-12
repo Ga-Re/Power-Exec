@@ -117,11 +117,11 @@ public partial class PanelWindow
             var title = new StackPanel { Orientation = Orientation.Horizontal };
             title.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeights.SemiBold });
             if (p.IsDefault)
-                title.Children.Add(new TextBlock { Text = L.T("Default"), FontSize = 11, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Text.Tertiary") });
+                title.Children.Add(new TextBlock { Text = L.T("Default"), FontSize = Tokens.FontCaption, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Text.Tertiary") });
             if (p.IsAdmin)
-                title.Children.Add(new TextBlock { Text = "\uE7EF", FontFamily = (FontFamily)FindResource("IconFont"), FontSize = 12, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Status.Warning") });
+                title.Children.Add(new TextBlock { Text = "\uE7EF", FontFamily = (FontFamily)FindResource("IconFont"), FontSize = Tokens.IconM, Margin = new Thickness(8, 1, 0, 0), Foreground = (Brush)FindResource("Status.Warning") });
             header.Children.Add(title);
-            header.Children.Add(new TextBlock { Text = p.Summary, FontSize = 11, Foreground = (Brush)FindResource("Text.Secondary") });
+            header.Children.Add(new TextBlock { Text = p.Summary, FontSize = Tokens.FontCaption, Foreground = (Brush)FindResource("Text.Secondary") });
             var mi = new MenuItem { Header = header, Command = p.Command };
             mi.Height = double.NaN;
             menu.Items.Add(mi);

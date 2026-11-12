@@ -7,12 +7,8 @@
         Title="{l:T 'Choose icon'}" Style="{StaticResource AppWindow}"
         Width="640" Height="600" MinWidth="460" MinHeight="420" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
     <DockPanel Margin="20,16,20,16">
-        <TextBlock x:Name="Heading" DockPanel.Dock="Top" Text="{l:T 'Choose icon'}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <TextBlock x:Name="Heading" DockPanel.Dock="Top" Text="{l:T 'Choose icon'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" Margin="0,0,0,10"/>
         <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Fluent 2'}" GroupName="Src" Tag="fluent" Checked="Source_Checked" x:Name="FluentTab"/>
             <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Heroicons'}" GroupName="Src" Tag="hero" Checked="Source_Checked" x:Name="HeroTab"/>
@@ -26,7 +22,7 @@
         </Grid>
 
         <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-            <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}" Margin="0,0,10,0">
+            <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}" Margin="0,0,10,0">
                 <c:IconPresenter x:Name="Preview" Size="28" Foreground="{DynamicResource Text.Primary}"/>
             </Border>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -36,7 +32,7 @@
             </StackPanel>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="PreviewName" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                <TextBlock x:Name="License" Style="{StaticResource Caption}" FontSize="11" TextWrapping="Wrap"/>
+                <TextBlock x:Name="License" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap"/>
             </StackPanel>
         </DockPanel>
 
@@ -46,8 +42,8 @@
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose image file …'}" HorizontalAlignment="Left" Margin="0,10,0,0" Click="BrowseImage_Click" />
         </StackPanel>
 
-        <TextBlock x:Name="MoreText" DockPanel.Dock="Bottom" Style="{StaticResource Caption}" FontSize="11" Margin="0,6,0,0"/>
-        <Border BorderThickness="1" BorderBrush="{DynamicResource Border.Default}" CornerRadius="6" x:Name="ResultBorder">
+        <TextBlock x:Name="MoreText" DockPanel.Dock="Bottom" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0"/>
+        <Border BorderThickness="1" BorderBrush="{DynamicResource Border.Default}" CornerRadius="{DynamicResource Radius.Card}" x:Name="ResultBorder">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="Results" Margin="6" Focusable="False">
                     <ItemsControl.ItemsPanel>

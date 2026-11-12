@@ -5,25 +5,21 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="{l:T 'Edit workflow'}" Style="{StaticResource AppWindow}"
         Width="560" Height="520" MinWidth="440" MinHeight="360" WindowStartupLocation="CenterScreen">
-    <Window.Resources>
-        <!-- Fluent-Bedienelemente (WPF UI), siehe Themes/Fluent.xaml -->
-        <ResourceDictionary Source="/Themes/Fluent.xaml"/>
-    </Window.Resources>
     <DockPanel Margin="24,20,24,16">
         <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="{l:T 'Workflow'}" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="{l:T 'Workflow'}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
             <TextBlock Text="{l:T 'The steps start one after another; each waits until the previous one finishes. Local scripts run without -NoExit for this.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,12"/>
-            <TextBlock Text="{l:T 'Name'}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+            <TextBlock Text="{l:T 'Name'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
             <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Height="32" Padding="8,0" AutomationProperties.Name="{l:T 'Workflow name'}"/>
             <CheckBox Content="{l:T 'On error, don\'t start the remaining steps'}" IsChecked="{Binding StopOnError}" Margin="0,12,0,12"/>
-            <TextBlock Text="{l:T 'Steps'}" FontSize="12" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+            <TextBlock Text="{l:T 'Steps'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Click="Cancel_Click" />
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Save and run'}" Command="{Binding RunCommand}" Margin="8,0,0,0" />
             <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Save'}" Command="{Binding SaveCommand}" MinWidth="96" Margin="8,0,0,0" IsDefault="True" />
         </StackPanel>
-        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6">
+        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Steps}" Focusable="False" Margin="4">
                     <ItemsControl.ItemTemplate>
@@ -35,23 +31,23 @@
                                                   Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}" ToolTip="{l:T 'Launch profile of this step'}"/>
                                         <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Move up'}"
                                                 Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
-                                            <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="11"/>
+                                            <TextBlock Text="&#xE70E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                         </ui:Button>
                                         <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Move down'}"
                                                 Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
-                                            <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                            <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                         </ui:Button>
                                         <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Remove step'}"
                                                 Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
-                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="11"/>
+                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                         </ui:Button>
                                     </StackPanel>
-                                    <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource Bg.Chip}" Margin="0,0,10,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Number}" FontSize="11" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Border DockPanel.Dock="Left" Width="22" Height="22" CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Bg.Chip}" Margin="0,0,10,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Number}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource Status.Warning}"
+                                        <TextBlock Text="{Binding Status}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Warning}"
                                                    Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                                     </StackPanel>
                                 </DockPanel>

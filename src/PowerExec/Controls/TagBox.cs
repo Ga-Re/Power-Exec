@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
+using PowerExec.Desktop.Infrastructure;
 
 namespace PowerExec.Desktop.Controls;
 
@@ -24,7 +25,7 @@ public sealed class TagBox : Control
         nameof(Suggestions), typeof(IEnumerable), typeof(TagBox), new PropertyMetadata(null));
 
     public static readonly DependencyProperty PlaceholderProperty = DependencyProperty.Register(
-        nameof(Placeholder), typeof(string), typeof(TagBox), new PropertyMetadata("Schlagwort eingeben, Enter", (d, _) => ((TagBox)d).UpdatePlaceholder()));
+        nameof(Placeholder), typeof(string), typeof(TagBox), new PropertyMetadata(L.T("Type a tag, press Enter"), (d, _) => ((TagBox)d).UpdatePlaceholder()));
 
     public string TagsText { get => (string)GetValue(TagsTextProperty); set => SetValue(TagsTextProperty, value); }
     public IEnumerable? Suggestions { get => (IEnumerable?)GetValue(SuggestionsProperty); set => SetValue(SuggestionsProperty, value); }
@@ -77,7 +78,7 @@ public sealed class TagBox : Control
             if (e.Key is Key.Enter or Key.Tab) { PickSuggestion(); e.Handled = true; }
             else if (e.Key == Key.Escape) { _popup!.IsOpen = false; _input.Focus(); e.Handled = true; }
         };
-        var popupBorder = new Border { Child = _list, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(4), MinWidth = 180 };
+        var popupBorder = new Border { Child = _list, CornerRadius = Tokens.RadiusCard, BorderThickness = new Thickness(1), Padding = new Thickness(4), MinWidth = 180 };
         popupBorder.SetResourceReference(Border.BackgroundProperty, "Bg.Menu");
         popupBorder.SetResourceReference(Border.BorderBrushProperty, "Border.Control");
         _popup = new Popup { Child = popupBorder, PlacementTarget = _input, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
@@ -86,7 +87,8 @@ public sealed class TagBox : Control
         var grid = new Grid();
         grid.Children.Add(_panel);
         grid.Children.Add(_popup);
-        _border = new Border { Child = grid, CornerRadius = new CornerRadius(4), BorderThickness = new Thickness(1), MinHeight = 32, Cursor = Cursors.IBeam };
+        _border = new Border { Child = grid, BorderThickness = new Thickness(1), MinHeight = Tokens.HeightControl, Cursor = Cursors.IBeam };
+        _border.SetResourceReference(Border.CornerRadiusProperty, Tokens.Keys.RadiusControl);
         _border.SetResourceReference(Border.BackgroundProperty, "Bg.Input");
         _border.SetResourceReference(Border.BorderBrushProperty, "Border.Control");
         _border.MouseLeftButtonDown += (_, e) => { _input.Focus(); e.Handled = true; };
@@ -237,11 +239,11 @@ public sealed class TagBox : Control
 
     private UIElement Chip(string tag)
     {
-        var text = new TextBlock { Text = "#" + tag, VerticalAlignment = VerticalAlignment.Center, FontSize = 12, Margin = new Thickness(8, 0, 2, 1) };
+        var text = new TextBlock { Text = "#" + tag, VerticalAlignment = VerticalAlignment.Center, FontSize = Tokens.FontBody, Margin = new Thickness(8, 0, 2, 1) };
         text.SetResourceReference(TextBlock.ForegroundProperty, "Text.Primary");
         var remove = new Wpf.Ui.Controls.Button
         {
-            Content = new TextBlock { Text = "", FontSize = 8, FontFamily = TryFindResource("IconFont") as FontFamily ?? new FontFamily("Segoe MDL2 Assets") },
+            Content = new TextBlock { Text = "", FontSize = Tokens.IconXs, FontFamily = TryFindResource("IconFont") as FontFamily ?? new FontFamily("Segoe MDL2 Assets") },
             Width = 20,
             Height = 20,
             MinHeight = 20,
@@ -256,7 +258,7 @@ public sealed class TagBox : Control
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
         panel.Children.Add(text);
         panel.Children.Add(remove);
-        var chip = new Border { Child = panel, CornerRadius = new CornerRadius(12), Margin = new Thickness(2), Height = 24, Cursor = Cursors.Arrow };
+        var chip = new Border { Child = panel, CornerRadius = Tokens.RadiusPill, Margin = new Thickness(2), Height = Tokens.HeightChip, Cursor = Cursors.Arrow };
         chip.SetResourceReference(Border.BackgroundProperty, "Bg.Chip");
         chip.MouseLeftButtonDown += (_, e) => e.Handled = true;
         return chip;
