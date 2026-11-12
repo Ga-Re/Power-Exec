@@ -80,8 +80,8 @@ public static class MessageDialog
     {
         var (glyph, brush) = kind switch
         {
-            MessageKind.Warning => ("", "InfoBar.Warning.Icon"),
-            MessageKind.Error => ("", "InfoBar.Error.Icon"),
+            MessageKind.Warning => ("", "Status.Warning"),
+            MessageKind.Error => ("", "Status.Error"),
             MessageKind.Question => ("", "Accent"),
             _ => ("", "Accent")
         };

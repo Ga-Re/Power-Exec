@@ -131,7 +131,7 @@ public partial class SettingsWindow : Window
     internal void ApplyNowForTest() => ApplyNow(force: true);
     internal SettingsViewModel CurrentViewModel => _vm;
 
-    private void ScheduleApply()
+    internal void ScheduleApply()
     {
         if (_reloading || !IsLoaded) return;
         _applyTimer.Stop();
@@ -147,9 +147,9 @@ public partial class SettingsWindow : Window
         (SaveIcon.Text, var brush, SaveHint.Text) = state switch
         {
             SaveState.Pending => ("\uE895", "Text.Secondary", text ?? L.T("Saving …")),
-            SaveState.Warning => ("\uE7BA", "InfoBar.Warning.Icon", text ?? string.Empty),
-            SaveState.Error => ("\uEA39", "InfoBar.Error.Icon", text ?? string.Empty),
-            _ => ("\uE73E", "InfoBar.Success.Icon", text ?? L.T("All changes saved"))
+            SaveState.Warning => ("\uE7BA", "Status.Warning", text ?? string.Empty),
+            SaveState.Error => ("\uEA39", "Status.Error", text ?? string.Empty),
+            _ => ("\uE73E", "Status.Success", text ?? L.T("All changes saved"))
         };
         SaveIcon.SetResourceReference(TextBlock.ForegroundProperty, brush);
         SaveHint.ToolTip = state == SaveState.Saved ? L.F("Last saved at {0:T}", DateTime.Now) : null;
@@ -158,7 +158,7 @@ public partial class SettingsWindow : Window
     private static string Fingerprint(AppSettings s) => System.Text.Json.JsonSerializer.Serialize(s);
 
     /// <summary>Änderungen jetzt übernehmen (nur wenn sich wirklich etwas geändert hat).</summary>
-    private void ApplyNow(bool force = false)
+    internal void ApplyNow(bool force = false)
     {
         _applyTimer.Stop();
         if (_reloading) return;
@@ -288,183 +288,6 @@ public partial class SettingsWindow : Window
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
-    /// <summary>„Neu ▾“: Menü öffnen (Eintragsarten bzw. Gruppenarten).</summary>
-    private void NewEntryMenu_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is Button { ContextMenu: { } menu } button)
-        {
-            menu.PlacementTarget = button;
-            menu.Placement = PlacementMode.Bottom;
-            menu.DataContext = button.DataContext;
-            menu.IsOpen = true;
-        }
-    }
-
-    private void HotkeyBox_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        e.Handled = true;
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
-        if (key is Key.Back or Key.Delete && Keyboard.Modifiers == ModifierKeys.None)
-        {
-            _vm.Panel.Hotkey = string.Empty;
-            ScheduleApply();
-            return;
-        }
-        var text = HotkeyService.Format(Keyboard.Modifiers, key);
-        if (text != null)
-        {
-            _vm.Panel.Hotkey = text;
-            _vm.HotkeyError = null;
-            ScheduleApply();
-        }
-    }
-
-    // ---- Eigene Einträge aus der Liste ins Panel ziehen ---------------------------
-
+    /// <summary>Format, in dem ein eigener Eintrag aus der Liste der Einstellungen ins Panel gezogen wird.</summary>
     public const string EntryDragFormat = "PowerExec.CustomEntry";
-    private Point _entryDragStart;
-    private CustomEntryRowViewModel? _entryDragRow;
-
-    private void EntryRow_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        _entryDragStart = e.GetPosition(this);
-        // Nicht beim Klick auf Haken, ⚙ oder Papierkorb
-        _entryDragRow = e.OriginalSource is DependencyObject d && IsInside<ButtonBase>(d) ? null
-            : (sender as FrameworkElement)?.DataContext as CustomEntryRowViewModel;
-    }
-
-    // ---- Gruppen per Drag & Drop sortieren (unter Geschwistern) -----------------------
-
-    private const string GroupDragFormat = "PowerExec.SettingsGroup";
-    private Point _groupDragStart;
-    private CategoryItemViewModel? _groupDragCandidate;
-
-    private void GroupCard_PreviewMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        // Nicht aus Knöpfen, Auswahlfeldern, Textfeldern oder Schiebereglern heraus ziehen
-        if (e.OriginalSource is DependencyObject src && FindAncestor<ButtonBase>(src) is null && FindAncestor<ComboBox>(src) is null && FindAncestor<TextBox>(src) is null && FindAncestor<Slider>(src) is null && FindAncestor<Thumb>(src) is null)
-        {
-            _groupDragStart = e.GetPosition(this);
-            _groupDragCandidate = (sender as FrameworkElement)?.DataContext as CategoryItemViewModel;
-        }
-        else _groupDragCandidate = null;
-    }
-
-    private void GroupCard_PreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (e.LeftButton != MouseButtonState.Pressed || _groupDragCandidate == null) return;
-        var d = e.GetPosition(this) - _groupDragStart;
-        if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
-        var item = _groupDragCandidate;
-        _groupDragCandidate = null;
-        var vm = CurrentViewModel;
-        _groupDragStartX = e.GetPosition(this).X;
-        vm.BeginCategoryDrag(item);
-        _dragFeedback = new DragFeedback(this, vm.CategoryDragLabel, Infrastructure.WpfColors.ToBrush(vm.CategoryDragColor), vm.GroupDragGhost, vm.GroupDragExplain);
-        var source = (UIElement)sender;
-        GiveFeedbackEventHandler follow = (_, _) => _dragFeedback?.Move();
-        source.GiveFeedback += follow;
-        try
-        {
-            DragDrop.DoDragDrop(source, new DataObject(GroupDragFormat, item), DragDropEffects.Move);
-        }
-        finally
-        {
-            source.GiveFeedback -= follow;
-            _dragFeedback?.Dispose();
-            _dragFeedback = null;
-            vm.EndCategoryDrag();
-        }
-    }
-
-    private double _groupDragStartX;
-    private DragFeedback? _dragFeedback;
-
-    /// <summary>
-    /// Bereich auf dem Kartenkopf wie im Panel: oberes Viertel = davor, Mitte = hinein, unteres Viertel = dahinter.
-    /// Unterhalb des Kopfs (Details, Untergruppen) null = Ziel beibehalten.
-    /// </summary>
-    private static Core.Config.GroupDropZone? CardZone(Border card, DragEventArgs e)
-    {
-        var head = (card.Child as Panel)?.Children.OfType<FrameworkElement>().FirstOrDefault();
-        if (head == null || head.ActualHeight <= 0) return null;
-        var y = e.GetPosition(head).Y;
-        var h = head.ActualHeight;
-        if (y > h) return null;
-        return y < h * 0.28 ? Core.Config.GroupDropZone.Before
-             : y > h * 0.72 ? Core.Config.GroupDropZone.After
-             : Core.Config.GroupDropZone.Into;
-    }
-
-    /// <summary>Seitliches Ziehen um so viel wechselt die Ebene (wie die Einrückung der Untergruppen).</summary>
-    private const double CategoryIndent = 24;
-
-    private void ApplyCategoryPlan(Core.Config.GroupDropPlan? plan, DragEventArgs e)
-    {
-        e.Effects = plan is { IsValid: true } ? DragDropEffects.Move : DragDropEffects.None;
-        _dragFeedback?.Update(plan);
-        e.Handled = true;
-    }
-
-    private void GroupCard_DragOver(object sender, DragEventArgs e)
-    {
-        if (sender is not Border card || card.DataContext is not CategoryItemViewModel target || !e.Data.GetDataPresent(GroupDragFormat)) return;
-        var offset = (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / CategoryIndent);
-        var zone = CardZone(card, e);
-        ApplyCategoryPlan(zone is { } z ? CurrentViewModel.PreviewCategoryDrop(target, z, offset) : CurrentViewModel.CurrentCategoryPlan, e);
-    }
-
-    private void GroupCard_DragLeave(object sender, DragEventArgs e)
-    {
-        // Lücke bleibt offen, bis ein anderes Ziel gefunden ist (sonst springt die Liste)
-    }
-
-    private void GroupCard_Drop(object sender, DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
-        e.Handled = true;
-        CurrentViewModel.CommitCategoryDrop();
-    }
-
-    /// <summary>Über der offenen Lücke: Ziel beibehalten.</summary>
-    private void CategoryGap_DragOver(object sender, DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
-        ApplyCategoryPlan(CurrentViewModel.CurrentCategoryPlan, e);
-    }
-
-    private void CategoryGap_Drop(object sender, DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
-        e.Handled = true;
-        CurrentViewModel.CommitCategoryDrop();
-    }
-
-    private static T? FindAncestor<T>(DependencyObject? d) where T : DependencyObject
-    {
-        while (d != null && d is not T) d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
-        return d as T;
-    }
-
-    private void EntryRow_PreviewMouseMove(object sender, MouseEventArgs e)
-    {
-        if (e.LeftButton != MouseButtonState.Pressed || _entryDragRow == null) return;
-        var pos = e.GetPosition(this);
-        if (Math.Abs(pos.X - _entryDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
-            Math.Abs(pos.Y - _entryDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
-        var row = _entryDragRow;
-        _entryDragRow = null;
-        ApplyNow(force: true); // Eintrag muss in der App existieren, bevor er im Panel landet
-        var data = new DataObject();
-        data.SetData(EntryDragFormat, row.Entry.Key);
-        data.SetData(DataFormats.UnicodeText, row.Name);
-        DragDrop.DoDragDrop((DependencyObject)sender, data, DragDropEffects.Move | DragDropEffects.Copy);
-    }
-
-    private static bool IsInside<T>(DependencyObject d) where T : DependencyObject
-    {
-        for (var c = d; c != null; c = c is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(c) : LogicalTreeHelper.GetParent(c))
-            if (c is T) return true;
-        return false;
-    }
 }

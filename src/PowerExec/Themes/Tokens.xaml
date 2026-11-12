@@ -34,8 +34,7 @@
     <CornerRadius x:Key="Radius.Control.CornerMark">0,4,0,4</CornerRadius>
     <!-- Schwebende Fenster und Popups: Spotlight, Vorschläge, Dialogkarten -->
     <CornerRadius x:Key="Radius.Window">12</CornerRadius>
-    <!-- Chips, Abzeichen, runde Farbfelder: immer ganz rund, unabhängig von der Höhe -->
-    <CornerRadius x:Key="Radius.Pill">100</CornerRadius>
+    <!-- Chips, Abzeichen und runde Farbfelder sind ganz rund: infra:Pill.IsEnabled="True" (Radius = halbe Höhe) -->
     <!-- Dieselben Werte als Zahl (RadiusX/RadiusY von Rechtecken) -->
     <sys:Double x:Key="Radius.Control.Value">4</sys:Double>
     <sys:Double x:Key="Radius.Card.Value">6</sys:Double>

@@ -438,7 +438,7 @@
         </Grid>
 
         <!-- Hinweise, die das Speichern nicht verhindern -->
-        <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
+        <Border Margin="0,12,0,0" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
                 Visibility="{Binding Warnings, Converter={StaticResource Vis}}">
             <DockPanel>
                 <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" Foreground="{DynamicResource Status.Warning}" Margin="0,1,10,0" VerticalAlignment="Top"/>

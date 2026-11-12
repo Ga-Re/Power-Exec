@@ -65,7 +65,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="Bd" Background="{DynamicResource Bg.Chip}" CornerRadius="{DynamicResource Radius.Pill}" Height="28" Padding="12,0">
+                    <Border x:Name="Bd" Background="{DynamicResource Bg.Chip}" infra:Pill.IsEnabled="True" Height="28" Padding="12,0">
                         <ContentPresenter VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -196,7 +196,7 @@
     <!-- Schlagwort als Chip (Anzeige) -->
     <infra:TagBrushConverter x:Key="TagBrush"/>
     <DataTemplate x:Key="TagChip">
-        <Border x:Name="Chip" Background="{DynamicResource Bg.Chip}" CornerRadius="{DynamicResource Radius.Pill}" Padding="8,1,8,2" Margin="0,2,4,2">
+        <Border x:Name="Chip" Background="{DynamicResource Bg.Chip}" infra:Pill.IsEnabled="True" Padding="8,1,8,2" Margin="0,2,4,2">
             <TextBlock Text="{Binding StringFormat=#{0}}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Primary}"/>
         </Border>
         <DataTemplate.Triggers>

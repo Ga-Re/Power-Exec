@@ -14,8 +14,8 @@
         <Setter Property="Padding" Value="{StaticResource Inset.InfoBar}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground" Value="{DynamicResource Text.Primary}"/>
-        <Setter Property="Background" Value="{DynamicResource InfoBar.Info.Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource InfoBar.Info.Border}"/>
+        <Setter Property="Background" Value="{DynamicResource Status.Info.Bg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Status.Info.Border}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type c:InfoBar}">
@@ -23,28 +23,28 @@
                             CornerRadius="{DynamicResource Radius.Card}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                         <DockPanel>
                             <TextBlock x:Name="Glyph" DockPanel.Dock="Left" Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}"
-                                       Margin="0,1,10,0" VerticalAlignment="Top" Foreground="{DynamicResource InfoBar.Info.Icon}"/>
+                                       Margin="0,1,10,0" VerticalAlignment="Top" Foreground="{DynamicResource Status.Info}"/>
                             <TextBlock Text="{TemplateBinding Message}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}"/>
                         </DockPanel>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Severity" Value="Success">
-                            <Setter Property="Background" Value="{DynamicResource InfoBar.Success.Bg}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource InfoBar.Success.Border}"/>
+                            <Setter Property="Background" Value="{DynamicResource Status.Success.Bg}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Status.Success.Border}"/>
                             <Setter TargetName="Glyph" Property="Text" Value="&#xE73E;"/>
-                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource InfoBar.Success.Icon}"/>
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Status.Success}"/>
                         </Trigger>
                         <Trigger Property="Severity" Value="Warning">
-                            <Setter Property="Background" Value="{DynamicResource InfoBar.Warning.Bg}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource InfoBar.Warning.Border}"/>
+                            <Setter Property="Background" Value="{DynamicResource Status.Warning.Bg}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Status.Warning.Border}"/>
                             <Setter TargetName="Glyph" Property="Text" Value="&#xE7BA;"/>
-                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource InfoBar.Warning.Icon}"/>
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
                         </Trigger>
                         <Trigger Property="Severity" Value="Error">
-                            <Setter Property="Background" Value="{DynamicResource InfoBar.Error.Bg}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource InfoBar.Error.Border}"/>
+                            <Setter Property="Background" Value="{DynamicResource Status.Error.Bg}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Status.Error.Border}"/>
                             <Setter TargetName="Glyph" Property="Text" Value="&#xEA39;"/>
-                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource InfoBar.Error.Icon}"/>
+                            <Setter TargetName="Glyph" Property="Foreground" Value="{DynamicResource Status.Error}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

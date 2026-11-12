@@ -986,18 +986,18 @@
             <!-- Update-Hinweis -->
             <StackPanel Grid.Row="1">
             <!-- Team-Katalog: Änderungen zum Übernehmen -->
-            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}"
-                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding CatalogPending, Converter={StaticResource Vis}}">
+            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
+                    BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Visibility="{Binding CatalogPending, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="{StaticResource Icon.L}" Margin="0,0,10,0"/>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
                             Command="{Binding ApplyCatalogsCommand}" MinHeight="26" Height="26" Padding="8,0" />
-                    <TextBlock Text="{Binding CatalogPending}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Info.Text}"/>
+                    <TextBlock Text="{Binding CatalogPending}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Status.Info.Text}"/>
                 </DockPanel>
             </Border>
             <!-- Neu in dieser Version -->
-            <Border Margin="16,0,16,10" Padding="12,10,6,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}"
-                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">
+            <Border Margin="16,0,16,10" Padding="12,10,6,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
+                    BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Visibility="{Binding WhatsNewVisible, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" VerticalAlignment="Top" Command="{Binding DismissWhatsNewCommand}"
                             ToolTip="{l:T 'Read – don\'t show again'}" AutomationProperties.Name="{l:T 'Close release notes'}">
@@ -1009,7 +1009,7 @@
                         <ItemsControl ItemsSource="{Binding WhatsNewItems}" Focusable="False" Margin="0,4,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding StringFormat=• {0}}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Info.Text}" Margin="0,1,0,0"/>
+                                    <TextBlock Text="{Binding StringFormat=• {0}}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Status.Info.Text}" Margin="0,1,0,0"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -1018,13 +1018,13 @@
                     </StackPanel>
                 </DockPanel>
             </Border>
-            <Border Margin="16,0,16,10" Padding="12,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}"
-                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding UpdateVisible, Converter={StaticResource Vis}}">
+            <Border Margin="16,0,16,10" Padding="12,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
+                    BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Visibility="{Binding UpdateVisible, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="{StaticResource Icon.XL}" VerticalAlignment="Top" Margin="0,1,10,0"/>
                     <StackPanel>
                         <TextBlock Text="{Binding UpdateTitle}" FontWeight="SemiBold"/>
-                        <TextBlock Text="{Binding UpdateSubtitle}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Info.Text}" Margin="0,2,0,0"/>
+                        <TextBlock Text="{Binding UpdateSubtitle}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Info.Text}" Margin="0,2,0,0"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                             <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Update now'}" Command="{Binding UpdateNowCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" />
                             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Later'}" Command="{Binding UpdateLaterCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
@@ -1032,8 +1032,8 @@
                     </StackPanel>
                 </DockPanel>
             </Border>
-            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Info.Bg}"
-                    BorderBrush="{DynamicResource Info.Border}" BorderThickness="1" Visibility="{Binding PendingText, Converter={StaticResource Vis}}">
+            <Border Margin="16,0,16,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
+                    BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Visibility="{Binding PendingText, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="{StaticResource Icon.L}" Margin="0,0,10,0"/>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Check'}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"
@@ -1148,7 +1148,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border x:Name="ChipBd" CornerRadius="{DynamicResource Radius.Pill}" Height="24" Padding="10,0,2,0" Margin="0,0,6,4" Background="{DynamicResource Bg.Chip}"
+                        <Border x:Name="ChipBd" infra:Pill.IsEnabled="True" Height="24" Padding="10,0,2,0" Margin="0,0,6,4" Background="{DynamicResource Bg.Chip}"
                                 BorderThickness="1" BorderBrush="{DynamicResource Accent}" ToolTip="{Binding ToolTip}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock x:Name="ChipText" Text="{Binding Label}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
@@ -1160,8 +1160,8 @@
                         </Border>
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsInvalid}" Value="True">
-                                <Setter TargetName="ChipBd" Property="Background" Value="{DynamicResource Warn.Bg}"/>
-                                <Setter TargetName="ChipBd" Property="BorderBrush" Value="{DynamicResource Warn.Border}"/>
+                                <Setter TargetName="ChipBd" Property="Background" Value="{DynamicResource Status.Warning.Bg}"/>
+                                <Setter TargetName="ChipBd" Property="BorderBrush" Value="{DynamicResource Status.Warning.Border}"/>
                             </DataTrigger>
                         </DataTemplate.Triggers>
                     </DataTemplate>
@@ -1170,7 +1170,7 @@
             </StackPanel>
 
             <!-- Warnung: Ordner nicht erreichbar -->
-            <Border Grid.Row="4" Margin="16,4,16,2" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}"
+            <Border Grid.Row="4" Margin="16,4,16,2" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
                     BorderThickness="1" Visibility="{Binding FolderWarning, Converter={StaticResource Vis}}">
                 <DockPanel>
                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0" Foreground="{DynamicResource Status.Warning}"/>

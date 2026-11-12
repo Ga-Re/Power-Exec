@@ -1,0 +1,194 @@
+<!-- Einstellungen › Inhalte › Eigene Einträge: Liste mit Suche, Filtern und Mehrfachauswahl. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.CustomEntriesPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
+    <StackPanel DataContext="{Binding EntryList}">
+        <TextBlock Text="{l:T 'Custom entries'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'Websites, folders, Remote Desktop, SSH, snippets, Windows tools, commands and individual files. ⚙ edits an entry; select several to move, export or delete them. Entries can be dragged straight into the panel to sort them into a group.'}"
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+        <!-- Werkzeugleiste -->
+        <DockPanel Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <ui:Button Style="{StaticResource Btn.Accent}" Click="NewEntryMenu_Click" Margin="8,0,0,0">
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/>
+                        <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}" Margin="6,0,0,0"/></StackPanel>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="{l:T 'New entry …'}" Command="{Binding NewCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="{l:T 'Website …'}" Command="{Binding NewCommand}" CommandParameter="Url"/>
+                            <MenuItem Header="{l:T 'Folder …'}" Command="{Binding NewCommand}" CommandParameter="Folder"/>
+                            <MenuItem Header="{l:T 'Remote Desktop …'}" Command="{Binding NewCommand}" CommandParameter="Rdp"/>
+                            <MenuItem Header="{l:T 'SSH connection …'}" Command="{Binding NewCommand}" CommandParameter="Ssh"/>
+                            <MenuItem Header="{l:T 'PowerShell snippet …'}" Command="{Binding NewCommand}" CommandParameter="Snippet"/>
+                            <MenuItem Header="{l:T 'Text snippet …'}" Command="{Binding NewCommand}" CommandParameter="TextSnippet"/>
+                            <MenuItem Header="{l:T 'Windows tool …'}" Command="{Binding NewCommand}" CommandParameter="Tool"/>
+                            <MenuItem Header="{l:T 'Command …'}" Command="{Binding NewCommand}" CommandParameter="Command"/>
+                            <MenuItem Header="{l:T 'File …'}" Command="{Binding NewCommand}" CommandParameter="File"/>
+                            <Separator/>
+                            <MenuItem Header="{l:T 'From templates …'}" Command="{Binding CatalogCommand}"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </ui:Button>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Import …'}" Command="{Binding ImportCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+            <Grid>
+                <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search (name, target, code, #tag)'}"/>
+                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            </Grid>
+        </DockPanel>
+        <!-- Typ-Filter: die häufigsten als Chips, der Rest im Dropdown – bleibt auch in schmalen Fenstern einzeilig -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'All'}" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=all}"/>
+            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Websites'}" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Url}"/>
+            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Snippets'}" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=Snippet}"/>
+            <RadioButton Style="{StaticResource Chip}" Content="{l:T 'RDP/SSH'}" GroupName="EntryKind" IsChecked="{Binding KindFilter, Converter={StaticResource Eq}, ConverterParameter=remote}"/>
+            <ComboBox Width="170" Margin="4,0,0,0" VerticalAlignment="Center" ItemsSource="{Binding MoreKinds}" SelectedValue="{Binding MoreKind}"
+                      DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'More types'}"/>
+        </StackPanel>
+        <DockPanel Margin="0,0,0,8">
+            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding CheckCommand}"
+                    ToolTip="{l:T 'Check websites, folders, files, RDP/SSH ports and programs (selection or all visible)'}">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
+            </ui:Button>
+            <StackPanel Orientation="Horizontal">
+                <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key">
+                    <ComboBox.ItemContainerStyle>
+                        <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+                            <Style.Triggers>
+                                <!-- Trennlinie zwischen festen Filtern und Gruppen -->
+                                <DataTrigger Binding="{Binding Key}" Value="—sep">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Focusable" Value="False"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ComboBoxItem">
+                                                <Separator Margin="8,4" Background="{DynamicResource Border.Default}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ComboBox.ItemContainerStyle>
+                </ComboBox>
+                <ComboBox Width="170" Margin="8,0,0,0" ItemsSource="{Binding TagFilters}" SelectedValue="{Binding TagFilter}" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                <TextBlock Text="{Binding SummaryText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Mehrfachauswahl -->
+        <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <ComboBox Width="190" IsEditable="True" ItemsSource="{Binding MoveTargets}" Text="{Binding MoveTarget, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,6,2"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Move to group'}" Command="{Binding MoveSelectedCommand}" Margin="0,2,10,2" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Export …'}" Command="{Binding ExportCommand}" Margin="0,2,6,2" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,6,2" />
+                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Clear selection'}" Command="{Binding ClearSelectionCommand}" Margin="0,2,0,2" />
+            </WrapPanel>
+        </Border>
+
+        <TextBlock Text="{l:T 'No custom entries yet. “New” (also from templates) – or in the panel via drag &amp; drop, Ctrl+V and right-click.'}" Style="{StaticResource Caption}" Margin="0,4,0,0"
+                   Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}"/>
+        <TextBlock Text="{l:T 'No results for search and filter.'}" Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="{Binding NoMatches, Converter={StaticResource Vis}}"/>
+
+        <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}, ConverterParameter=invert}">
+            <StackPanel>
+                <!-- Kopfzeile -->
+                <Grid Margin="10,8,10,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="40"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="76"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="{StaticResource Font.Caption}" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
+                            Grid.ColumnSpan="2" HorizontalAlignment="Left" ToolTip="{l:T 'Select all visible'}" />
+                    <TextBlock Grid.Column="2" Text="{l:T 'Entry'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="3" Text="{l:T 'Group / tags'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="EntryRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent"
+                                    PreviewMouseLeftButtonDown="EntryRow_PreviewMouseLeftButtonDown" PreviewMouseMove="EntryRow_PreviewMouseMove"
+                                    ToolTip="{l:T 'Drag into the panel to sort it in (to the screen edge, the panel slides out)'}" ToolTipService.InitialShowDelay="1500">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28"/>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="28"/>
+                                        <ColumnDefinition Width="76"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                    <Grid Grid.Column="1" Width="32" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                        <Border Width="32" Height="20" CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Badge.Other.Bg}"
+                                                Visibility="{Binding ShowBadge, Converter={StaticResource Vis}}">
+                                            <TextBlock Text="{Binding Badge}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource Badge.Other.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <Image Source="{Binding Image, Converter={StaticResource IconImage}}" Width="20" Height="20" HorizontalAlignment="Left" Margin="2,0,0,0"
+                                               Visibility="{Binding HasImage, Converter={StaticResource Vis}}"/>
+                                        <c:IconPresenter Icon="{Binding Icon}" Size="20" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Primary}"/>
+                                    </Grid>
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="320"/>
+                                            <TextBlock Text="{Binding KindText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
+                                            <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="6,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                                       ToolTip="{l:T 'Starts with one click'}" Visibility="{Binding SingleClick, Converter={StaticResource Vis}}"/>
+                                            <TextBlock Text="{}{{…}}" FontSize="{StaticResource Font.Caption}" Margin="6,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="{l:T 'With placeholders'}"
+                                                       Visibility="{Binding HasPlaceholders, Converter={StaticResource Vis}}"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Detail}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding GroupText}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
+                                        <ItemsControl ItemsSource="{Binding Tags}" ItemTemplate="{StaticResource TagChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
+                                    </StackPanel>
+                                    <Ellipse x:Name="Dot" Grid.Column="4" Width="9" Height="9" Fill="{DynamicResource Text.Disabled}" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                             ToolTip="{Binding HealthText}"/>
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding EditCommand}" ToolTip="{l:T 'Edit'}">
+                                            <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
+                                        </ui:Button>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove'}">
+                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="EntryRow" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="EntryRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="EntryRow" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding HealthOk}" Value="True">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Status.Success}"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding HealthOk}" Value="False">
+                                    <Setter TargetName="Dot" Property="Fill" Value="{DynamicResource Status.Error}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+    </Grid>
+</UserControl>

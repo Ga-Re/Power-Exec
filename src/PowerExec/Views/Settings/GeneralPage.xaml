@@ -1,0 +1,120 @@
+<!-- Einstellungen › Allgemein. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.GeneralPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
+        <TextBlock Text="{l:T 'General'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'Team catalogs'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE716;" Header="{l:T 'Shared entries from the team'}" IsExpanded="True"
+                            Description="{l:T 'Put an exported group (right-click › Export) on a share and subscribe to it here. Power-Exec checks for changes at startup and every 30 minutes. Catalog entries are read-only; favorites and custom entries in the group stay local.'}">
+            <c:SettingsExpander.HeaderContent>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Check now'}" Command="{Binding CheckCatalogsCommand}" Foreground="{DynamicResource Accent}" Margin="0,0,8,0"
+                                Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}}" />
+                        <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Subscribe …'}" Command="{Binding SubscribeCatalogCommand}" />
+                    </StackPanel>
+            </c:SettingsExpander.HeaderContent>
+            <StackPanel>
+                <TextBlock Text="{l:T 'No team catalog subscribed yet.'}" Style="{StaticResource Caption}" Margin="0,10,0,4"
+                           Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                <c:InfoBar Severity="Error" Message="{Binding CatalogError}" Margin="0,8,0,0"/>
+                <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" Command="{Binding ApplyCommand}" Foreground="{DynamicResource Accent}"
+                                                Visibility="{Binding HasPending, Converter={StaticResource Vis}}" />
+                                        <CheckBox Content="{l:T 'apply automatically'}" IsChecked="{Binding AutoApply}" VerticalAlignment="Center" Margin="8,0" FontSize="{StaticResource Font.Body}"/>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Unsubscribe (entries are removed)'}">
+                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                        </ui:Button>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold">
+                                            <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="{StaticResource Font.Caption}"/>
+                                            <Run Text="{Binding Name, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Path}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding HasProblem}" Value="True">
+                                    <Setter TargetName="CatStatus" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </c:SettingsExpander>
+        <TextBlock Text="{l:T 'Version and updates'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE895;" Header="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Description="{Binding UpdateStatus}">
+            <c:SettingsExpander.HeaderContent>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Introduction'}" Command="{Binding ShowWelcomeCommand}" Foreground="{DynamicResource Accent}"
+                            ToolTip="{l:T 'Run the setup assistant again (folders, edge, hotkey)'}" Margin="0,0,8,0" />
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Release notes'}" Command="{Binding CurrentReleaseNotesCommand}" Foreground="{DynamicResource Accent}"
+                            ToolTip="{l:T 'What\'s new in this version? (GitHub)'}" Margin="0,0,8,0" />
+                    <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Check for updates'}" Command="{Binding CheckUpdatesCommand}" />
+                </StackPanel>
+            </c:SettingsExpander.HeaderContent>
+            <StackPanel>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding CheckUpdatesOnStart}" VerticalAlignment="Center" />
+                    <TextBlock Text="{l:T 'Check for updates at startup'}" VerticalAlignment="Center"/>
+                </DockPanel>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding IncludePrereleases}" VerticalAlignment="Center" />
+                    <StackPanel VerticalAlignment="Center"><TextBlock Text="{l:T 'Include pre-releases'}"/>
+                        <TextBlock Text="{l:T 'New features earlier – may still contain bugs.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/></StackPanel>
+                </DockPanel>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{Binding RepoText}" Command="{Binding OpenRepoCommand}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
+                    <TextBlock Text="{l:T 'Source (GitHub Releases, SHA-256 verified)'}" VerticalAlignment="Center"/>
+                </DockPanel>
+            </StackPanel>
+        </c:SettingsExpander>
+
+        <TextBlock Text="{l:T 'Language'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE775;" Header="{l:T 'Display language'}" Description="{l:T 'Like Windows: the Windows language if Power-Exec has a translation for it, otherwise English.'}">
+            <ComboBox Width="190" ItemsSource="{Binding LanguageList}" SelectedValue="{Binding Language}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                      AutomationProperties.Name="{l:T 'Display language'}"/>
+        </c:SettingsCard>
+        <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Margin="0,4,0,0"
+                Visibility="{Binding LanguageChangePending, Converter={StaticResource Vis}}">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Restart now'}" Command="{Binding RestartCommand}" Margin="12,0,0,0"/>
+                <TextBlock Text="{l:T 'The new language applies after Power-Exec restarts.'}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <TextBlock Text="{l:T 'Start'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE7E8;" Header="{l:T 'Start with Windows'}" Description="{l:T 'Power-Exec starts in the background after sign-in.'}">
+            <ui:ToggleSwitch IsChecked="{Binding StartWithWindows}" />
+        </c:SettingsCard>
+
+        <TextBlock Text="{l:T 'Backup and restore'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE8F1;" Header="{l:T 'Back up settings'}"
+                            Description="{l:T 'Groups, smart groups, launch profiles, favorites, workspaces, custom entries and computer list as a file – for backup or another PC. Passwords are never included.'}">
+            <c:SettingsExpander.HeaderContent>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Export …'}" Command="{Binding ExportCommand}" />
+                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Import …'}" Command="{Binding ImportCommand}" Margin="8,0,0,0" />
+                </StackPanel>
+            </c:SettingsExpander.HeaderContent>
+            <DockPanel Style="{StaticResource SubSetting}">
+                <TextBlock Text="{l:T 'Settings file'}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <TextBlock Text="{Binding SettingsFile}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+        </c:SettingsExpander>
+    </StackPanel>
+</UserControl>

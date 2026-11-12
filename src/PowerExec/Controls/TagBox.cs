@@ -258,7 +258,7 @@ public sealed class TagBox : Control
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
         panel.Children.Add(text);
         panel.Children.Add(remove);
-        var chip = new Border { Child = panel, CornerRadius = Tokens.RadiusPill, Margin = new Thickness(2), Height = Tokens.HeightChip, Cursor = Cursors.Arrow };
+        var chip = new Border { Child = panel, CornerRadius = new CornerRadius(Tokens.HeightChip / 2), Margin = new Thickness(2), Height = Tokens.HeightChip, Cursor = Cursors.Arrow };
         chip.SetResourceReference(Border.BackgroundProperty, "Bg.Chip");
         chip.MouseLeftButtonDown += (_, e) => e.Handled = true;
         return chip;

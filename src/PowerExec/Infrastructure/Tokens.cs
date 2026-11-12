@@ -18,7 +18,6 @@ public static class Tokens
         public const string RadiusCard = "Radius.Card";
         public const string RadiusTile = "Radius.Tile";
         public const string RadiusWindow = "Radius.Window";
-        public const string RadiusPill = "Radius.Pill";
         public const string InsetCard = "Inset.Card";
         public const string InsetInfoBar = "Inset.InfoBar";
     }
@@ -28,7 +27,6 @@ public static class Tokens
     public static CornerRadius RadiusCard => Get(Keys.RadiusCard, new CornerRadius(6));
     public static CornerRadius RadiusTile => Get(Keys.RadiusTile, new CornerRadius(8));
     public static CornerRadius RadiusWindow => Get(Keys.RadiusWindow, new CornerRadius(12));
-    public static CornerRadius RadiusPill => Get(Keys.RadiusPill, new CornerRadius(100));
 
     public static double FontMicro => Get("Font.Micro", 10.0);
     public static double FontCaption => Get("Font.Caption", 11.0);

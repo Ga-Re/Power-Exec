@@ -95,7 +95,7 @@
                 <ProgressBar Height="4" Margin="0,12,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
                              Foreground="{DynamicResource Accent}" Background="{DynamicResource Bg.Chip}" BorderThickness="0"/>
                 <TextBlock Text="{Binding StatusLine}" Style="{StaticResource Caption}" Margin="0,6,0,0"/>
-                <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Warn.Bg}" BorderBrush="{DynamicResource Warn.Border}" BorderThickness="1"
+                <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
                         Visibility="{Binding RunnerError, Converter={StaticResource Vis}}">
                     <TextBlock Text="{Binding RunnerError}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                 </Border>
@@ -132,7 +132,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="92" Height="40" Margin="0,0,6,6" Padding="0" Cursor="Hand" ToolTip="{Binding TileToolTip}"
+                                <Button Width="104" Height="40" Margin="0,0,6,6" Padding="0" Cursor="Hand" ToolTip="{Binding TileToolTip}"
                                         Command="{Binding DataContext.SelectTileCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
                                         AutomationProperties.Name="{Binding TileToolTip}">
                                     <Button.Template>
@@ -147,16 +147,16 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding Status}" Value="Success">
-                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Success}"/>
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Status.Success.Fill}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Error}"/>
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Status.Error.Fill}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Status}" Value="Unreachable">
-                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Unreachable}"/>
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Status.Warning.Fill}"/>
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Status}" Value="Running">
-                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Tile.Running}"/>
+                                                    <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Status.Info.Fill}"/>
                                                 </DataTrigger>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource Border.Control}"/>

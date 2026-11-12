@@ -14,6 +14,8 @@
                 <ResourceDictionary Source="Themes/Styles.xaml"/>
                 <!-- Fluent-Bedienelemente (WPF UI) samt eigener Anpassungen – einmal für alle Fenster -->
                 <ResourceDictionary Source="Themes/Fluent.xaml"/>
+                <!-- Gemeinsame Stile der Einstellungsseiten -->
+                <ResourceDictionary Source="Themes/Settings.xaml"/>
                 <!-- Vorlagen der eigenen Controls -->
                 <ResourceDictionary Source="Themes/Controls.xaml"/>
             </ResourceDictionary.MergedDictionaries>

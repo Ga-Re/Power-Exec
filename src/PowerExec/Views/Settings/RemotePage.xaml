@@ -1,0 +1,50 @@
+<!-- Einstellungen › Ausführung › Remote. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.RemotePage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=remote}">
+        <TextBlock Text="{l:T 'Remote'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'Run on other computers via WinRM, one at a time or in parallel on many.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+        <TextBlock Text="{l:T 'Connection'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE968;" Header="{l:T 'PowerShell for remote'}" Description="{l:T 'Most servers only have 5.1. PowerShell 7 only if the PowerShell.7 endpoint exists.'}">
+            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding RemoteEngines}" SelectedValue="{Binding RemoteEngine}"/>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE72E;" Header="{l:T 'Remote via HTTPS (port 5986)'}" Description="{l:T 'For computers outside the domain or when WinRM is only reachable via HTTPS. An HTTPS listener must be set up on the target.'}">
+            <ui:ToggleSwitch IsChecked="{Binding RemoteUseSsl}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE916;" Header="{l:T 'Connection timeout per computer'}" Description="{l:T 'After that, the computer counts as unreachable.'}">
+            <StackPanel Orientation="Horizontal">
+                <Slider Width="180" Minimum="10" Maximum="300" TickFrequency="10" Value="{Binding RemoteTimeoutSeconds}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding RemoteTimeoutSeconds, StringFormat={}{0} s}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+            </StackPanel>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE902;" Header="{l:T 'Concurrent connections'}" Description="{l:T 'For bulk execution.'}">
+            <StackPanel Orientation="Horizontal">
+                <Slider Width="180" Minimum="1" Maximum="64" TickFrequency="1" Value="{Binding ThrottleLimit}" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding ThrottleLimit}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
+            </StackPanel>
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Results'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xEA8F;" Header="{l:T 'Notify when a remote run finishes'}" Description="{l:T 'Windows notification with a summary; a click opens the result list.'}">
+            <ui:ToggleSwitch IsChecked="{Binding NotifyOnFinish}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE8B7;" Header="{l:T 'Log folder'}" Description="{Binding LogFolderDisplay}">
+            <StackPanel Orientation="Horizontal">
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Change …'}" Command="{Binding BrowseLogFolderCommand}" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Open'}" Command="{Binding OpenLogFolderCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Computers and sign-in'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE7F4;" Header="{l:T 'Recently used computers'}" Description="{Binding MachinesText}">
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Clear list'}" Command="{Binding ClearMachinesCommand}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE8D7;" Header="{l:T 'Credentials'}" Description="{l:T 'Asked for at every launch and never saved.'}">
+            <TextBlock Text="{l:T 'Always ask'}" Foreground="{DynamicResource Text.Secondary}"/>
+        </c:SettingsCard>
+    </StackPanel>
+</UserControl>
