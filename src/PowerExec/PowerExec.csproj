@@ -10,7 +10,9 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <RootNamespace>PowerExec</RootNamespace>
+    <RootNamespace>PowerExec.Desktop</RootNamespace>
+    <!-- LibraryImport erzeugt die Übergänge zu Win32 zur Übersetzungszeit (Interop/NativeMethods.cs) -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>PowerExec</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\PowerExec.ico</ApplicationIcon>
@@ -18,6 +20,17 @@
     <!-- WFAC010/WFO0003 (neuer Name ab .NET 9) betreffen WinForms-Apps; für WPF ist die DPI-Angabe im Manifest richtig. -->
     <NoWarn>$(NoWarn);WFAC010;WFO0003</NoWarn>
   </PropertyGroup>
+  <!--
+    Oberflächen-Selbsttest (SelfTest/, Aufruf mit dem Schalter „selftest“): in Debug-Builds und in der CI (Eigenschaft SelfTest=true)
+    enthalten, nicht in der ausgelieferten EXE.
+  -->
+  <PropertyGroup>
+    <SelfTest Condition="'$(SelfTest)' == '' and '$(Configuration)' == 'Debug'">true</SelfTest>
+    <DefineConstants Condition="'$(SelfTest)' == 'true'">$(DefineConstants);SELFTEST</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SelfTest)' != 'true'">
+    <Compile Remove="SelfTest\**" />
+  </ItemGroup>
   <!-- Einzeldatei-Veröffentlichung (siehe .github/workflows/release.yml) -->
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
@@ -27,6 +40,8 @@
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
     <Using Include="System.IO" />
+    <!-- App-Kern (AppController, AppPanel) -->
+    <Using Include="PowerExec.UI" />
     <!-- Seit .NET 9 gibt es System.Windows.ThemeMode (Fluent-Theme von WPF); gemeint ist immer die eigene Einstellung -->
     <Using Include="PowerExec.Core.Config.ThemeMode" Alias="ThemeMode" />
   </ItemGroup>

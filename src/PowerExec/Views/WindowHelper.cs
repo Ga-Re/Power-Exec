@@ -1,20 +1,15 @@
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 internal static class WindowHelper
 {
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-
-    private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-
     /// <summary>Aktuelle Einstellungen (Größe); setzt der AppController beim Start.</summary>
     public static Func<AppSettings>? Settings { get; set; }
 
@@ -26,14 +21,7 @@ internal static class WindowHelper
         if (Application.Current == null) return;
         foreach (Window w in Application.Current.Windows)
         {
-            var hwnd = new WindowInteropHelper(w).Handle;
-            if (hwnd == IntPtr.Zero) continue;
-            try
-            {
-                int dark = ThemeService.IsDark ? 1 : 0;
-                DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
-            }
-            catch { }
+            NativeMethods.SetDarkTitleBar(new WindowInteropHelper(w).Handle, ThemeService.IsDark);
         }
     }
 
@@ -64,16 +52,7 @@ internal static class WindowHelper
     {
         TrackActivation(w);
         ApplyScale(w);
-        void Apply()
-        {
-            try
-            {
-                var hwnd = new WindowInteropHelper(w).Handle;
-                int dark = ThemeService.IsDark ? 1 : 0;
-                DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, sizeof(int));
-            }
-            catch { }
-        }
+        void Apply() => NativeMethods.SetDarkTitleBar(new WindowInteropHelper(w).Handle, ThemeService.IsDark);
 
         if (new WindowInteropHelper(w).Handle != IntPtr.Zero) Apply();
         else w.SourceInitialized += (_, _) => Apply();

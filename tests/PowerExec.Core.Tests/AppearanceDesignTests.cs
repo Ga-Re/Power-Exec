@@ -1,4 +1,7 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Models;
+using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Tests;
 
@@ -89,5 +92,63 @@ public class AppearanceDesignTests
         var c = new PanelConfig { GroupStyle = GroupCardStyle.Accent, AccentColor = "#88C0D0" }.Clone();
         Assert.Equal(GroupCardStyle.Accent, c.GroupStyle);
         Assert.Equal("#88C0D0", c.AccentColor);
+    }
+
+    [Fact]
+    public void AccentIsReadableInBothThemes()
+    {
+        var darkBlue = new Rgb(0x00, 0x33, 0x99); // zu dunkel für das dunkle Design
+        var dark = Appearance.Derive(darkBlue, dark: true);
+        Assert.True(PanelColors.Contrast(dark.Accent, new Rgb(0x20, 0x20, 0x20)) >= 3.0);
+        var yellow = new Rgb(0xFF, 0xD7, 0x00); // zu hell für das helle Design
+        var light = Appearance.Derive(yellow, dark: false);
+        Assert.True(PanelColors.Contrast(light.Accent, new Rgb(0xF3, 0xF3, 0xF3)) >= 3.0);
+        Assert.True(PanelColors.Contrast(light.OnAccent, light.Accent) >= 3.0); // Schrift auf Akzent-Knöpfen
+        Assert.Equal(new Rgb(0x10, 0x20, 0x30), Appearance.FromAbgr(0xFF302010));
+    }
+
+    [Fact]
+    public void DesignPresetAppliesAndIsRecognized()
+    {
+        var s = new AppSettings();
+        s.Panels.Add(new PanelConfig());
+        var glass = Appearance.Presets.Single(p => p.Key == "glass");
+        Appearance.Apply(s, glass);
+        Assert.Equal(glass.Frost, s.Panels[0].Frost);
+        Assert.Equal(PanelBackdrop.Glass, s.Panels[0].Backdrop); // echtes Glas, nicht Klarglas
+        Assert.True(s.UseWindowsAccent);
+        Assert.Equal("glass", Appearance.Current(s)?.Key);
+        s.Panels[0].PanelOpacity = 60;
+        Assert.Null(Appearance.Current(s));
+    }
+
+    [Fact]
+    public void CornerStylesMapToTheFourTokenLevels()
+    {
+        Assert.Equal(new CornerRadii(4, 6, 8, 12), CornerRadii.Of(CornerStyle.Standard));
+        Assert.Equal(new CornerRadii(8, 12, 12, 16), CornerRadii.Of(CornerStyle.Rounded));
+        Assert.Equal(new CornerRadii(0, 0, 0, 0), CornerRadii.Of(CornerStyle.Square));
+    }
+
+    [Fact]
+    public void DesignCarriesCornersOnlyWhenItNamesThem()
+    {
+        var s = new AppSettings { Corners = CornerStyle.Square };
+        s.Panels.Add(new PanelConfig());
+        // Design ohne Angabe: die Ecken bleiben, wie der Benutzer sie eingestellt hat
+        Appearance.Apply(s, Appearance.Presets[0]);
+        Assert.Equal(CornerStyle.Square, s.Corners);
+        Appearance.Apply(s, Appearance.Presets[0] with { Corners = CornerStyle.Rounded });
+        Assert.Equal(CornerStyle.Rounded, s.Corners);
+    }
+
+    [Fact]
+    public void MarketplaceDesignMayNameCorners()
+    {
+        const string json = """{ "Name": "Weich", "Theme": "Dark", "PanelColor": "#202020", "Opacity": 100, "Frost": 0, "WindowsAccent": true, "Corners": "Rounded" }""";
+        var design = System.Text.Json.JsonSerializer.Deserialize<DesignPreset>(json, Marketplace.Json)!;
+        Assert.Equal(CornerStyle.Rounded, design.Corners);
+        const string without = """{ "Name": "Alt", "Theme": "Dark", "PanelColor": "", "Opacity": 100, "Frost": 0, "WindowsAccent": true }""";
+        Assert.Null(System.Text.Json.JsonSerializer.Deserialize<DesignPreset>(without, Marketplace.Json)!.Corners);
     }
 }

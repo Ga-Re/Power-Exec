@@ -1,5 +1,10 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Scanning;
+using PowerExec.Core.Layout;
+using PowerExec.Core.Metadata;
+using PowerExec.Core.Models;
+using PowerExec.Core.Search;
+using System.Drawing;
 
 namespace PowerExec.Core.Tests;
 
@@ -98,6 +103,33 @@ public class ScanningTests
             Assert.Equal(300, loaded.HoverDelayMs);
             Assert.Equal(@"C:\Scripts", loaded.Folders[0].Path);
             Assert.Contains("\"Left\"", File.ReadAllText(file));
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Fact]
+    public void ScanCacheRoundTrip()
+    {
+        var file = Path.Combine(Path.GetTempPath(), "pe-cache-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            var item = new LaunchItem { FullPath = @"\\srv\s\a.ps1", RootFolder = @"\\srv\s", Type = ItemType.PowerShell, Synopsis = "Hallo", ZoneId = 3 };
+            item.Parameters = [new ScriptParameter { Name = "Name", TypeName = "string", IsMandatory = true }];
+            item.Shortcut = new ShortcutTarget("t.exe", "-x", "C:\\");
+            var cache = new ScanCache(file);
+            cache.Save([new CachedFolder { Path = @"\\srv\s", ScannedUtc = DateTime.UtcNow, Items = [item],
+                Excluded = [new ExcludedFile(@"\\srv\s\Archiv\b.ps1", @"Archiv\b.ps1", @"*\Archiv\*")] }]);
+            var loaded = cache.Load();
+            var f = loaded[@"\\SRV\s"];
+            var i = Assert.Single(f.Items);
+            Assert.Equal("Hallo", i.Synopsis);
+            Assert.True(i.IsBlocked);
+            Assert.True(i.Parameters[0].IsMandatory);
+            Assert.Equal("-x", i.Shortcut!.Arguments);
+            Assert.Equal(@"*\Archiv\*", f.Excluded[0].Pattern);
         }
         finally
         {

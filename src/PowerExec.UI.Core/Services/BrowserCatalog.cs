@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.Win32;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Installierte Browser (App Paths bzw. bekannte Ordner) und ihre Profile (Local State / profiles.ini).</summary>
 public static class BrowserCatalog
@@ -39,15 +39,15 @@ public static class BrowserCatalog
     {
         if (b == BrowserChoice.Default) return true;
         if (OperatingSystem.IsWindows())
-        try
-        {
-            foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+            try
             {
-                using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" + Exe(b));
-                if (key?.GetValue(null) is string path && File.Exists(path.Trim('"'))) return true;
+                foreach (var hive in new[] { Registry.CurrentUser, Registry.LocalMachine })
+                {
+                    using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" + Exe(b));
+                    if (key?.GetValue(null) is string path && File.Exists(path.Trim('"'))) return true;
+                }
             }
-        }
-        catch { }
+            catch { /* Registry nicht lesbar: weiter mit den üblichen Installationsordnern */ }
         var pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
         var pf86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -97,7 +97,7 @@ public static class BrowserCatalog
             }
             catch (Exception ex)
             {
-                AppLog.Info(L.F("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
+                AppLog.Info(string.Format("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
             }
             _profiles[b] = result;
             return result;

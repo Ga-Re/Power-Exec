@@ -7,7 +7,7 @@ namespace PowerExec.Core.Config;
 /// <summary>Eigene Einträge (und ihre Gruppen) als Datei weitergeben – ohne Kennwörter, ohne lokale Einstellungen.</summary>
 public static class EntryShare
 {
-    public const string FileFilter = "Power-Exec-Einträge (*.pxentries.json)|*.pxentries.json|JSON (*.json)|*.json";
+    public static string FileFilter => L.T("Power-Exec entries (*.pxentries.json)|*.pxentries.json|JSON (*.json)|*.json");
 
     private static readonly JsonSerializerOptions Options = new()
     {

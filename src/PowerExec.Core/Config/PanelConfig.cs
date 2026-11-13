@@ -27,6 +27,12 @@ public sealed class PanelConfig
     public HotZoneMode HotZone { get; set; } = HotZoneMode.Middle;
     public int HotZoneThickness { get; set; } = 4;
     public int HotZoneLength { get; set; } = 200;
+
+    /// <summary>
+    /// Hover-Zone erst zeigen, wenn sich der Mauszeiger nähert (sonst unsichtbar, aber weiter auslösend). Bei neuen
+    /// Installationen an; vorhandene Einstellungen behalten den dauerhaft sichtbaren Streifen.
+    /// </summary>
+    public bool HotZoneAutoHide { get; set; }
     public int PanelWidth { get; set; } = 400;
     public int PanelHeightPercent { get; set; } = 100;
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
@@ -107,13 +113,42 @@ public sealed class PanelConfig
 
     public PanelConfig Clone() => new()
     {
-        Id = Id, Name = Name, Edge = Edge, MonitorMode = MonitorMode, MonitorIndex = MonitorIndex, HotZone = HotZone,
-        HotZoneThickness = HotZoneThickness, HotZoneLength = HotZoneLength, PanelWidth = PanelWidth,
-        PanelHeightPercent = PanelHeightPercent, PanelAlignment = PanelAlignment, PanelColor = PanelColor, AccentColor = AccentColor, GroupStyle = GroupStyle,
-        PanelOpacity = PanelOpacity, Acrylic = Acrylic, Backdrop = Backdrop, Frost = Frost, GlassBlur = GlassBlur, GlassSaturation = GlassSaturation, ShowDock = ShowDock, HotkeyOpensSpotlight = HotkeyOpensSpotlight,
-        ShowJumpRail = ShowJumpRail, ShowScrollBar = ShowScrollBar, DockCount = DockCount, Hotkey = Hotkey, DefaultFilter = DefaultFilter, Pinned = Pinned, Compact = Compact,
-        Layout = Layout, ShowRecent = ShowRecent, ShowFavorites = ShowFavorites, ItemSize = ItemSize,
-        Folders = new List<string>(Folders), Categories = new List<string>(Categories)
+        Id = Id,
+        Name = Name,
+        Edge = Edge,
+        MonitorMode = MonitorMode,
+        MonitorIndex = MonitorIndex,
+        HotZone = HotZone,
+        HotZoneThickness = HotZoneThickness,
+        HotZoneLength = HotZoneLength,
+        HotZoneAutoHide = HotZoneAutoHide,
+        PanelWidth = PanelWidth,
+        PanelHeightPercent = PanelHeightPercent,
+        PanelAlignment = PanelAlignment,
+        PanelColor = PanelColor,
+        AccentColor = AccentColor,
+        GroupStyle = GroupStyle,
+        PanelOpacity = PanelOpacity,
+        Acrylic = Acrylic,
+        Backdrop = Backdrop,
+        Frost = Frost,
+        GlassBlur = GlassBlur,
+        GlassSaturation = GlassSaturation,
+        ShowDock = ShowDock,
+        HotkeyOpensSpotlight = HotkeyOpensSpotlight,
+        ShowJumpRail = ShowJumpRail,
+        ShowScrollBar = ShowScrollBar,
+        DockCount = DockCount,
+        Hotkey = Hotkey,
+        DefaultFilter = DefaultFilter,
+        Pinned = Pinned,
+        Compact = Compact,
+        Layout = Layout,
+        ShowRecent = ShowRecent,
+        ShowFavorites = ShowFavorites,
+        ItemSize = ItemSize,
+        Folders = new List<string>(Folders),
+        Categories = new List<string>(Categories)
     };
 
     /// <summary>Übernimmt die Panel-Einstellungen aus Versionen vor 0.7 (ein Panel, globale Felder).</summary>
@@ -125,16 +160,26 @@ public sealed class PanelConfig
         current.Id == updated.Id && current.EffectiveBackdropSetting == updated.EffectiveBackdropSetting;
 
     /// <summary>Alles, was Hover-Zonen und Mini-Docks betrifft (ändert es sich, werden sie neu angelegt).</summary>
-    public string TriggerKey =>
-        $"{Edge}|{MonitorMode}|{MonitorIndex}|{HotZone}|{HotZoneThickness}|{HotZoneLength}|{PanelWidth}|{PanelHeightPercent}|{PanelAlignment}|{PanelColor}|{AccentColor}|{PanelOpacity}|{Backdrop}|{ShowDock}|{DockCount}";
+    public TriggerSettings TriggerKey => new(Edge, MonitorMode, MonitorIndex, HotZone, HotZoneThickness, HotZoneLength, PanelWidth,
+        PanelHeightPercent, PanelAlignment, PanelColor, AccentColor, PanelOpacity, Backdrop, ShowDock, DockCount, HotZoneAutoHide);
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
         Name = L.T("Main panel"),
-        Edge = s.Edge, MonitorMode = s.MonitorMode, MonitorIndex = s.MonitorIndex, HotZone = s.HotZone,
-        HotZoneThickness = s.HotZoneThickness, HotZoneLength = s.HotZoneLength, PanelWidth = s.PanelWidth,
-        PanelHeightPercent = s.PanelHeightPercent, PanelAlignment = s.PanelAlignment, PanelColor = s.PanelColor,
-        PanelOpacity = s.PanelOpacity, Hotkey = s.Hotkey, DefaultFilter = s.DefaultFilter, Pinned = s.Pinned
+        Edge = s.Edge,
+        MonitorMode = s.MonitorMode,
+        MonitorIndex = s.MonitorIndex,
+        HotZone = s.HotZone,
+        HotZoneThickness = s.HotZoneThickness,
+        HotZoneLength = s.HotZoneLength,
+        PanelWidth = s.PanelWidth,
+        PanelHeightPercent = s.PanelHeightPercent,
+        PanelAlignment = s.PanelAlignment,
+        PanelColor = s.PanelColor,
+        PanelOpacity = s.PanelOpacity,
+        Hotkey = s.Hotkey,
+        DefaultFilter = s.DefaultFilter,
+        Pinned = s.Pinned
     };
 
     public void Normalize()
@@ -162,3 +207,11 @@ public sealed class PanelConfig
         if (!PanelColors.TryParse(PanelColor, out _)) PanelColor = string.Empty;
     }
 }
+
+/// <summary>
+/// Die Einstellungen eines Panels, von denen Lage und Aussehen der Hover-Zonen und Mini-Docks abhängen – als Wert mit
+/// Gleichheit über alle Felder (siehe <see cref="PanelConfig.TriggerKey"/>).
+/// </summary>
+public readonly record struct TriggerSettings(ScreenEdge Edge, MonitorMode MonitorMode, int MonitorIndex, HotZoneMode HotZone, int HotZoneThickness,
+    int HotZoneLength, int PanelWidth, int PanelHeightPercent, PanelAlignment PanelAlignment, string PanelColor, string AccentColor, int PanelOpacity,
+    PanelBackdrop? Backdrop, bool ShowDock, int DockCount, bool HotZoneAutoHide);

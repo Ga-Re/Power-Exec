@@ -1,7 +1,7 @@
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Ergebnis des Eintragsdialogs.</summary>
 /// <param name="SavedKey">Schlüssel des gespeicherten Eintrags; null = abgebrochen.</param>

@@ -75,8 +75,13 @@ public sealed class RunHistory
     {
         var e = new HistoryEntry
         {
-            Path = item.FullPath, Name = name, ProfileName = profileName, Mode = mode, Engine = engine,
-            Targets = targets?.ToList() ?? new List<string>(), StartUtc = nowUtc ?? DateTime.UtcNow
+            Path = item.FullPath,
+            Name = name,
+            ProfileName = profileName,
+            Mode = mode,
+            Engine = engine,
+            Targets = targets?.ToList() ?? new List<string>(),
+            StartUtc = nowUtc ?? DateTime.UtcNow
         };
         if (raw != null)
             foreach (var p in item.Parameters)

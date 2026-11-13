@@ -1,6 +1,6 @@
 using System.Security;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Anmeldedaten für einen einzelnen Start. Werden nie gespeichert und nach Gebrauch verworfen.</summary>
 public sealed class RunCredential : IDisposable

@@ -5,10 +5,10 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ProfileParamViewModel : ObservableObject
 {
@@ -367,7 +367,7 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         if (Entry == null || p.Options == null) return Item;
         var item = Entry.Current.WithProfile(p).ToLaunchItem();
-        if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { } }
+        if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { /* unvollständiger Code beim Tippen: Parameter bleiben leer */ } }
         return item;
     }
     private string _lastParams = string.Empty;
@@ -478,7 +478,11 @@ public sealed class ProfilesViewModel : ObservableObject
     public bool IsScannedFile => Entry == null;
     public string FileKindText => Item.IsPowerShell ? L.T("PowerShell script") : Item.Type switch
     {
-        ItemType.Batch => L.T("Batch script"), ItemType.Shortcut => L.T("Shortcut"), ItemType.ConsoleSnapIn => "Snap-in", ItemType.Executable => L.T("Program"), _ => L.T("File")
+        ItemType.Batch => L.T("Batch script"),
+        ItemType.Shortcut => L.T("Shortcut"),
+        ItemType.ConsoleSnapIn => "Snap-in",
+        ItemType.Executable => L.T("Program"),
+        _ => L.T("File")
     };
     public string FileInfo => Item.ParseError ?? (Item.Synopsis.Length > 0 ? Item.Synopsis : L.T("No description in the script (comment-based help .SYNOPSIS)."));
     public string FileParametersText => Item.Parameters.Count == 0 ? L.T("No parameters") : L.T("Parameters: ") + string.Join(", ", Item.Parameters.Select(p => p.Name + (p.IsMandatory ? L.T(" (required)") : string.Empty)));
@@ -524,7 +528,7 @@ public sealed class ProfilesViewModel : ObservableObject
         if (Entry.IsPsSnippet)
         {
             item.LaunchTarget = Entry.Current.SnippetPath;
-            try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { }
+            try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { /* unvollständiger Code beim Tippen: Parameter bleiben leer */ }
         }
         Item = item;
         var sig = ParamSignature(item);

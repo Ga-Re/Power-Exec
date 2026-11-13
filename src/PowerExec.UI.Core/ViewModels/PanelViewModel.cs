@@ -7,10 +7,10 @@ using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Search;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class PanelViewModel : ObservableObject
 {
@@ -31,8 +31,8 @@ public sealed class PanelViewModel : ObservableObject
         SetLayoutCommand = new RelayCommand(p => { if (Enum.TryParse<ItemLayout>(p?.ToString(), out var l)) Layout = l; });
         SwitchWorkspaceCommand = new RelayCommand(p => { if (p is string name) _app.SwitchWorkspace(name); });
         SettingsCommand = new RelayCommand(() => _app.ShowSettings());
-        RescanCommand = new RelayCommand(() => _ = _app.Repository.ScanAsync());
-        UpdateNowCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => !UpdateBusy);
+        RescanCommand = new RelayCommand(() => _app.Repository.ScanAsync().Forget());
+        UpdateNowCommand = new RelayCommand(() => _app.InstallUpdateAsync().Forget(), () => !UpdateBusy);
         UpdateLaterCommand = new RelayCommand(() => { _updateDismissed = true; OnPropertyChanged(nameof(UpdateVisible)); });
         _app.Update.PropertyChanged += OnUpdateChanged;
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
@@ -173,7 +173,7 @@ public sealed class PanelViewModel : ObservableObject
         if (_app.Health == null) return;
         var keys = new HashSet<string>(AllItems.Where(i => i.Item.Source != null).Select(i => i.Item.FullPath), StringComparer.OrdinalIgnoreCase);
         var entries = _app.Settings.CustomEntries.Where(c => keys.Contains(c.Key)).ToList();
-        if (entries.Count > 0) _ = _app.Health.CheckAsync(entries);
+        if (entries.Count > 0) _app.Health.CheckAsync(entries).Forget();
     }
 
     // Arbeitsbereiche
@@ -415,7 +415,7 @@ public sealed class PanelViewModel : ObservableObject
     public IReadOnlyList<LaunchItem> QuickItems => _quickItems;
 
     /// <summary>Favoriten fürs Mini-Dock (Anzahl einstellbar).</summary>
-    public IReadOnlyList<LaunchItem> DockItems => _favoriteItems.Take(_host.Config.DockCount).ToList();
+    public IReadOnlyList<LaunchItem> DockItems => FavoriteItems.Take(_host.Config.DockCount).ToList();
 
     /// <summary>Die Favoriten haben sich geändert (Mini-Dock neu aufbauen).</summary>
     public event Action? QuickItemsChanged;
@@ -616,7 +616,7 @@ public sealed class PanelViewModel : ObservableObject
         if (items.Count == 0) return;
         var steps = items.Select(i => new WorkflowStep { Path = i.FullPath, Name = i.DisplayName }).ToList();
         ClearChecked();
-        _ = _app.RunWorkflowAsync(L.F("{0} entries one after another", steps.Count), steps, stopOnError: true);
+        _app.RunWorkflowAsync(L.F("{0} entries one after another", steps.Count), steps, stopOnError: true).Forget();
     });
     public ICommand SaveCheckedAsWorkflowCommand => _saveWorkflowCommand ??= new RelayCommand(() =>
     {
@@ -692,7 +692,7 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Gemeldete, noch nicht übernommene Katalog-Änderungen.</summary>
     public string? CatalogPending => _app.Settings.Catalogs.Where(c => c.PendingSummary.Length > 0)
         .Select(c => L.F("Team catalog “{0}”: {1}", c.Name, c.PendingSummary)).FirstOrDefault();
-    public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _ = _app.ApplyPendingCatalogsAsync());
+    public ICommand ApplyCatalogsCommand => _applyCatalogsCommand ??= new RelayCommand(() => _app.ApplyPendingCatalogsAsync().Forget());
     private ICommand? _applyCatalogsCommand;
     public void RefreshCatalogs() => OnPropertyChanged(nameof(CatalogPending));
 
@@ -774,6 +774,27 @@ public sealed class PanelViewModel : ObservableObject
     public IReadOnlyList<SearchChip> SearchChips { get => _searchChips; private set { if (Set(ref _searchChips, value)) OnPropertyChanged(nameof(HasSearchChips)); } }
     public bool HasSearchChips => _searchChips.Count > 0;
     public string SearchHelp => SearchQuery.Help;
+
+    /// <summary>
+    /// Hinweistext im leeren Suchfeld: bei jedem Öffnen ein anderes Beispiel, damit die Filter (#Schlagwort, Typ, Gruppe,
+    /// Merkmal) auffallen, ohne dass man die Hilfe öffnen muss.
+    /// </summary>
+    public string SearchPlaceholder => SearchPlaceholders[_placeholderIndex % SearchPlaceholders.Length];
+
+    private int _placeholderIndex;
+
+    private static string[] SearchPlaceholders =>
+    [
+        L.T("Search …"),
+        L.T("Search …   e.g. #tag"),
+        L.T("Search …   e.g. type:ps1"),
+        L.T("Search …   e.g. is:fav"),
+        L.T("Search …   e.g. group:Name"),
+        L.T("Search …   ? shows all shortcuts")
+    ];
+
+    /// <summary>Favoriten in der Reihenfolge der Gruppe „Favoriten“ (für Mini-Dock und Tray-Menü).</summary>
+    public IReadOnlyList<LaunchItem> FavoriteItems => _favoriteItems;
 
     private void UpdateSearchChips(SearchQuery query)
     {
@@ -898,8 +919,14 @@ public sealed class PanelViewModel : ObservableObject
 
         GroupSpec MakeGroup(string key, string title, string kind, string? folderPath, IEnumerable<LaunchItem> items, string? error = null) => new()
         {
-            Key = key, Title = title, Kind = kind, IsFavorites = kind == "fav", FolderPath = folderPath, Error = error,
-            Expanded = searching || !collapsed.Contains(key), AllowReorder = !searching,
+            Key = key,
+            Title = title,
+            Kind = kind,
+            IsFavorites = kind == "fav",
+            FolderPath = folderPath,
+            Error = error,
+            Expanded = searching || !collapsed.Contains(key),
+            AllowReorder = !searching,
             Items = Arrange(key, items).Select(i => ItemVm(i, key)).ToList()
         };
 
@@ -908,7 +935,11 @@ public sealed class PanelViewModel : ObservableObject
         if (query.HasTerms && pool.Count > BestHitsCount)
             groups.Add(new GroupSpec
             {
-                Key = "best", Title = L.T("Best matches"), Kind = "best", Expanded = true, AllowReorder = false,
+                Key = "best",
+                Title = L.T("Best matches"),
+                Kind = "best",
+                Expanded = true,
+                AllowReorder = false,
                 Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
             });
         // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
@@ -936,8 +967,12 @@ public sealed class PanelViewModel : ObservableObject
                 if (recent.Count > 0)
                     fixedSpecs[FixedGroups.Recent] = new GroupSpec
                     {
-                        Key = "recent", Title = L.T("Recently run"), Kind = "recent", Expanded = !collapsed.Contains("recent"),
-                        AllowReorder = false, Items = recent
+                        Key = "recent",
+                        Title = L.T("Recently run"),
+                        Kind = "recent",
+                        Expanded = !collapsed.Contains("recent"),
+                        AllowReorder = false,
+                        Items = recent
                     };
             }
 
@@ -1390,6 +1425,8 @@ public sealed class PanelViewModel : ObservableObject
         ShowGroupJump = false;
         Peek = null;
         _suggestionSource = null; // beim nächsten Öffnen frisch (neue Schlagworte, Gruppen …)
+        _placeholderIndex++;
+        OnPropertyChanged(nameof(SearchPlaceholder));
         Suggestions = Array.Empty<SearchSuggestion>();
         ShowHistory = false;
         OnPropertyChanged(nameof(SearchText));

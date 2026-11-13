@@ -127,6 +127,9 @@ public sealed class AppSettings
 
     /// <summary>Größe von Schrift und Bedienelementen in Prozent (80–150).</summary>
     public int UiScalePercent { get; set; } = 100;
+
+    /// <summary>Form der Ecken in allen Fenstern (überschreibt die Radius-Tokens).</summary>
+    public CornerStyle Corners { get; set; } = CornerStyle.Standard;
     public string Hotkey { get; set; } = "Ctrl+Alt+Space";
     public bool StartWithWindows { get; set; }
     public bool Pinned { get; set; }
@@ -312,7 +315,11 @@ public sealed class MachineGroup
 
     public MachineGroup Clone() => new()
     {
-        Name = Name, Machines = new List<string>(Machines), AdQuery = AdQuery?.Clone(), ListQuery = ListQuery?.Clone(),
-        LastSyncUtc = LastSyncUtc, LastSyncError = LastSyncError
+        Name = Name,
+        Machines = new List<string>(Machines),
+        AdQuery = AdQuery?.Clone(),
+        ListQuery = ListQuery?.Clone(),
+        LastSyncUtc = LastSyncUtc,
+        LastSyncError = LastSyncError
     };
 }

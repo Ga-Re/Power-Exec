@@ -2,9 +2,9 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Was der Ausführen-Dialog (<see cref="RunViewModel"/>) von der App braucht – ohne UI-Framework.

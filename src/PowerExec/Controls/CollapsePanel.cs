@@ -2,8 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using PowerExec.Desktop.Infrastructure;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Klappt seinen Inhalt weich auf und zu (Höhe 0 ↔ volle Höhe). Zugeklappt ist der Inhalt <see cref="Visibility.Collapsed"/>,
@@ -60,7 +61,7 @@ public sealed class CollapsePanel : Decorator
     public bool Animate { get => (bool)GetValue(AnimateProperty); set => SetValue(AnimateProperty, value); }
     public double Progress { get => (double)GetValue(ProgressProperty); set => SetValue(ProgressProperty, value); }
 
-    public static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(170);
+    public static TimeSpan Duration => Tokens.MotionFast;
 
     public CollapsePanel()
     {

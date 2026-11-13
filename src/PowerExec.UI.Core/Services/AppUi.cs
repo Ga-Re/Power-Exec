@@ -2,10 +2,11 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.ViewModels;
+using PowerExec.UI.Interop;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Die Oberfläche aus Sicht des App-Kerns (<c>AppController</c>): Fenster, Panels, Tray, Tastenkürzel und Design.
@@ -190,35 +191,13 @@ public sealed record FullscreenProbe(Rectangle? Foreground, string ClassName)
     public static FullscreenProbe Current()
     {
         if (!OperatingSystem.IsWindows()) return new FullscreenProbe(null, string.Empty);
-        var hwnd = GetForegroundWindow();
-        if (hwnd != IntPtr.Zero && IsWindowVisible(hwnd) &&
-            GetWindowThreadProcessId(hwnd, out var pid) != 0 && pid != Environment.ProcessId &&
-            GetWindowRect(hwnd, out var r))
+        var hwnd = NativeMethods.GetForegroundWindow();
+        if (hwnd != IntPtr.Zero && NativeMethods.IsWindowVisible(hwnd) &&
+            NativeMethods.GetWindowThreadProcessId(hwnd, out var pid) != 0 && pid != Environment.ProcessId &&
+            NativeMethods.GetWindowRect(hwnd, out var r))
         {
-            var cls = new char[256];
-            var len = GetClassName(hwnd, cls, cls.Length);
-            return new FullscreenProbe(Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom), new string(cls, 0, Math.Max(0, len)));
+            return new FullscreenProbe(Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom), NativeMethods.ClassNameOf(hwnd));
         }
         return new FullscreenProbe(null, string.Empty);
     }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT { public int Left, Top, Right, Bottom; }
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsWindowVisible(IntPtr hWnd);
-
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    private static extern int GetClassName(IntPtr hWnd, char[] className, int maxCount);
 }

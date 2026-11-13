@@ -1,10 +1,12 @@
 using System.Windows;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.Infrastructure;
+using PowerExec.Desktop.Infrastructure;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary><see cref="IAppUi"/> für WPF: Fenster, Panels, Tray (WinForms-NotifyIcon), Tastenkürzel und Design.</summary>
 public sealed class WpfAppUi : IAppUi
@@ -14,6 +16,7 @@ public sealed class WpfAppUi : IAppUi
     private HotkeyService? _hotkeys;
     private IconService? _icons;
     private IIconProvider? _iconProvider;
+    private DisplayTopology? _display;
 
     public WpfAppUi(AppController app)
     {
@@ -40,6 +43,9 @@ public sealed class WpfAppUi : IAppUi
         Controls.MachineBox.GroupSource = () => _app.Settings.MachineGroups;
         TagBrushConverter.Lookup = t => Core.Config.Tags.ColorOf(_app.Settings, t);
         ThemeService.SystemChanged += () => SystemThemeChanged?.Invoke();
+        // Monitore, Arbeitsbereich, Skalierung, Standby/Entsperren: Hover-Zonen, Docks und Panels auffrischen
+        _display = new DisplayTopology(Application.Current.Dispatcher);
+        _display.Changed += geometryChanged => { foreach (var h in PanelHosts.ToList()) h.OnDisplayChanged(geometryChanged); };
     }
 
     /// <summary>Die WPF-Seite der laufenden Panels.</summary>
@@ -122,6 +128,8 @@ public sealed class WpfAppUi : IAppUi
 
     public void Dispose()
     {
+        _display?.Dispose();
+        _display = null;
         _hotkeys?.Dispose();
         _hotkeys = null;
         _tray?.Dispose();

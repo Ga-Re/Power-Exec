@@ -2,10 +2,10 @@ using PowerExec.Core.Localization;
 using System.Drawing;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
 using Forms = System.Windows.Forms;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 public sealed record MonitorInfo(int Index, Rectangle Bounds, Rectangle WorkArea, bool IsPrimary)
 {
@@ -30,6 +30,14 @@ public static class ScreenService
             _ => new[] { primary }
         };
     }
+
+    /// <summary>
+    /// Aktueller Stand eines Monitors (Bereich, Arbeitsbereich). Ein <see cref="MonitorInfo"/> ist eine Momentaufnahme –
+    /// wer ihn länger hält (Hover-Zone, Panel), fragt vor dem Platzieren neu. Gibt es den Monitor nicht mehr, gilt der
+    /// erste Monitor des Panels.
+    /// </summary>
+    public static MonitorInfo Refresh(MonitorInfo monitor, PanelConfig s) =>
+        GetMonitors().FirstOrDefault(m => m.Index == monitor.Index) ?? TriggerMonitors(s)[0];
 
     public static MonitorInfo MonitorAtCursor()
     {

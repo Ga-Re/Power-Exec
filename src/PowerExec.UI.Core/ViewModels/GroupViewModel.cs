@@ -2,9 +2,10 @@ using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Wo an dieser Gruppe beim Ziehen einer anderen die Lücke aufgeht.</summary>
 public enum GroupDropSlot { None, Before, After, Inside }
@@ -40,7 +41,7 @@ public sealed class GroupViewModel : ObservableObject
             AnimateExpand = false;
         });
         OpenInExplorerCommand = new RelayCommand(() => { if (FolderPath != null) app.Shell.OpenLocation(FolderPath, isFolder: true); }, () => FolderPath != null);
-        RescanCommand = new RelayCommand(() => _ = app.Repository.ScanAsync());
+        RescanCommand = new RelayCommand(() => app.Repository.ScanAsync().Forget());
         CollapseOthersCommand = new RelayCommand(() => _panel.CollapseAllExcept(this));
         CollapseAllCommand = new RelayCommand(() => _panel.SetAllExpanded(false));
         ExpandAllCommand = new RelayCommand(() => _panel.SetAllExpanded(true));

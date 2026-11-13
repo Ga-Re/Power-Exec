@@ -1,4 +1,8 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Metadata;
+using PowerExec.Core.Models;
+using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Tests;
 
@@ -97,5 +101,16 @@ public class MachineSourcesTests
         var clone = g.Clone();
         Assert.Equal(@"C:\x.csv", clone.ListQuery!.Path);
         Assert.NotSame(g.ListQuery, clone.ListQuery);
+    }
+
+    [Fact]
+    public void MachineGroupsAndImport()
+    {
+        var s = new AppSettings();
+        s.MachineGroups.Add(new MachineGroup { Name = "Druckserver", Machines = ["PRT01", "PRT02"] });
+        Assert.Equal(new[] { "PRT01", "PRT02", "PC1" }, MachineList.Resolve(s, ["@druckserver", "pc1", "prt01"]));
+        var csv = "Name;Standort\r\nPC-0142;Nord\r\n\"PC-0187\";Süd\r\n# Kommentar\r\npc-0142;x\r\n";
+        Assert.Equal(new[] { "PC-0142", "PC-0187" }, MachineList.ParseImport(csv));
+        Assert.Equal(new[] { "A", "B" }, MachineList.ParseImport("a\nb\n"));
     }
 }

@@ -3,8 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using PowerExec.Core.Config;
+using PowerExec.Desktop.Infrastructure;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Farbwähler: Sättigung/Helligkeit-Feld, Farbton-Leiste, Vorlagen und #RRGGBB-Feld.</summary>
 public partial class ColorPickerWindow : Window
@@ -41,10 +42,10 @@ public partial class ColorPickerWindow : Window
     {
         _updating = true;
         var hue = ColorMath.FromHsv(_h, 1, 1);
-        HueFill.Fill = new SolidColorBrush(Color.FromRgb(hue.R, hue.G, hue.B));
+        HueFill.Fill = hue.ToBrush();
         HueSlider.Value = _h;
         var c = ColorMath.FromHsv(_h, _s, _v);
-        Preview.Background = new SolidColorBrush(Color.FromRgb(c.R, c.G, c.B));
+        Preview.Background = c.ToBrush();
         SvThumb.Stroke = _v > 0.6 && _s < 0.4 ? Brushes.Black : Brushes.White;
         if (updateText) HexBox.Text = c.Hex;
         ErrorText.Visibility = Visibility.Collapsed;

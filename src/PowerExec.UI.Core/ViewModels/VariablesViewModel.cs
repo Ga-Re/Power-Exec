@@ -2,10 +2,10 @@ using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Einstellungsseite „Variablen“: eingebaute und eigene {{$Variablen}}, Datums-/Zeitformat.</summary>
 public sealed class VariablesViewModel : ObservableObject
@@ -120,7 +120,9 @@ public sealed class VariablesViewModel : ObservableObject
         if (Variables.Find(_s, name) != null) return true;
         var v = new UserVariable
         {
-            Name = name, Kind = kind, Description = description,
+            Name = name,
+            Kind = kind,
+            Description = description,
             // Geheimes nie vorbelegen (wird verschlüsselt gespeichert); sonst Vorschlag bzw. Befehl übernehmen
             Value = kind == VariableKind.Secret ? string.Empty : suggestion
         };

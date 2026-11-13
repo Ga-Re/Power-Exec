@@ -8,6 +8,16 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 32, 0), L.T("Panel always slides out completely; calmer look; corners setting"), new[]
+        {
+            L.T("The panel no longer stays partly off-screen after standby, docking or a taskbar change: its end position is checked after sliding out and monitor data is refreshed"),
+            L.T("With the glass background the mini dock reappears after the panel slides in"),
+            L.T("Tiles fill the whole row and names wrap at - and _ instead of being cut off"),
+            L.T("One View menu in the panel header (list or grid, item size); the footer shows the status without the version"),
+            L.T("The search box shows a different filter example each time; small text is at least 11 pt"),
+            L.T("New under Appearance: Corners (standard, rounded, square); hover zone can stay hidden until the pointer is near"),
+            L.T("The tray menu lists favorites in the same order as the panel; the log is always in English")
+        }),
         new ReleaseNote(new Version(0, 31, 1), L.T("No frame next to the retracted panel"), new[]
         {
             L.T("When retracted, the panel no longer leaves a frame on a neighboring monitor or over the taskbar")

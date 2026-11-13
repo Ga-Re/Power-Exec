@@ -5,8 +5,9 @@ using PowerExec.Core.Localization;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 using TextBlock = System.Windows.Controls.TextBlock;
+using PowerExec.Desktop.Infrastructure;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Art einer Meldung (Symbol und Farbe).</summary>
 public enum MessageKind { Info, Warning, Question, Error }
@@ -79,8 +80,8 @@ public static class MessageDialog
     {
         var (glyph, brush) = kind switch
         {
-            MessageKind.Warning => ("", "InfoBar.Warning.Icon"),
-            MessageKind.Error => ("", "InfoBar.Error.Icon"),
+            MessageKind.Warning => ("", "Status.Warning"),
+            MessageKind.Error => ("", "Status.Error"),
             MessageKind.Question => ("", "Accent"),
             _ => ("", "Accent")
         };
@@ -89,15 +90,24 @@ public static class MessageDialog
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var icon = new TextBlock
         {
-            Text = glyph, FontSize = 22, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top,
+            Text = glyph,
+            FontSize = Tokens.IconCard,
+            Margin = new Thickness(0, 0, 14, 0),
+            VerticalAlignment = VerticalAlignment.Top,
             FontFamily = (FontFamily)Application.Current.FindResource("IconFont")
         };
         icon.SetResourceReference(TextBlock.ForegroundProperty, brush);
         var text = new System.Windows.Controls.TextBox
         {
-            Text = message, TextWrapping = TextWrapping.Wrap, IsReadOnly = true, BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent, Padding = new Thickness(0), MaxHeight = 420,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            IsReadOnly = true,
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            Padding = new Thickness(0),
+            MaxHeight = 420,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Focusable = false
         };
         text.SetResourceReference(System.Windows.Controls.Control.ForegroundProperty, "Text.Primary");
         Grid.SetColumn(text, 1);
@@ -119,7 +129,6 @@ public static class MessageDialog
             ShowInTaskbar = owner == null;
             ResizeMode = ResizeMode.NoResize;
             Title = "Power-Exec";
-            Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/PowerExec;component/Themes/Fluent.xaml") });
             Infrastructure.FluentTheme.Attach(this);
             Content = Host;
             if (owner is { IsVisible: true, ActualWidth: >= 420, ActualHeight: >= 300 } && owner.WindowState != WindowState.Minimized)

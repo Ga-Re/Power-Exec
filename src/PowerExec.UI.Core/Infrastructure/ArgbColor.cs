@@ -1,6 +1,6 @@
 using PowerExec.Core.Config;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>
 /// Farbe mit Deckkraft, ohne UI-Framework. Die Oberfläche wandelt sie per Converter in ihren Pinsel um

@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Autostart über HKCU\...\Run (keine Adminrechte nötig).</summary>
 public static class AutostartService

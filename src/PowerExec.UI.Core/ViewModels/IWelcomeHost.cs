@@ -1,6 +1,6 @@
 using PowerExec.Core.Config;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was die Einführung (<see cref="WelcomeViewModel"/>) von der App braucht.</summary>
 public interface IWelcomeHost

@@ -45,8 +45,21 @@ public static class TeamCatalogs
         s.CustomEntries.Where(c => c.CatalogId == sub.Id);
 
     private static string Fingerprint(CustomEntry e, EntryShare.SharedEntry? shared = null) =>
-        System.Text.Json.JsonSerializer.Serialize(new { e.Kind, e.Name, e.Target, e.Arguments, e.Code, e.Description, e.Icon, Steps = e.Steps.Select(x => x.Path),
-            Group = shared?.Group, Tags = shared?.Tags, Notes = shared?.Notes, Profiles = shared?.Profiles.Count });
+        System.Text.Json.JsonSerializer.Serialize(new
+        {
+            e.Kind,
+            e.Name,
+            e.Target,
+            e.Arguments,
+            e.Code,
+            e.Description,
+            e.Icon,
+            Steps = e.Steps.Select(x => x.Path),
+            Group = shared?.Group,
+            Tags = shared?.Tags,
+            Notes = shared?.Notes,
+            Profiles = shared?.Profiles.Count
+        });
 
     public static CatalogDiff Diff(AppSettings s, CatalogSubscription sub, EntryShare.SharedFile file)
     {

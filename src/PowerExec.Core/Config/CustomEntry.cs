@@ -315,9 +315,12 @@ public sealed class CustomEntry
         CustomEntryKind.Ssh => "SSH · " + SshTarget() + (Port > 0 && Port != 22 ? ":" + Port : string.Empty),
         CustomEntryKind.Command => (Target.Trim() + " " + Arguments.Trim()).Trim(),
         CustomEntryKind.Tool => (Target.Trim() + " " + Arguments.Trim()).Trim(),
-        CustomEntryKind.Workflow => (Steps.Count == 1 ? L.T("Workflow · 1 step: ") : L.F("Workflow · {0} steps: ", Steps.Count)) + string.Join(" → ", Steps.Select(s => s.Name.Length > 0 ? s.Name : System.IO.Path.GetFileName(s.Path))),
+        CustomEntryKind.Workflow => (Steps.Count == 1 ? L.T("Workflow · 1 step: ") : L.F("Workflow · {0} steps: ", Steps.Count)) + string.Join(" → ", Steps.Select(s => s.Name.Length > 0 ? s.Name : WindowsFileName(s.Path))),
         _ => Target.Trim()
     };
+
+    /// <summary>Dateiname eines Windows-Pfads – unabhängig davon, auf welchem System der Code läuft (Tests unter Linux).</summary>
+    private static string WindowsFileName(string path) => path[(path.LastIndexOfAny(['\\', '/']) + 1)..];
 
     private string DefaultName() => Kind switch
     {

@@ -7,8 +7,10 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Interop;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>
 /// Lädt Symbole: Programmsymbole und Dateisymbole über die Windows-Shell, das Ordnersymbol und Favicons von Webseiten.
@@ -62,7 +64,7 @@ public sealed class IconService : IDisposable
         var list = _pending.GetOrAdd(cacheKey, _ => { first = true; return new List<Action<ImageSource>>(); });
         lock (list) list.Add(onLoaded);
         if (!first) return null;
-        if (web) _ = Task.Run(() => LoadWebAsync(cacheKey, key[(key.IndexOf('|') + 1)..]));
+        if (web) Task.Run(() => LoadWebAsync(cacheKey, key[(key.IndexOf('|') + 1)..])).Forget();
         else if (!_queue.IsAddingCompleted) _queue.Add(key);
         return null;
     }
@@ -89,7 +91,7 @@ public sealed class IconService : IDisposable
                 if (key == "dir:") image = LoadShell("folder", FILE_ATTRIBUTE_DIRECTORY, SHGFI_USEFILEATTRIBUTES);
                 else if (key.StartsWith("file:")) image = LoadShell(key[5..key.LastIndexOf('|')], 0, 0);
             }
-            catch { }
+            catch { /* Shell liefert kein Symbol (Datei weg, Freigabe offline): Standardsymbol */ }
             Complete(key, image);
         }
     }
@@ -123,7 +125,7 @@ public sealed class IconService : IDisposable
                 if (File.Exists(file) && DateTime.UtcNow - File.GetLastWriteTimeUtc(file) < TimeSpan.FromDays(14))
                     bytes = await File.ReadAllBytesAsync(file);
             }
-            catch { }
+            catch { /* Zwischenspeicher nicht lesbar: Favicon wird neu geladen */ }
             image = bytes is { Length: > 0 } ? Decode(bytes) : null;
             if (image == null)
             {
@@ -136,11 +138,11 @@ public sealed class IconService : IDisposable
                         Directory.CreateDirectory(FaviconFolder);
                         await File.WriteAllBytesAsync(file, bytes);
                     }
-                    catch { }
+                    catch { /* Zwischenspeicher nicht schreibbar: Favicon wird beim nächsten Start neu geladen */ }
                 }
             }
         }
-        catch { }
+        catch { /* Favicon ist Zierde – ohne Netz bleibt das Standardsymbol */ }
         finally
         {
             _webLimit.Release();
@@ -167,7 +169,7 @@ public sealed class IconService : IDisposable
                 }
             }
         }
-        catch { }
+        catch { /* Seite nicht lesbar: weiter mit /favicon.ico */ }
         var ico = await TryGetBytesAsync(origin.TrimEnd('/') + "/favicon.ico");
         return ico != null && Decode(ico) != null ? ico : null;
     }
@@ -240,19 +242,18 @@ public sealed class IconService : IDisposable
 
     private static ImageSource? LoadShell(string path, uint attributes, uint extraFlags)
     {
-        var info = new SHFILEINFO();
         // Großes Symbol (32 px), ohne Verknüpfungspfeil
-        var result = SHGetFileInfo(path, attributes, ref info, (uint)Marshal.SizeOf<SHFILEINFO>(), SHGFI_ICON | SHGFI_LARGEICON | extraFlags);
-        if (result == IntPtr.Zero || info.hIcon == IntPtr.Zero) return null;
+        var icon = NativeMethods.GetShellIcon(path, attributes, SHGFI_ICON | SHGFI_LARGEICON | extraFlags);
+        if (icon == IntPtr.Zero) return null;
         try
         {
-            var source = Imaging.CreateBitmapSourceFromHIcon(info.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            var source = Imaging.CreateBitmapSourceFromHIcon(icon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             source.Freeze();
             return source;
         }
         finally
         {
-            DestroyIcon(info.hIcon);
+            NativeMethods.DestroyIcon(icon);
         }
     }
 
@@ -262,20 +263,4 @@ public sealed class IconService : IDisposable
     private const uint SHGFI_LARGEICON = 0x000000000;
     private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x10;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct SHFILEINFO
-    {
-        public IntPtr hIcon;
-        public int iIcon;
-        public uint dwAttributes;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string szDisplayName;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)] public string szTypeName;
-    }
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyIcon(IntPtr hIcon);
 }

@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Einfaches App-Protokoll: hält die letzten Einträge im Speicher (für die Diagnose-Ansicht)

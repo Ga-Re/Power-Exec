@@ -7,9 +7,11 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Infrastructure;
 
-namespace PowerExec.Controls;
+namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Vorschau eines Designs als kleine Desktop-Szene: echtes Windows-Hintergrundbild, ein Fenster im Windows-Design
@@ -41,9 +43,6 @@ public sealed class DesignPreview : Border
     private static ImageSource? _wallpaper;
     private static bool _wallpaperLoaded;
 
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool SystemParametersInfo(uint action, uint param, StringBuilder value, uint winIni);
-
     /// <summary>Hintergrundbild von Windows (verkleinert); null, wenn es keins gibt (dann Farbverlauf).</summary>
     private static ImageSource? Wallpaper
     {
@@ -53,12 +52,12 @@ public sealed class DesignPreview : Border
             _wallpaperLoaded = true;
             try
             {
-                var sb = new StringBuilder(520);
-                if (SystemParametersInfo(0x0073 /* SPI_GETDESKWALLPAPER */, (uint)sb.Capacity, sb, 0) && File.Exists(sb.ToString()))
+                var path = NativeMethods.DesktopWallpaperPath();
+                if (File.Exists(path))
                 {
                     var bmp = new BitmapImage();
                     bmp.BeginInit();
-                    bmp.UriSource = new Uri(sb.ToString());
+                    bmp.UriSource = new Uri(path);
                     bmp.DecodePixelWidth = 480;
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.EndInit();
@@ -89,11 +88,11 @@ public sealed class DesignPreview : Border
 
         var winDark = ThemeService.SystemUsesDarkTheme();
         var dark = d.Theme switch { ThemeMode.Light => false, ThemeMode.Dark => true, _ => winDark };
-        var panel = PanelColors.TryParse(d.PanelColor, out var pc) ? Color.FromRgb(pc.R, pc.G, pc.B)
+        var panel = PanelColors.TryParse(d.PanelColor, out var pc) ? pc.ToColor()
             : dark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3);
         var light = (0.299 * panel.R + 0.587 * panel.G + 0.114 * panel.B) > 150;
         var ink = light ? Color.FromRgb(0x1B, 0x1B, 0x1B) : Colors.White;
-        var accent = PanelColors.TryParse(d.AccentColor, out var ac) ? Color.FromRgb(ac.R, ac.G, ac.B)
+        var accent = PanelColors.TryParse(d.AccentColor, out var ac) ? ac.ToColor()
             : TryFindResource("Accent") is SolidColorBrush ab ? ab.Color : Color.FromRgb(0x00, 0x78, 0xD4);
         var opacity = d.Backdrop == PanelBackdrop.Solid ? 1.0 : Math.Clamp(d.Opacity / 100.0, 0.2, 1.0);
 
@@ -106,9 +105,14 @@ public sealed class DesignPreview : Border
         var winBar = winDark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xE9, 0xE9, 0xE9);
         var window = new Border
         {
-            Background = new SolidColorBrush(winBg), CornerRadius = new CornerRadius(3),
-            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(8, 10, 0, 0), Width = 64, Height = 42, Opacity = 0.97,
+            Background = new SolidColorBrush(winBg),
+            CornerRadius = new CornerRadius(3),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(8, 10, 0, 0),
+            Width = 64,
+            Height = 42,
+            Opacity = 0.97,
             Child = new StackPanel
             {
                 Children =
@@ -124,7 +128,8 @@ public sealed class DesignPreview : Border
         // Taskleiste
         _root.Children.Add(new Border
         {
-            Height = 9, VerticalAlignment = VerticalAlignment.Bottom,
+            Height = 9,
+            VerticalAlignment = VerticalAlignment.Bottom,
             Background = new SolidColorBrush(winDark ? Color.FromArgb(0xD0, 0x1C, 0x1C, 0x1C) : Color.FromArgb(0xD0, 0xEE, 0xEE, 0xEE))
         });
 
@@ -153,10 +158,13 @@ public sealed class DesignPreview : Border
         content.Children.Add(buttons);
         _panel = new Border
         {
-            HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 4, 0, 11),
-            CornerRadius = new CornerRadius(4, 0, 0, 4), ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 4, 0, 11),
+            CornerRadius = new CornerRadius(4, 0, 0, 4),
+            ClipToBounds = true,
             Background = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), panel.R, panel.G, panel.B)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, ink.R, ink.G, ink.B)), BorderThickness = new Thickness(0.6, 0.6, 0, 0.6),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, ink.R, ink.G, ink.B)),
+            BorderThickness = new Thickness(0.6, 0.6, 0, 0.6),
             Child = content
         };
         _root.Children.Add(_panel);
@@ -164,8 +172,11 @@ public sealed class DesignPreview : Border
         // Hover-Zone: leuchtet am rechten Rand
         _root.Children.Add(new Border
         {
-            Width = 2.5, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
-            Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(1.5, 0, 0, 1.5),
+            Width = 2.5,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(accent),
+            CornerRadius = new CornerRadius(1.5, 0, 0, 1.5),
             Effect = new DropShadowEffect { Color = accent, BlurRadius = 6, ShadowDepth = 0, Opacity = 0.9 }
         });
         UpdateLayoutParts();

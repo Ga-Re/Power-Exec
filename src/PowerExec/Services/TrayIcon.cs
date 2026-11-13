@@ -1,9 +1,10 @@
 using PowerExec.Core.Localization;
 using System.Windows;
+using PowerExec.UI.Services;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Symbol im Infobereich mit Menü (Panel öffnen, Einstellungen, Beenden).</summary>
 public sealed class TrayIcon : IDisposable
@@ -31,7 +32,7 @@ public sealed class TrayIcon : IDisposable
         menu.Items.Add(_workspaces);
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Opening += (_, _) => RebuildQuickMenus();
-        menu.Items.Add(L.T("Rescan folders"), null, (_, _) => _ = app.Repository.ScanAsync());
+        menu.Items.Add(L.T("Rescan folders"), null, (_, _) => app.Repository.ScanAsync().Forget());
         menu.Items.Add(L.T("Settings"), null, (_, _) => app.ShowSettings());
         menu.Items.Add(L.T("Check for updates"), null, async (_, _) =>
         {
@@ -80,12 +81,12 @@ public sealed class TrayIcon : IDisposable
             }
 
         _favorites.DropDownItems.Clear();
-        foreach (var path in s.Favorites)
-        {
-            var item = _app.FindItem(path);
-            if (item == null) continue;
+        // Dieselbe Liste wie die Gruppe „Favoriten“ im Panel und das Mini-Dock (Reihenfolge, nur vorhandene Einträge)
+        var favorites = _app.Hosts.Count > 0
+            ? _app.Hosts[0].ViewModel.FavoriteItems
+            : s.Favorites.Select(_app.FindItem).OfType<Core.Models.LaunchItem>().ToList();
+        foreach (var item in favorites)
             _favorites.DropDownItems.Add(Label(item), null, (_, _) => Run(() => _app.RunProfile(item, null)));
-        }
         _favorites.Enabled = _favorites.DropDownItems.Count > 0;
 
         _recent.DropDownItems.Clear();
@@ -133,7 +134,7 @@ public sealed class TrayIcon : IDisposable
                 return new Drawing.Icon(s, Forms.SystemInformation.SmallIconSize);
             }
         }
-        catch { }
+        catch (Exception ex) { AppLog.Warn($"Tray icon could not be loaded, using the default application icon: {ex.Message}"); }
         return Drawing.SystemIcons.Application;
     }
 
@@ -142,7 +143,7 @@ public sealed class TrayIcon : IDisposable
     public void ShowBalloon(string title, string text, Action? onClick = null, bool warning = false)
     {
         _balloonClick = onClick;
-        try { _icon.ShowBalloonTip(6000, title, text, warning ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info); } catch { }
+        try { _icon.ShowBalloonTip(6000, title, text, warning ? Forms.ToolTipIcon.Warning : Forms.ToolTipIcon.Info); } catch { /* Benachrichtigungen können in Windows abgeschaltet sein – dann erscheint keine */ }
     }
 
     public void Dispose()

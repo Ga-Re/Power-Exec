@@ -1,0 +1,136 @@
+<!-- Einstellungen › Inhalte › Variablen. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.VariablesPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding DataContext.Section, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource EqVis}, ConverterParameter=variables}" DataContext="{Binding VariablesPage}">
+        <TextBlock Text="{l:T 'Variables'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                   Text="{l:T 'Write variables as \{\{$Name\}\} in texts, links, commands, targets, PowerShell code and script parameters – Power-Exec inserts the value at launch without asking. Normal \{\{placeholders\}\} are still asked for before launch.'}"/>
+
+        <TextBlock Text="{l:T 'Built-in'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE787;" Header="{l:T 'Date, time, user, computer, clipboard'}"
+                            Description="{l:T 'Always available. You set the format of date and time here.'}">
+            <StackPanel>
+                <ItemsControl ItemsSource="{Binding Builtins}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel Style="{StaticResource SubSetting}">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding Preview}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"
+                                           MaxWidth="260" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" Width="190" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ComboBox DockPanel.Dock="Right" Width="220" IsEditable="True" ItemsSource="{Binding DateFormats}"
+                              Text="{Binding DateFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Date format'}"/>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{l:T 'Format of \{\{$Date\}\}'}"/>
+                        <TextBlock Text="{l:T '.NET format, e.g. dd.MM.yyyy or yyyy-MM-dd.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/>
+                    </StackPanel>
+                </DockPanel>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ComboBox DockPanel.Dock="Right" Width="220" IsEditable="True" ItemsSource="{Binding TimeFormats}"
+                              Text="{Binding TimeFormat, UpdateSourceTrigger=LostFocus}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Time format'}"/>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{l:T 'Format of \{\{$Time\}\}'}"/>
+                        <TextBlock Text="{l:T '.NET format, e.g. HH:mm or HH:mm:ss.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}"/>
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </c:SettingsExpander>
+
+        <!-- Eigene Variablen als kompakte Tabelle (wie „Eigene Einträge“): Suche, Häkchen, Bearbeiten im Dialog -->
+        <TextBlock Text="{l:T 'Custom variables'}" Style="{StaticResource SettingsSection}"/>
+        <DockPanel Margin="0,0,0,8">
+            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding AddCommand}" Margin="8,0,0,0">
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/></StackPanel>
+            </ui:Button>
+            <Grid>
+                <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search variables (name, value, description)'}"
+                         AutomationProperties.Name="{l:T 'Search variables'}"/>
+                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            </Grid>
+        </DockPanel>
+        <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Margin="0,0,0,8"
+                Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,6,2"/>
+                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Clear selection'}" Command="{Binding SelectAllCommand}" Margin="0,2,0,2"/>
+            </WrapPanel>
+        </Border>
+        <TextBlock Text="{l:T 'No custom variables yet – e.g. \{\{$CompanyName\}\} for the company name in signatures and replies.'}"
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Visibility="{Binding HasNoItems, Converter={StaticResource Vis}}"/>
+        <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding HasNoItems, Converter={StaticResource Vis}, ConverterParameter=invert}">
+            <StackPanel>
+                <Grid Margin="10,8,10,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="28"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="108"/>
+                    </Grid.ColumnDefinitions>
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'All'}" FontSize="{StaticResource Font.Caption}" Padding="2,0" MinHeight="22" Height="22" Command="{Binding SelectAllCommand}"
+                               HorizontalAlignment="Left" ToolTip="{l:T 'Select all visible'}"/>
+                    <TextBlock Grid.Column="1" Text="{l:T 'Variable'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="2" Text="{l:T 'Kind'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="3" Text="{l:T 'Current value'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="4" Text="{Binding SummaryText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                </Grid>
+                <ItemsControl ItemsSource="{Binding VisibleItems}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="VarRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="108"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Select'}"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="2" Text="{Binding KindText}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding Preview}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Preview}"/>
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding CopyTokenCommand}" ToolTip="{l:T 'Copy \{\{$Name\}\}'}">
+                                            <TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                        </ui:Button>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding EditCommand}" ToolTip="{l:T 'Edit'}">
+                                            <TextBlock Text="&#xE713;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
+                                        </ui:Button>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Delete'}">
+                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                        </ui:Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <Trigger SourceName="VarRow" Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="VarRow" Property="Background" Value="{DynamicResource Bg.Hover}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="VarRow" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

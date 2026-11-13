@@ -5,7 +5,7 @@ using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Führt den Verbindungstest (WinRM, Anmeldung, PowerShell 7) für mehrere Rechner aus.</summary>
 public static class RemoteTestService
@@ -43,11 +43,11 @@ public static class RemoteTestService
                 if (r != null) results.Add(r);
             }
             await p.WaitForExitAsync();
-            AppLog.Info(L.T("Connection test: ") + string.Join("; ", results.Select(r => $"{r.Computer}: {r.Summary}")));
+            AppLog.Info("Connection test: " + string.Join("; ", results.Select(r => $"{r.Computer}: {r.Summary}")));
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Connection test failed"), ex);
+            AppLog.Error("Connection test failed", ex);
             foreach (var t in targets.Where(t => results.All(r => !r.Computer.Equals(t, StringComparison.OrdinalIgnoreCase))))
                 results.Add(new RemoteTestResult { Computer = t, Error = L.T("Test couldn't be started: ") + ex.Message });
         }

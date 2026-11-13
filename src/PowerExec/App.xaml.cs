@@ -1,8 +1,10 @@
 using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Threading;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.Desktop;
 
 public partial class App : Application
 {
@@ -15,18 +17,20 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        Infrastructure.CommandRequery.Backend = new Infrastructure.WpfCommandRequery();
+        CommandRequery.Backend = new Infrastructure.WpfCommandRequery();
+#if SELFTEST
         if (e.Args.Length > 0 && e.Args[0] == "--selftest")
         {
             base.OnStartup(e);
             RunSelfTest(e.Args.Length > 1 ? e.Args[1] : Path.Combine(Path.GetTempPath(), "PowerExec-selftest.txt"));
             return;
         }
+#endif
         _mutex = new Mutex(true, MutexName, out var isFirst);
         if (!isFirst)
         {
             // Zweiter Start: laufende Instanz bitten, das Panel zu zeigen.
-            try { EventWaitHandle.OpenExisting(ShowEventName).Set(); } catch { }
+            try { EventWaitHandle.OpenExisting(ShowEventName).Set(); } catch { /* laufende Instanz antwortet nicht mehr – der zweite Start endet ohnehin */ }
             Shutdown();
             return;
         }
@@ -42,11 +46,16 @@ public partial class App : Application
         {
             while (_showEvent.WaitOne())
                 Dispatcher.BeginInvoke(() => _controller?.ShowPanelFromHotkey());
-        }) { IsBackground = true, Name = "PowerExec.ShowEvent" };
+        })
+        { IsBackground = true, Name = "PowerExec.ShowEvent" };
         thread.Start();
     }
 
-    /// <summary>Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung.</summary>
+#if SELFTEST
+    /// <summary>
+    /// Oberflächen-Selbsttest für die CI; Ergebnis in eine Datei, Exitcode 0 = in Ordnung. Nur in Builds mit
+    /// <c>-p:SelfTest=true</c> (CI) bzw. Debug enthalten – die ausgelieferte EXE trägt den Testcode nicht.
+    /// </summary>
     private void RunSelfTest(string resultFile)
     {
         var selfTest = new SelfTestController();
@@ -56,10 +65,11 @@ public partial class App : Application
             string? error;
             try { error = await selfTest.RunSelfTestAsync(resultFile + ".progress"); }
             catch (Exception ex) { error = ex.ToString(); }
-            try { File.WriteAllText(resultFile, error ?? "OK"); } catch { }
+            try { File.WriteAllText(resultFile, error ?? "OK"); } catch { /* ohne Ergebnisdatei wertet die CI den Lauf als fehlgeschlagen */ }
             Shutdown(error == null ? 0 : 1);
         });
     }
+#endif
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
@@ -68,9 +78,9 @@ public partial class App : Application
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec");
             Directory.CreateDirectory(dir);
             File.AppendAllText(Path.Combine(dir, "error.log"), $"{DateTime.Now:u} {e.Exception}{Environment.NewLine}");
-            Services.AppLog.Error(L.T("Unexpected error"), e.Exception);
+            AppLog.Error("Unexpected error", e.Exception);
         }
-        catch { }
+        catch { /* Protokoll nicht schreibbar – die Meldung unten zeigt den Fehler trotzdem */ }
         e.Handled = true;
         // Beim Beenden (z. B. für ein Update) nur protokollieren – keine Meldung, die das Update aufhält
         if (_controller?.IsExiting == true) return;
@@ -80,7 +90,7 @@ public partial class App : Application
             .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true);
         var where = frame != null ? $"{frame.DeclaringType!.Name}.{frame.Name}" : e.Exception.TargetSite?.Name ?? "unbekannt";
         var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "error.log");
-        var text = L.F("An unexpected error occurred:\n\n{0}\n\nLocation: {1} · version {2}\n", e.Exception.Message, where, Services.UpdateService.CurrentVersionText) +
+        var text = L.F("An unexpected error occurred:\n\n{0}\n\nLocation: {1} · version {2}\n", e.Exception.Message, where, UpdateService.CurrentVersionText) +
                    L.F("Details: {0}", log);
         // Fluent-Dialog; scheitert er (z. B. Fehler beim Aufbau von Fenstern), bleibt die einfache Windows-Meldung
         try { Services.MessageDialog.Error(null, text, L.T("Unexpected error")); }
@@ -92,7 +102,7 @@ public partial class App : Application
     {
         _controller?.Dispose();
         _showEvent?.Dispose();
-        try { _mutex?.ReleaseMutex(); } catch { }
+        try { _mutex?.ReleaseMutex(); } catch { /* Mutex schon frei oder von einem anderen Thread gehalten – beim Beenden ohne Belang */ }
         _mutex?.Dispose();
         base.OnExit(e);
     }

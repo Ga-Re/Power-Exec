@@ -2,7 +2,7 @@ using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Localization;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Gruppe wählen: vorhandene aus der Liste oder eine neue anlegen.</summary>
 public partial class GroupPickerWindow : Window

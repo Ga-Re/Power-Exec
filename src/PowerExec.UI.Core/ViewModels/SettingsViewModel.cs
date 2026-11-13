@@ -7,10 +7,10 @@ using PowerExec.Core.Profiles;
 using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 using PowerExec.Core.Updates;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ExclusionViewModel
 {
@@ -555,8 +555,8 @@ public sealed class SettingsViewModel : ObservableObject
             .ToList();
 
         ClearMachinesCommand = new RelayCommand(() => { MachineList.ClearRecent(_s); _machinesCleared = true; OnPropertyChanged(nameof(MachinesText)); });
-        CheckUpdatesCommand = new RelayCommand(() => _ = CheckUpdatesAsync(), () => !_isChecking);
-        InstallUpdateCommand = new RelayCommand(() => _ = _app.InstallUpdateAsync(), () => HasUpdate && !_app.Update.Busy);
+        CheckUpdatesCommand = new RelayCommand(() => CheckUpdatesAsync().Forget(), () => !_isChecking);
+        InstallUpdateCommand = new RelayCommand(() => _app.InstallUpdateAsync().Forget(), () => HasUpdate && !_app.Update.Busy);
         ReleaseNotesCommand = new RelayCommand(() => { if (_app.AvailableUpdate is { } r) _app.Shell.OpenUrl(r.HtmlUrl); });
         ShowWelcomeCommand = new RelayCommand(() => _app.ShowWelcome());
         CurrentReleaseNotesCommand = new RelayCommand(() => _app.Shell.OpenUrl(
@@ -649,6 +649,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("workspaces", L.T("Workspaces"), L.T("Workspaces"), L.T("customer profile switch")),
         new("workspaces", L.T("Workspaces"), L.T("Groups per workspace"), L.T("hide visible selection")),
         new("look", L.T("Appearance"), "Design", L.T("light dark theme color")),
+        new("look", L.T("Appearance"), L.T("Corners"), L.T("rounded square radius corner")),
         new("look", L.T("Appearance"), "Animation", L.T("slide out smooth fast")),
         new("look", L.T("Appearance"), L.T("Show icons"), L.T("icons favicon program icon")),
         new("look", L.T("Appearance"), L.T("List or grid"), L.T("tiles view")),
@@ -721,7 +722,9 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
+#pragma warning disable CA2011 // gewollt: „marketplace“ leitet einmalig auf die erste Unterseite weiter, keine Endlosschleife
             if (value == "marketplace") { Section = "market-entries"; return; }
+#pragma warning restore CA2011
             if (value.StartsWith("market-", StringComparison.Ordinal))
             {
                 MarketplacePage.Tab = value switch
@@ -732,7 +735,7 @@ public sealed class SettingsViewModel : ObservableObject
                     "market-sources" => "Sources",
                     _ => "Entry"
                 };
-                _ = MarketplacePage.EnsureLoadedAsync();
+                MarketplacePage.EnsureLoadedAsync().Forget();
             }
             OnPropertyChanged(nameof(IsMarketplaceSection));
         }
@@ -775,6 +778,15 @@ public sealed class SettingsViewModel : ObservableObject
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
+    /// <summary>Form der Ecken in allen Fenstern.</summary>
+    public CornerStyle Corners { get => _s.Corners; set { _s.Corners = value; OnPropertyChanged(); } }
+    public IReadOnlyList<KeyValuePair<CornerStyle, string>> CornerStyles { get; } = new[]
+    {
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Standard, L.T("Standard (like Windows 11)")),
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Rounded, L.T("Rounded")),
+        new KeyValuePair<CornerStyle, string>(CornerStyle.Square, L.T("Square"))
+    };
+
     public bool IsHighContrast => _app.Theme.IsHighContrast;
 
     /// <summary>Designvorlagen und eigene Designs: Design, Panelfarbe, Deckkraft, Hintergrund, Milchglas und Akzent mit einem Klick.</summary>
@@ -811,6 +823,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         Theme = p.Theme;
         UseWindowsAccent = p.WindowsAccent;
+        if (p.Corners is { } corners) Corners = corners;
         Panel.ApplyDesign(p);
         RaisePresets();
     }
@@ -1091,7 +1104,8 @@ public sealed class SettingsViewModel : ObservableObject
     private void RebuildCategoryTree()
     {
         if (_treeSuspended) return;
-        var children = Categories.ToDictionary(c => c, _ => new List<CategoryItemViewModel>(), ReferenceEqualityComparer.Instance);
+        var children = new Dictionary<CategoryItemViewModel, List<CategoryItemViewModel>>(ReferenceEqualityComparer.Instance);
+        foreach (var c in Categories) children[c] = new List<CategoryItemViewModel>();
         var roots = new List<CategoryItemViewModel>();
         foreach (var c in Categories)
         {
@@ -1607,7 +1621,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             File.WriteAllText(file, SettingsTransfer.Export(_app.Settings));
-            AppLog.Info(L.F("Settings exported: {0}", file));
+            AppLog.Info(string.Format("Settings exported: {0}", file));
             _app.Dialogs.Inform(L.T("The saved settings were exported.\nPasswords are not included."), L.T("Export"));
         }
         catch (Exception ex)
@@ -1638,7 +1652,7 @@ public sealed class SettingsViewModel : ObservableObject
         var result = merge == true ? SettingsTransfer.Merge(_app.Settings, imported) : imported;
         result.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         _app.ApplySettings(result);
-        AppLog.Info($"Einstellungen importiert ({(merge == true ? "zusammengeführt" : "ersetzt")}): {file}");
+        AppLog.Info($"Settings imported ({(merge == true ? "merged" : "replaced")}): {file}");
         ReopenRequested?.Invoke();
     }
 

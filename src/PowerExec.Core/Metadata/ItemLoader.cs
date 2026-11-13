@@ -25,7 +25,7 @@ public sealed class ItemLoader
             RootFolder = rootFolder,
             Type = LaunchItem.TypeFromExtension(fullPath)
         };
-        try { item.LastWriteTimeUtc = File.GetLastWriteTimeUtc(fullPath); } catch { }
+        try { item.LastWriteTimeUtc = File.GetLastWriteTimeUtc(fullPath); } catch { /* Datei inzwischen weg oder gesperrt: ohne Zeitstempel weiter */ }
 
         item.DisplayName = item.Type == ItemType.PowerShell || item.Type == ItemType.Batch
             ? item.FileName

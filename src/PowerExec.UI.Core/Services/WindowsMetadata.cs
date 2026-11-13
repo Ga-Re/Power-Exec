@@ -3,8 +3,9 @@ using System.Diagnostics;
 using System.Text;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
+using PowerExec.UI.Interop;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Liest Dateibeschreibung von EXE-Dateien und Ziel/Kommentar von Verknüpfungen.</summary>
 public sealed class WindowsMetadata : IPlatformMetadata
@@ -85,10 +86,8 @@ public static class PathResolver
         {
             if (path.Length < 3 || path[1] != ':' || path.StartsWith(@"\\")) return path;
             var drive = path[..2];
-            var sb = new StringBuilder(512);
-            int len = sb.Capacity;
-            if (OperatingSystem.IsWindows() && WNetGetConnection(drive, sb, ref len) == 0)
-                return sb.ToString().TrimEnd('\\') + path[2..];
+            if (OperatingSystem.IsWindows() && NativeMethods.NetworkPathOf(drive) is { } unc)
+                return unc.TrimEnd('\\') + path[2..];
         }
         catch
         {
@@ -98,9 +97,6 @@ public static class PathResolver
     }
 
     public static bool IsNetworkPath(string path) => path.StartsWith(@"\\");
-
-    [System.Runtime.InteropServices.DllImport("mpr.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-    private static extern int WNetGetConnection(string localName, StringBuilder remoteName, ref int length);
 
     public static string ServerShare(string uncPath)
     {

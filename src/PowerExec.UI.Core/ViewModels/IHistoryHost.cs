@@ -1,6 +1,6 @@
 using PowerExec.Core.Execution;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was eine Verlaufszeile (<see cref="HistoryRowViewModel"/>) von der App braucht.</summary>
 public interface IHistoryHost

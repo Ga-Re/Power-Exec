@@ -1,7 +1,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>Das Programmsymbol (Assets/PowerExec.ico) in passender Auflösung für die Oberfläche.</summary>
 public static class AppIcon

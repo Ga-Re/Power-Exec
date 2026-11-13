@@ -27,7 +27,7 @@ Scripte und Designs.
 |---|---|---|
 | `*.pxentry.json` | `{ "Entry": { … eigener Eintrag … }, "Variables": [ … ] }` | Eigene Einträge |
 | `*.ps1` | PowerShell-Script (`.SYNOPSIS` = Beschreibung) | Dokumente\Power-Exec\Marktplatz + Eigene Einträge |
-| `*.design.json` | Designvorlage (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor …) | Designvorlagen |
+| `*.design.json` | Designvorlage (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor …; optional `Corners`: `Standard`, `Rounded` oder `Square`) | Designvorlagen |
 
 - `Variables` nennt Variablen (`{{$Name}}`), die der Eintrag braucht – Power-Exec öffnet beim Herunterladen den
   Variablen-Dialog, falls es sie noch nicht gibt:

@@ -1,9 +1,9 @@
 using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Eine eigene Variable bearbeiten (Name, Art, Wert, Werte je Arbeitsbereich, PowerShell-Befehl …).</summary>
 public partial class VariableWindow : Window

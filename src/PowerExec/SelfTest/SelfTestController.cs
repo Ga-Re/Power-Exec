@@ -3,11 +3,12 @@ using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Search;
 using PowerExec.Core.Execution;
-using PowerExec.Services;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.Services;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
 
-namespace PowerExec;
+namespace PowerExec.Desktop;
 
 /// <summary>
 /// Oberflächen-Selbsttest für die CI (Aufruf: PowerExec.exe --selftest &lt;Ergebnisdatei&gt;).
@@ -26,7 +27,7 @@ public sealed partial class SelfTestController : AppController
     private void Step(string name)
     {
         if (_progressFile == null) return;
-        try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { }
+        try { File.AppendAllText(_progressFile, $"{DateTime.Now:HH:mm:ss.fff} {name}{Environment.NewLine}"); } catch { /* Fortschrittsdatei ist nur Hilfe bei einem Hänger */ }
     }
 
     /// <summary>Sammelt WPF-Bindungsfehler „Eigenschaft nicht gefunden“ – z. B. falscher DataContext.</summary>
@@ -108,7 +109,9 @@ public sealed partial class SelfTestController : AppController
             Settings.MachineGroups.Add(new MachineGroup { Name = "Web", Machines = ["WEB1", "WEB2"] });
             Settings.MachineGroups.Add(new MachineGroup
             {
-                Name = "Server-AD", Machines = ["SRV-DC1", "SRV-FS1"], LastSyncUtc = DateTime.UtcNow.AddHours(-1),
+                Name = "Server-AD",
+                Machines = ["SRV-DC1", "SRV-FS1"],
+                LastSyncUtc = DateTime.UtcNow.AddHours(-1),
                 AdQuery = new AdGroupQuery
                 {
                     Blocks =
@@ -121,10 +124,12 @@ public sealed partial class SelfTestController : AppController
             File.WriteAllText(Path.Combine(dir, "rechner.csv"), "Hostname;Standort\nSRV-B1;Berlin\nSRV-H1;Hamburg\nSRV-B2;Berlin\n");
             Settings.MachineGroups.Add(new MachineGroup
             {
-                Name = "Berlin", Machines = ["SRV-B1", "SRV-B2"],
+                Name = "Berlin",
+                Machines = ["SRV-B1", "SRV-B2"],
                 ListQuery = new ListGroupQuery
                 {
-                    Path = Path.Combine(dir, "rechner.csv"), NameColumn = "Hostname",
+                    Path = Path.Combine(dir, "rechner.csv"),
+                    NameColumn = "Hostname",
                     Filters = { new ListFilter { Column = "Standort", Operator = AdOperator.Equals, Value = "Berlin" } }
                 }
             });
@@ -408,8 +413,8 @@ public sealed partial class SelfTestController : AppController
                         else if (!act.IsError || !act.Detail.Contains("Fehler") || !act.WindowStillOpen) Fail($"Aktivitäten: Ergebnis bei offenem Fenster falsch ({act.State}, {act.Detail})");
                         if (!act.CanRestart) Fail("Aktivitäten: „Erneut starten“ fehlt nach dem Ende");
                     }
-                    try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { }
-                    try { Directory.Delete(doneDir, true); } catch { }
+                    try { if (cmdProc is { HasExited: false }) cmdProc.Kill(); } catch { /* Prozess inzwischen beendet */ }
+                    try { Directory.Delete(doneDir, true); } catch { /* Aufräumen im Temp-Ordner – darf scheitern */ }
                 }
                 var remoteDemo = Activities.Add(new ActivityViewModel("Get-DiskSpace", "28 / 40 Rechner · 26 ✓ · 2 Fehler", "PS", open: () => { }, cancel: () => { }));
                 remoteDemo.Progress = 0.7;
@@ -517,8 +522,10 @@ public sealed partial class SelfTestController : AppController
                         if (!host.Window.SearchBox.IsVisible || host.Window.SearchBox.ActualWidth < 10)
                             Fail("Glas: Suchfeld im Kindfenster nicht sichtbar");
                         // Fluent-Stile im Kindfenster festgehalten (sonst „defaultDestinationValue“-Absturz beim Neuaufbau)
-                        if (!Infrastructure.FluentTheme.IsPinnedForTest(host.Window.SearchBox))
-                            Fail("Glas: Bedienelemente im Kindfenster halten ihren Fluent-Stil nicht fest");
+                        // Die Fluent-Stile kommen aus den App-Ressourcen: auch im Kindfenster gilt derselbe Stil wie überall
+                        if (!ReferenceEquals(host.Window.SearchBox.TryFindResource(typeof(System.Windows.Controls.TextBox)),
+                                Application.Current.TryFindResource(typeof(System.Windows.Controls.TextBox))))
+                            Fail("Glas: Bedienelemente im Kindfenster nutzen nicht die Fluent-Stile der App");
                         // Leere Flächen müssen Klicks und Ablegen annehmen (Deckkraft 0 fiele im Kindfenster durch)
                         if (host.Window.PanelBorder.Background is not System.Windows.Media.SolidColorBrush { Color.A: > 0 })
                             Fail("Glas: Panelfläche ohne Deckkraft – Klicks auf leere Flächen fielen durch");
@@ -550,6 +557,8 @@ public sealed partial class SelfTestController : AppController
                         host.Window.ShowPanel(monitor, viaHotkey: false);
                         await Settle();
                         System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
+                        await Task.Delay(400);
+                        if (!host.Window.IsSettledForTest) Fail("Glas: Panel steht nach dem Ausfahren nicht an seiner Ziellage");
                         report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
                         host.Window.HidePanel();
                         await Settle();
@@ -621,6 +630,23 @@ public sealed partial class SelfTestController : AppController
                 var pinned = host.Config.Pinned;
                 host.Config.Pinned = true;
                 var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                await Task.Delay(500);
+                if (!host.Window.IsSettledForTest) Fail("Ausfahren: Panel steht danach nicht an seiner Ziellage");
+                // Fenster von außen verschoben (wie Windows nach Standby oder Monitorwechsel): das nächste Ausfahren
+                // muss trotzdem genau an der Ziellage enden
+                host.Window.HidePanel();
+                await Settle();
+                await Task.Delay(500);
+                host.Window.DisplaceForTest(37, 21);
+                host.ShowFromTrigger(monitor);
+                await Settle();
+                await Task.Delay(500);
+                if (!host.Window.IsSettledForTest) Fail("Ausfahren: von außen verschobenes Panel endet nicht an seiner Ziellage");
+                host.Window.HidePanel();
+                await Settle();
+                await Task.Delay(500);
                 host.ShowFromTrigger(monitor);
                 await Settle();
                 host.ToggleFromTrigger(monitor); // direkt nach dem Ausfahren: gehört noch zum Öffnen
@@ -717,6 +743,9 @@ public sealed partial class SelfTestController : AppController
                     if (dock.IsVisible) Fail("Mini-Dock: bleibt sichtbar, während das Panel offen ist");
                     host.Window.HidePanel();
                     await Settle();
+                    await Task.Delay(500);
+                    // Auch bei Glas (Panel bleibt eingefahren sichtbar geparkt) muss das Dock zurückkommen
+                    if (!dock.IsVisible) Fail("Mini-Dock: erscheint nach dem Einfahren des Panels nicht wieder");
                 }
                 host.Config.ShowDock = false;
                 host.CreateTriggers(this);
@@ -1012,6 +1041,25 @@ public sealed partial class SelfTestController : AppController
             settingsWindow.ApplyNowForTest();
             if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
 
+            // Ecken: die Einstellung überschreibt die Radius-Tokens für alle Fenster und kehrt sauber zurück
+            Step("Ecken");
+            {
+                var sectionBefore = settingsVm.Section;
+                settingsVm.Section = "look";
+                settingsVm.Corners = CornerStyle.Rounded;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 12 }) Fail("Ecken: „Rund“ setzt den Karten-Radius nicht auf 12");
+                if (settingsWindow.Content is FrameworkElement cornersRoot) Screenshot(cornersRoot, "settings-ecken-rund");
+                settingsVm = settingsWindow.CurrentViewModel;
+                settingsVm.Corners = CornerStyle.Standard;
+                settingsWindow.ApplyNowForTest();
+                await Settle();
+                if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 6 }) Fail("Ecken: „Standard“ stellt den Karten-Radius nicht wieder her");
+                settingsVm = settingsWindow.CurrentViewModel;
+                settingsVm.Section = sectionBefore;
+            }
+
             // Änderung im Panel (Eintrag in Gruppe ziehen) → Einstellungsfenster zeigt den neuen Stand
             Step("Änderung im Panel");
             var entryKey = Settings.CustomEntries.First(c => c.Name == "Intranet").Key;
@@ -1038,7 +1086,7 @@ public sealed partial class SelfTestController : AppController
             var wsRow = settingsVm.Workspaces.FirstOrDefault(w => w.IsActive);
             if (wsRow == null || wsRow.Groups.Count(g => !g.IsFixed) != settingsVm.Categories.Count) Fail("Arbeitsbereiche: Gruppenauswahl unvollständig");
             if (wsRow != null && wsRow.Groups.Count(g => g.IsFixed) != FixedGroups.Keys.Count) Fail("Arbeitsbereiche: feste Gruppen fehlen in der Auswahl");
-            else
+            else if (wsRow != null)
             {
                 wsRow.IsExpanded = true;
                 var choice = wsRow.Groups.First(g => g.Path == "Leer");
@@ -1524,15 +1572,25 @@ public sealed partial class SelfTestController : AppController
     {
         var brush = new System.Windows.Media.DrawingBrush
         {
-            TileMode = System.Windows.Media.TileMode.Tile, Viewport = new Rect(0, 0, 4, 4), ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute,
+            TileMode = System.Windows.Media.TileMode.Tile,
+            Viewport = new Rect(0, 0, 4, 4),
+            ViewportUnits = System.Windows.Media.BrushMappingMode.Absolute,
             Drawing = new System.Windows.Media.GeometryDrawing(System.Windows.Media.Brushes.Black, null, new System.Windows.Media.RectangleGeometry(new Rect(0, 0, 2, 4)))
         };
         var scale = Interop.NativeMethods.ScaleForPoint(px.Left + 1, px.Top + 1);
         return new Window
         {
-            WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize, ShowInTaskbar = false, ShowActivated = false,
-            Background = System.Windows.Media.Brushes.White, Content = new System.Windows.Controls.Border { Background = brush },
-            Left = px.Left / scale - 40, Top = px.Top / scale - 40, Width = px.Width / scale + 80, Height = px.Height / scale + 80, Title = "Streifen"
+            WindowStyle = WindowStyle.None,
+            ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false,
+            ShowActivated = false,
+            Background = System.Windows.Media.Brushes.White,
+            Content = new System.Windows.Controls.Border { Background = brush },
+            Left = px.Left / scale - 40,
+            Top = px.Top / scale - 40,
+            Width = px.Width / scale + 80,
+            Height = px.Height / scale + 80,
+            Title = "Streifen"
         };
     }
 
@@ -1571,12 +1629,12 @@ public sealed partial class SelfTestController : AppController
             using (var g = System.Drawing.Graphics.FromImage(bmp)) g.CopyFromScreen(x, y, 0, 0, bmp.Size);
             double sum = 0; int n = 0;
             for (int yy = 0; yy < bmp.Height; yy += 4)
-            for (int xx = 0; xx < bmp.Width - 1; xx++)
-            {
-                var a = bmp.GetPixel(xx, yy); var c = bmp.GetPixel(xx + 1, yy);
-                sum += Math.Abs((a.R + a.G + a.B) / 3.0 - (c.R + c.G + c.B) / 3.0);
-                n++;
-            }
+                for (int xx = 0; xx < bmp.Width - 1; xx++)
+                {
+                    var a = bmp.GetPixel(xx, yy); var c = bmp.GetPixel(xx + 1, yy);
+                    sum += Math.Abs((a.R + a.G + a.B) / 3.0 - (c.R + c.G + c.B) / 3.0);
+                    n++;
+                }
             return n == 0 ? -1 : sum / n;
         }
         catch { return -1; }

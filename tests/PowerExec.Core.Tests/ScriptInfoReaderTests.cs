@@ -1,5 +1,8 @@
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
+using PowerExec.Core.Config;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Search;
 
 namespace PowerExec.Core.Tests;
 
@@ -129,5 +132,15 @@ public class ScriptInfoReaderTests
             Assert.False(string.IsNullOrWhiteSpace(item.Synopsis), $"{item.DisplayName}: keine Kurzbeschreibung");
             Assert.All(item.Parameters, p => Assert.False(string.IsNullOrWhiteSpace(p.HelpText), $"{item.DisplayName}: -{p.Name} ohne Hilfe"));
         }
+    }
+
+    [Fact]
+    public void RequiresIsRead()
+    {
+        var item = new LaunchItem { FullPath = "/tmp/x.ps1", RootFolder = "/tmp", Type = ItemType.PowerShell };
+        ScriptInfoReader.FillFromText(item, "#Requires -RunAsAdministrator\n#Requires -Version 7.2\n#Requires -Modules ActiveDirectory\nGet-Date");
+        Assert.True(item.RequiresAdmin);
+        Assert.Equal("7.2", item.RequiredPsVersion);
+        Assert.Equal(new[] { "ActiveDirectory" }, item.RequiredModules);
     }
 }

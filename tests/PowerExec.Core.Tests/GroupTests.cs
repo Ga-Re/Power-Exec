@@ -1,4 +1,5 @@
 using PowerExec.Core.Config;
+using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Tests;
 
@@ -123,6 +124,19 @@ public class GroupTests
         Assert.Null(item.LaunchTarget);
         var spec = Execution.CommandBuilder.BuildLocal(new Execution.ExecutionRequest { Item = item });
         Assert.Equal(Path.GetDirectoryName(@"C:\Tools\Reset.ps1"), spec.WorkingDirectory);
+    }
+
+    [Fact]
+    public void GroupIconsFollowRename()
+    {
+        var s = new AppSettings();
+        GroupManager.Create(s, "A");
+        GroupManager.Create(s, "B", "A");
+        GroupManager.SetIcon(s, "A/B", IconRef.Parse("fluent:server"));
+        GroupManager.Rename(s, "A", "X");
+        Assert.Equal("fluent:server", GroupManager.IconOf(s, "X/B").ToString());
+        GroupManager.Delete(s, "X");
+        Assert.Empty(s.GroupIcons);
     }
 }
 

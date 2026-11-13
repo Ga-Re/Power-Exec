@@ -1,7 +1,7 @@
 using System.Windows.Markup;
 using PowerExec.Core.Localization;
 
-namespace PowerExec.Localization;
+namespace PowerExec.Desktop.Localization;
 
 /// <summary>Übersetzter Text in XAML: <c>Text="{l:T 'Speichern'}"</c>.</summary>
 [MarkupExtensionReturnType(typeof(string))]

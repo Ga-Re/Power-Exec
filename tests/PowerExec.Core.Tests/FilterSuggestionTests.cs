@@ -1,4 +1,7 @@
 using PowerExec.Core.Search;
+using PowerExec.Core.Config;
+using PowerExec.Core.Execution;
+using PowerExec.Core.Models;
 
 namespace PowerExec.Core.Tests;
 
@@ -54,6 +57,43 @@ public class FilterSuggestionTests
         for (int i = 0; i < 30; i++) src.Tags["tag" + i] = 1;
         Assert.Equal(30, SearchSuggestions.For("#", 1, src).Count);
         Assert.Equal(SearchSuggestions.MaxSuggestions, SearchSuggestions.For("#tag", 4, src).Count);
+    }
+
+    [Fact]
+    public void SuggestionsOfferOnlyWhatExists()
+    {
+        var src = new SuggestionSource();
+        src.Tags["Exchange"] = 4; src.Tags["AD"] = 7;
+        src.Kinds[SearchKind.PowerShell] = 23; src.Kinds[SearchKind.Rdp] = 2;
+        src.Groups["Kunde A"] = 5;
+        src.Favorites = 3;
+
+        var tags = SearchSuggestions.For("reset #e", 8, src);
+        Assert.Equal("#Exchange", tags.Single().Insert);
+        Assert.Equal(4, tags.Single().Count);
+
+        var all = SearchSuggestions.For("#", 1, src);
+        Assert.Equal("#AD", all[0].Insert); // häufigstes zuerst
+
+        var kinds = SearchSuggestions.For("typ:", 4, src);
+        Assert.Equal(new[] { "typ:ps1", "typ:rdp" }, kinds.Select(k => k.Insert));
+        Assert.DoesNotContain(kinds, k => k.Insert == "typ:ssh"); // nicht vorhanden → nicht angeboten
+
+        Assert.Equal("gruppe:\"Kunde A\"", SearchSuggestions.For("gruppe:ku", 9, src).Single().Insert);
+        Assert.Equal(new[] { "ist:fav" }, SearchSuggestions.For("ist:", 4, src).Select(x => x.Insert)); // Admin/Remote ohne Treffer fehlen
+        Assert.Contains(SearchSuggestions.For("ty", 2, src), x => x.Insert == "typ:");
+        Assert.Empty(SearchSuggestions.For("disk", 4, src));
+    }
+
+    [Fact]
+    public void SuggestionReplacesCurrentWord()
+    {
+        var (text, caret) = SearchSuggestions.Apply("reset #ex", 9, new SearchSuggestion("#Exchange", "#Exchange", "", 1));
+        Assert.Equal("reset #Exchange ", text);
+        Assert.Equal(text.Length, caret);
+        var (t2, c2) = SearchSuggestions.Apply("ty disk", 2, new SearchSuggestion("typ:", "typ:", "", 1));
+        Assert.Equal("typ: disk", t2);
+        Assert.Equal(4, c2);
     }
 }
 

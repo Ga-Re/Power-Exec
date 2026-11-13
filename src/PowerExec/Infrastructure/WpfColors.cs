@@ -2,8 +2,10 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Windows.Data;
 using System.Windows.Media;
+using PowerExec.Core.Config;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>Neutrale Farben (<see cref="ArgbColor"/>) als WPF-Pinsel.</summary>
 public static class WpfColors
@@ -22,6 +24,24 @@ public static class WpfColors
             return b;
         });
     }
+
+    /// <summary>Eingefrorener Pinsel in dieser Farbe.</summary>
+    public static SolidColorBrush Frozen(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
+    /// <summary><see cref="Rgb"/> als WPF-Farbe (deckend).</summary>
+    public static Color ToColor(this Rgb c) => Color.FromRgb(c.R, c.G, c.B);
+
+    /// <summary>WPF-Farbe als <see cref="Rgb"/> (ohne Deckkraft).</summary>
+    public static Rgb ToRgb(this Color c) => new(c.R, c.G, c.B);
+
+    /// <summary>Eingefrorener Pinsel aus einer <see cref="Rgb"/>-Farbe mit Deckkraft 0–1.</summary>
+    public static SolidColorBrush ToBrush(this Rgb c, double opacity = 1) =>
+        Frozen(Color.FromArgb((byte)Math.Round(255 * Math.Clamp(opacity, 0, 1)), c.R, c.G, c.B));
 }
 
 /// <summary>

@@ -1,9 +1,9 @@
 using PowerExec.Core.Localization;
 using System.ComponentModel;
 using System.Windows;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 public partial class ResultsWindow : Window
 {

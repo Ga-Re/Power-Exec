@@ -2,8 +2,9 @@ using PowerExec.Core.Localization;
 using System.Text;
 using System.Windows;
 using PowerExec.Core.Config;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Liest, was aus dem Explorer (Dateien, Ordner) oder dem Browser (Links) ins Panel gezogen wurde.</summary>
 public static class ExternalDrop
@@ -41,7 +42,7 @@ public static class ExternalDrop
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Drag & drop couldn't be read"), ex);
+            AppLog.Error("Drag & drop couldn't be read", ex);
         }
         return result;
     }

@@ -96,7 +96,13 @@ public static class GroupDropPlanner
         var newParent = position == GroupDropPosition.Into ? target : GroupManager.ParentOf(target);
         var plan = new GroupDropPlan
         {
-            IsValid = true, Position = position, Target = target, NewParent = newParent, Depth = depth, MinDepth = min, MaxDepth = max
+            IsValid = true,
+            Position = position,
+            Target = target,
+            NewParent = newParent,
+            Depth = depth,
+            MinDepth = min,
+            MaxDepth = max
         };
 
         bool sameParent = string.Equals(newParent, draggedParent, StringComparison.CurrentCultureIgnoreCase);

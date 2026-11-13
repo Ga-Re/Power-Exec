@@ -1,12 +1,13 @@
 <!--
-    Fluent-Bedienelemente (WPF UI) für Einstellungen und Dialoge. Wird pro Fenster eingebunden, nicht in App.xaml:
-    Panel, Hover-Zonen und Mini-Docks behalten ihr eigenes Aussehen. Design (hell/dunkel/Kontrast), Akzentfarbe und
-    die Zuordnung der eigenen Farben setzt Infrastructure/FluentTheme (Aufruf FluentTheme.Attach im Fenster).
+    Fluent-Bedienelemente (WPF UI) samt eigener Anpassungen. Einmal in App.xaml eingebunden – alle Fenster teilen sich
+    dieselben Stile. Das Design (hell/dunkel/Kontrast), die Akzentfarbe und die Zuordnung der eigenen Farben legt
+    Infrastructure/FluentTheme je Fenster darüber (Aufruf FluentTheme.Attach): ein Panel mit heller Panelfarbe bleibt
+    so auch im dunklen Design hell.
 -->
-<ResourceDictionary xmlns:l="clr-namespace:PowerExec.Localization" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns:l="clr-namespace:PowerExec.Desktop.Localization" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                    xmlns:c="clr-namespace:PowerExec.Controls">
+                    xmlns:c="clr-namespace:PowerExec.Desktop.Controls">
     <ResourceDictionary.MergedDictionaries>
         <ui:ThemesDictionary Theme="Dark"/>
         <ui:ControlsDictionary/>
@@ -102,7 +103,7 @@
                 <ControlTemplate TargetType="MenuItem">
                     <DockPanel>
                         <Border x:Name="TopRule" DockPanel.Dock="Top" Height="1" Margin="4,4" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Visibility="Collapsed"/>
-                        <Border x:Name="Bd" Background="Transparent" CornerRadius="4" Margin="4,1" Padding="10,0" MinHeight="32" MinWidth="200">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource Radius.Control}" Margin="4,1" Padding="10,0" MinHeight="32" MinWidth="200">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="28"/>
@@ -110,7 +111,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                 <!-- Aktive Auswahl (Darstellung, Farbe …): Häkchen in Akzentfarbe -->
-                                <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"
+                                <TextBlock x:Name="Check" Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="{StaticResource Font.Subtitle}"
                                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed"/>
                                 <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" RecognizesAccessKey="True"
                                                   TextElement.Foreground="{TemplateBinding Foreground}"/>
@@ -149,7 +150,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Control}" SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -160,6 +161,7 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                         </Trigger>
@@ -179,7 +181,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4,0,0,4" SnapsToDevicePixels="True">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Control.Left}" SnapsToDevicePixels="True">
                         <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"
                                           TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
@@ -200,7 +202,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <!-- 1 px Abstand zur linken Hälfte -->
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="0,4,4,0" SnapsToDevicePixels="True" Margin="1,0,0,0">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Control.Right}" SnapsToDevicePixels="True" Margin="1,0,0,0">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -245,7 +247,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="c:SettingsCard">
-                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6"
+                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}"
                             Padding="16,12" Margin="0,0,0,3" MinHeight="66">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -253,11 +255,11 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="IconText" Text="{TemplateBinding Icon}" FontFamily="{StaticResource IconFont}" FontSize="20" Width="40"
+                            <TextBlock x:Name="IconText" Text="{TemplateBinding Icon}" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.Card}" Width="40"
                                        VerticalAlignment="Center" Foreground="{DynamicResource Text.Primary}"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                <TextBlock Text="{TemplateBinding Header}" FontSize="14" TextWrapping="Wrap"/>
-                                <ContentPresenter x:Name="Desc" Content="{TemplateBinding Description}" Margin="0,2,0,0" TextElement.FontSize="12"
+                                <TextBlock Text="{TemplateBinding Header}" FontSize="{StaticResource Font.Subtitle}" TextWrapping="Wrap"/>
+                                <ContentPresenter x:Name="Desc" Content="{TemplateBinding Description}" Margin="0,2,0,0" TextElement.FontSize="{StaticResource Font.Body}"
                                                   TextElement.Foreground="{DynamicResource Text.Secondary}">
                                     <ContentPresenter.Resources>
                                         <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
@@ -286,7 +288,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="c:SettingsExpander">
-                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,3">
+                    <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Margin="0,0,0,3">
                         <StackPanel>
                             <!-- Gleiche Höhe wie SettingsCard (Padding 12 + 42 = 66) -->
                             <Grid MinHeight="42" Margin="16,12,12,12">
@@ -296,11 +298,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock x:Name="IconText" Text="{TemplateBinding Icon}" FontFamily="{StaticResource IconFont}" FontSize="20" Width="40"
+                                <TextBlock x:Name="IconText" Text="{TemplateBinding Icon}" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.Card}" Width="40"
                                            VerticalAlignment="Center"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="{TemplateBinding Header}" FontSize="14" TextWrapping="Wrap"/>
-                                    <ContentPresenter x:Name="Desc" Content="{TemplateBinding Description}" Margin="0,2,0,0" TextElement.FontSize="12"
+                                    <TextBlock Text="{TemplateBinding Header}" FontSize="{StaticResource Font.Subtitle}" TextWrapping="Wrap"/>
+                                    <ContentPresenter x:Name="Desc" Content="{TemplateBinding Description}" Margin="0,2,0,0" TextElement.FontSize="{StaticResource Font.Body}"
                                                       TextElement.Foreground="{DynamicResource Text.Secondary}">
                                         <ContentPresenter.Resources>
                                             <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style>
@@ -310,11 +312,11 @@
                                 <ContentPresenter Grid.Column="2" Content="{TemplateBinding HeaderContent}" VerticalAlignment="Center"/>
                                 <ui:Button Grid.Column="3" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="8,0,0,0" Command="{Binding ToggleCommand, RelativeSource={RelativeSource TemplatedParent}}"
                                         ToolTip="{l:T 'More options'}">
-                                    <TextBlock x:Name="Chevron" Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="12"/>
+                                    <TextBlock x:Name="Chevron" Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
                                 </ui:Button>
                             </Grid>
                             <Border x:Name="Body" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Background="{DynamicResource Bg.CardAlt}"
-                                    CornerRadius="0,0,6,6" Padding="56,6,16,6" Visibility="Collapsed">
+                                    CornerRadius="{DynamicResource Radius.Card.Bottom}" Padding="56,6,16,6" Visibility="Collapsed">
                                 <ContentPresenter/>
                             </Border>
                         </StackPanel>

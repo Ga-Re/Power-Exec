@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Text in die Zwischenablage – optional formatiert (HTML) und zusätzlich als reiner Text.</summary>
 public static class ClipboardText

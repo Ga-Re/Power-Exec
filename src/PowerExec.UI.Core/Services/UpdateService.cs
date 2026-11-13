@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using Microsoft.Win32;
 using PowerExec.Core.Updates;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Sucht nach Updates in den GitHub Releases und installiert sie nach Bestätigung.</summary>
 public sealed class UpdateService

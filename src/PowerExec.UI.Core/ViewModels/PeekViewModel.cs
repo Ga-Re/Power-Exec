@@ -3,7 +3,7 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Zeile in der Vorschau: Bezeichnung und Wert.</summary>
 public sealed record PeekFact(string Label, string Value);

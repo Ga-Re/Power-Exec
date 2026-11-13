@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Vorschläge beim Tippen von <c>{{$</c> in einem Textfeld: Liste der Variablen, Pfeiltasten wählen, Enter/Tab fügt ein,
@@ -16,10 +16,16 @@ public static class VariableCompletion
         var list = new ListBox { MaxHeight = 220, MinWidth = 220, FontFamily = (System.Windows.Media.FontFamily)box.FindResource("MonoFont"), BorderThickness = new Thickness(0) };
         var popup = new Popup
         {
-            PlacementTarget = box, Placement = PlacementMode.RelativePoint, StaysOpen = false, AllowsTransparency = true,
+            PlacementTarget = box,
+            Placement = PlacementMode.RelativePoint,
+            StaysOpen = false,
+            AllowsTransparency = true,
             Child = new Border
             {
-                Child = list, Padding = new Thickness(4), CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1)
+                Child = list,
+                Padding = new Thickness(4),
+                CornerRadius = Tokens.RadiusCard,
+                BorderThickness = new Thickness(1)
             }
         };
         if (popup.Child is Border b)

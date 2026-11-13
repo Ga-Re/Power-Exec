@@ -1,0 +1,20 @@
+<!-- Einstellungen › Hilfe › Beispiele. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.SamplesPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=samples}">
+        <TextBlock Text="{l:T 'Examples'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'Ready-made sample scripts to try out and as a template for your own scripts.'}" Style="{StaticResource Caption}"/>
+        <TextBlock Text="{l:T 'Sample scripts'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE943;" Header="{l:T 'Create sample scripts'}"
+                        Description="{l:T 'System info, network test, disk space, large files, installed programs, error log, temp cleanup and passwords – under Documents › Power-Exec › Scripts (existing files stay unchanged), shown in the panel as the group “Examples”.'}">
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Create'}" Command="{Binding AddSamplesCommand}"/>
+        </c:SettingsCard>
+        <c:InfoBar Message="{Binding SamplesStatus}" Severity="{Binding SamplesSeverity}"/>
+    </StackPanel>
+</UserControl>

@@ -1,8 +1,8 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.ViewModels;
 
 namespace PowerExec.UI.Core.Tests;
 
@@ -217,7 +217,10 @@ public class PanelViewModelTests
             SmartGroups.Add(host.Settings, dir);
             host.Items.List.Add(new LaunchItem
             {
-                FullPath = file, RootFolder = dir, Type = ItemType.PowerShell, DisplayName = "Peek",
+                FullPath = file,
+                RootFolder = dir,
+                Type = ItemType.PowerShell,
+                DisplayName = "Peek",
                 RequiresAdmin = true,
                 Parameters = new[] { new ScriptParameter { Name = "Drive", TypeName = "string", DefaultValueText = "'C:'" } }
             });

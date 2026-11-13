@@ -1,13 +1,13 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>Verlauf aller Starts (B3): mit Ergebnis, Dauer, Zielen und Parametern; „Erneut ausführen“ mit denselben Werten.</summary>
 public partial class AppController
@@ -76,7 +76,7 @@ public partial class AppController
     public void SaveHistory()
     {
         try { _history?.Save(HistoryPath); }
-        catch (Exception ex) { AppLog.Error(L.T("History couldn't be saved"), ex); }
+        catch (Exception ex) { AppLog.Error("History couldn't be saved", ex); }
     }
 
     /// <summary>Lauf mit denselben Werten wiederholen (bei Remote wahlweise nur die fehlgeschlagenen Rechner).</summary>
@@ -100,7 +100,7 @@ public partial class AppController
             activity.State switch { ActivityState.Error => HistoryResult.Error, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Success },
             activity.Detail, activity.ExitCode));
         // Programme, Webseiten, Ordner …: nur „gestartet“, kein Ende
-        if (track == null) CompleteHistory(entry, HistoryResult.Started, "gestartet");
+        if (track == null) CompleteHistory(entry, HistoryResult.Started, L.T("started"));
         return track;
     }
 }

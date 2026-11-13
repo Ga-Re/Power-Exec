@@ -2,8 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using PowerExec.Core.Search;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.Desktop.Infrastructure;
 
 /// <summary>
 /// Füllt einen TextBlock aus Abschnitten und hebt Treffer hervor:
@@ -17,14 +18,27 @@ public static class Highlight
     public static IEnumerable<TextPart>? GetParts(DependencyObject d) => (IEnumerable<TextPart>?)d.GetValue(PartsProperty);
     public static void SetParts(DependencyObject d, IEnumerable<TextPart>? value) => d.SetValue(PartsProperty, value);
 
-    private static void OnPartsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    /// <summary>
+    /// Umbruchstellen nach „-“, „_“ und „.“ einfügen (für Namen in schmalen Kacheln):
+    /// <c>infra:Highlight.SoftBreaks="True"</c>.
+    /// </summary>
+    public static readonly DependencyProperty SoftBreaksProperty = DependencyProperty.RegisterAttached(
+        "SoftBreaks", typeof(bool), typeof(Highlight), new PropertyMetadata(false, (d, _) => Render(d)));
+
+    public static bool GetSoftBreaks(DependencyObject d) => (bool)d.GetValue(SoftBreaksProperty);
+    public static void SetSoftBreaks(DependencyObject d, bool value) => d.SetValue(SoftBreaksProperty, value);
+
+    private static void OnPartsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => Render(d);
+
+    private static void Render(DependencyObject d)
     {
         if (d is not TextBlock tb) return;
         tb.Inlines.Clear();
-        if (e.NewValue is not IEnumerable<TextPart> parts) return;
+        if (GetParts(tb) is not { } parts) return;
+        var soft = GetSoftBreaks(tb);
         foreach (var p in parts)
         {
-            var run = new Run(p.Text);
+            var run = new Run(soft ? DisplayText.WithSoftBreaks(p.Text) : p.Text);
             if (p.IsHit)
             {
                 run.SetResourceReference(TextElement.BackgroundProperty, "Search.Highlight");

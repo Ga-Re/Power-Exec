@@ -7,10 +7,10 @@ using System.Text.RegularExpressions;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Kachel im ersten Schritt des Eintragsdialogs.</summary>
 public sealed record KindTile(string Key, string Label, string Glyph);
@@ -52,7 +52,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         TestCommand = new RelayCommand(Test, () => IsValid && _e.Placeholders.Count == 0);
         ChooseIconCommand = new RelayCommand(ChooseIcon);
         ClearIconCommand = new RelayCommand(() => Icon = string.Empty, () => _e.Icon.Length > 0);
-        FetchTitleCommand = new RelayCommand(() => _ = FetchTitleAsync(force: true), () => IsUrl && Uri.TryCreate(_e.Target.Trim(), UriKind.Absolute, out _));
+        FetchTitleCommand = new RelayCommand(() => FetchTitleAsync(force: true).Forget(), () => IsUrl && Uri.TryCreate(_e.Target.Trim(), UriKind.Absolute, out _));
         PickToolCommand = new RelayCommand(p => { if (p is ToolChoice t) ApplyTool(t.Template); });
         SmartGroupCommand = new RelayCommand(() => SmartGroupRequested?.Invoke(_e.Target.Trim()), () => IsFolder && _e.Target.Trim().Length > 0);
         _checkTimer = app.UiDispatcher.CreateTimer(TimeSpan.FromMilliseconds(700), () => { _checkTimer!.Stop(); RunDelayedChecks(); });
@@ -436,7 +436,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         {
             SyntaxErrors = EntryValidation.CheckSyntax(_e.Code);
             var probe = new LaunchItem { FullPath = "snippet.ps1", RootFolder = string.Empty, Type = ItemType.PowerShell };
-            try { Core.Metadata.ScriptInfoReader.FillFromText(probe, _e.Code); } catch { }
+            try { Core.Metadata.ScriptInfoReader.FillFromText(probe, _e.Code); } catch { /* unvollständiger Code beim Tippen: Parameter-Vorschau bleibt leer */ }
             ParameterPreview = probe.Parameters.Count == 0
                 ? L.T("No parameters – the snippet starts without asking.")
                 : L.T("Asked for at launch: ") + string.Join(", ", probe.Parameters.Select(p =>
@@ -444,9 +444,9 @@ public sealed class CustomEntryViewModel : ObservableObject
         }
         else SyntaxErrors = Array.Empty<SyntaxIssue>();
 
-        _ = CheckTargetAsync(version);
+        CheckTargetAsync(version).Forget();
         LoadAutoIcon();
-        if (IsUrl) _ = FetchTitleAsync(force: false);
+        if (IsUrl) FetchTitleAsync(force: false).Forget();
     }
 
     private async Task CheckTargetAsync(int version)

@@ -4,11 +4,11 @@ using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
 using PowerExec.Core.Updates;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Brücke zwischen den UI-neutralen ViewModels (PowerExec.UI.Core) und der WPF-App: übersetzt den

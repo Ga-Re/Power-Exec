@@ -1,8 +1,8 @@
 using PowerExec.Core.Localization;
 using System.Windows;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Fragt zwischen wenigen Möglichkeiten (große Schaltflächen mit Erklärung), z. B. Ordner als Gruppe oder Link.</summary>
 public partial class ChoiceWindow : Window

@@ -46,7 +46,12 @@ public sealed class UserVariable
 
     public UserVariable Clone() => new()
     {
-        Name = Name, Kind = Kind, Value = Value, Refresh = Refresh, CacheMinutes = CacheMinutes, Description = Description,
+        Name = Name,
+        Kind = Kind,
+        Value = Value,
+        Refresh = Refresh,
+        CacheMinutes = CacheMinutes,
+        Description = Description,
         WorkspaceValues = new Dictionary<string, string>(WorkspaceValues, StringComparer.CurrentCultureIgnoreCase)
     };
 }

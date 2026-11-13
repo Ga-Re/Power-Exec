@@ -2,10 +2,10 @@ using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Search;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Spotlight-Modus (A1): schwebende Suche in der Bildschirmmitte mit den besten Treffern des Panels.

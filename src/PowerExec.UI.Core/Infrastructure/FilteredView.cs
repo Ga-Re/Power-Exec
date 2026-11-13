@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using PowerExec.Core.Collections;
 
-namespace PowerExec.Infrastructure;
+namespace PowerExec.UI.Infrastructure;
 
 /// <summary>
 /// Gefilterte und optional sortierte Ansicht einer Quellliste, ohne UI-Framework (ersetzt WPF-<c>CollectionView</c>).

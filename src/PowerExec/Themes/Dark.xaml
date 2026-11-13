@@ -23,10 +23,10 @@
     <SolidColorBrush x:Key="Accent.Hover" Color="#7DD6FF"/>
     <SolidColorBrush x:Key="Accent.Pressed" Color="#4BB8EA"/>
     <SolidColorBrush x:Key="OnAccent" Color="#00263A"/>
-    <SolidColorBrush x:Key="Tile.Success" Color="#1F4D2A"/>
-    <SolidColorBrush x:Key="Tile.Error" Color="#5C2329"/>
-    <SolidColorBrush x:Key="Tile.Unreachable" Color="#4A3F14"/>
-    <SolidColorBrush x:Key="Tile.Running" Color="#1F3A4D"/>
+    <SolidColorBrush x:Key="Status.Success.Fill" Color="#1F4D2A"/>
+    <SolidColorBrush x:Key="Status.Error.Fill" Color="#5C2329"/>
+    <SolidColorBrush x:Key="Status.Warning.Fill" Color="#4A3F14"/>
+    <SolidColorBrush x:Key="Status.Info.Fill" Color="#1F3A4D"/>
     <SolidColorBrush x:Key="Code.Keyword" Color="#569CD6"/>
     <SolidColorBrush x:Key="Code.Variable" Color="#9CDCFE"/>
     <SolidColorBrush x:Key="Code.String" Color="#CE9178"/>
@@ -37,18 +37,12 @@
     <SolidColorBrush x:Key="Code.Operator" Color="#C8C8C8"/>
     <SolidColorBrush x:Key="Code.Parameter" Color="#C586C0"/>
     <SolidColorBrush x:Key="Search.Highlight" Color="#5560CDFF"/>
-    <SolidColorBrush x:Key="Info.Bg" Color="#1F3346"/>
-    <SolidColorBrush x:Key="Info.Border" Color="#2F4B65"/>
-    <SolidColorBrush x:Key="Info.Text" Color="#C8D6E3"/>
-    <SolidColorBrush x:Key="Warn.Bg" Color="#3D3414"/>
-    <SolidColorBrush x:Key="Warn.Border" Color="#6B5A1A"/>
+    <SolidColorBrush x:Key="Status.Info.Text" Color="#C8D6E3"/>
     <SolidColorBrush x:Key="Status.Success" Color="#6CCB5F"/>
     <SolidColorBrush x:Key="Status.Error" Color="#FF99A4"/>
     <SolidColorBrush x:Key="Status.Warning" Color="#FCE100"/>
     <SolidColorBrush x:Key="Star" Color="#FCE100"/>
-    <SolidColorBrush x:Key="Excl.Bg" Color="#3A2A2E"/>
-    <SolidColorBrush x:Key="Excl.Border" Color="#5A3D44"/>
-    <SolidColorBrush x:Key="Excl.Text" Color="#FFC2C9"/>
+    <SolidColorBrush x:Key="Status.Error.Text" Color="#FFC2C9"/>
     <Color x:Key="ShadowColor">#000000</Color>
     <SolidColorBrush x:Key="Badge.PowerShell.Bg" Color="#403B82F6"/>
     <SolidColorBrush x:Key="Badge.PowerShell.Fg" Color="#A6D4FF"/>
@@ -74,16 +68,13 @@
     <SolidColorBrush x:Key="Bg.GroupCard" Color="#0FFFFFFF"/>
     <SolidColorBrush x:Key="Border.GroupCard" Color="#1FFFFFFF"/>
     <!-- InfoBar (Rückmeldungen wie in Windows 11) -->
-    <SolidColorBrush x:Key="InfoBar.Success.Bg" Color="#393D1B"/>
-    <SolidColorBrush x:Key="InfoBar.Success.Border" Color="#4D5A2A"/>
-    <SolidColorBrush x:Key="InfoBar.Success.Icon" Color="#6CCB5F"/>
-    <SolidColorBrush x:Key="InfoBar.Warning.Bg" Color="#433519"/>
-    <SolidColorBrush x:Key="InfoBar.Warning.Border" Color="#5E4B22"/>
-    <SolidColorBrush x:Key="InfoBar.Warning.Icon" Color="#FCE100"/>
-    <SolidColorBrush x:Key="InfoBar.Error.Bg" Color="#442726"/>
-    <SolidColorBrush x:Key="InfoBar.Error.Border" Color="#5E3533"/>
-    <SolidColorBrush x:Key="InfoBar.Error.Icon" Color="#FF99A4"/>
-    <SolidColorBrush x:Key="InfoBar.Info.Bg" Color="#1F3346"/>
-    <SolidColorBrush x:Key="InfoBar.Info.Border" Color="#2F4B65"/>
-    <SolidColorBrush x:Key="InfoBar.Info.Icon" Color="#60CDFF"/>
+    <SolidColorBrush x:Key="Status.Success.Bg" Color="#393D1B"/>
+    <SolidColorBrush x:Key="Status.Success.Border" Color="#4D5A2A"/>
+    <SolidColorBrush x:Key="Status.Warning.Bg" Color="#433519"/>
+    <SolidColorBrush x:Key="Status.Warning.Border" Color="#5E4B22"/>
+    <SolidColorBrush x:Key="Status.Error.Bg" Color="#442726"/>
+    <SolidColorBrush x:Key="Status.Error.Border" Color="#5E3533"/>
+    <SolidColorBrush x:Key="Status.Info.Bg" Color="#1F3346"/>
+    <SolidColorBrush x:Key="Status.Info.Border" Color="#2F4B65"/>
+    <SolidColorBrush x:Key="Status.Info" Color="#60CDFF"/>
 </ResourceDictionary>

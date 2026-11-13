@@ -1,7 +1,7 @@
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>Spotlight-Modus (A1): Tastenkürzel öffnet eine schwebende Suche in der Bildschirmmitte.</summary>
 public partial class AppController

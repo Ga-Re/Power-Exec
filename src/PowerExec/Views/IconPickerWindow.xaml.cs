@@ -3,9 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.Desktop.Services;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Symbolauswahl: Fluent UI System Icons, Heroicons, Segoe-Glyphen, Emoji oder eigene Bilddatei.</summary>
 public partial class IconPickerWindow : Window

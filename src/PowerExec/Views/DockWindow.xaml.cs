@@ -7,12 +7,13 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
 using PowerExec.Core.Layout;
-using PowerExec.Infrastructure;
-using PowerExec.Interop;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.Desktop.Infrastructure;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Ein Platz im Mini-Dock: Favorit (Klick startet) oder „⋯“ (öffnet das Panel).</summary>
 public sealed class DockSlot : ObservableObject
@@ -85,12 +86,13 @@ public partial class DockWindow : Window
         Infrastructure.FluentTheme.Attach(this);
         Orientation = host.Config.Edge is ScreenEdge.Left or ScreenEdge.Right ? Orientation.Vertical : Orientation.Horizontal;
         // Abgerundet nur zur Bildschirmmitte hin
+        var r = Tokens.RadiusTile.TopLeft;
         DockBorder.CornerRadius = host.Config.Edge switch
         {
-            ScreenEdge.Left => new CornerRadius(0, 8, 8, 0),
-            ScreenEdge.Top => new CornerRadius(0, 0, 8, 8),
-            ScreenEdge.Bottom => new CornerRadius(8, 8, 0, 0),
-            _ => new CornerRadius(8, 0, 0, 8)
+            ScreenEdge.Left => new CornerRadius(0, r, r, 0),
+            ScreenEdge.Top => new CornerRadius(0, 0, r, r),
+            ScreenEdge.Bottom => new CornerRadius(r, r, 0, 0),
+            _ => new CornerRadius(r, 0, 0, r)
         };
         DockBorder.Opacity = Math.Max(0.6, host.Config.EffectiveOpacity / 100.0);
 
@@ -98,14 +100,14 @@ public partial class DockWindow : Window
         _hoverTimer.Tick += (_, _) => { _hoverTimer.Stop(); OpenPanel(); };
 
         host.ViewModel.QuickItemsChanged += Rebuild;
-        host.Window.IsVisibleChanged += OnPanelVisibleChanged;
+        host.Window.OpenChanged += UpdateVisibility;
         // Nach dem Schließen (Dock ausgeschaltet, Panels neu erzeugt) nicht mehr reagieren
         Closed += (_, _) =>
         {
             _closed = true;
             _hoverTimer.Stop();
             host.ViewModel.QuickItemsChanged -= Rebuild;
-            host.Window.IsVisibleChanged -= OnPanelVisibleChanged;
+            host.Window.OpenChanged -= UpdateVisibility;
         };
 
         SourceInitialized += (_, _) =>
@@ -125,8 +127,6 @@ public partial class DockWindow : Window
     private void OpenPanel() => _host.ShowFromTrigger(_monitor);
 
     /// <summary>Favoriten neu einlesen (Reihenfolge wie in der Gruppe „Favoriten“).</summary>
-    private void OnPanelVisibleChanged(object? sender, DependencyPropertyChangedEventArgs e) => UpdateVisibility();
-
     public void Rebuild()
     {
         if (_closed) return;
@@ -157,7 +157,8 @@ public partial class DockWindow : Window
     private void UpdateVisibility()
     {
         if (_closed) return;
-        if (_suspended || _host.Window.IsVisible) { _hoverTimer.Stop(); Hide(); }
+        // „Offen“ statt „sichtbar“: ein Glas-Panel bleibt eingefahren sichtbar geparkt
+        if (_suspended || _host.Window.IsOpen) { _hoverTimer.Stop(); Hide(); }
         else { Show(); Place(); }
     }
 

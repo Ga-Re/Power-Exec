@@ -201,4 +201,35 @@ public class ExecutionTests
         Assert.Null(UpdateChecker.FindNewer(json, new Version(1, 4, 0, 0), false));
         Assert.Equal("ab" + new string('0', 62), UpdateChecker.ParseChecksum("AB" + new string('0', 62) + "  PowerExec.exe"));
     }
+
+    private static LaunchItem Script(bool admin = false, string version = "") => new()
+    {
+        FullPath = @"C:\Scripts\a.ps1",
+        RootFolder = @"C:\Scripts",
+        Type = ItemType.PowerShell,
+        RequiresAdmin = admin,
+        RequiredPsVersion = version
+    };
+
+    [Theory]
+    [InlineData("", false)]
+    [InlineData("5.1", false)]
+    [InlineData("7", true)]
+    [InlineData("7.2", true)]
+    [InlineData("6.0", true)]
+    public void RequiredVersionSelectsPowerShell7(string version, bool expected)
+    {
+        Assert.Equal(expected, Requirements.NeedsPowerShell7(Script(version: version)));
+        Assert.Equal(expected ? PsEngine.PowerShell7 : PsEngine.WindowsPowerShell, Requirements.EngineFor(Script(version: version), PsEngine.WindowsPowerShell));
+    }
+
+    [Fact]
+    public void RequiresAdminElevatesOnlyLocally()
+    {
+        var item = Script(admin: true);
+        Assert.Equal(ExecutionMode.Administrator, Requirements.ModeFor(item, ExecutionMode.CurrentUser, remote: false));
+        Assert.Equal(ExecutionMode.CurrentUser, Requirements.ModeFor(item, ExecutionMode.CurrentUser, remote: true));
+        Assert.Equal(ExecutionMode.OtherUser, Requirements.ModeFor(item, ExecutionMode.OtherUser, remote: false));
+        Assert.Equal(ExecutionMode.CurrentUser, Requirements.ModeFor(Script(), ExecutionMode.CurrentUser, remote: false));
+    }
 }

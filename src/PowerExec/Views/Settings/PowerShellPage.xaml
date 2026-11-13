@@ -1,0 +1,53 @@
+<!-- Einstellungen › Ausführung › PowerShell. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.PowerShellPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=exec}">
+        <TextBlock Text="{l:T 'PowerShell'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'Defaults for running scripts. An entry\'s launch profiles (⚙) can override them.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+        <TextBlock Text="{l:T 'Start'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE70F;" Header="{l:T 'Parameters directly in the panel'}"
+                        Description="{l:T 'Expanding a script shows a small form with its parameters. “Save as …” creates a parameter set as a launch profile.'}">
+            <ui:ToggleSwitch IsChecked="{Binding InlineParameters}" AutomationProperties.Name="{l:T 'Parameters directly in the panel'}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE756;" Header="{l:T 'Default PowerShell (local)'}" Description="{l:T 'If PowerShell 7 is missing, Windows PowerShell 5.1 is used automatically.'}">
+            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding EnginesList}" SelectedValue="{Binding DefaultEngine}"/>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE72E;" Header="{l:T 'Execution Policy'}" Description="{l:T 'Only applies to scripts started by Power-Exec.'}">
+            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Policies}" SelectedValue="{Binding ExecutionPolicy}"/>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE77B;" Header="{l:T 'Start without profile (-NoProfile)'}" Description="{l:T 'Faster start, no side effects from the PowerShell profile.'}">
+            <ui:ToggleSwitch IsChecked="{Binding NoProfile}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE7C4;" Header="{l:T 'Keep console open after finishing (-NoExit)'}" Description="{l:T 'So the output stays visible.'}">
+            <ui:ToggleSwitch IsChecked="{Binding NoExit}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE77B;" Header="{l:T 'Ask for the profile at launch'}"
+                        Description="{l:T 'If an entry has several launch profiles, Power-Exec asks which one before launching – in the same window as the values for \{\{placeholders\}\}. Can be set differently per entry (edit entry).'}">
+            <ui:ToggleSwitch IsChecked="{Binding AskProfile}" AutomationProperties.Name="{l:T 'Ask for the profile at launch'}" />
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Editor'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE70F;" Header="{l:T 'Editor for “Open in editor”'}">
+            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Editors}" SelectedValue="{Binding Editor}"/>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE8E5;" Header="{l:T 'Custom editor'}" Description="{l:T 'Path to the EXE'}" Visibility="{Binding IsCustomEditor, Converter={StaticResource Vis}}">
+            <StackPanel Orientation="Horizontal">
+                <TextBox Width="320" Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'C:\\Program Files\\Notepad++\\notepad++.exe'}"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseEditorCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Good to know'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE946;" Header="{l:T 'How Power-Exec runs scripts'}" Description="{l:T 'Network drives, companion files, delegation'}">
+            <StackPanel Margin="0,6">
+                <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Network paths: '}"/><Run Text="{l:T 'Mapped drives are converted to UNC paths before launch – elevated processes and other accounts don\'t see mapped drives.'}"/></TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Companion files for remote: '}"/><Run Text="{l:T '“Send script folder along” copies modules and files via the remote session and deletes them afterwards. Permanently with “PowerExec: CopyFolder” under .NOTES.'}"/></TextBlock>
+                <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Delegation (CredSSP): '}"/><Run Text="{l:T 'is deliberately not supported because credentials would be passed on to the target computer.'}"/></TextBlock>
+            </StackPanel>
+        </c:SettingsExpander>
+    </StackPanel>
+</UserControl>

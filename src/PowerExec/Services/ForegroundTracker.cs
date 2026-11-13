@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using PowerExec.Interop;
+using PowerExec.Desktop.Interop;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>Merkt sich das Fenster, das vor dem Öffnen des Panels aktiv war (für „Text direkt einfügen“).</summary>
 public static class ForegroundTracker

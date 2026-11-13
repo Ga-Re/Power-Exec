@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Führt ein Script über den Remote-Runner (Windows PowerShell 5.1) auf einem oder mehreren Rechnern aus.
@@ -104,7 +104,7 @@ public sealed class RemoteSession : IDisposable
     private void OnExited()
     {
         // Restliche Ausgabe abwarten
-        try { _process?.WaitForExit(); } catch { }
+        try { _process?.WaitForExit(); } catch { /* Prozess schon beendet oder nie gestartet */ }
         string? error = null;
         if (!_done)
         {
@@ -120,7 +120,7 @@ public sealed class RemoteSession : IDisposable
         {
             if (_process is { HasExited: false }) _process.Kill(entireProcessTree: true);
         }
-        catch { }
+        catch { /* Prozess inzwischen von selbst beendet */ }
     }
 
     public void Dispose()

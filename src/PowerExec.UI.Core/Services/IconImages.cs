@@ -1,4 +1,4 @@
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Geladenes Symbolbild der Oberfläche als undurchsichtiger Griff: Das ViewModel reicht es nur weiter,

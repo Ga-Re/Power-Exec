@@ -1,9 +1,9 @@
 using System.Windows;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Eintragsdialog: erst die Art (Kacheln), dann ein Formular mit den Feldern dieser Art, dem Startverhalten

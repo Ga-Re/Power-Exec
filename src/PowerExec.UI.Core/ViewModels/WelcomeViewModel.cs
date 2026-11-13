@@ -1,10 +1,10 @@
 using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>
 /// Einführung beim ersten Start in vier Schritten: Scriptordner, Bildschirmrand, Tastenkürzel/Autostart, Fertig.
@@ -133,7 +133,7 @@ public sealed class WelcomeViewModel : ObservableObject
         s.StartWithWindows = _startWithWindows;
         s.UseWindowsAccent = _useWindowsAccent;
         if (s.Panels.Count == 0) s.Panels.Add(new PanelConfig());
-        foreach (var p in s.Panels) p.Edge = _edge;
+        foreach (var p in s.Panels) { p.Edge = _edge; p.HotZoneAutoHide = true; } // neue Installation: Streifen erst beim Annähern
         s.Panels[0].Hotkey = _hotkey;
         var folder = _folder;
         if (folder != null && !s.Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))
@@ -147,7 +147,7 @@ public sealed class WelcomeViewModel : ObservableObject
             SmartGroups.Add(s, samples, name, null);
         }
         _app.ApplySettings(s);
-        AppLog.Info($"Einführung abgeschlossen: Rand {_edge}, Ordner {folder ?? "–"}, Beispiele {samples ?? "–"}");
+        AppLog.Info($"Welcome finished: edge {_edge}, folder {folder ?? "–"}, samples {samples ?? "–"}");
         CloseRequested?.Invoke(true);
     }
 
@@ -175,7 +175,7 @@ public sealed class WelcomeViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.T("Sample folder couldn't be created"), ex);
+            AppLog.Error("Sample folder couldn't be created", ex);
             return null;
         }
     }

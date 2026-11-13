@@ -1,7 +1,7 @@
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Betriebssystem-Aufrufe der Oberfläche: Explorer, Browser, Zwischenablage, installierte Werkzeuge.</summary>
 public interface IShell

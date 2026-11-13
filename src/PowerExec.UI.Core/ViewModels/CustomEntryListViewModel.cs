@@ -3,10 +3,10 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using PowerExec.Core.Config;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Eine Zeile der Liste „Eigene Einträge“ in den Einstellungen.</summary>
 public sealed class CustomEntryRowViewModel : ObservableObject
@@ -143,7 +143,7 @@ public sealed class CustomEntryListViewModel : ObservableObject
         MoveSelectedCommand = new RelayCommand(MoveSelected, () => Selected.Any());
         ClearSelectionCommand = new RelayCommand(() => { foreach (var r in Selected.ToList()) r.IsSelected = false; });
         SelectAllCommand = new RelayCommand(() => { foreach (var r in VisibleRows.ToList()) r.IsSelected = true; });
-        CheckCommand = new RelayCommand(() => _ = CheckAsync(), () => !_checking);
+        CheckCommand = new RelayCommand(() => CheckAsync().Forget(), () => !_checking);
         SetKindFilterCommand = new RelayCommand(p => KindFilter = p?.ToString() ?? "all");
     }
 

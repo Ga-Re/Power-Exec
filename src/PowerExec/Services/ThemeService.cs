@@ -3,7 +3,7 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using PowerExec.Core.Config;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>
 /// Tauscht das Farbschema (Dunkel/Hell) zur Laufzeit aus, übernimmt auf Wunsch die Windows-Akzentfarbe
@@ -26,6 +26,46 @@ public static class ThemeService
     public static string StateKey => $"{IsDark}|{IsHighContrast}|{(Overrides.TryGetValue("Accent", out var a) ? a.ToString() : string.Empty)}";
 
     /// <summary>Nur das Farbschema (z. B. Selbsttest ohne weitere Einstellungen).</summary>
+    /// <summary>
+    /// Einstellung „Ecken“: die Radius-Tokens aus <c>Themes/Tokens.xaml</c> für alle Fenster überschreiben (Standard: die
+    /// Werte der Datei gelten). Auch die Radien der Fluent-Bedienelemente von WPF UI folgen.
+    /// </summary>
+    public static void ApplyCorners(CornerStyle style)
+    {
+        var res = Application.Current.Resources;
+        string[] keys =
+        [
+            "Radius.Control", "Radius.Control.Left", "Radius.Control.Right", "Radius.Control.CornerMark", "Radius.Control.Value",
+            "Radius.Card", "Radius.Card.Top", "Radius.Card.Top.Inner", "Radius.Card.Bottom", "Radius.Card.Value",
+            "Radius.Tile", "Radius.Tile.Inner", "Radius.Tile.Top", "Radius.Tile.Top.Inner", "Radius.Tile.BottomLeft",
+            "Radius.Window", "TextBox.CornerRadius", "ControlCornerRadius", "OverlayCornerRadius"
+        ];
+        foreach (var key in keys) res.Remove(key);
+        if (style == CornerStyle.Standard) return;
+        var r = CornerRadii.Of(style);
+        static double Inner(double radius) => Math.Max(0, radius - 1); // Fläche innerhalb eines 1 px breiten Rahmens
+        res["Radius.Control"] = new CornerRadius(r.Control);
+        res["Radius.Control.Left"] = new CornerRadius(r.Control, 0, 0, r.Control);
+        res["Radius.Control.Right"] = new CornerRadius(0, r.Control, r.Control, 0);
+        res["Radius.Control.CornerMark"] = new CornerRadius(0, r.Control, 0, r.Control);
+        res["Radius.Control.Value"] = r.Control;
+        res["Radius.Card"] = new CornerRadius(r.Card);
+        res["Radius.Card.Top"] = new CornerRadius(r.Card, r.Card, 0, 0);
+        res["Radius.Card.Top.Inner"] = new CornerRadius(Inner(r.Card), Inner(r.Card), 0, 0);
+        res["Radius.Card.Bottom"] = new CornerRadius(0, 0, r.Card, r.Card);
+        res["Radius.Card.Value"] = r.Card;
+        res["Radius.Tile"] = new CornerRadius(r.Tile);
+        res["Radius.Tile.Inner"] = new CornerRadius(Inner(r.Tile));
+        res["Radius.Tile.Top"] = new CornerRadius(r.Tile, r.Tile, 0, 0);
+        res["Radius.Tile.Top.Inner"] = new CornerRadius(Inner(r.Tile), Inner(r.Tile), 0, 0);
+        res["Radius.Tile.BottomLeft"] = new CornerRadius(0, 0, 0, r.Tile);
+        res["Radius.Window"] = new CornerRadius(r.Window);
+        res["TextBox.CornerRadius"] = new CornerRadius(r.Control);
+        // Fluent-Bedienelemente (WPF UI): Schaltflächen, Auswahllisten, Menüs
+        res["ControlCornerRadius"] = new CornerRadius(r.Control);
+        res["OverlayCornerRadius"] = new CornerRadius(r.Card);
+    }
+
     public static void Apply(ThemeMode mode) => Apply(new AppSettings { Theme = mode });
 
     public static void Apply(AppSettings settings)
@@ -58,7 +98,8 @@ public static class ThemeService
         var merged = Application.Current.Resources.MergedDictionaries;
         if (merged.Count > 0) merged[0] = dict;
         else merged.Insert(0, dict);
-        PowerExec.Views.WindowHelper.RefreshOpenWindows();
+        ApplyCorners(settings.Corners);
+        PowerExec.Desktop.Views.WindowHelper.RefreshOpenWindows();
         Infrastructure.FluentTheme.Refresh();
         Listen();
     }

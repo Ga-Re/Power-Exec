@@ -50,6 +50,14 @@ public static class PanelSlide
         return monitors.Any(m => m.IntersectsWith(outside));
     }
 
+    /// <summary>
+    /// Steht das ausgefahrene Fenster an seiner Ziellage? Je Kante sind <paramref name="tolerance"/> Pixel Abweichung
+    /// erlaubt (Rundung, wenn WPF Lage und Größe über DIP setzt); 0 verlangt die genaue Lage.
+    /// </summary>
+    public static bool IsSettled(Rectangle actual, Rectangle expected, int tolerance) =>
+        Math.Abs(actual.X - expected.X) <= tolerance && Math.Abs(actual.Y - expected.Y) <= tolerance &&
+        Math.Abs(actual.Width - expected.Width) <= tolerance && Math.Abs(actual.Height - expected.Height) <= tolerance;
+
     /// <summary>Sichtbarer Teil des Fensters (relativ zum Fenster), wenn auf den Arbeitsbereich zugeschnitten wird; leer = nichts sichtbar.</summary>
     public static Rectangle Visible(Rectangle window, Rectangle workArea)
     {

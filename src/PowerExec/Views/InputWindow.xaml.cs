@@ -1,7 +1,7 @@
 using PowerExec.Core.Localization;
 using System.Windows;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>Kleine Eingabe (z. B. Name einer neuen Gruppe).</summary>
 public partial class InputWindow : Window

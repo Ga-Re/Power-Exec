@@ -1,8 +1,9 @@
 using PowerExec.Core.Config;
-using PowerExec.ViewModels;
-using PowerExec.Views;
+using PowerExec.UI.ViewModels;
+using PowerExec.Desktop.Views;
+using PowerExec.UI.Services;
 
-namespace PowerExec.Services;
+namespace PowerExec.Desktop.Services;
 
 /// <summary>WPF-Oberfläche eines Panels: Panelfenster, Hover-Zonen bzw. Mini-Docks (je Monitor).</summary>
 public sealed class PanelHost : IPanelView
@@ -106,6 +107,17 @@ public sealed class PanelHost : IPanelView
     {
         Window.ApplyConfigChange();
         if (previous.TriggerKey != Config.TriggerKey) CreateTriggers(_app);
+        KeepTriggersClickable();
+    }
+
+    /// <summary>
+    /// Anzeige geändert (siehe <see cref="DisplayTopology"/>): bei anderer Geometrie Hover-Zonen und Docks mit frischen
+    /// Monitordaten neu anlegen; das Panel in jedem Fall neu platzieren (Windows kann es verschoben haben).
+    /// </summary>
+    public void OnDisplayChanged(bool geometryChanged)
+    {
+        if (geometryChanged) CreateTriggers(_app);
+        Window.OnDisplayChanged();
         KeepTriggersClickable();
     }
 

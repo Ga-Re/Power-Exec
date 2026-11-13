@@ -5,9 +5,9 @@ using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Wochentag zum Ankreuzen.</summary>
 public sealed class DayChoice : ObservableObject
@@ -59,9 +59,13 @@ public sealed class ScheduleViewModel : ObservableObject
 
     private Schedule NewSchedule() => new()
     {
-        Path = Item.FullPath, Name = Title, Kind = ScheduleKind.Daily, TimeOfDay = new TimeSpan(7, 0, 0),
+        Path = Item.FullPath,
+        Name = Title,
+        Kind = ScheduleKind.Daily,
+        TimeOfDay = new TimeSpan(7, 0, 0),
         Days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday },
-        OnceAt = DateTime.Now.Date.AddDays(1).AddHours(7), IntervalMinutes = 60
+        OnceAt = DateTime.Now.Date.AddDays(1).AddHours(7),
+        IntervalMinutes = 60
     };
 
     private void LoadFields()

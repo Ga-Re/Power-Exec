@@ -22,7 +22,13 @@ public class LocalizationTests
 
     private static string UnescapeCs(string s) => Regex.Replace(s, @"\\(u[0-9a-fA-F]{4}|.)", m => m.Groups[1].Value switch
     {
-        "n" => "\n", "t" => "\t", "r" => "\r", "0" => "\0", "\\" => "\\", "\"" => "\"", "'" => "'",
+        "n" => "\n",
+        "t" => "\t",
+        "r" => "\r",
+        "0" => "\0",
+        "\\" => "\\",
+        "\"" => "\"",
+        "'" => "'",
         var u when u.Length == 5 && u[0] == 'u' => ((char)Convert.ToInt32(u[1..], 16)).ToString(),
         var x => "\\" + x
     });
@@ -36,12 +42,12 @@ public class LocalizationTests
         foreach (var f in SourceFiles("*.xaml"))
             foreach (Match m in xaml.Matches(File.ReadAllText(f)))
                 yield return (Path.GetFileName(f), UnescapeXaml(m.Groups[1].Value));
-        // Emoji-Namen der Symbolauswahl werden zur Laufzeit übersetzt (Liste in IconLibrary.cs)
+        // Namen der Segoe-Symbole und der Emoji in der Symbolauswahl werden zur Laufzeit übersetzt (Listen in IconLibrary.cs)
         var icons = SourceFiles("IconLibrary.cs").FirstOrDefault();
         if (icons != null)
         {
             var text = File.ReadAllText(icons);
-            var start = text.IndexOf("[] EmojiList", StringComparison.Ordinal);
+            var start = text.IndexOf("[] SegoeGlyphs", StringComparison.Ordinal);
             foreach (Match m in new Regex(@"\(""[^""]+"", ""([^""]+)""\)").Matches(text[start..]))
                 yield return ("IconLibrary.cs", m.Groups[1].Value);
         }

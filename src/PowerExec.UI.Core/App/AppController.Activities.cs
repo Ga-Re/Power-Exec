@@ -2,9 +2,9 @@ using PowerExec.Core.Localization;
 using System.Diagnostics;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
-using PowerExec.ViewModels;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>Aktivitäten-Leiste: laufende und gerade beendete Starts für alle Panels.</summary>
 public partial class AppController

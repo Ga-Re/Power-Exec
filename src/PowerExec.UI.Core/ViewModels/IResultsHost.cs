@@ -1,9 +1,9 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was die Ergebnisliste eines Remote-Laufs (<see cref="ResultsViewModel"/>) von der App braucht.</summary>
 public interface IResultsHost

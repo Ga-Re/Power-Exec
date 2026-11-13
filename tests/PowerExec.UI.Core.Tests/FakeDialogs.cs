@@ -1,5 +1,5 @@
 using PowerExec.Core.Config;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
 namespace PowerExec.UI.Core.Tests;
 

@@ -1,0 +1,60 @@
+<!-- Einstellungen › Panel › Verhalten. -->
+<UserControl x:Class="PowerExec.Desktop.Views.Settings.PanelBehaviorPage"
+             xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
+             xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+             xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
+        <TextBlock Text="{l:T 'Behavior'}" Style="{StaticResource PageTitle}"/>
+        <TextBlock Text="{l:T 'When the panel slides out and in, and how you open it.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+        <TextBlock Text="{l:T 'Slide out and collapse'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsCard Icon="&#xE823;" Header="{l:T 'Dwell time before sliding out'}" Description="{l:T 'Prevents accidental opening when passing by.'}">
+                <StackPanel Orientation="Horizontal">
+                    <Slider Width="180" Minimum="0" Maximum="1000" TickFrequency="50" Value="{Binding HoverDelayMs}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding HoverDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                </StackPanel>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE81C;" Header="{l:T 'Collapse after leaving'}" Description="{l:T 'Time until the panel slides back in.'}">
+                <StackPanel Orientation="Horizontal">
+                    <Slider Width="180" Minimum="0" Maximum="2000" TickFrequency="100" Value="{Binding CollapseDelayMs}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding CollapseDelayMs, StringFormat={}{0} ms}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                </StackPanel>
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE740;" Header="{l:T 'Hide while full-screen programs run'}" Description="{l:T 'The hover zone rests while a video, presentation, game or Remote Desktop session runs full screen. The hotkey keeps working.'}">
+            <ui:ToggleSwitch IsChecked="{Binding HideHotZoneInFullscreen}" />
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Drag groups'}" Style="{StaticResource SettingsSection}"/>
+        <TextBlock Text="{l:T 'When moving a group – in the panel and under Groups – a gap with a placeholder opens at the target. In the panel, you choose the level between two groups by dragging sideways: right goes deeper, left goes higher.'}"
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="4,0,0,8"/>
+        <c:SettingsCard Icon="&#xE7C2;" Header="{l:T 'Drag image at the mouse pointer'}" Description="{l:T 'A small badge with name, color and number of subgroups follows the mouse.'}">
+            <ui:ToggleSwitch IsChecked="{Binding GroupDragGhost}" AutomationProperties.Name="{l:T 'Drag image at the mouse pointer'}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE8AB;" Header="{l:T 'Open gap smoothly'}" Description="{l:T 'Groups slide aside when the gap opens. Also follows the “Animation” setting under Appearance.'}">
+            <ui:ToggleSwitch IsChecked="{Binding GroupDragAnimate}" AutomationProperties.Name="{l:T 'Open gap smoothly'}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE8C4;" Header="{l:T 'Collapse contents while dragging'}" Description="{l:T 'While dragging, the panel shows only group headers and the group list only compact cards – shorter distances with many entries.'}">
+            <ui:ToggleSwitch IsChecked="{Binding GroupDragCollapse}" AutomationProperties.Name="{l:T 'Collapse contents while dragging'}" />
+        </c:SettingsCard>
+        <c:SettingsCard Icon="&#xE946;" Header="{l:T 'Reason at invalid places'}" Description="{l:T 'Instead of just a no-entry sign, the mouse pointer shows why the group can\'t be dropped here.'}">
+            <ui:ToggleSwitch IsChecked="{Binding GroupDragExplain}" AutomationProperties.Name="{l:T 'Reason at invalid places'}" />
+        </c:SettingsCard>
+        <TextBlock Text="{l:T 'Open'}" Style="{StaticResource SettingsSection}"/>
+        <StackPanel DataContext="{Binding Panel}">
+            <c:SettingsCard Icon="&#xE765;" Header="{l:T 'Hotkey'}" Description="{l:T 'Opens the panel and puts the cursor in the search box. To change it, click into the field and press the combination.'}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="HotkeyBox" Width="200" IsReadOnly="True" Text="{Binding HotkeyDisplay, Mode=OneWay}"
+                             PreviewKeyDown="HotkeyBox_PreviewKeyDown" ToolTip="{l:T 'Click and press the desired key combination'}"/>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Remove'}" Margin="8,0,0,0" Command="{Binding ClearHotkeyCommand}" />
+                </StackPanel>
+            </c:SettingsCard>
+            <c:SettingsCard Icon="&#xE721;" Header="{l:T 'Hotkey opens the search in the middle of the screen'}"
+                            Description="{l:T 'Spotlight mode: a floating search window with the best matches – no mouse trip to the edge. Tab switches to the full panel. The hover zone still opens the panel.'}">
+                <ui:ToggleSwitch IsChecked="{Binding HotkeyOpensSpotlight}" AutomationProperties.Name="{l:T 'Spotlight mode'}" />
+            </c:SettingsCard>
+            <c:InfoBar Severity="Error" Message="{Binding DataContext.HotkeyError, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

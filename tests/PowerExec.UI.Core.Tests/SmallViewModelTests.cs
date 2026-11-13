@@ -1,8 +1,8 @@
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
-using PowerExec.Infrastructure;
-using PowerExec.ViewModels;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.ViewModels;
 
 namespace PowerExec.UI.Core.Tests;
 
@@ -24,8 +24,12 @@ public class HistoryRowViewModelTests
 {
     private static HistoryEntry Entry() => new()
     {
-        Name = "Reset", ProfileName = "Standard", StartUtc = DateTime.UtcNow, EndUtc = DateTime.UtcNow.AddSeconds(4.2),
-        Result = HistoryResult.Success, Summary = "Exit 0",
+        Name = "Reset",
+        ProfileName = "Standard",
+        StartUtc = DateTime.UtcNow,
+        EndUtc = DateTime.UtcNow.AddSeconds(4.2),
+        Result = HistoryResult.Success,
+        Summary = "Exit 0",
         Parameters = new(StringComparer.OrdinalIgnoreCase) { ["User"] = "lena", ["Force"] = "true" }
     };
 
@@ -175,7 +179,8 @@ public class WorkflowEditorViewModelTests
         host.Items[@"C:\s\Start.ps1"] = new LaunchItem { FullPath = @"C:\s\Start.ps1", RootFolder = @"C:\s", Type = ItemType.PowerShell };
         var wf = new CustomEntry
         {
-            Name = "Neustart", Kind = CustomEntryKind.Workflow,
+            Name = "Neustart",
+            Kind = CustomEntryKind.Workflow,
             Steps = new()
             {
                 new WorkflowStep { Path = @"C:\s\Stop.ps1", Name = "Stop" },
@@ -376,4 +381,14 @@ public class WelcomeViewModelTests
         Assert.NotNull(stream);
         Assert.True(stream.Length > 0);
     }
+
+    [Theory]
+    [InlineData("Get-DiskSpace", "Get-\u200BDiskSpace")]
+    [InlineData("Move_Scripts.ps1", "Move_\u200BScripts.\u200Bps1")]
+    [InlineData("Cleanup", "Cleanup")]
+    [InlineData("a--b", "a--\u200Bb")]      // nicht zwischen zwei Trennzeichen
+    [InlineData("-x", "-x")]                // nicht am Anfang
+    [InlineData("x-", "x-")]                // nicht am Ende
+    public void SoftBreaksFollowSeparators(string name, string expected) =>
+        Assert.Equal(expected, PowerExec.UI.Infrastructure.DisplayText.WithSoftBreaks(name));
 }

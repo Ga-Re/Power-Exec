@@ -1,4 +1,4 @@
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Findet Programme wie die Windows-Shell: absoluter Pfad, System32, Windows, PATH, WindowsApps.</summary>
 public static class ProgramResolver
@@ -23,7 +23,7 @@ public static class ProgramResolver
                     if (File.Exists(p)) return p;
                 }
         }
-        catch { }
+        catch { /* ungültige Zeichen im Namen oder in PATH: Programm gilt als nicht gefunden */ }
         return null;
     }
 }

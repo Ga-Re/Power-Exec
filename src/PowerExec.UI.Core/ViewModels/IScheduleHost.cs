@@ -1,6 +1,6 @@
 using PowerExec.Core.Config;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Was der Planen-Dialog (<see cref="ScheduleViewModel"/>) von der App braucht.</summary>
 public interface IScheduleHost

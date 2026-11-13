@@ -1,6 +1,6 @@
 using PowerExec.Core.Config;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 /// <summary>Kürzel eines eigenen Eintrags im Panel (URL, DIR, RDP …).</summary>
 public static class EntryBadge

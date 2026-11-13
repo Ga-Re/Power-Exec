@@ -3,10 +3,10 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Services;
-using PowerExec.ViewModels;
+using PowerExec.UI.Services;
+using PowerExec.UI.ViewModels;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Abläufe (C3): mehrere Einträge nacheinander starten. Jeder Schritt wartet, bis der vorige beendet ist
@@ -70,7 +70,7 @@ public partial class AppController
         }
         catch (Exception ex)
         {
-            AppLog.Error(L.F("Workflow {0} aborted", name), ex);
+            AppLog.Error(string.Format("Workflow {0} aborted", name), ex);
             failed++;
         }
         var text = cancelled ? L.F("aborted after {0} of {1} steps", done, steps.Count)
@@ -80,7 +80,7 @@ public partial class AppController
         activity.Complete(state, text);
         if (summary != null)
             CompleteHistory(summary, state switch { ActivityState.Success => HistoryResult.Success, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Error }, text);
-        AppLog.Info(L.F("Workflow {0}: {1}", name, text));
+        AppLog.Info(string.Format("Workflow {0}: {1}", name, text));
         return failed == 0 && !cancelled;
     }
 
@@ -90,7 +90,7 @@ public partial class AppController
         var item = FindItem(step.Path);
         if (item == null)
         {
-            AppLog.Info(L.F("Workflow {0}: step {1} not found ({2})", workflowName, step.Name, step.Path));
+            AppLog.Info(string.Format("Workflow {0}: step {1} not found ({2})", workflowName, step.Name, step.Path));
             return HistoryResult.Error;
         }
         if (item.Source?.Kind == CustomEntryKind.Workflow) return HistoryResult.Error; // keine verschachtelten Abläufe
@@ -118,7 +118,7 @@ public partial class AppController
 
     /// <summary>Gespeicherten Ablauf starten.</summary>
     private void RunWorkflowEntry(LaunchItem item, CustomEntry wf) =>
-        _ = RunWorkflowAsync(item.DisplayName, wf.Steps.ToList(), wf.StopOnError, item);
+        RunWorkflowAsync(item.DisplayName, wf.Steps.ToList(), wf.StopOnError, item).Forget();
 
     /// <summary>Ablauf bearbeiten: Name, Schritte (Reihenfolge, entfernen, Startprofil), „bei Fehler abbrechen“.</summary>
     public void EditWorkflow(CustomEntry wf)

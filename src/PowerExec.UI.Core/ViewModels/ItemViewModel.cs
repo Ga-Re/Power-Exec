@@ -4,10 +4,10 @@ using PowerExec.Core.Execution;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ItemViewModel : ObservableObject
 {
@@ -217,14 +217,14 @@ public sealed class ItemViewModel : ObservableObject
 
     public string BadgeText => Item.Source is { Kind: CustomEntryKind.Snippet, Language: SnippetLanguage.Text } ? "TXT"
         : Item.CustomKind is { } ck and not CustomEntryKind.File ? EntryBadge.For(ck, Item.Source?.Target ?? string.Empty) : Item.Type switch
-    {
-        ItemType.PowerShell => "PS1",
-        ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
-        ItemType.Executable => "EXE",
-        ItemType.Shortcut => "LNK",
-        ItemType.ConsoleSnapIn => "MSC",
-        _ => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant()
-    };
+        {
+            ItemType.PowerShell => "PS1",
+            ItemType.Batch => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant(),
+            ItemType.Executable => "EXE",
+            ItemType.Shortcut => "LNK",
+            ItemType.ConsoleSnapIn => "MSC",
+            _ => Path.GetExtension(Item.FullPath).TrimStart('.').ToUpperInvariant()
+        };
 
     public string Meta
     {

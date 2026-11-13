@@ -6,10 +6,11 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
-using PowerExec.Interop;
-using PowerExec.Services;
+using PowerExec.Desktop.Interop;
+using PowerExec.Desktop.Services;
+using PowerExec.Desktop.Infrastructure;
 
-namespace PowerExec.Views;
+namespace PowerExec.Desktop.Views;
 
 /// <summary>
 /// Schmale, fast unsichtbare Hover-Zone am Bildschirmrand. Nach der Verweilzeit fährt das Panel aus.
@@ -46,10 +47,10 @@ public sealed class EdgeTriggerWindow : Window
         Brush outline = Brushes.Transparent;
         if (!app.Settings.UseWindowsAccent && (PanelColors.TryParse(settings.AccentColor, out var rgb) || PanelColors.TryParse(settings.PanelColor, out rgb)))
         {
-            fill = new SolidColorBrush(Color.FromRgb(rgb.R, rgb.G, rgb.B));
+            fill = rgb.ToBrush();
             // Feiner Rand, damit auch sehr dunkle oder sehr helle Farben auf dem Desktop sichtbar bleiben
             var border = PanelColors.Blend(rgb, PanelColors.IsLight(rgb) ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255), 0.35);
-            outline = new SolidColorBrush(Color.FromRgb(border.R, border.G, border.B));
+            outline = border.ToBrush();
         }
         else
         {
@@ -62,13 +63,22 @@ public sealed class EdgeTriggerWindow : Window
             BorderBrush = outline,
             BorderThickness = new Thickness(thicknessDip >= 4 ? 1 : 0),
             Opacity = Math.Max(0.55, settings.EffectiveOpacity / 100.0 * 0.85),
-            CornerRadius = new CornerRadius(Math.Min(4, thicknessDip / 2)),
+            CornerRadius = new CornerRadius(Math.Min(Tokens.RadiusControl.TopLeft, thicknessDip / 2)),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch
         };
         Content = strip;
         _strip = strip;
         _baseOpacity = strip.Opacity;
+        if (settings.HotZoneAutoHide)
+        {
+            // Erst beim Annähern zeigen: der Streifen ist in Ruhe unsichtbar (das Fenster löst weiter aus)
+            strip.Opacity = 0;
+            _nearTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _nearTimer.Tick += (_, _) => UpdateNear();
+            IsVisibleChanged += (_, _) => { if (IsVisible) _nearTimer.Start(); else _nearTimer.Stop(); };
+            Closed += (_, _) => _nearTimer.Stop();
+        }
 
         _hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(Math.Max(1, app.Settings.HoverDelayMs)) };
         _hoverTimer.Tick += (_, _) =>
@@ -134,6 +144,22 @@ public sealed class EdgeTriggerWindow : Window
     public System.Drawing.Rectangle CurrentRect => ScreenService.HotZone(_monitor, _host.Config);
     public MonitorInfo Monitor => _monitor;
 
+    private readonly DispatcherTimer? _nearTimer;
+    private bool _near;
+
+    /// <summary>Abstand in DIP, ab dem sich die Hover-Zone zeigt.</summary>
+    private const int NearDistance = 48;
+
+    /// <summary>Mauszeiger in der Nähe? Dann den Streifen weich ein-, sonst ausblenden (solange nichts läuft).</summary>
+    private void UpdateNear()
+    {
+        var near = ScreenService.CursorInside(CurrentRect, (int)Math.Round(NearDistance * _monitor.Scale));
+        if (near == _near) return;
+        _near = near;
+        if (_busy) return; // läuft etwas, pulsiert die Zone sichtbar
+        _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(near ? _baseOpacity : 0, Tokens.MotionFast));
+    }
+
     private bool _suspended;
     private DateTime _toggledAt;
     private readonly Border _strip;
@@ -146,7 +172,7 @@ public sealed class EdgeTriggerWindow : Window
         if (_busy == busy) return;
         _busy = busy;
         _strip.BeginAnimation(OpacityProperty, null);
-        if (!busy) { _strip.Opacity = _baseOpacity; return; }
+        if (!busy) { _strip.Opacity = _nearTimer != null && !_near ? 0 : _baseOpacity; return; }
         if (_app.Settings.Animation == AnimationMode.Off || !SystemParameters.ClientAreaAnimation) { _strip.Opacity = 1; return; }
         _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(Math.Min(_baseOpacity, 0.45), 1, TimeSpan.FromMilliseconds(900))
         {

@@ -5,10 +5,10 @@ using System.Text;
 using System.Windows.Input;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ResultRowViewModel : ObservableObject
 {
@@ -227,7 +227,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
         IsRunning = false;
         RaiseCounts();
         WriteLog();
-        AppLog.Info(L.F("Remote run finished: {0} · {1}", _request.Item.FileName, StatusLine) + (error != null ? " · Runner: " + error : string.Empty));
+        AppLog.Info(string.Format("Remote run finished: {0} · {1}", _request.Item.FileName, StatusLine) + (error != null ? " · Runner: " + error : string.Empty));
         Finished?.Invoke();
         _session?.Dispose();
         _session = null;

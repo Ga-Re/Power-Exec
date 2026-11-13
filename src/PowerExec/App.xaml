@@ -1,15 +1,23 @@
-<Application x:Class="PowerExec.App"
+<Application x:Class="PowerExec.Desktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:infra="clr-namespace:PowerExec.Infrastructure"
-             xmlns:svc="clr-namespace:PowerExec.Services"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
+             xmlns:svc="clr-namespace:PowerExec.Desktop.Services"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Index 0: Farbschema, wird vom ThemeService ausgetauscht -->
                 <ResourceDictionary Source="Themes/Dark.xaml"/>
+                <!-- Radien, Abstände, Schrift, Höhen, Bewegung -->
+                <ResourceDictionary Source="Themes/Tokens.xaml"/>
                 <ResourceDictionary Source="Themes/Styles.xaml"/>
+                <!-- Fluent-Bedienelemente (WPF UI) samt eigener Anpassungen – einmal für alle Fenster -->
+                <ResourceDictionary Source="Themes/Fluent.xaml"/>
+                <!-- Gemeinsame Stile der Einstellungsseiten -->
+                <ResourceDictionary Source="Themes/Settings.xaml"/>
+                <!-- Vorlagen der eigenen Controls -->
+                <ResourceDictionary Source="Themes/Controls.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <infra:VisibilityConverter x:Key="Vis"/>
             <infra:EqualsConverter x:Key="Eq"/>

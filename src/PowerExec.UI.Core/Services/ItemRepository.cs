@@ -1,12 +1,12 @@
 using PowerExec.Core.Localization;
 using System.Collections.Concurrent;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Metadata;
 using PowerExec.Core.Models;
 using PowerExec.Core.Scanning;
 
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Hält die gefundenen Einträge aktuell: Scannen, Metadaten lesen, Dateiwächter.</summary>
 public sealed class ItemRepository : IItemSource, IDisposable
@@ -34,7 +34,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         _debounce = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(800), () =>
         {
             _debounce!.Stop();
-            _ = ScanAsync();
+            ScanAsync().Forget();
         });
     }
 
@@ -42,7 +42,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
     {
         _settings = settings;
         SetupWatchers();
-        _ = ScanAsync();
+        ScanAsync().Forget();
     }
 
     private readonly ScanCache _scanCache = new();
@@ -69,7 +69,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         if (items.Count == 0) return;
         Items = items;
         FolderStatuses = statuses;
-        AppLog.Info(L.F("Cache loaded: {0} entries", items.Count));
+        AppLog.Info(string.Format("Cache loaded: {0} entries", items.Count));
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -89,7 +89,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         IsScanning = false;
         Changed?.Invoke(this, EventArgs.Empty);
         var snapshot = _cached.Values.Where(c => settings.Folders.Any(f => f.Path.Equals(c.Path, StringComparison.OrdinalIgnoreCase))).ToList();
-        _ = Task.Run(() => _scanCache.Save(snapshot));
+        Task.Run(() => _scanCache.Save(snapshot)).Forget();
     }
 
     private (List<LaunchItem>, List<FolderStatus>) ScanAll(AppSettings settings)
@@ -122,7 +122,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 {
                     statuses.Add(new FolderStatus(folder.Path, 0, Array.Empty<ExcludedFile>(), error) { Duration = sw.Elapsed });
                 }
-                AppLog.Warn(L.F("Folder {0}: {1}", folder.Path, error));
+                AppLog.Warn(string.Format("Folder {0}: {1}", folder.Path, error));
                 continue;
             }
 
@@ -138,9 +138,12 @@ public sealed class ItemRepository : IItemSource, IDisposable
             statuses.Add(new FolderStatus(folder.Path, result.Files.Count, result.Excluded, null) { Duration = sw.Elapsed });
             _cached[folder.Path] = new CachedFolder
             {
-                Path = folder.Path, ScannedUtc = DateTime.UtcNow, Items = folderItems, Excluded = result.Excluded.ToList()
+                Path = folder.Path,
+                ScannedUtc = DateTime.UtcNow,
+                Items = folderItems,
+                Excluded = result.Excluded.ToList()
             };
-            AppLog.Info(L.F("Folder {0}: {1} files, {2} excluded by pattern, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
+            AppLog.Info(string.Format("Folder {0}: {1} files, {2} excluded by pattern, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
         }
 
         // Cache auf aktuelle Dateien begrenzen
@@ -183,7 +186,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         if (_singleLoading.TryAdd(basic.FullPath, 0))
         {
             var path = basic.FullPath;
-            _ = Task.Run(() =>
+            Background.Run(() =>
             {
                 try
                 {
@@ -192,7 +195,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                     if (!File.Exists(path)) loaded.ParseError = L.T("File not found");
                     _singles[path] = (DateTime.UtcNow, loaded);
                 }
-                catch { }
+                catch (Exception ex) { AppLog.Warn($"Item could not be loaded ({path}): {ex.Message}"); }
                 finally
                 {
                     _singleLoading.TryRemove(path, out _);

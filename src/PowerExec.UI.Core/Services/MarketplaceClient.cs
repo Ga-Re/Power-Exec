@@ -1,5 +1,5 @@
 using PowerExec.Core.Localization;
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>Lädt Index und Dateien des Marktplatzes (HTTPS, mit Zeitlimit).</summary>
 public static class MarketplaceClient

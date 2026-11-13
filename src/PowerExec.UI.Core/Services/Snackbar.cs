@@ -1,4 +1,4 @@
-namespace PowerExec.Services;
+namespace PowerExec.UI.Services;
 
 /// <summary>
 /// Kurze Rückmeldungen („3 Einträge installiert“), die das offene Fenster unten einblendet und nach einigen Sekunden

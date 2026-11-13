@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace PowerExec.Interop;
+namespace PowerExec.Desktop.Interop;
 
 // Eigene Composition-Effekte ohne Win2D. Die Windows-Composition nimmt eine Effektbeschreibung als
 // Windows.Graphics.Effects.IGraphicsEffect entgegen und fragt über IGraphicsEffectD2D1Interop nach dem Direct2D-Effekt
@@ -151,16 +151,16 @@ public abstract class GlassEffect : GlassEffectSource, IGraphicsEffectAbi, IGrap
 /// Windows.Foundation.PropertyValue direkt über die Aktivierungsfabrik (IPropertyValueStatics). Die Plätze in der
 /// Methodentabelle stammen aus der Windows-Projektion: CreateUInt32 = 11, CreateSingle = 14, CreateSingleArray = 33.
 /// </summary>
-internal static class PropertyValues
+internal static partial class PropertyValues
 {
-    [DllImport("combase.dll", CharSet = CharSet.Unicode)]
-    private static extern int WindowsCreateString(string source, int length, out IntPtr hstring);
+    [LibraryImport("combase.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int WindowsCreateString(string source, int length, out IntPtr hstring);
 
-    [DllImport("combase.dll")]
-    private static extern int WindowsDeleteString(IntPtr hstring);
+    [LibraryImport("combase.dll")]
+    private static partial int WindowsDeleteString(IntPtr hstring);
 
-    [DllImport("combase.dll")]
-    private static extern int RoGetActivationFactory(IntPtr classId, in Guid iid, out IntPtr factory);
+    [LibraryImport("combase.dll")]
+    private static partial int RoGetActivationFactory(IntPtr classId, in Guid iid, out IntPtr factory);
 
     private delegate int CreateSingleFn(IntPtr self, float value, out IntPtr result);
     private delegate int CreateUInt32Fn(IntPtr self, uint value, out IntPtr result);

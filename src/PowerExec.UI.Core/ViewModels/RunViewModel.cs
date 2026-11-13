@@ -6,10 +6,10 @@ using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
 using PowerExec.Core.Profiles;
-using PowerExec.Infrastructure;
-using PowerExec.Services;
+using PowerExec.UI.Infrastructure;
+using PowerExec.UI.Services;
 
-namespace PowerExec.ViewModels;
+namespace PowerExec.UI.ViewModels;
 
 public sealed class ParameterViewModel : ObservableObject
 {
@@ -171,7 +171,7 @@ public sealed class RunViewModel : ObservableObject
                 new RelayCommand(() => SelectGroup(members))));
         }
         AddMachineCommand = new RelayCommand(AddMachines, () => !string.IsNullOrWhiteSpace(NewMachine));
-        TestConnectionCommand = new RelayCommand(() => _ = TestConnectionsAsync(), () => _remote && !_testing && SelectedMachines.Any());
+        TestConnectionCommand = new RelayCommand(() => TestConnectionsAsync().Forget(), () => _remote && !_testing && SelectedMachines.Any());
         RunCommand = new RelayCommand(Execute, () => CanRun);
         UpdatePreview();
     }
@@ -454,7 +454,7 @@ public sealed class RunViewModel : ObservableObject
             {
                 _app.RecordParameters(Item, RawValues());
                 _app.RecordRun(Item, Profile);
-                AppLog.Info(L.F("Launch (dialog): {0} · {1} computers", Item.FullPath, req.Targets.Count));
+                AppLog.Info(string.Format("Launch (dialog): {0} · {1} computers", Item.FullPath, req.Targets.Count));
                 CloseRequested?.Invoke();
             }
         }
@@ -462,7 +462,7 @@ public sealed class RunViewModel : ObservableObject
         {
             _app.RecordParameters(Item, RawValues());
             _app.RecordRun(Item, Profile);
-            AppLog.Info($"Start (Dialog): {Item.FullPath} · lokal{(req.Mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
+            AppLog.Info($"Launch (dialog): {Item.FullPath} · local{(req.Mode == ExecutionMode.Administrator ? " · Admin" : string.Empty)}");
             CloseRequested?.Invoke();
         }
     }

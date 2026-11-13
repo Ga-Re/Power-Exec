@@ -1,10 +1,10 @@
 using PowerExec.Core.Localization;
-using PowerExec.Infrastructure;
+using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
-using PowerExec.Services;
+using PowerExec.UI.Services;
 
-namespace PowerExec;
+namespace PowerExec.UI;
 
 /// <summary>
 /// Rückgängig für Änderungen im Panel (Ausblenden, Entfernen, Verschieben, Gruppen …):
@@ -78,7 +78,7 @@ public partial class AppController
         try { ApplySettings(restored); }
         finally { _undoing = false; }
         SettingsChangedOutside?.Invoke();
-        AppLog.Info(L.F("Undo: {0}", step.Description));
+        AppLog.Info(string.Format("Undo: {0}", step.Description));
         UndoToast = null;
         _undoTimer?.Stop();
         RefreshUndo();
