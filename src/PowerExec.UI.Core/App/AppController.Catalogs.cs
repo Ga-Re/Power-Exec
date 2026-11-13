@@ -80,7 +80,7 @@ public partial class AppController
         SaveSettings();
         if (changed) CommitUserChange();
         CatalogsChanged?.Invoke();
-        foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
+        foreach (var h in Hosts) h.ViewModel.RefreshCatalogs();
         if (messages.Count > 0) ShowUndoToast(L.T("Team catalog updated – ") + string.Join(" · ", messages));
     }
 
@@ -109,7 +109,7 @@ public partial class AppController
         TeamCatalogs.Unsubscribe(Settings, sub);
         CommitUserChange();
         CatalogsChanged?.Invoke();
-        foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
+        foreach (var h in Hosts) h.ViewModel.RefreshCatalogs();
         ShowUndoToast(L.F("Catalog “{0}” unsubscribed", sub.Name));
     }
 

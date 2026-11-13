@@ -25,7 +25,7 @@ public partial class AppController
     /// <summary>Ja/Nein-Frage über dem offenen Panel (das Panel liegt sonst darüber).</summary>
     private bool Confirm(string text, string title)
     {
-        var owner = _hosts.FirstOrDefault(h => h.View.IsOpen)?.View.Owner;
+        var owner = Hosts.FirstOrDefault(h => h.View.IsOpen)?.View.Owner;
         return WithDialog(() => Dialogs.Confirm(text, title, owner: owner, defaultNo: true));
     }
 

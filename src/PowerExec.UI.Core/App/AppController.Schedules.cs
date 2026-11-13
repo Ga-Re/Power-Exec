@@ -85,7 +85,7 @@ public partial class AppController
     /// <summary>Panel mit geöffnetem Verlauf zeigen (Klick auf die Benachrichtigung).</summary>
     public void ShowHistoryInPanel()
     {
-        var host = _hosts.FirstOrDefault();
+        var host = Hosts.FirstOrDefault();
         if (host == null) return;
         ShowPanelFromHotkey(host, forcePanel: true);
         host.ViewModel.ShowHistory = true;

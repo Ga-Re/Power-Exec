@@ -22,11 +22,11 @@ public partial class AppController : IDisposable
     public AppController(Func<AppController, IAppUi> createUi)
     {
         Ui = createUi(this);
+        Panels = new PanelHostManager(Ui, () => Settings, host => new PanelViewModel(this, host));
         // {{$Variablen}} gleich auflösbar – auch wenn Teile der Initialisierung übersprungen werden (Selbsttest)
         Placeholders.Resolver = name => VariableResolver.Resolve(name);
     }
 
-    protected readonly List<AppPanel> _hosts = new();
     private ISettingsWindow? _settingsWindow;
 
     /// <summary>Die Oberfläche: Fenster, Panels, Tray, Tastenkürzel, Design.</summary>
@@ -40,8 +40,6 @@ public partial class AppController : IDisposable
     public HealthService Health { get; protected set; } = null!;
     /// <summary>Update-Hinweis für alle Panels und das Einstellungsfenster.</summary>
     public UpdateState Update { get; } = new();
-
-    public IReadOnlyList<AppPanel> Hosts => _hosts;
 
     public void Start()
     {
@@ -75,9 +73,9 @@ public partial class AppController : IDisposable
             RebuildPanels();
         };
 
-        Ui.Hotkeys.Pressed += id => ShowPanelFromHotkey(_hosts.FirstOrDefault(h => h.HotkeyId == id));
+        Ui.Hotkeys.Pressed += id => ShowPanelFromHotkey(Hosts.FirstOrDefault(h => h.HotkeyId == id));
         var hotkeyError = CreateHosts();
-        StartFullscreenWatch();
+        Panels.StartFullscreenWatch();
         StartScheduler();
         StartCatalogs();
         StartMachineSync();

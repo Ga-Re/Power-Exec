@@ -991,7 +991,7 @@ public sealed partial class SelfTestController : AppController
 
             Step("Feste Gruppen: Reihenfolge und Arbeitsbereich");
             {
-                var vm0 = _hosts[0].ViewModel;
+                var vm0 = Hosts[0].ViewModel;
                 vm0.Rebuild();
                 if (!vm0.Groups.Any(g => g.Kind == "fav")) Fail("Feste Gruppen: Favoriten fehlen im Panel");
                 var ws = WorkspaceManager.Active(Settings);
@@ -1014,11 +1014,11 @@ public sealed partial class SelfTestController : AppController
 
             Step("Gruppenfarbe und Darstellung je Gruppe");
             {
-                var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
+                var ad = Hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
                 if (ad == null || !ad.HasColor || ad.ColorHex != "#22C55E") Fail("Gruppenfarbe wird nicht an die Untergruppe vererbt");
                 if (ad == null || !ad.IsGrid) Fail("Darstellung je Gruppe (Raster) wird nicht übernommen");
-                var admin = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
-                if (admin != null && _hosts[0].ViewModel.IsGrid == false && admin.IsGrid) Fail("Gruppe ohne eigene Darstellung folgt nicht dem Panel");
+                var admin = Hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
+                if (admin != null && Hosts[0].ViewModel.IsGrid == false && admin.IsGrid) Fail("Gruppe ohne eigene Darstellung folgt nicht dem Panel");
             }
 
             Step("Einstellungen");
@@ -1033,14 +1033,14 @@ public sealed partial class SelfTestController : AppController
 
             // Live-Übernahme: allgemeine Einstellung ohne Neuaufbau der Panels, Panel-Einstellung mit
             Step("Live-Übernahme");
-            var hostBefore = _hosts[0];
+            var hostBefore = Hosts[0];
             settingsVm.RecentRunsCount = 7;
             settingsWindow.ApplyNowForTest();
             if (Settings.RecentRunsCount != 7) Fail("Live-Übernahme: allgemeine Einstellung nicht übernommen");
-            if (!ReferenceEquals(hostBefore, _hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
+            if (!ReferenceEquals(hostBefore, Hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
             settingsVm.Panel.PanelWidth = 512;
             settingsWindow.ApplyNowForTest();
-            if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
+            if (Settings.Panels[0].PanelWidth != 512 || Hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
 
             // Ecken: die Einstellung überschreibt die Radius-Tokens für alle Fenster und kehrt sauber zurück
             Step("Ecken");
@@ -1064,8 +1064,8 @@ public sealed partial class SelfTestController : AppController
             // Änderung im Panel (Eintrag in Gruppe ziehen) → Einstellungsfenster zeigt den neuen Stand
             Step("Änderung im Panel");
             var entryKey = Settings.CustomEntries.First(c => c.Name == "Intranet").Key;
-            var leer = _hosts[0].ViewModel.AllGroups.First(g => g.GroupPath == "Leer");
-            _hosts[0].ViewModel.MoveKeyToGroup(entryKey, leer);
+            var leer = Hosts[0].ViewModel.AllGroups.First(g => g.GroupPath == "Leer");
+            Hosts[0].ViewModel.MoveKeyToGroup(entryKey, leer);
             await Settle();
             if (GroupManager.GroupOf(Settings, entryKey) != "Leer") Fail("Ablegen in Gruppe: Zuordnung fehlt");
             var reloaded = settingsWindow.CurrentViewModel;
@@ -1095,7 +1095,7 @@ public sealed partial class SelfTestController : AppController
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (WorkspaceManager.ShowsGroup(Settings, "Leer")) Fail("Arbeitsbereich: Gruppe ausblenden nicht übernommen");
-                if (_hosts[0].ViewModel.AllGroups.Any(g => g.GroupPath == "Leer")) Fail("Arbeitsbereich: ausgeblendete Gruppe weiter im Panel");
+                if (Hosts[0].ViewModel.AllGroups.Any(g => g.GroupPath == "Leer")) Fail("Arbeitsbereich: ausgeblendete Gruppe weiter im Panel");
                 settingsVm = settingsWindow.CurrentViewModel;
                 settingsVm.Section = "workspaces";
                 await Settle();
@@ -1209,6 +1209,8 @@ public sealed partial class SelfTestController : AppController
                 var marketVm = new MarketplaceWindowViewModel(this, _ => { });
                 var marketWindow = new MarketplaceWindow(marketVm);
                 marketWindow.Show();
+                // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
+                await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
                 await Settle();
                 if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Reiter statt 5");
                 foreach (var tab in marketVm.Tabs.Select(t => t.Key).ToList())
@@ -1557,11 +1559,11 @@ public sealed partial class SelfTestController : AppController
             var snippet = Settings.CustomEntries.First(c => c.Name == "Ping");
             var snippetItem = DescribeCustom(snippet);
             if (!File.Exists(snippet.SnippetPath) || snippetItem.Parameters.Count != 1) Fail("PowerShell-Snippet: Datei oder param() nicht erkannt");
-            if (!_hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
+            if (!Hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
             // Jeder eigene Eintrag muss im Hauptpanel erscheinen (Snippets haben kein Ziel!)
-            _hosts[0].ViewModel.ResetForNextOpen();
+            Hosts[0].ViewModel.ResetForNextOpen();
             foreach (var c in Settings.CustomEntries)
-                if (!_hosts[0].ViewModel.AllItems.Any(i => i.Item.FullPath.Equals(c.Key, StringComparison.OrdinalIgnoreCase)))
+                if (!Hosts[0].ViewModel.AllItems.Any(i => i.Item.FullPath.Equals(c.Key, StringComparison.OrdinalIgnoreCase)))
                     Fail($"Eigener Eintrag fehlt im Panel: {c.Name} ({c.Kind})");
 
             Step("Arbeitsbereich wechseln");
@@ -1591,9 +1593,9 @@ public sealed partial class SelfTestController : AppController
     private void Fail(string message) => _selfTestErrors.Add(message);
 
     /// <summary>WPF-Seite der Panels (Fenster, Hover-Zonen, Docks) für die Prüfungen.</summary>
-    private IReadOnlyList<PanelHost> WpfHosts => _hosts.Select(h => (PanelHost)h.View).ToList();
+    private IReadOnlyList<PanelHost> WpfHosts => Hosts.Select(h => (PanelHost)h.View).ToList();
 
-    private PanelHost WpfHost(int index) => (PanelHost)_hosts[index].View;
+    private PanelHost WpfHost(int index) => (PanelHost)Hosts[index].View;
 
     /// <summary>Bildschirmfoto eines Fensters (Inhalt) für die Sichtprüfung als CI-Artefakt.</summary>
     private void Screenshot(FrameworkElement element, string name)

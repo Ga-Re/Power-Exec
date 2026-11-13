@@ -25,7 +25,7 @@ public partial class AppController
     private void OnActivitiesChanged()
     {
         var busy = _activities?.HasRunning == true;
-        foreach (var h in _hosts)
+        foreach (var h in Hosts)
         {
             h.ViewModel.RefreshActivities();
             h.View.SetBusy(busy);

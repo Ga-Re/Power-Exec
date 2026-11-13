@@ -60,7 +60,7 @@ public partial class AppController
 
     private void RefreshUndo()
     {
-        foreach (var h in _hosts) h.ViewModel.RefreshUndo();
+        foreach (var h in Hosts) h.ViewModel.RefreshUndo();
     }
 
     /// <summary>Letzte Änderung zurücknehmen. Laufzeitstand (Verlauf, Häufigkeit, Parameter) bleibt erhalten.</summary>
