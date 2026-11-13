@@ -30,7 +30,7 @@
                                 <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8" MinHeight="0"
                                         AllowDrop="True" DragOver="GroupCard_DragOver" DragLeave="GroupCard_DragLeave" Drop="GroupCard_Drop">
                                     <StackPanel>
-                                        <DockPanel Margin="6,6,8,6" MinHeight="44" Background="Transparent" Cursor="SizeAll"
+                                        <DockPanel Margin="8,8,8,8" MinHeight="44" Background="Transparent" Cursor="SizeAll"
                                                    PreviewMouseLeftButtonDown="GroupCard_PreviewMouseDown" PreviewMouseMove="GroupCard_PreviewMouseMove"
                                                    ToolTip="{l:T 'Drag to move the group – dropped onto the middle of another group it becomes a subgroup. Right-click: new subgroup'}">
                                             <DockPanel.ContextMenu>
@@ -125,12 +125,12 @@
                                                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="8,0,0,0" />
                                                                     <TextBox Text="{Binding Path, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'Path, e.g. C:\\Scripts or \\\\server\\share'}"/>
                                                                 </DockPanel>
-                                                                <WrapPanel Margin="0,10,0,0">
-                                                                    <CheckBox Content="{l:T 'Include subfolders'}" IsChecked="{Binding Recursive}" Margin="0,0,20,6" VerticalAlignment="Center"/>
+                                                                <WrapPanel Margin="0,12,0,0">
+                                                                    <CheckBox Content="{l:T 'Include subfolders'}" IsChecked="{Binding Recursive}" Margin="0,0,20,8" VerticalAlignment="Center"/>
                                                                     <CheckBox Content="{l:T 'Subfolders as subgroups in the panel'}" IsChecked="{Binding SubfoldersAsGroups}" IsEnabled="{Binding Recursive}"
-                                                                              Margin="0,0,20,6" VerticalAlignment="Center"/>
-                                                                    <TextBlock Text="{l:T 'File extensions:'}" VerticalAlignment="Center" Margin="0,0,8,6" Foreground="{DynamicResource Text.Secondary}"/>
-                                                                    <StackPanel Margin="0,0,0,6">
+                                                                              Margin="0,0,20,8" VerticalAlignment="Center"/>
+                                                                    <TextBlock Text="{l:T 'File extensions:'}" VerticalAlignment="Center" Margin="0,0,8,8" Foreground="{DynamicResource Text.Secondary}"/>
+                                                                    <StackPanel Margin="0,0,0,8">
                                                                         <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="220"
                                                                                  Tag="{l:T 'empty = default; e.g. .ps1; .cmd'}" FontFamily="{StaticResource MonoFont}"
                                                                                  ToolTip="{l:T 'Separated by semicolons, e.g. .ps1; .cmd; .exe'}"/>
@@ -144,10 +144,10 @@
                                                             </StackPanel>
                                                         </Border>
                                                         <!-- Einträge -->
-                                                        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="16,12,16,14">
+                                                        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="16,12,16,16">
                                                             <StackPanel>
-                                    <WrapPanel Margin="0,0,0,10">
-                                        <TextBlock Text="{l:T 'New files:'}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
+                                    <WrapPanel Margin="0,0,0,12">
+                                        <TextBlock Text="{l:T 'New files:'}" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
                                         <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="1" Width="330">
                                             <UniformGrid Columns="2">
                                                 <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Show automatically'}" IsChecked="{Binding AutoShow}" GroupName="{Binding Path, StringFormat={}{0}|mode}"/>
@@ -157,10 +157,10 @@
                                         <TextBlock Text="{Binding ModeHint}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                                     </WrapPanel>
 
-                                    <Border Visibility="{Binding HasPending, Converter={StaticResource Vis}}" Margin="0,0,0,10" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}"
+                                    <Border Visibility="{Binding HasPending, Converter={StaticResource Vis}}" Margin="0,0,0,12" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}"
                                             Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1">
                                         <DockPanel>
-                                            <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="0,0,10,0"/>
+                                            <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" Margin="0,0,12,0"/>
                                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                                 <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Approve all'}" Command="{Binding ApproveAllCommand}" Height="30" MinHeight="30" FontSize="{StaticResource Font.Body}" />
                                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep hidden'}" Command="{Binding DismissPendingCommand}" Height="30" MinHeight="30" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
@@ -171,13 +171,13 @@
 
                                     <DockPanel Margin="0,0,0,8">
                                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Show all'}" Command="{Binding AllOnCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" />
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'None'}" Command="{Binding AllOffCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" Margin="6,0,0,0" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'None'}" Command="{Binding AllOffCommand}" Height="28" MinHeight="28" FontSize="{StaticResource Font.Body}" Margin="8,0,0,0" />
                                         </StackPanel>
-                                        <Grid Width="240" Margin="0,0,10,0" DockPanel.Dock="Left">
+                                        <Grid Width="240" Margin="0,0,12,0" DockPanel.Dock="Left">
                                             <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" Padding="28,0,8,0" Tag="{l:T 'Search in this folder'}" Height="30" MinHeight="30"/>
-                                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False"
+                                            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False"
                                                        Foreground="{DynamicResource Text.Secondary}"/>
                                         </Grid>
                                         <WrapPanel VerticalAlignment="Center">
@@ -228,14 +228,14 @@
                                                             <Image Source="{Binding Icon, Converter={StaticResource IconImage}}" Width="22" Height="22" HorizontalAlignment="Left" Margin="7,0,0,0"
                                                                    Visibility="{Binding HasIcon, Converter={StaticResource Vis}}"/>
                                                         </Grid>
-                                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,6,12,6">
+                                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,8,12,8">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                                <Border Margin="8,0,0,0" Padding="6,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Accent}"
+                                                                <Border Margin="8,0,0,0" Padding="8,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Accent}"
                                                                         Visibility="{Binding IsNew, Converter={StaticResource Vis}}">
                                                                     <TextBlock Text="{l:T 'NEW'}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource OnAccent}"/>
                                                                 </Border>
-                                                                <Border Margin="8,0,0,0" Padding="6,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
+                                                                <Border Margin="8,0,0,0" Padding="8,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
                                                                         Visibility="{Binding IsBlocked, Converter={StaticResource Vis}}"
                                                                         ToolTip="{l:T 'Downloaded from the internet – approve it in the panel via “Unblock”'}">
                                                                     <TextBlock Text="{l:T 'BLOCKED'}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource Status.Warning}"/>
@@ -248,7 +248,7 @@
                                                             <TextBlock Text="{Binding ProfileDetail}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsAdmin, Converter={StaticResource Vis}}">
-                                                            <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,8,0"/>
                                                             <TextBlock Text="{l:T 'Yes'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Warning}"/>
                                                         </StackPanel>
                                                         <ui:Button Grid.Column="5" Style="{StaticResource Btn.Icon}" Width="34" Height="34" Command="{Binding ConfigureCommand}"
@@ -277,7 +277,7 @@
                                                Visibility="{Binding HasNoEntries, Converter={StaticResource Vis}}"/>
 
                                     <WrapPanel Margin="0,12,0,0">
-                                        <TextBlock Text="{l:T 'Pattern exclusions:'}" VerticalAlignment="Center" Margin="0,0,8,6" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
+                                        <TextBlock Text="{l:T 'Pattern exclusions:'}" VerticalAlignment="Center" Margin="0,0,8,8" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
                                         <ItemsControl ItemsSource="{Binding Exclusions}" Focusable="False">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -285,9 +285,9 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border Height="26" infra:Pill.IsEnabled="True" Background="{DynamicResource Status.Error.Bg}" BorderBrush="{DynamicResource Status.Error.Border}"
-                                                            BorderThickness="1" Padding="10,0,2,0" Margin="0,0,6,6">
+                                                            BorderThickness="1" Padding="12,0,2,0" Margin="0,0,8,8">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="{Binding Kind}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error.Text}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                            <TextBlock Text="{Binding Kind}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error.Text}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                                             <TextBlock Text="{Binding Value}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
                                                             <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
                                                                     ToolTip="{l:T 'Remove exclusion'}" Foreground="{DynamicResource Status.Error.Text}">
@@ -298,10 +298,10 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <TextBox Text="{Binding NewExclusion, UpdateSourceTrigger=PropertyChanged}" Width="200" Height="28" MinHeight="28" Margin="0,0,6,6"
+                                        <TextBox Text="{Binding NewExclusion, UpdateSourceTrigger=PropertyChanged}" Width="200" Height="28" MinHeight="28" Margin="0,0,8,8"
                                                  Tag="{l:T 'e.g. *.exe or *\\Archive\\*'}" FontSize="{StaticResource Font.Body}"/>
                                         <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ Pattern'}" Command="{Binding AddExclusionCommand}" Height="28" MinHeight="28"
-                                                FontSize="{StaticResource Font.Body}" Margin="0,0,0,6" />
+                                                FontSize="{StaticResource Font.Body}" Margin="0,0,0,8" />
                                     </WrapPanel>
                                     <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Text="{l:T 'Individual files are shown or hidden with the checkbox. Patterns apply immediately; the list updates after scanning.'}"/>
                                                             </StackPanel>
@@ -311,9 +311,9 @@
                                             </ContentControl.ContentTemplate>
                                         </ContentControl>
                                         <!-- Untergruppen im Rahmen dieser Gruppe; Lücke „als letzte Untergruppe“ -->
-                                        <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource CategoryCardTemplate}" Focusable="False" Margin="14,2,12,0"
+                                        <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{DynamicResource CategoryCardTemplate}" Focusable="False" Margin="16,2,12,0"
                                                       Visibility="{Binding HasChildren, Converter={StaticResource Vis}}"/>
-                                        <c:DropGap IsOpen="{Binding GapInside}" Margin="14,0,12,0" OpenHeight="44"
+                                        <c:DropGap IsOpen="{Binding GapInside}" Margin="16,0,12,0" OpenHeight="44"
                                                    Label="{Binding DataContext.CategoryDragLabel, RelativeSource={RelativeSource AncestorType=Window}}"
                                                    DotBrush="{Binding DataContext.CategoryDragColor, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ArgbBrush}}"
                                                    Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -361,7 +361,7 @@
                 <Border x:Name="GroupCard" Style="{StaticResource Card}" Padding="0" Margin="0,0,0,8" MinHeight="0" Background="{DynamicResource Bg.CardAlt}"
                         AllowDrop="True" DragOver="GroupCard_DragOver" DragLeave="GroupCard_DragLeave" Drop="GroupCard_Drop">
                     <StackPanel>
-                        <DockPanel Margin="6,6,12,6" MinHeight="44" Background="Transparent" Cursor="SizeAll"
+                        <DockPanel Margin="8,8,12,8" MinHeight="44" Background="Transparent" Cursor="SizeAll"
                                    PreviewMouseLeftButtonDown="GroupCard_PreviewMouseDown" PreviewMouseMove="GroupCard_PreviewMouseMove"
                                    ToolTip="{l:T 'Fixed group – drag to move it. Show or hide per workspace.'}">
                             <TextBlock DockPanel.Dock="Left" Text="&#xE76F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="2,0,0,0"
@@ -404,7 +404,7 @@
                 Background="Transparent" AllowDrop="True" DragOver="Page_DragOver" Drop="Page_Drop">
         <DockPanel>
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New group'}"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'New group'}"/></StackPanel>
             </ui:Button>
             <TextBlock Text="{l:T 'Groups'}" Style="{StaticResource PageTitle}"/>
         </DockPanel>

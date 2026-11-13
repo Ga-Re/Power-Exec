@@ -51,19 +51,19 @@
         <TextBlock Text="{l:T 'Custom variables'}" Style="{StaticResource SettingsSection}"/>
         <DockPanel Margin="0,0,0,8">
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding AddCommand}" Margin="8,0,0,0">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'New'}"/></StackPanel>
             </ui:Button>
             <Grid>
                 <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search variables (name, value, description)'}"
                          AutomationProperties.Name="{l:T 'Search variables'}"/>
-                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
             </Grid>
         </DockPanel>
         <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                 Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
             <WrapPanel VerticalAlignment="Center">
-                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,6,2"/>
+                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,8,2"/>
                 <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Clear selection'}" Command="{Binding SelectAllCommand}" Margin="0,2,0,2"/>
             </WrapPanel>
         </Border>
@@ -71,7 +71,7 @@
                    Style="{StaticResource Caption}" TextWrapping="Wrap" Visibility="{Binding HasNoItems, Converter={StaticResource Vis}}"/>
         <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding HasNoItems, Converter={StaticResource Vis}, ConverterParameter=invert}">
             <StackPanel>
-                <Grid Margin="10,8,10,6">
+                <Grid Margin="12,8,12,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="28"/>
                         <ColumnDefinition Width="*"/>
@@ -89,7 +89,7 @@
                 <ItemsControl ItemsSource="{Binding VisibleItems}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border x:Name="VarRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent">
+                            <Border x:Name="VarRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="12,5" Background="Transparent">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="28"/>
@@ -99,7 +99,7 @@
                                         <ColumnDefinition Width="108"/>
                                     </Grid.ColumnDefinitions>
                                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Select'}"/>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                         <TextBlock Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>

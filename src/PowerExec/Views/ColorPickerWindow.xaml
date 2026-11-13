@@ -40,7 +40,7 @@
         </Border>
 
         <!-- Farbton -->
-        <Grid Height="18" Margin="0,10,0,0">
+        <Grid Height="18" Margin="0,12,0,0">
             <Border CornerRadius="{DynamicResource Radius.Control}" Margin="0,3">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
@@ -63,7 +63,7 @@
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Button Width="26" Height="26" Margin="0,0,6,6" Padding="0" Cursor="Hand" ToolTip="{Binding Name}" Click="Preset_Click" Tag="{Binding Hex}"
+                    <Button Width="26" Height="26" Margin="0,0,8,8" Padding="0" Cursor="Hand" ToolTip="{Binding Name}" Click="Preset_Click" Tag="{Binding Hex}"
                             AutomationProperties.Name="{Binding Name}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
@@ -80,11 +80,11 @@
         </ItemsControl>
 
         <!-- Vorschau und Wert -->
-        <DockPanel Margin="0,6,0,0">
-            <Border x:Name="Preview" DockPanel.Dock="Left" Width="44" Height="32" CornerRadius="{DynamicResource Radius.Control}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" Margin="0,0,10,0"/>
+        <DockPanel Margin="0,8,0,0">
+            <Border x:Name="Preview" DockPanel.Dock="Left" Width="44" Height="32" CornerRadius="{DynamicResource Radius.Control}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" Margin="0,0,12,0"/>
             <TextBox x:Name="HexBox" Height="32" Padding="8,0" FontFamily="{StaticResource MonoFont}" TextChanged="Hex_TextChanged" AutomationProperties.Name="{l:T 'Color value #RRGGBB'}"/>
         </DockPanel>
-        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,6,0,0" Visibility="Collapsed" Text="{l:T 'Please enter as #RRGGBB, e.g. #3B82F6.'}"/>
+        <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" Visibility="Collapsed" Text="{l:T 'Please enter as #RRGGBB, e.g. #3B82F6.'}"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" />

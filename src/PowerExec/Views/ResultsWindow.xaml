@@ -16,32 +16,32 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="24,18,24,14">
+        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="24,20,24,16">
             <StackPanel>
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding CancelCommand}" Margin="0,0,8,0"
                                 Visibility="{Binding IsRunning, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Cancel'}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ToggleLogCommand}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE8A5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{Binding LogLabel}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ExportCsvCommand}" Margin="0,0,8,0">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Export CSV'}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource Btn.Accent}" Command="{Binding RetryFailedCommand}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Retry failed'}"/>
                             </StackPanel>
                         </ui:Button>
@@ -58,35 +58,35 @@
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=ok}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Success}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Success}" Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding SuccessCount, StringFormat={}{0} erfolgreich}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=err}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Error}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Error}" Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding ErrorCount, StringFormat={}{0} Fehler}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultFilter" IsChecked="{Binding Filter, Converter={StaticResource Eq}, ConverterParameter=off}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE738;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE738;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,8,0"/>
                             <TextBlock Text="{Binding UnreachableCount, StringFormat={}{0} nicht erreichbar}"/>
                         </StackPanel>
                     </RadioButton>
                     <!-- Ansicht: Liste oder Kachelkarte -->
-                    <Border Width="1" Height="20" Margin="6,0,12,0" Background="{DynamicResource Border.Default}" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="20" Margin="8,0,12,0" Background="{DynamicResource Border.Default}" VerticalAlignment="Center"/>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowList, Mode=OneWay}"
                                  Command="{Binding SetViewCommand}" CommandParameter="list" ToolTip="{l:T 'List with output per computer'}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE8FD;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                             <TextBlock Text="{l:T 'List'}"/>
                         </StackPanel>
                     </RadioButton>
                     <RadioButton Style="{StaticResource FilterChip}" GroupName="ResultView" IsChecked="{Binding ShowTiles, Mode=OneWay}"
                                  Command="{Binding SetViewCommand}" CommandParameter="tiles" ToolTip="{l:T 'One tile per computer – status at a glance'}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE80A;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                            <TextBlock Text="&#xE80A;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                             <TextBlock Text="{l:T 'Tiles'}"/>
                         </StackPanel>
                     </RadioButton>
@@ -94,8 +94,8 @@
 
                 <ProgressBar Height="4" Margin="0,12,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
                              Foreground="{DynamicResource Accent}" Background="{DynamicResource Bg.Chip}" BorderThickness="0"/>
-                <TextBlock Text="{Binding StatusLine}" Style="{StaticResource Caption}" Margin="0,6,0,0"/>
-                <Border Margin="0,8,0,0" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
+                <TextBlock Text="{Binding StatusLine}" Style="{StaticResource Caption}" Margin="0,8,0,0"/>
+                <Border Margin="0,8,0,0" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}" BorderThickness="1"
                         Visibility="{Binding RunnerError, Converter={StaticResource Vis}}">
                     <TextBlock Text="{Binding RunnerError}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                 </Border>
@@ -112,32 +112,32 @@
             <DockPanel Visibility="{Binding ShowTiles, Converter={StaticResource Vis}}">
                 <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" MaxHeight="300"
                         Visibility="{Binding DataContext.HasSelectedTile, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}" DataContext="{Binding SelectedTile}">
-                    <DockPanel Margin="24,10,24,12">
-                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <DockPanel Margin="24,12,24,12">
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" Foreground="{DynamicResource Text.Secondary}"/>
                             <TextBlock Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding StatusText, StringFormat=' · {0}'}" Foreground="{DynamicResource Text.Secondary}"/>
                         </DockPanel>
-                        <Border Padding="12,10" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
+                        <Border Padding="12,12" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
                                      FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
                                      Foreground="{DynamicResource Text.Secondary}"/>
                         </Border>
                     </DockPanel>
                 </Border>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,14,24,14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,16,24,16">
                     <ItemsControl ItemsSource="{Binding VisibleTiles}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Button Width="104" Height="40" Margin="0,0,6,6" Padding="0" Cursor="Hand" ToolTip="{Binding TileToolTip}"
+                                <Button Width="104" Height="40" Margin="0,0,8,8" Padding="0" Cursor="Hand" ToolTip="{Binding TileToolTip}"
                                         Command="{Binding DataContext.SelectTileCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
                                         AutomationProperties.Name="{Binding TileToolTip}">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Tile" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Chip}" BorderThickness="2" BorderBrush="Transparent" Padding="6,2">
+                                            <Border x:Name="Tile" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Chip}" BorderThickness="2" BorderBrush="Transparent" Padding="8,2">
                                                 <StackPanel VerticalAlignment="Center">
                                                     <TextBlock x:Name="TileName" Text="{Binding Computer}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
                                                                Foreground="{DynamicResource Text.Primary}"/>
@@ -214,7 +214,7 @@
                                                 </TextBlock>
                                                 <TextBlock Grid.Column="1" Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock x:Name="StatusIcon" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0" Text="&#xE916;"
+                                                    <TextBlock x:Name="StatusIcon" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0" Text="&#xE916;"
                                                                Foreground="{DynamicResource Text.Secondary}"/>
                                                     <TextBlock x:Name="StatusLabel" Text="{Binding StatusText}" Foreground="{DynamicResource Text.Secondary}"/>
                                                 </StackPanel>
@@ -222,7 +222,7 @@
                                                 <TextBlock Grid.Column="4" Text="{Binding FirstLine}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                             </Grid>
                                         </ui:Button>
-                                        <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="48,0,16,12" Padding="12,10"
+                                        <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="48,0,16,12" Padding="12,12"
                                                 Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
                                                      FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
@@ -255,11 +255,11 @@
             <Border Grid.Column="1" Width="380" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1,0,0,0" Background="{DynamicResource Bg.Subtle}"
                     Visibility="{Binding ShowLog, Converter={StaticResource Vis}}">
                 <DockPanel>
-                    <DockPanel DockPanel.Dock="Top" Margin="14,8,8,8">
+                    <DockPanel DockPanel.Dock="Top" Margin="16,8,8,8">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Open log folder'}" FontSize="{StaticResource Font.Body}" Command="{Binding OpenLogFolderCommand}" />
                         <TextBlock Text="{l:T 'Log'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
-                    <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="14,4,14,14"
+                    <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="16,4,16,16"
                              FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
                 </DockPanel>

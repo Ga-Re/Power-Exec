@@ -10,10 +10,10 @@
     <DockPanel Margin="20,16,20,16">
         <TextBlock DockPanel.Dock="Top" Text="{l:T 'Add from templates'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"/>
         <TextBlock DockPanel.Dock="Top" Text="{l:T 'Common admin tools, Control Panel, Windows settings and examples with placeholders. Select several and apply.'}"
-                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,10"/>
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,12"/>
         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBox x:Name="SearchBox" Padding="28,0,8,0" Tag="{l:T 'Search, e.g. dns, services, proxy'}" TextChanged="Search_Changed"/>
-            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
         </Grid>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
             <TextBlock x:Name="CountText" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
@@ -28,11 +28,11 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel>
-                                <TextBlock Text="{Binding Header}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,10,0,4"
+                                <TextBlock Text="{Binding Header}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,12,0,4"
                                            Visibility="{Binding Header, Converter={StaticResource Vis}}"/>
                                 <CheckBox IsChecked="{Binding IsChecked}" Margin="8,3" Checked="Check_Changed" Unchecked="Check_Changed">
                                     <DockPanel>
-                                        <c:IconPresenter Icon="{Binding Template.Icon}" Size="20" Margin="0,0,10,0" Foreground="{DynamicResource Text.Primary}"/>
+                                        <c:IconPresenter Icon="{Binding Template.Icon}" Size="20" Margin="0,0,12,0" Foreground="{DynamicResource Text.Primary}"/>
                                         <StackPanel>
                                             <TextBlock Text="{Binding Template.Name}"/>
                                             <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextTrimming="CharacterEllipsis">

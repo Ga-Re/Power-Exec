@@ -8,7 +8,7 @@
         Width="640" Height="600" MinWidth="460" MinHeight="420" WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True" Topmost="True">
     <DockPanel Margin="20,16,20,16">
-        <TextBlock x:Name="Heading" DockPanel.Dock="Top" Text="{l:T 'Choose icon'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <TextBlock x:Name="Heading" DockPanel.Dock="Top" Text="{l:T 'Choose icon'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" Margin="0,0,0,12"/>
         <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Fluent 2'}" GroupName="Src" Tag="fluent" Checked="Source_Checked" x:Name="FluentTab"/>
             <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Heroicons'}" GroupName="Src" Tag="hero" Checked="Source_Checked" x:Name="HeroTab"/>
@@ -18,11 +18,11 @@
         </WrapPanel>
         <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBox x:Name="SearchBox" Padding="28,0,8,0" Tag="{l:T 'Search (English names, e.g. server, folder, shield)'}" TextChanged="Search_Changed"/>
-            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
         </Grid>
 
         <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-            <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}" Margin="0,0,10,0">
+            <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="{DynamicResource Border.Control}" Margin="0,0,12,0">
                 <c:IconPresenter x:Name="Preview" Size="28" Foreground="{DynamicResource Text.Primary}"/>
             </Border>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -39,13 +39,13 @@
         <StackPanel x:Name="FilePanel" DockPanel.Dock="Top" Visibility="Collapsed" Margin="0,8,0,0">
             <TextBlock Text="{l:T 'PNG, ICO, JPG or GIF – ideally square, at least 32 × 32 pixels. The file is not copied; it must stay reachable.'}"
                        Style="{StaticResource Caption}" TextWrapping="Wrap"/>
-            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose image file …'}" HorizontalAlignment="Left" Margin="0,10,0,0" Click="BrowseImage_Click" />
+            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose image file …'}" HorizontalAlignment="Left" Margin="0,12,0,0" Click="BrowseImage_Click" />
         </StackPanel>
 
-        <TextBlock x:Name="MoreText" DockPanel.Dock="Bottom" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0"/>
+        <TextBlock x:Name="MoreText" DockPanel.Dock="Bottom" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0"/>
         <Border BorderThickness="1" BorderBrush="{DynamicResource Border.Default}" CornerRadius="{DynamicResource Radius.Card}" x:Name="ResultBorder">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="Results" Margin="6" Focusable="False">
+                <ItemsControl x:Name="Results" Margin="8" Focusable="False">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>

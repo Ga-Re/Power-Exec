@@ -10,13 +10,13 @@
     <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=workspaces}">
         <TextBlock Text="{l:T 'Workspaces'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'Workspaces show a selection of your groups – e.g. per customer or task. Groups, folders and custom entries exist only once; each workspace has its own favorites, “Recently run”, launch profiles and collapsed groups. You can also switch in the panel header and the tray menu.'}"
-                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,16"/>
         <ItemsControl ItemsSource="{Binding Workspaces}" Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Border Style="{StaticResource Card}" Padding="0" MinHeight="0">
                         <StackPanel>
-                            <DockPanel Margin="6,8,12,8">
+                            <DockPanel Margin="8,8,12,8">
                                 <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}"
                                         ToolTip="{l:T 'Choose the groups of this workspace'}" Margin="0,0,8,0">
                                     <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
@@ -43,15 +43,15 @@
                                 </StackPanel>
                             </DockPanel>
                             <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0"
-                                    Background="{DynamicResource Bg.CardAlt}" Padding="20,10,16,12">
+                                    Background="{DynamicResource Bg.CardAlt}" Padding="20,12,16,12">
                                 <StackPanel>
-                                    <TextBlock Text="{l:T 'These groups appear in the panel (Favorites, Recently run and Search show everything):'}" Style="{StaticResource Caption}" Margin="0,0,0,6" TextWrapping="Wrap"/>
+                                    <TextBlock Text="{l:T 'These groups appear in the panel (Favorites, Recently run and Search show everything):'}" Style="{StaticResource Caption}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                                     <TextBlock Text="{l:T 'No groups created yet.'}" Style="{StaticResource Caption}"
                                                Visibility="{Binding Groups.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                     <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <CheckBox IsChecked="{Binding IsVisible}" IsEnabled="{Binding IsEnabled}" Margin="{Binding IndentLeft, Converter={StaticResource LeftMargin}}" Padding="6,0,0,0" MinHeight="30">
+                                                <CheckBox IsChecked="{Binding IsVisible}" IsEnabled="{Binding IsEnabled}" Margin="{Binding IndentLeft, Converter={StaticResource LeftMargin}}" Padding="8,0,0,0" MinHeight="30">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Grid Width="18" Margin="0,0,8,0">
                                                             <c:IconPresenter Icon="{Binding Icon}" Size="15" Foreground="{DynamicResource Text.Primary}"
@@ -60,7 +60,7 @@
                                                                        Visibility="{Binding Icon, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                                         </Grid>
                                                         <TextBlock Text="{Binding Display}" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="6,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                                        <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="8,0,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                                    VerticalAlignment="Center" ToolTip="{l:T 'Fixed group'}" Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                                     </StackPanel>
                                                 </CheckBox>

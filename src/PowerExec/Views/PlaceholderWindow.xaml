@@ -10,7 +10,7 @@
         <TextBlock x:Name="Heading" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
         <TextBlock x:Name="SubHeading" Text="{l:T 'Enter values for this launch.'}" Style="{StaticResource Caption}" Margin="0,2,0,12"/>
         <!-- Profil wählen („Nach Profil fragen“) -->
-        <StackPanel x:Name="ProfileRow" Margin="0,0,0,10" Visibility="Collapsed">
+        <StackPanel x:Name="ProfileRow" Margin="0,0,0,12" Visibility="Collapsed">
             <TextBlock Text="{l:T 'Profile'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Margin="0,0,0,4"/>
             <ComboBox x:Name="ProfileBox" DisplayMemberPath="Name" AutomationProperties.Name="{l:T 'Profile'}"/>
             <TextBlock x:Name="ProfileHint" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
@@ -18,7 +18,7 @@
         <ItemsControl x:Name="Fields" Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <StackPanel Margin="0,0,0,10">
+                    <StackPanel Margin="0,0,0,12">
                         <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                         <ComboBox IsEditable="True" ItemsSource="{Binding History}" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
                                   ToolTip="{l:T 'Recently used values via the arrow'}" Loaded="Field_Loaded"/>
@@ -26,7 +26,7 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" />
             <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Run'}" IsDefault="True" MinWidth="96" Margin="8,0,0,0" Click="Ok_Click" />
         </StackPanel>

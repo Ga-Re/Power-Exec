@@ -150,12 +150,13 @@
                     <DockPanel>
                         <ui:Button x:Name="PART_Button" DockPanel.Dock="Right" Style="{DynamicResource Btn.Standard}" Margin="6,0,0,0" Content="{l:T 'Insert group ▾'}"
                                    ToolTip="{l:T 'Insert computer group (resolved at launch)'}"/>
-                        <TextBox x:Name="PART_Input" FontFamily="{DynamicResource MonoFont}" Tag="{TemplateBinding Placeholder}"/>
+                        <!-- Popup vor der Eingabe: das letzte Kind des DockPanels füllt die Breite -->
                         <Popup x:Name="PART_Popup" PlacementTarget="{Binding ElementName=PART_Input}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
                             <Border Style="{StaticResource SuggestionPopupBorder}">
                                 <ListBox x:Name="PART_List" MaxHeight="220" MinWidth="220"/>
                             </Border>
                         </Popup>
+                        <TextBox x:Name="PART_Input" FontFamily="{DynamicResource MonoFont}" Tag="{TemplateBinding Placeholder}"/>
                     </DockPanel>
                 </ControlTemplate>
             </Setter.Value>

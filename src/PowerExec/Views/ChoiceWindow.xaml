@@ -8,15 +8,15 @@
         ShowInTaskbar="True" Topmost="True">
     <StackPanel Margin="24,20,24,20">
         <TextBlock x:Name="Heading" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" TextWrapping="Wrap"/>
-        <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,14" TextWrapping="Wrap"/>
+        <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,16" TextWrapping="Wrap"/>
         <!-- Je Möglichkeit eine große Schaltfläche mit Symbol, Titel und Erklärung -->
         <ItemsControl x:Name="Options" Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <ui:Button Style="{StaticResource Btn.Standard}" Margin="0,0,0,8" Padding="12,10" HorizontalContentAlignment="Stretch" Click="Option_Click"
+                    <ui:Button Style="{StaticResource Btn.Standard}" Margin="0,0,0,8" Padding="12,12" HorizontalContentAlignment="Stretch" Click="Option_Click"
                             AutomationProperties.Name="{Binding Title}">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.Card}" Margin="0,0,14,0"
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.Card}" Margin="0,0,16,0"
                                        Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
                             <StackPanel>
                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" HorizontalAlignment="Left"/>

@@ -8,13 +8,13 @@
         ShowInTaskbar="False">
     <StackPanel Margin="24,20,24,20">
         <TextBlock x:Name="Heading" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"/>
-        <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,14" TextWrapping="Wrap"/>
+        <TextBlock x:Name="Prompt" Style="{StaticResource Caption}" Margin="0,4,0,16" TextWrapping="Wrap"/>
         <!-- Vorhandene Gruppe -->
-        <RadioButton x:Name="ExistingOption" GroupName="Kind" Content="{l:T 'Existing group'}" Checked="Option_Changed" Margin="0,0,0,6"/>
+        <RadioButton x:Name="ExistingOption" GroupName="Kind" Content="{l:T 'Existing group'}" Checked="Option_Changed" Margin="0,0,0,8"/>
         <ComboBox x:Name="GroupBox" Margin="28,0,0,12" IsEditable="False" AutomationProperties.Name="{l:T 'Existing group'}"
                   SelectionChanged="GroupBox_SelectionChanged"/>
         <!-- Neue Gruppe -->
-        <RadioButton x:Name="NewOption" GroupName="Kind" Content="{l:T 'New group'}" Checked="Option_Changed" Margin="0,0,0,6"/>
+        <RadioButton x:Name="NewOption" GroupName="Kind" Content="{l:T 'New group'}" Checked="Option_Changed" Margin="0,0,0,8"/>
         <TextBox x:Name="NewBox" Margin="28,0,0,0" Tag="{l:T 'Name of the new group (subgroups with /)'}" GotFocus="NewBox_GotFocus"
                  AutomationProperties.Name="{l:T 'New group'}"/>
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="28,8,0,0" Visibility="Collapsed" TextWrapping="Wrap"/>

@@ -69,7 +69,7 @@
             </ItemsControl>
             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox Width="60" Text="{Binding CacheMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,0,6,0" VerticalAlignment="Center"
+                    <TextBox Width="60" Text="{Binding CacheMinutes, UpdateSourceTrigger=LostFocus}" Margin="0,0,8,0" VerticalAlignment="Center"
                              Visibility="{Binding IsCached, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Minutes'}"/>
                     <TextBlock Text="{l:T 'min'}" VerticalAlignment="Center" Margin="0,0,12,0" Visibility="{Binding IsCached, Converter={StaticResource Vis}}"/>
                     <ComboBox Width="200" ItemsSource="{Binding Refreshes}" SelectedValue="{Binding Refresh}" DisplayMemberPath="Value" SelectedValuePath="Key"
@@ -82,7 +82,7 @@
                 </StackPanel>
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}" Margin="0,8,0,4">
-                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Description (optional)'}" Margin="0,0,0,6"/>
+                <TextBlock DockPanel.Dock="Top" Text="{l:T 'Description (optional)'}" Margin="0,0,0,8"/>
                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged, Delay=400}" AcceptsReturn="True" TextWrapping="Wrap"
                          MinHeight="64" MaxHeight="160" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
                          AutomationProperties.Name="{l:T 'Description'}"/>

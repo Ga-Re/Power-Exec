@@ -13,7 +13,7 @@
                    Text="{l:T 'You then drag entries in with drag &amp; drop – also files, folders and links from Explorer or the browser.'}"/>
 
         <!-- Symbol und Name -->
-        <TextBlock Text="{l:T 'Name and icon'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <TextBlock Text="{l:T 'Name and icon'}" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <DockPanel>
             <ui:Button x:Name="IconButton" DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Width="40" Height="34" MinHeight="34" Padding="0" Margin="0,0,8,0"
                     Click="Icon_Click" ToolTip="{l:T 'Choose icon or image'}" AutomationProperties.Name="{l:T 'Choose icon or image'}">
@@ -26,7 +26,7 @@
         </DockPanel>
 
         <!-- Ordner: macht daraus eine smarte Gruppe -->
-        <TextBlock Text="{l:T 'Folder (optional)'}" FontWeight="SemiBold" Margin="0,16,0,6"/>
+        <TextBlock Text="{l:T 'Folder (optional)'}" FontWeight="SemiBold" Margin="0,16,0,8"/>
         <DockPanel>
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Margin="8,0,0,0" Click="Browse_Click" />
             <ui:Button x:Name="ClearFolderButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0"
@@ -35,7 +35,7 @@
             </ui:Button>
             <TextBox x:Name="FolderBox" IsReadOnly="True" Tag="{l:T 'No folder'}" AutomationProperties.Name="{l:T 'Folder'}"/>
         </DockPanel>
-        <TextBlock x:Name="FolderHint" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0"
+        <TextBlock x:Name="FolderHint" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
                    Text="{l:T 'With a folder, the group automatically shows its scripts and programs – new files appear by themselves.'}"/>
 
         <!-- Farbe und Darstellung -->
@@ -46,7 +46,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel>
-                <TextBlock Text="{l:T 'Color'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Text="{l:T 'Color'}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="4,0,0,0" Click="CustomColor_Click"
                             ToolTip="{l:T 'Pick your own color in the color picker'}" AutomationProperties.Name="{l:T 'Custom color'}">
@@ -66,7 +66,7 @@
                 </DockPanel>
             </StackPanel>
             <StackPanel Grid.Column="2">
-                <TextBlock Text="{l:T 'Appearance'}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <TextBlock Text="{l:T 'Appearance'}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <ComboBox x:Name="LayoutBox" DisplayMemberPath="Value" SelectedValuePath="Key" AutomationProperties.Name="{l:T 'Appearance'}"/>
             </StackPanel>
         </Grid>

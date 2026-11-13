@@ -8,11 +8,11 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24,20,24,16">
             <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,14"
+            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,16"
                        Text="{l:T 'Runs automatically as long as Power-Exec is running (so permanently with “Start with Windows”). The result appears in the history (Ctrl+H).'}"/>
 
             <!-- Bestehende Zeitpläne -->
-            <StackPanel Visibility="{Binding HasExisting, Converter={StaticResource Vis}}" Margin="0,0,0,14">
+            <StackPanel Visibility="{Binding HasExisting, Converter={StaticResource Vis}}" Margin="0,0,0,16">
                 <DockPanel Margin="0,0,0,4">
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'New schedule'}" Command="{Binding NewCommand}" Foreground="{DynamicResource Accent}" />
                     <TextBlock Text="{l:T 'Scheduled'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -20,7 +20,7 @@
                 <ItemsControl ItemsSource="{Binding Existing}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="10,6" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1">
+                            <Border Padding="12,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1">
                                 <DockPanel>
                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove schedule'}">
                                         <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
@@ -40,17 +40,17 @@
             </StackPanel>
 
             <!-- Art -->
-            <WrapPanel Margin="0,0,0,10">
+            <WrapPanel Margin="0,0,0,12">
                 <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Once'}" GroupName="Kind" IsChecked="{Binding IsOnce}"/>
                 <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Daily / weekdays'}" GroupName="Kind" IsChecked="{Binding IsDaily}"/>
                 <RadioButton Style="{StaticResource Chip}" Content="{l:T 'Repeat every …'}" GroupName="Kind" IsChecked="{Binding IsInterval}"/>
             </WrapPanel>
 
-            <StackPanel Orientation="Horizontal" Visibility="{Binding IsOnce, Converter={StaticResource Vis}}" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Visibility="{Binding IsOnce, Converter={StaticResource Vis}}" Margin="0,0,0,12">
                 <TextBox Width="120" Height="32" Padding="8,0" Text="{Binding OnceDate, UpdateSourceTrigger=PropertyChanged}" Tag="TT.MM.JJJJ" AutomationProperties.Name="{l:T 'Date'}"/>
                 <TextBox Width="80" Height="32" Padding="8,0" Margin="8,0,0,0" Text="{Binding OnceTime, UpdateSourceTrigger=PropertyChanged}" Tag="HH:MM" AutomationProperties.Name="{l:T 'Time'}"/>
             </StackPanel>
-            <StackPanel Visibility="{Binding IsDaily, Converter={StaticResource Vis}}" Margin="0,0,0,10">
+            <StackPanel Visibility="{Binding IsDaily, Converter={StaticResource Vis}}" Margin="0,0,0,12">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{l:T 'at'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBox Width="80" Height="32" Padding="8,0" Text="{Binding DailyTime, UpdateSourceTrigger=PropertyChanged}" Tag="HH:MM" AutomationProperties.Name="{l:T 'Time'}"/>
@@ -64,25 +64,25 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Visibility="{Binding IsInterval, Converter={StaticResource Vis}}" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Visibility="{Binding IsInterval, Converter={StaticResource Vis}}" Margin="0,0,0,12">
                 <TextBox Width="80" Height="32" Padding="8,0" Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Interval in minutes'}"/>
                 <TextBlock Text="{l:T 'Minutes'}" VerticalAlignment="Center" Margin="8,0,0,0"/>
             </StackPanel>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12" Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}">
                 <TextBlock Text="{l:T 'Launch profile'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding ProfileName}" Width="200" Height="30"/>
             </StackPanel>
-            <CheckBox Content="{l:T 'Notify only on errors'}" IsChecked="{Binding NotifyOnlyOnError}" Margin="0,0,0,6"/>
-            <CheckBox Content="{l:T 'Catch up on missed runs (Power-Exec wasn\'t running)'}" IsChecked="{Binding CatchUp}" Margin="0,0,0,6"/>
-            <CheckBox Content="{l:T 'Active'}" IsChecked="{Binding Enabled}" Margin="0,0,0,10"/>
+            <CheckBox Content="{l:T 'Notify only on errors'}" IsChecked="{Binding NotifyOnlyOnError}" Margin="0,0,0,8"/>
+            <CheckBox Content="{l:T 'Catch up on missed runs (Power-Exec wasn\'t running)'}" IsChecked="{Binding CatchUp}" Margin="0,0,0,8"/>
+            <CheckBox Content="{l:T 'Active'}" IsChecked="{Binding Enabled}" Margin="0,0,0,12"/>
 
             <TextBlock Text="{Binding Preview}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
             <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"
                        Text="{l:T 'If a launch profile asks for values, computers or a sign-in, the dialog appears at the scheduled time. For unattended runs, choose a profile with fixed values.'}"/>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Close'}" IsCancel="True" MinWidth="96" Click="Close_Click" />
                 <ui:Button Style="{StaticResource Btn.Accent}" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" MinWidth="96" Margin="8,0,0,0" IsDefault="True" />
             </StackPanel>
