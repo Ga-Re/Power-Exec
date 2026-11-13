@@ -5,7 +5,7 @@ using PowerExec.UI.ViewModels;
 
 namespace PowerExec.Desktop.Views;
 
-/// <summary>Der Marktplatz als eigenes Fenster: Reiter für Einträge, Scripte, Designs, Installiert und Quellen.</summary>
+/// <summary>Der Marktplatz als eigenes Fenster: Navigation links (Bereiche, Kategorien), rechts die Galerie der Karten.</summary>
 public partial class MarketplaceWindow : Window
 {
     private readonly MarketplaceWindowViewModel _vm;
@@ -18,6 +18,7 @@ public partial class MarketplaceWindow : Window
         WindowHelper.ApplyTitleBar(this);
         FluentTheme.Attach(this);
         QuietScrollBar.Attach(PageScroll);
+        QuietScrollBar.Attach(NavScroll);
         vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MarketplaceWindowViewModel.Tab)) SyncTabs(); };
     }
 

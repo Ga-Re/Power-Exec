@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Localization;
 using PowerExec.UI.Infrastructure;
@@ -25,20 +26,37 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
         _app = app;
         _apply = apply;
         Page = Load();
+        Page.Tab = "All"; // das Fenster öffnet mit „Entdecken“
+        UpdateCounts();
     }
 
     /// <summary>Listen und Befehle des Marktplatzes.</summary>
     public MarketplaceViewModel Page { get; private set; }
 
-    /// <summary>Bereiche des Fensters (Schlüssel wie <see cref="MarketplaceViewModel.Tab"/>).</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Tabs { get; } = new[]
+    /// <summary>Bereiche in der Navigation (Schlüssel wie <see cref="MarketplaceViewModel.Tab"/>), mit Anzahl.</summary>
+    public IReadOnlyList<MarketplaceTab> Tabs { get; } = new[]
     {
-        new KeyValuePair<string, string>("Entry", L.T("Entries")),
-        new KeyValuePair<string, string>("Script", L.T("Scripts")),
-        new KeyValuePair<string, string>("Design", L.T("Designs")),
-        new KeyValuePair<string, string>("Installed", L.T("Installed")),
-        new KeyValuePair<string, string>("Sources", L.T("Sources"))
+        new MarketplaceTab("All", L.T("Discover")),
+        new MarketplaceTab("Entry", L.T("Entries")),
+        new MarketplaceTab("Script", L.T("Scripts")),
+        new MarketplaceTab("Design", L.T("Designs")),
+        new MarketplaceTab("Installed", L.T("Installed")),
+        new MarketplaceTab("Sources", L.T("Sources"))
     };
+
+    private void UpdateCounts()
+    {
+        foreach (var t in Tabs)
+            t.CountText = t.Key switch
+            {
+                "All" => Page.AllCount.ToString(CultureInfo.CurrentCulture),
+                "Entry" => Page.EntryCount.ToString(CultureInfo.CurrentCulture),
+                "Script" => Page.ScriptCount.ToString(CultureInfo.CurrentCulture),
+                "Design" => Page.DesignCount.ToString(CultureInfo.CurrentCulture),
+                "Installed" => Page.InstalledCount.ToString(CultureInfo.CurrentCulture),
+                _ => string.Empty
+            };
+    }
 
     public string Tab
     {
@@ -52,7 +70,9 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
     private MarketplaceViewModel Load()
     {
         _copy = SettingsStore.Clone(_app.Settings);
-        return new MarketplaceViewModel(_app, _copy, OnChanged);
+        var page = new MarketplaceViewModel(_app, _copy, OnChanged);
+        page.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MarketplaceViewModel.SummaryText) && ReferenceEquals(page, Page)) UpdateCounts(); };
+        return page;
     }
 
     private void OnChanged()
@@ -68,9 +88,27 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
         if (_applying) return;
         var tab = Page.Tab;
         Page = Load();
-        Page.Tab = tab; // der gewählte Reiter bleibt
+        Page.Tab = tab; // der gewählte Bereich bleibt
+        UpdateCounts();
         OnPropertyChanged(nameof(Page));
         OnPropertyChanged(nameof(Tab));
         Page.EnsureLoadedAsync().Forget();
     }
+}
+
+/// <summary>Ein Bereich in der Navigation des Marktplatz-Fensters.</summary>
+public sealed class MarketplaceTab : ObservableObject
+{
+    private string _countText = string.Empty;
+
+    public MarketplaceTab(string key, string title)
+    {
+        Key = key;
+        Title = title;
+    }
+
+    public string Key { get; }
+    public string Title { get; }
+    /// <summary>Anzahl der Dateien im Bereich (leer bei „Quellen“).</summary>
+    public string CountText { get => _countText; set => Set(ref _countText, value); }
 }

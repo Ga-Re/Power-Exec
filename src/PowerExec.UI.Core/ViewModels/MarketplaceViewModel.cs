@@ -65,6 +65,32 @@ public sealed class MarketplaceViewModel : ObservableObject
     internal ISettingsHost App => _app;
 
     public ObservableCollection<MarketplaceRow> Rows { get; } = new();
+    /// <summary>Alle Treffer als Karten der Galerie (ohne Ordner; Reihenfolge wie in <see cref="Rows"/>).</summary>
+    public ObservableCollection<MarketplaceItemRow> Cards { get; } = new();
+    /// <summary>Kategorien (oberster Ordner) der aktuellen Liste – Filter in der Navigation.</summary>
+    public ObservableCollection<MarketplaceCategory> Categories { get; } = new();
+
+    private string _category = string.Empty;
+    /// <summary>Gewählte Kategorie; leer = alle.</summary>
+    public string Category
+    {
+        get => _category;
+        set { if (_category == (value ?? string.Empty)) return; _category = value ?? string.Empty; OnPropertyChanged(); Rebuild(); }
+    }
+
+    public int AllCount => AllFiles().Count();
+    public int EntryCount => Count(MarketplaceItemType.Entry);
+    public int ScriptCount => Count(MarketplaceItemType.Script);
+    public int DesignCount => Count(MarketplaceItemType.Design);
+    public int InstalledCount => AllFiles().Count(f => Marketplace.FindInstall(_s, f.Source, f.File.Path) != null);
+
+    /// <summary>Details einer Karte auf- bzw. zuklappen; es ist immer höchstens eine offen.</summary>
+    internal void ToggleDetails(MarketplaceItemRow row)
+    {
+        var open = !row.IsPreviewOpen;
+        foreach (var i in _items) if (!ReferenceEquals(i, row)) i.IsPreviewOpen = false;
+        row.IsPreviewOpen = open;
+    }
     public ObservableCollection<MarketplaceSourceViewModel> SourceList { get; } = new();
     public ICommand RefreshCommand { get; }
     public ICommand AddSourceCommand { get; }
@@ -75,13 +101,13 @@ public sealed class MarketplaceViewModel : ObservableObject
     public bool IsLoading { get => _loading; private set { if (Set(ref _loading, value)) { CommandRequery.Invalidate(); OnPropertyChanged(nameof(IsEmpty)); } } }
     public bool IsEmpty => !_loading && Rows.Count == 0 && _tab != "Sources";
     public bool HasRows => Rows.Count > 0;
+    public bool HasCategories => Categories.Count > 0;
     /// <summary>Fehler (bleibt stehen, bis er behoben ist); Erfolg kommt als Snackbar.</summary>
     public string? Error { get => _error; private set => Set(ref _error, value); }
 
     public string Query { get => _query; set { if (Set(ref _query, value ?? string.Empty)) Rebuild(); } }
 
-    /// <summary>Tab: Entry, Script, Design oder Installed.</summary>
-    /// <summary>Unterseite: Entry, Script, Design, Installed oder Sources (Navigation Marktplatz › …).</summary>
+    /// <summary>Bereich: All (Entdecken), Entry, Script, Design, Installed oder Sources.</summary>
     public string Tab
     {
         get => _tab;
@@ -89,7 +115,9 @@ public sealed class MarketplaceViewModel : ObservableObject
         {
             if (_tab == value) return;
             _tab = value ?? "Entry";
+            _category = string.Empty; // Kategorien gehören zum Bereich
             OnPropertyChanged();
+            OnPropertyChanged(nameof(Category));
             OnPropertyChanged(nameof(IsSourcesPage));
             OnPropertyChanged(nameof(IsListPage));
             Rebuild();
@@ -228,8 +256,10 @@ public sealed class MarketplaceViewModel : ObservableObject
     internal void Rebuild()
     {
         var checkedKeys = _items.Where(i => i.IsChecked).Select(i => i.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var openKey = _items.FirstOrDefault(i => i.IsPreviewOpen)?.Id;
         _items.Clear();
         Rows.Clear();
+        var categories = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var terms = _query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var sources = Marketplace.Sources(_s).Where(s => _sourceFilter == "*" || Marketplace.SameSource(s.Url, _sourceFilter)).ToList();
         var bySource = sources.Count > 1;
@@ -237,11 +267,18 @@ public sealed class MarketplaceViewModel : ObservableObject
         {
             if (!Trees.TryGetValue(Key(src.Url), out var tree)) continue;
             if (_tab == "Sources") continue;
-            var files = tree.Files.Where(f => _tab == "Installed" ? Marketplace.FindInstall(_s, src.Url, f.Path) != null : f.Type.ToString() == _tab).ToList();
+            var files = tree.Files.Where(f => _tab == "Installed" ? Marketplace.FindInstall(_s, src.Url, f.Path) != null : _tab == "All" || f.Type.ToString() == _tab).ToList();
             var items = files.Select(f => new MarketplaceItemRow(this, src.Url, tree.Repo, f, Payloads.TryGetValue(PayloadKey(src.Url, f), out var p) ? p.Details : null))
                 .Where(i => terms.All(t => i.SearchText.Contains(t, StringComparison.CurrentCultureIgnoreCase))).ToList();
+            foreach (var i in items.Where(i => i.CategoryName.Length > 0))
+                categories[i.CategoryName] = categories.TryGetValue(i.CategoryName, out var n) ? n + 1 : 1;
+            if (_category.Length > 0) items = items.Where(i => i.CategoryName.Equals(_category, StringComparison.OrdinalIgnoreCase)).ToList();
             if (items.Count == 0) continue;
-            foreach (var i in items) if (checkedKeys.Contains(i.Id)) i.SetChecked(true);
+            foreach (var i in items)
+            {
+                if (checkedKeys.Contains(i.Id)) i.SetChecked(true);
+                if (i.Id == openKey) i.IsPreviewOpen = true;
+            }
             _items.AddRange(items);
             var root = new MarketplaceFolderRow(this, Key(src.Url) + "|", SourceName(src.Url), 0, isSource: true);
             foreach (var item in items)
@@ -258,7 +295,13 @@ public sealed class MarketplaceViewModel : ObservableObject
             if (bySource) AddRows(root, 0, terms.Length > 0);
             else foreach (var child in root.Children) AddRow(child, 0, terms.Length > 0);
         }
-        foreach (var p in new[] { nameof(IsEmpty), nameof(EntryTabText), nameof(ScriptTabText), nameof(DesignTabText), nameof(InstalledTabText), nameof(SummaryText), nameof(HasRows) }) OnPropertyChanged(p);
+        Cards.Clear();
+        foreach (var i in _items) Cards.Add(i);
+        Categories.Clear();
+        foreach (var c in categories.OrderBy(c => c.Key, StringComparer.CurrentCultureIgnoreCase))
+            Categories.Add(new MarketplaceCategory(this, c.Key, c.Value, c.Key.Equals(_category, StringComparison.OrdinalIgnoreCase)));
+        foreach (var p in new[] { nameof(IsEmpty), nameof(EntryTabText), nameof(ScriptTabText), nameof(DesignTabText), nameof(InstalledTabText), nameof(SummaryText), nameof(HasRows),
+                     nameof(AllCount), nameof(EntryCount), nameof(ScriptCount), nameof(DesignCount), nameof(InstalledCount), nameof(HasCategories) }) OnPropertyChanged(p);
         SelectionChanged();
     }
 
@@ -587,6 +630,22 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public override bool IsFolder => false;
     public override string Name => _details?.Name ?? File.DefaultName;
     public string Description => _details?.Description ?? string.Empty;
+    /// <summary>Kategorie: oberster Ordner der Gruppe („Links“); leer, wenn die Datei in keiner Gruppe liegt.</summary>
+    public string CategoryName => File.GroupFolder.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+    /// <summary>Fußzeile der Karte: Kategorie, bei mehreren Quellen mit Quelle.</summary>
+    public string CategoryText => string.Join(" · ", new[] { CategoryName, _page.HasSeveralSources ? _page.SourceName(Source) : string.Empty }.Where(t => t.Length > 0));
+    /// <summary>Erste Zeile der Vorschau – das, was der Eintrag ausführt (Kopf der Karte).</summary>
+    public string PreviewLine => (_details?.Preview ?? string.Empty).Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0) ?? string.Empty;
+    /// <summary>Farbe des Kartenkopfs: je Kategorie gleich bleibend, dunkel genug für weiße Schrift.</summary>
+    public string BandColor
+    {
+        get
+        {
+            string[] palette = { "#1F4E8C", "#8A4A12", "#0B5C5C", "#4A3A8A", "#7A2E4A", "#2E5E2E" };
+            var key = CategoryName.Length > 0 ? CategoryName : TypeText;
+            return palette[key.Sum(c => char.ToLowerInvariant(c)) % palette.Length];
+        }
+    }
     public string TypeText => File.Type switch { MarketplaceItemType.Script => L.T("Script"), MarketplaceItemType.Design => L.T("Design"), _ => L.T("Entry") };
     public string Glyph => File.Type switch { MarketplaceItemType.Script => "", MarketplaceItemType.Design => "", _ => "" };
     public string Needs => _details?.Variables.Count > 0 ? L.T("needs ") + string.Join(", ", _details.Variables.Select(v => "{{$" + Variables.Normalize(v.Name) + "}}")) : string.Empty;
@@ -613,7 +672,7 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     internal void SetDetails(MarketplaceDetails details)
     {
         _details = details;
-        foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(EntryKindText), nameof(VariablesText),
+        foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(PreviewLine), nameof(EntryKindText), nameof(VariablesText),
                      nameof(HasVariables), nameof(DesignPanelColor), nameof(DesignAccentColor), nameof(DesignTextColor), nameof(DesignSubtleColor),
                      nameof(DesignBackdropText), nameof(HasDesign), nameof(DesignPreset) })
             OnPropertyChanged(p);
@@ -624,7 +683,7 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     private bool _previewOpen;
     /// <summary>Vorschau unter der Zeile aufgeklappt (Einträge und Scripte; Designs zeigen sie immer).</summary>
     public bool IsPreviewOpen { get => _previewOpen; set => Set(ref _previewOpen, value); }
-    public ICommand TogglePreviewCommand => _togglePreview ??= new RelayCommand(() => IsPreviewOpen = !IsPreviewOpen);
+    public ICommand TogglePreviewCommand => _togglePreview ??= new RelayCommand(() => _page.ToggleDetails(this));
     private ICommand? _togglePreview;
 
     public bool IsDesignFile => File.Type == MarketplaceItemType.Design;
@@ -664,6 +723,24 @@ public sealed class MarketplaceItemRow : MarketplaceRow
 }
 
 /// <summary>Eine Quelle in der Liste „Quellen“.</summary>
+/// <summary>Eine Kategorie in der Navigation des Marktplatzes (Filter nach oberstem Ordner).</summary>
+public sealed class MarketplaceCategory
+{
+    public MarketplaceCategory(MarketplaceViewModel page, string name, int count, bool isSelected)
+    {
+        Name = name;
+        Count = count;
+        IsSelected = isSelected;
+        // Erneuter Klick auf die gewählte Kategorie hebt den Filter auf
+        SelectCommand = new RelayCommand(() => page.Category = isSelected ? string.Empty : name);
+    }
+
+    public string Name { get; }
+    public int Count { get; }
+    public bool IsSelected { get; }
+    public ICommand SelectCommand { get; }
+}
+
 public sealed class MarketplaceSourceViewModel
 {
     public MarketplaceSourceViewModel(MarketplaceViewModel page, MarketplaceSource source, string name, int count, string? error)

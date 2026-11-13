@@ -1212,7 +1212,33 @@ public sealed partial class SelfTestController : AppController
                 // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
                 await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
                 await Settle();
-                if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Reiter statt 5");
+                if (marketVm.Tabs.Count != 6) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 6");
+                if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
+                if (marketVm.Page.Cards.Count == 0) Fail("Marktplatz: keine Karten in „Entdecken“");
+                else
+                {
+                    if (marketVm.Page.Categories.Count == 0) Fail("Marktplatz: keine Kategorien in der Navigation");
+                    // Details aufklappen: die Karte nimmt die ganze Zeile ein, es ist immer nur eine offen
+                    var firstCard = marketVm.Page.Cards[0];
+                    firstCard.TogglePreviewCommand.Execute(null);
+                    await Settle();
+                    if (marketWindow.Content is FrameworkElement openRoot) Screenshot(openRoot, "marktplatz-details");
+                    if (marketVm.Page.Cards.Count > 1)
+                    {
+                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+                        if (firstCard.IsPreviewOpen || !marketVm.Page.Cards[1].IsPreviewOpen) Fail("Marktplatz: mehr als eine Karte aufgeklappt");
+                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+                    }
+                    if (marketVm.Page.Categories.Count > 0)
+                    {
+                        var category = marketVm.Page.Categories[0];
+                        category.SelectCommand.Execute(null);
+                        await Settle();
+                        if (marketVm.Page.Cards.Count != category.Count) Fail($"Marktplatz: Kategorie „{category.Name}“ zeigt {marketVm.Page.Cards.Count} statt {category.Count} Karten");
+                        if (marketWindow.Content is FrameworkElement catRoot) Screenshot(catRoot, "marktplatz-kategorie");
+                        marketVm.Page.Category = string.Empty;
+                    }
+                }
                 foreach (var tab in marketVm.Tabs.Select(t => t.Key).ToList())
                 {
                     marketVm.Tab = tab;

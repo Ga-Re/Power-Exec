@@ -269,4 +269,33 @@ public class MarketplaceViewModelTests
         Assert.False(vm.Page.AllItems.Single().IsInstalled);
         Assert.Equal("Design", vm.Tab); // der gewählte Reiter bleibt
     }
+
+    [Fact]
+    public async Task GalleryShowsAllTypesWithCategoriesAndOneOpenCard()
+    {
+        var host = Host();
+        var vm = new MarketplaceWindowViewModel(host, _ => { });
+        await vm.Page.LoadAsync(force: false);
+
+        // „Entdecken“ zeigt Einträge, Scripte und Designs zusammen als Karten
+        Assert.Equal("All", vm.Tab);
+        Assert.Equal(vm.Page.AllCount, vm.Page.Cards.Count);
+        Assert.Contains(vm.Page.Cards, c => c.File.Type == MarketplaceItemType.Design);
+        Assert.Equal(vm.Page.AllCount.ToString(System.Globalization.CultureInfo.CurrentCulture), vm.Tabs.First(t => t.Key == "All").CountText);
+
+        // Kategorie filtert die Karten; erneuter Klick hebt den Filter auf
+        var links = vm.Page.Categories.First(c => c.Name == "Links");
+        links.SelectCommand.Execute(null);
+        Assert.Equal(links.Count, vm.Page.Cards.Count);
+        Assert.All(vm.Page.Cards, c => Assert.Equal("Links", c.CategoryName));
+        vm.Page.Categories.First(c => c.Name == "Links").SelectCommand.Execute(null);
+        Assert.Equal(vm.Page.AllCount, vm.Page.Cards.Count);
+
+        // Details: immer nur eine Karte offen
+        vm.Page.Cards[0].TogglePreviewCommand.Execute(null);
+        vm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+        Assert.False(vm.Page.Cards[0].IsPreviewOpen);
+        Assert.True(vm.Page.Cards[1].IsPreviewOpen);
+        vm.Tab = "Entry";
+    }
 }
