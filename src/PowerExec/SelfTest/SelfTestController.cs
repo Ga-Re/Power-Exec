@@ -1253,22 +1253,31 @@ public sealed partial class SelfTestController : AppController
                     await Settle();
                     var fullHeight = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     if (fullHeight < 1) Fail("Navigation: aufgeklappte Oberkategorie zeigt keine Unterpunkte");
+                    // Zwischenstand abtasten statt einmal nach fester Zeit messen: auf langsamen Rechnern beginnt die Bewegung später.
+                    async Task<double> MidHeight()
+                    {
+                        double h = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                        for (int i = 0; i < 40 && !(h > 0.5 && h < fullHeight - 0.5); i++)
+                        {
+                            await Task.Delay(15);
+                            h = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                        }
+                        return h;
+                    }
                     exec.IsExpanded = false;
-                    await Task.Delay(70);
-                    var midClose = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    var midClose = await MidHeight();
                     await Settle();
                     var closed = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     exec.IsExpanded = true;
-                    await Task.Delay(70);
-                    var midOpen = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    var midOpen = await MidHeight();
                     await Settle();
                     var reopened = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     Step($"Navigation: Unterpunkte {fullHeight:0} → zu {midClose:0} … {closed:0} → auf {midOpen:0} … {reopened:0} px");
                     Step("Navigation: Unterpunkte " + Infrastructure.NavigationMotion.ChildrenStateForTest(exec));
                     if (Settings.Animation != AnimationMode.Off)
                     {
-                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px nach 70 ms)");
-                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px nach 70 ms)");
+                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px)");
+                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px)");
                     }
                     if (closed > 0.5 || Math.Abs(reopened - fullHeight) > 1) Fail($"Navigation: nach dem Klappen {closed:0} bzw. {reopened:0} statt 0 bzw. {fullHeight:0} px");
                     exec.IsExpanded = false;
