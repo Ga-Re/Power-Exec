@@ -400,7 +400,8 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}">
+    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}"
+                Background="Transparent" AllowDrop="True" DragOver="Page_DragOver" Drop="Page_Drop">
         <DockPanel>
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New group'}"/></StackPanel>
@@ -415,7 +416,7 @@
                    Text="{l:T 'Groups with a lock (Recently run, Favorites, Custom entries) are fixed: movable but not deletable. Whether they appear in the panel is set per workspace.'}"/>
         <TextBlock Text="{l:T 'No groups yet – “New group” at the top right or right-click in the panel.'}" Style="{StaticResource Caption}" Margin="4,0,0,8"
                    Visibility="{Binding Categories.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
-        <ItemsControl ItemsSource="{Binding CategoryRoots}" Focusable="False">
+        <ItemsControl x:Name="CategoryList" ItemsSource="{Binding CategoryRoots}" Focusable="False">
             <ItemsControl.ItemTemplateSelector>
                 <v:CategoryTemplateSelector Group="{StaticResource CategoryCardTemplate}" Fixed="{StaticResource FixedCardTemplate}"/>
             </ItemsControl.ItemTemplateSelector>

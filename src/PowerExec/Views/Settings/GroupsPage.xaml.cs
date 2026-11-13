@@ -65,13 +65,15 @@ public partial class GroupsPage : UserControl
     /// Bereich auf dem Kartenkopf wie im Panel: oberes Viertel = davor, Mitte = hinein, unteres Viertel = dahinter.
     /// Unterhalb des Kopfs (Details, Untergruppen) null = Ziel beibehalten.
     /// </summary>
-    private static GroupDropZone? CardZone(Border card, DragEventArgs e)
+    private static GroupDropZone? CardZone(Border card, DragEventArgs e, bool allowInto)
     {
         var head = (card.Child as Panel)?.Children.OfType<FrameworkElement>().FirstOrDefault();
         if (head == null || head.ActualHeight <= 0) return null;
         var y = e.GetPosition(head).Y;
         var h = head.ActualHeight;
         if (y > h) return null;
+        // Wo „hinein“ nicht geht (feste Gruppe beteiligt): zwei Hälften statt eines schmalen Streifens für „davor“
+        if (!allowInto) return y < h * 0.5 ? GroupDropZone.Before : GroupDropZone.After;
         return y < h * 0.28 ? GroupDropZone.Before
              : y > h * 0.72 ? GroupDropZone.After
              : GroupDropZone.Into;
@@ -91,8 +93,23 @@ public partial class GroupsPage : UserControl
     {
         if (sender is not Border card || card.DataContext is not CategoryItemViewModel target || !e.Data.GetDataPresent(GroupDragFormat) || Vm is not { } vm) return;
         var offset = (int)Math.Round((e.GetPosition(this).X - _groupDragStartX) / CategoryIndent);
-        var zone = CardZone(card, e);
+        var zone = CardZone(card, e, allowInto: !vm.CategoryDropIsTopLevelOnly(target));
         ApplyCategoryPlan(zone is { } z ? vm.PreviewCategoryDrop(target, z, offset) : vm.CurrentCategoryPlan, e);
+    }
+
+    /// <summary>Oberhalb der ersten Karte (Überschrift, Hinweise): an den Anfang.</summary>
+    private void Page_DragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat) || Vm is not { } vm) return;
+        var above = e.GetPosition(CategoryList).Y < 0;
+        ApplyCategoryPlan(above ? vm.PreviewCategoryDropAtStart() : vm.CurrentCategoryPlan, e);
+    }
+
+    private void Page_Drop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(GroupDragFormat)) return;
+        e.Handled = true;
+        Vm?.CommitCategoryDrop();
     }
 
     private void GroupCard_DragLeave(object sender, DragEventArgs e)

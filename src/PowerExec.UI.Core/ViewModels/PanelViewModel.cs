@@ -1267,6 +1267,17 @@ public sealed class PanelViewModel : ObservableObject
         return plan;
     }
 
+    /// <summary>Geht an dieser Gruppe nur „davor“ oder „dahinter“ (feste Gruppe gezogen oder Ziel)?</summary>
+    public bool GroupDropIsTopLevelOnly(GroupViewModel hovered) => _dragGroup?.FixedKey != null || hovered.FixedKey != null;
+
+    /// <summary>Über dem Anfang der Liste: vor die erste Gruppe.</summary>
+    public GroupDropPlan? PreviewGroupDropAtStart()
+    {
+        if (_dragGroup == null) return null;
+        var first = Groups.FirstOrDefault(g => g.Kind != "best" && TopKeyOf(g) != null);
+        return first == null ? null : PreviewGroupDrop(first, GroupDropZone.Before, 0);
+    }
+
     /// <summary>Feste Gruppe beteiligt: oberste Ebene, Lücke vor oder hinter der Gruppe der obersten Ebene unter der Maus.</summary>
     private (string Anchor, bool After)? _topDrop;
 

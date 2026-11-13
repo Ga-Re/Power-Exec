@@ -129,10 +129,15 @@ public partial class PanelWindow
     private const double GroupIndent = 14;
 
     /// <summary>Oberes Viertel = davor, unteres Viertel = dahinter, Mitte = hinein (Untergruppe).</summary>
-    private static Core.Config.GroupDropZone GroupZone(FrameworkElement header, DragEventArgs e)
+    /// <summary>
+    /// Bereich auf dem Gruppenkopf: oben = davor, Mitte = hinein, unten = dahinter. Wo „hinein“ nicht geht (feste Gruppe
+    /// beteiligt), teilt sich der Kopf in zwei Hälften – sonst bliebe für „davor“ nur ein schmaler Streifen.
+    /// </summary>
+    private static Core.Config.GroupDropZone GroupZone(FrameworkElement header, DragEventArgs e, bool allowInto = true)
     {
         var y = e.GetPosition(header).Y;
         var h = Math.Max(1, header.ActualHeight);
+        if (!allowInto) return y < h * 0.5 ? Core.Config.GroupDropZone.Before : Core.Config.GroupDropZone.After;
         return y < h * 0.28 ? Core.Config.GroupDropZone.Before
              : y > h * 0.72 ? Core.Config.GroupDropZone.After
              : Core.Config.GroupDropZone.Into;
@@ -152,7 +157,7 @@ public partial class PanelWindow
     {
         if (sender is not Border header || !e.Data.GetDataPresent(GroupDragFormat)) return; // Einträge/Dateien: übernimmt die Gruppe
         if (header.DataContext is not GroupViewModel target) return;
-        ApplyGroupPlan(Vm.PreviewGroupDrop(target, GroupZone(header, e), LevelOffset(e)), e);
+        ApplyGroupPlan(Vm.PreviewGroupDrop(target, GroupZone(header, e, allowInto: !Vm.GroupDropIsTopLevelOnly(target)), LevelOffset(e)), e);
     }
 
     private void GroupHeader_DragLeave(object sender, DragEventArgs e)
@@ -306,7 +311,10 @@ public partial class PanelWindow
     {
         if (e.Data.GetDataPresent(GroupDragFormat))
         {
-            ApplyGroupPlan(Vm.CurrentGroupDropPlan, e);
+            // Oberhalb der ersten Gruppe (Suchfeld, Kopf): an den Anfang – dort gibt es keinen Gruppenkopf zum Zielen
+            var first = GroupContainers().Select(c => c.Element).FirstOrDefault();
+            var aboveList = first != null && e.GetPosition(first).Y < 0;
+            ApplyGroupPlan(aboveList ? Vm.PreviewGroupDropAtStart() : Vm.CurrentGroupDropPlan, e);
             return;
         }
         e.Effects = e.Data.GetDataPresent(SettingsWindow.EntryDragFormat) ? DragDropEffects.Move

@@ -1172,6 +1172,13 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    /// <summary>Geht an dieser Karte nur „davor“ oder „dahinter“ (feste Gruppe gezogen oder Ziel)?</summary>
+    public bool CategoryDropIsTopLevelOnly(CategoryItemViewModel hovered) => _dragCategory?.IsFixed == true || hovered.IsFixed;
+
+    /// <summary>Über dem Anfang der Liste: vor die erste Karte.</summary>
+    public GroupDropPlan? PreviewCategoryDropAtStart() =>
+        _dragCategory != null && CategoryRoots.FirstOrDefault() is { } first ? PreviewCategoryDrop(first, GroupDropZone.Before, 0) : null;
+
     /// <summary>Ziel bestimmen und die Lücke öffnen (über der Zielkarte bzw. unter ihrer letzten Untergruppe).</summary>
     public GroupDropPlan? PreviewCategoryDrop(CategoryItemViewModel hovered, GroupDropZone zone, int levelOffset)
     {
