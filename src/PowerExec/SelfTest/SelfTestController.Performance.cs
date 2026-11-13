@@ -23,11 +23,11 @@ public sealed partial class SelfTestController
     private const int PerfRounds = 5;
 
     /// <summary>
-    /// Grenzwert für die CI: Tippen im Mittel (mit Wiederverwendung). Rund das Doppelte des Stands von 0.17 (~170 ms),
-    /// damit Schwankungen der Runner (bis Faktor 1,6) keinen Fehlalarm auslösen, Rückfälle wie ein Neuaufbau aller
-    /// Container (600–900 ms) aber sicher auffallen.
+    /// Grenzwert für die CI: Tippen im Mittel (mit Wiederverwendung). Derselbe Stand (0.32) misst auf den Runnern
+    /// zwischen 200 und 365 ms; 480 ms lässt diese Streuung zu, Rückfälle wie ein Neuaufbau aller Container
+    /// (600–900 ms) fallen weiter sicher auf.
     /// </summary>
-    private const double PerfTypingLimitMs = 350;
+    private const double PerfTypingLimitMs = 480;
 
     /// <summary>Rebuild (synchron), danach erzwungenes Layout, danach bis der UI-Thread frei ist (Rendern und Rest).</summary>
     private readonly record struct PerfTiming(double Sync, double Layout, double Total);
