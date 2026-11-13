@@ -15,9 +15,9 @@ text.AppendLine("Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotn
 foreach (var note in ReleaseNotes.All.OrderByDescending(n => n.Version))
 {
     text.AppendLine();
-    text.AppendLine($"## {note.Version.ToString(3)} – {note.Title}");
+    text.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"## {note.Version.ToString(3)} – {note.Title}");
     text.AppendLine();
-    foreach (var line in note.Highlights) text.AppendLine($"- {line}");
+    foreach (var line in note.Highlights) text.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"- {line}");
 }
 File.WriteAllText(Path.Combine(root, "CHANGELOG.md"), text.ToString().ReplaceLineEndings("\n"));
 Console.WriteLine($"CHANGELOG.md: {ReleaseNotes.All.Count} Versionen");
