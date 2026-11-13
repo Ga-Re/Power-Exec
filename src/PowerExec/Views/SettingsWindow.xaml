@@ -53,27 +53,6 @@
                         </ui:NavigationViewItem>
                     </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
-                <!-- Marktplatz: eigene Oberkategorie mit den Kategorien des Repositorys -->
-                <ui:NavigationViewItem Content="{l:T 'Marketplace'}" IsExpanded="False" AutomationProperties.Name="{l:T 'Marketplace'}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                    <ui:NavigationViewItem.MenuItems>
-                        <ui:NavigationViewItem Content="{l:T 'Entries'}" TargetPageTag="market-entries" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Scripts'}" TargetPageTag="market-scripts" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Designs'}" TargetPageTag="market-designs" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Installed'}" TargetPageTag="market-installed" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE73E;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Sources'}" TargetPageTag="market-sources" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE774;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                    </ui:NavigationViewItem.MenuItems>
-                </ui:NavigationViewItem>
                 <!-- Panel: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
                 <ui:NavigationViewItem Content="{l:T 'Panel'}" IsExpanded="True" AutomationProperties.Name="{l:T 'Panel'}">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE737;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
@@ -114,6 +93,13 @@
                     </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
+            <ui:NavigationView.FooterMenuItems>
+                <!-- Der Marktplatz ist ein eigenes Fenster -->
+                <ui:NavigationViewItem Content="{l:T 'Marketplace'}" Click="Marketplace_Click" AutomationProperties.Name="{l:T 'Marketplace'}"
+                                       ToolTip="{l:T 'Opens the marketplace in its own window'}">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
             <ui:NavigationView.PaneFooter>
                 <TextBlock Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="16,8,0,12"/>
             </ui:NavigationView.PaneFooter>
@@ -168,7 +154,6 @@
                 <s:CustomEntriesPage/>
                 <s:MachineGroupsPage/>
                 <s:TagsPage/>
-                <s:MarketplacePage/>
                 <s:VariablesPage/>
                 <s:WorkspacesPage/>
                 <s:GeneralPage/>

@@ -1,0 +1,28 @@
+<Window x:Class="PowerExec.Desktop.Views.MarketplaceWindow"
+        xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+        Title="{l:T 'Power-Exec – Marketplace'}" Style="{StaticResource AppWindow}"
+        Width="980" Height="760" MinWidth="640" MinHeight="460" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <!-- Kopf: Titel und Bereiche als Reiter -->
+        <StackPanel DockPanel.Dock="Top" Margin="28,20,28,0">
+            <TextBlock Text="{l:T 'Marketplace'}" Style="{StaticResource PageTitle}"/>
+            <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False" Margin="-12,4,0,8">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <RadioButton Style="{StaticResource TabHeader}" GroupName="MarketplaceTabs" Content="{Binding Value}" Tag="{Binding Key}"
+                                     Checked="Tab_Checked" Loaded="Tab_Loaded" AutomationProperties.Name="{Binding Value}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+        <ScrollViewer x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <v:MarketplaceView Margin="28,4,28,28" DataContext="{Binding Page}"/>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

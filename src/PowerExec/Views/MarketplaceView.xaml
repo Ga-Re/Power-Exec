@@ -1,5 +1,5 @@
-<!-- Einstellungen › Marktplatz: Einträge, Scripte, Designs, Installiert, Quellen. -->
-<UserControl x:Class="PowerExec.Desktop.Views.Settings.MarketplacePage"
+<!-- Inhalt des Marktplatz-Fensters: Einträge, Scripte, Designs, Installiert, Quellen (Datenkontext: MarketplaceViewModel). -->
+<UserControl x:Class="PowerExec.Desktop.Views.MarketplaceView"
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,8 +7,7 @@
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <StackPanel Visibility="{Binding DataContext.IsMarketplaceSection, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}" DataContext="{Binding MarketplacePage}">
-        <TextBlock Text="{Binding DataContext.PageTitle, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource PageTitle}"/>
+    <StackPanel>
         <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Visibility="{Binding IsListPage, Converter={StaticResource Vis}}"
                    Text="{l:T 'Ready-made entries, scripts and designs from Git folders – from the bundled marketplace and your own sources. Expand groups, check individual files or whole groups and download them. Entries and scripts end up in your custom entries in the group of your choice; you create any required variables once along the way.'}"/>
         <!-- Quellen -->

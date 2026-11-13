@@ -34,6 +34,7 @@ public sealed class TrayIcon : IDisposable
         menu.Opening += (_, _) => RebuildQuickMenus();
         menu.Items.Add(L.T("Rescan folders"), null, (_, _) => app.Repository.ScanAsync().Forget());
         menu.Items.Add(L.T("Settings"), null, (_, _) => app.ShowSettings());
+        menu.Items.Add(L.T("Marketplace"), null, (_, _) => app.ShowMarketplace());
         menu.Items.Add(L.T("Check for updates"), null, async (_, _) =>
         {
             var r = await app.CheckUpdatesAsync(manual: true, includePrereleases: app.Settings.IncludePrereleases);

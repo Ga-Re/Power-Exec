@@ -231,41 +231,42 @@ public class MarketplaceViewModelTests
     }
 
     [Fact]
-    public async Task InstalledEntryKeepsGroupAfterSettingsAreApplied()
+    public async Task WindowAppliesInstallsImmediatelyWithGroup()
     {
         var host = Host();
-        var vm = new SettingsViewModel(host, focusFolder: null);
-        await vm.MarketplacePage.LoadAsync(force: false);
+        AppSettings? applied = null;
+        var vm = new MarketplaceWindowViewModel(host, s => applied = s);
+        await vm.Page.LoadAsync(force: false);
         host.FakeDialogs.Answer = "Suche";
-        await vm.MarketplacePage.InstallAsync(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
+        await vm.Page.InstallAsync(vm.Page.AllItems.Where(i => i.Name == "Google").ToList());
 
-        // Übernehmen baut die Einstellungen aus den Listen neu – die Gruppe darf dabei nicht verloren gehen
-        var s = vm.Build();
-        var e = Assert.Single(s.CustomEntries);
-        Assert.Equal("Suche", GroupManager.GroupOf(s, e.Key));
-        Assert.Contains("Suche", s.CategoryOrder);
-        Assert.Contains(vm.EntryList.Rows, r => r.Group == "Suche");
+        // Jede Installation wird sofort übernommen – samt der gewählten Gruppe
+        Assert.NotNull(applied);
+        var e = Assert.Single(applied!.CustomEntries);
+        Assert.Equal("Suche", GroupManager.GroupOf(applied, e.Key));
+        Assert.Contains("Suche", applied.CategoryOrder);
 
-        // Deinstallieren entfernt den Eintrag auch aus der Liste
-        vm.MarketplacePage.Uninstall(vm.MarketplacePage.AllItems.Where(i => i.Name == "Google").ToList());
-        Assert.Empty(vm.Build().CustomEntries);
+        vm.Page.Uninstall(vm.Page.AllItems.Where(i => i.Name == "Google").ToList());
+        Assert.Empty(applied!.CustomEntries);
     }
 
     [Fact]
-    public async Task DeletingDesignUnderAppearanceMarksItNotInstalled()
+    public async Task WindowFollowsSettingsChangedElsewhere()
     {
         var host = Host();
-        var vm = new SettingsViewModel(host, focusFolder: null);
-        await vm.MarketplacePage.LoadAsync(force: false);
-        vm.MarketplacePage.Tab = "Design";
-        await vm.MarketplacePage.InstallAsync(vm.MarketplacePage.AllItems.ToList());
-        Assert.True(vm.MarketplacePage.AllItems.Single().IsInstalled);
+        var vm = new MarketplaceWindowViewModel(host, s => { host.Settings.CustomDesigns.Clear(); host.Settings.CustomDesigns.AddRange(s.CustomDesigns); host.Settings.MarketplaceInstalls.Clear(); host.Settings.MarketplaceInstalls.AddRange(s.MarketplaceInstalls); });
+        await vm.Page.LoadAsync(force: false);
+        vm.Tab = "Design";
+        await vm.Page.InstallAsync(vm.Page.AllItems.ToList());
+        Assert.True(vm.Page.AllItems.Single().IsInstalled);
 
-        // unter Darstellung löschen → im Marktplatz wieder „nicht installiert“
-        vm.DesignPresets.Single(p => p.IsCustom).DeleteCommand!.Execute(null);
-        Assert.Empty(vm.Build().CustomDesigns);
-        Assert.False(vm.MarketplacePage.AllItems.Single().IsInstalled);
-        Assert.Empty(vm.Build().MarketplaceInstalls);
-        vm.MarketplacePage.Tab = "Entry";
+        // Design unter Darstellung gelöscht (Einstellungsfenster): der Marktplatz arbeitet mit dem neuen Stand weiter
+        host.Settings.CustomDesigns.Clear();
+        host.Settings.MarketplaceInstalls.Clear();
+        var before = vm.Page;
+        vm.SettingsChanged();
+        Assert.NotSame(before, vm.Page);
+        Assert.False(vm.Page.AllItems.Single().IsInstalled);
+        vm.Tab = "Entry";
     }
 }

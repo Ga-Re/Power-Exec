@@ -67,6 +67,7 @@ public partial class AppController
             Repository.SetupWatchers();
             RebuildPanels();
         }
+        _marketplace?.SettingsChanged(); // offenes Marktplatz-Fenster arbeitet mit dem neuen Stand weiter
         return hotkeyError;
     }
 

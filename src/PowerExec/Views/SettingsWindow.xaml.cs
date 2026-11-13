@@ -79,7 +79,6 @@ public partial class SettingsWindow : Window
             _app.ShowSettings();
         };
         // Marktplatz: Installiertes sofort übernehmen und alle Seiten neu lesen (neue Gruppen, Variablen, Designs)
-        vm.MarketplaceChanged += () => Dispatcher.BeginInvoke(() => { ApplyNow(force: true); Reload(); });
         vm.SwitchWorkspaceRequested += name =>
         {
             ApplyNow(force: true);
@@ -287,6 +286,13 @@ public partial class SettingsWindow : Window
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Marktplatz öffnen (eigenes Fenster); offene Änderungen vorher übernehmen, damit er den aktuellen Stand sieht.</summary>
+    private void Marketplace_Click(object sender, RoutedEventArgs e)
+    {
+        ApplyNow(force: true);
+        _app.ShowMarketplace();
+    }
 
     /// <summary>Format, in dem ein eigener Eintrag aus der Liste der Einstellungen ins Panel gezogen wird.</summary>
     public const string EntryDragFormat = "PowerExec.CustomEntry";

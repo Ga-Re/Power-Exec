@@ -589,7 +589,6 @@ public sealed class SettingsViewModel : ObservableObject
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
         VariablesPage = new VariablesViewModel(app, _s, text => app.Shell.SetClipboardText(text));
-        MarketplacePage = new MarketplaceViewModel(app, _s, OnMarketplaceInstalled, VariablesPage);
         AddGroupCommand = new RelayCommand(AddGroup);
         AddWorkspaceCommand = new RelayCommand(AddWorkspace);
         LoadWorkspaces();
@@ -613,9 +612,6 @@ public sealed class SettingsViewModel : ObservableObject
     {
         ("general", L.T("General"), ""),
         ("groups", L.T("Groups"), "content"), ("custom", L.T("Custom entries"), "content"), ("tags", L.T("Tags"), "content"), ("variables", L.T("Variables"), "content"), ("workspaces", L.T("Workspaces"), "content"),
-        ("market-entries", L.T("Marketplace › Entries"), "market"), ("market-scripts", L.T("Marketplace › Scripts"), "market"),
-        ("market-designs", L.T("Marketplace › Designs"), "market"), ("market-installed", L.T("Marketplace › Installed"), "market"),
-        ("market-sources", L.T("Marketplace › Sources"), "market"),
         ("look", L.T("Appearance"), "panel"), ("behavior", L.T("Behavior"), "panel"),
         ("exec", "PowerShell", "exec"), ("remote", L.T("Remote"), "exec"), ("machines", L.T("Computer groups"), "exec"),
         ("samples", L.T("Examples"), "help"), ("diag", L.T("Diagnostics"), "help")
@@ -644,7 +640,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("custom", L.T("Custom entries"), L.T("Check reachability"), L.T("health dead links broken")),
         new("custom", L.T("Custom entries"), L.T("Import / export"), L.T("share colleagues file")),
         new("tags", L.T("Tags"), L.T("Manage tags"), L.T("tag rename merge delete color #")),
-        new("market-entries", L.T("Marketplace"), L.T("Download entries, scripts and designs"), L.T("marketplace download folder design script matrix42 google virustotal")),
+        new("marketplace", L.T("Marketplace"), L.T("Download entries, scripts and designs"), L.T("marketplace download folder design script matrix42 google virustotal")),
         new("variables", L.T("Variables"), L.T("Manage variables"), L.T("variable placeholder $ company name date time user computer clipboard secret token environment variable powershell workspace")),
         new("workspaces", L.T("Workspaces"), L.T("Workspaces"), L.T("customer profile switch")),
         new("workspaces", L.T("Workspaces"), L.T("Groups per workspace"), L.T("hide visible selection")),
@@ -718,31 +714,17 @@ public sealed class SettingsViewModel : ObservableObject
         get => _section;
         set
         {
+            // Der Marktplatz ist ein eigenes Fenster (Treffer der Suche und Verweise führen dorthin)
+            if (value == "marketplace") { _app.ShowMarketplace(); return; }
             if (!Set(ref _section, value)) return;
             OnPropertyChanged(nameof(PageTitle));
             if (value == "workspaces") { ApplyWorkspaceRenames(); LoadWorkspaces(); }
             if (value == "tags") { EntryList.ApplyTo(_s); TagList.Load(); }
-#pragma warning disable CA2011 // gewollt: „marketplace“ leitet einmalig auf die erste Unterseite weiter, keine Endlosschleife
-            if (value == "marketplace") { Section = "market-entries"; return; }
-#pragma warning restore CA2011
-            if (value.StartsWith("market-", StringComparison.Ordinal))
-            {
-                MarketplacePage.Tab = value switch
-                {
-                    "market-scripts" => "Script",
-                    "market-designs" => "Design",
-                    "market-installed" => "Installed",
-                    "market-sources" => "Sources",
-                    _ => "Entry"
-                };
-                MarketplacePage.EnsureLoadedAsync().Forget();
-            }
-            OnPropertyChanged(nameof(IsMarketplaceSection));
         }
     }
 
     /// <summary>Eine der Marktplatz-Seiten ist offen (Einträge, Scripte, Designs, Installiert, Quellen).</summary>
-    public bool IsMarketplaceSection => _section.StartsWith("market-", StringComparison.Ordinal);
+
 
     // Ordner
     public ObservableCollection<FolderViewModel> Folders { get; } = new();
@@ -845,7 +827,7 @@ public sealed class SettingsViewModel : ObservableObject
         if (!_app.Dialogs.Confirm(L.F("Delete the custom design “{0}”?", p.Name), L.T("Delete design"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         _s.CustomDesigns.RemoveAll(d => d.Key == p.Key);
         // Aus dem Marktplatz installiert? Dann gilt es dort wieder als nicht installiert
-        if (_s.MarketplaceInstalls.RemoveAll(i => i.DesignKey == p.Key) > 0) MarketplacePage.Rebuild();
+        _s.MarketplaceInstalls.RemoveAll(i => i.DesignKey == p.Key);
         RaisePresets();
     }
 
@@ -932,23 +914,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     // ---- Marktplatz -------------------------------------------------------------
 
-    public MarketplaceViewModel MarketplacePage { get; }
+
 
     /// <summary>Nach einer Installation: neue Gruppen, Variablen und Designs in den anderen Seiten zeigen.</summary>
-    private void OnMarketplaceInstalled()
-    {
-        // Marktplatz hat _s direkt geändert: neue Gruppen und Einträge in die Listen übernehmen, sonst überschreibt
-        // das Übernehmen (Build) sie mit dem alten Stand
-        foreach (var g in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.CurrentCultureIgnoreCase))).ToList())
-            Categories.Add(NewCategoryVm(g, GroupManager.IconOf(_s, g).ToString()));
-        EntryList.SyncFrom(_s);
-        RaisePresets();
-        MarketplaceChanged?.Invoke();
-    }
-
-    /// <summary>Marktplatz hat etwas installiert – das Fenster übernimmt die Einstellungen sofort.</summary>
-    public event Action? MarketplaceChanged;
-
     // ---- Rechnergruppen -------------------------------------------------------
 
     public ObservableCollection<MachineGroupViewModel> MachineGroups { get; } = new();

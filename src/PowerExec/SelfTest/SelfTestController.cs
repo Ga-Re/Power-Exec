@@ -1192,7 +1192,7 @@ public sealed partial class SelfTestController : AppController
                 if (listGroup.MachinesInline != "SRV-B1, SRV-B2") Fail($"Rechnergruppen: Listenfilter liefert {listGroup.MachinesInline}");
                 if (listGroup.ToGroup().ListQuery?.Filters.Count != 1) Fail("Rechnergruppen: Listen-Gruppe geht beim Speichern verloren");
             }
-            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "market-entries", "market-scripts", "market-designs", "market-installed", "market-sources", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
@@ -1200,6 +1200,24 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
                 if (settingsWindow.NavigationSectionForTest != section)
                     Fail($"Navigation: Abschnitt „{section}“ ist in der Leiste nicht ausgewählt ({settingsWindow.NavigationSectionForTest ?? "nichts"})");
+                await Settle();
+            }
+
+            Step("Marktplatz als eigenes Fenster");
+            {
+                var marketVm = new MarketplaceWindowViewModel(this, _ => { });
+                var marketWindow = new MarketplaceWindow(marketVm);
+                marketWindow.Show();
+                await Settle();
+                if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Reiter statt 5");
+                foreach (var tab in marketVm.Tabs.Select(t => t.Key).ToList())
+                {
+                    marketVm.Tab = tab;
+                    await Settle();
+                    if (marketVm.Tab != tab) Fail($"Marktplatz: Reiter „{tab}“ lässt sich nicht wählen");
+                    if (marketWindow.Content is FrameworkElement marketRoot) Screenshot(marketRoot, "marktplatz-" + tab.ToLowerInvariant());
+                }
+                marketWindow.Close();
                 await Settle();
             }
 
@@ -1219,11 +1237,13 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
                 nav.IsPaneOpen = true;
                 await Settle();
-                // Oberkategorien (Inhalte, Marktplatz, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
+                // Oberkategorien (Inhalte, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
                 var categories = nav.MenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Where(i => i.MenuItems.Count > 0).ToList();
-                if (categories.Count != 5) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 5");
-                if (categories.FirstOrDefault(c => (c.Content as string) == "Marktplatz") is not { } market || market.MenuItems.Count != 5)
-                    Fail("Navigation: Marktplatz fehlt als eigener Bereich mit Einträge, Scripte, Designs, Installiert und Quellen");
+                if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
+                // Der Marktplatz ist ein eigenes Fenster: in den Einstellungen nur noch ein Verweis in der Fußzeile
+                if (categories.Any(c => (c.Content as string) == "Marktplatz")) Fail("Navigation: Marktplatz steht noch als Bereich in den Einstellungen");
+                if (!nav.FooterMenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Any(i => (i.Content as string) == "Marktplatz"))
+                    Fail("Navigation: Verweis auf den Marktplatz fehlt in der Fußzeile");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
                     // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg.
@@ -1368,7 +1388,7 @@ public sealed partial class SelfTestController : AppController
                 var enWindow = new SettingsWindow(enVm, this);
                 enWindow.Show();
                 await Settle();
-                foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "market-entries", "market-scripts", "market-designs", "market-installed", "market-sources", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+                foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
                 {
                     enVm.Section = section;
                     await Settle();

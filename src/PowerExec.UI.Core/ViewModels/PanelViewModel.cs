@@ -1186,6 +1186,7 @@ public sealed class PanelViewModel : ObservableObject
         _app.AddDropped(targets, group?.GroupName);
 
     public ICommand NewGroupCommand => new RelayCommand(() => _app.CreateGroup());
+    public ICommand MarketplaceCommand => new RelayCommand(() => _app.ShowMarketplace());
 
     // ---- Gruppen ziehen: Lücke an der Zielstelle (Optionen unter Panel › Verhalten) ----------------
 
