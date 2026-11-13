@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
@@ -440,7 +441,7 @@ public sealed partial class SelfTestController : AppController
                 var report = new System.Text.StringBuilder();
                 report.AppendLine("### Hintergrund hinter dem Panel");
                 report.AppendLine();
-                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(transparency ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
+                report.AppendLine(CultureInfo.InvariantCulture, $"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(transparency ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
                 report.AppendLine();
                 report.AppendLine("| Variante | Läuft als | Weichzeichner | Helligkeitsschicht (WPF) | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s | Gleiten: Bilder · längstes Bild |");
                 report.AppendLine("|---|---|---|---:|---|---|---:|---:|---|");
@@ -508,7 +509,7 @@ public sealed partial class SelfTestController : AppController
                     await Task.Delay(1500);
                     var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                     var glassState = host.Window.GlassActive ? "aktiv" : host.Window.GlassError is { } ge ? "Fehler: " + ge.Replace("|", "/") : "–";
-                    report.AppendLine($"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
+                    report.AppendLine(CultureInfo.InvariantCulture, $"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
                     if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
                         Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
                     if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + name);
@@ -540,7 +541,7 @@ public sealed partial class SelfTestController : AppController
                         host.Config.Pinned = pinned;
                         var c3 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                         ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-glas-inaktiv");
-                        report.AppendLine($"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
+                        report.AppendLine(CultureInfo.InvariantCulture, $"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
                     }
                     host.Window.HidePanel();
                     await Settle();
@@ -559,7 +560,7 @@ public sealed partial class SelfTestController : AppController
                         System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
                         await Task.Delay(400);
                         if (!host.Window.IsSettledForTest) Fail("Glas: Panel steht nach dem Ausfahren nicht an seiner Ziellage");
-                        report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
+                        report.AppendLine(CultureInfo.InvariantCulture, $"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
                         host.Window.HidePanel();
                         await Settle();
                     }
@@ -675,9 +676,9 @@ public sealed partial class SelfTestController : AppController
                 }
                 catch (Exception ex) { Fail("Variablen: PowerShell-Variable – " + ex.Message); }
                 var secret = SecretProtector.Protect("geheim äöü");
-                if (!secret.StartsWith("dpapi:") || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
+                if (!secret.StartsWith("dpapi:", StringComparison.Ordinal) || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
                 var gruss = Settings.CustomEntries.First(e => e.Name == "Firmengruß").WithValues(new Dictionary<string, string>());
-                if (!gruss.Code.StartsWith("Grüße von Med360° am ")) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
+                if (!gruss.Code.StartsWith("Grüße von Med360° am ", StringComparison.Ordinal)) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
                 // Bearbeiten-Dialog einer Variable (je Art andere Felder)
                 var varPage = new VariablesViewModel(this, SettingsStore.Clone(Settings));
                 foreach (var row in varPage.Items) await ShowAndClose(VariableWindow.ForTest(row));
@@ -956,7 +957,7 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
                 if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
-                if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe"))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
+                if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
                 var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
                 if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
                 await ShowAndClose(ColorPickerWindow.ForTest());

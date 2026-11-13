@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
@@ -59,7 +60,7 @@ public partial class AppController
                 Ui.Notify(L.T("Scheduled launch not possible"), L.F("{0} wasn't found.", s.Name), warning: true);
                 return;
             }
-            AppLog.Info(string.Format("Schedule: {0} ({1})", s.Name, Schedules.Describe(s)));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Schedule: {0} ({1})", s.Name, Schedules.Describe(s)));
             HistoryResult result;
             if (item.Source is { Kind: CustomEntryKind.Workflow } wf)
                 result = await RunWorkflowAsync(item.DisplayName, wf.Steps.ToList(), wf.StopOnError, item) ? HistoryResult.Success : HistoryResult.Error;
@@ -73,7 +74,7 @@ public partial class AppController
         }
         catch (Exception ex)
         {
-            AppLog.Error(string.Format("Schedule {0} failed", s.Name), ex);
+            AppLog.Error(string.Format(CultureInfo.InvariantCulture, "Schedule {0} failed", s.Name), ex);
         }
         finally
         {

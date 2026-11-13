@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -454,7 +455,7 @@ public sealed class RunViewModel : ObservableObject
             {
                 _app.RecordParameters(Item, RawValues());
                 _app.RecordRun(Item, Profile);
-                AppLog.Info(string.Format("Launch (dialog): {0} · {1} computers", Item.FullPath, req.Targets.Count));
+                AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Launch (dialog): {0} · {1} computers", Item.FullPath, req.Targets.Count));
                 CloseRequested?.Invoke();
             }
         }

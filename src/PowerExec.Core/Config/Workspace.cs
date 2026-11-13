@@ -58,7 +58,7 @@ public static class WorkspaceManager
     }
 
     public static Workspace? Find(AppSettings s, string name) =>
-        s.Workspaces.FirstOrDefault(w => w.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase));
+        s.Workspaces.FirstOrDefault(w => w.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     public static Workspace Active(AppSettings s)
     {
@@ -74,7 +74,7 @@ public static class WorkspaceManager
 
     public static void SetGroupHidden(Workspace ws, string groupPath, bool hidden)
     {
-        ws.HiddenGroups.RemoveAll(h => h.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase));
+        ws.HiddenGroups.RemoveAll(h => h.Equals(groupPath, StringComparison.OrdinalIgnoreCase));
         if (hidden) ws.HiddenGroups.Add(groupPath);
     }
 
@@ -118,7 +118,7 @@ public static class WorkspaceManager
         EnsureInitialized(s);
         var target = Find(s, name);
         if (target == null) return false;
-        if (target.Name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)) return true;
+        if (target.Name.Equals(s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)) return true;
         Capture(s);
         Load(s, target);
         return true;
@@ -148,7 +148,7 @@ public static class WorkspaceManager
         newName = newName.Trim();
         if (ws == null || newName.Length == 0) return false;
         if (Find(s, newName) is { } other && !ReferenceEquals(other, ws)) return false;
-        bool active = ws.Name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
+        bool active = ws.Name.Equals(s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase);
         ws.Name = newName;
         if (active) s.ActiveWorkspace = newName;
         return true;
@@ -157,8 +157,8 @@ public static class WorkspaceManager
     /// <summary>Löscht einen Arbeitsbereich (nicht den aktiven und nicht den letzten).</summary>
     public static bool Delete(AppSettings s, string name)
     {
-        if (s.Workspaces.Count <= 1 || name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)) return false;
-        return s.Workspaces.RemoveAll(w => w.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)) > 0;
+        if (s.Workspaces.Count <= 1 || name.Equals(s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)) return false;
+        return s.Workspaces.RemoveAll(w => w.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) > 0;
     }
 
     private static string UniqueName(AppSettings s, string name)

@@ -67,12 +67,12 @@ public static class SettingsTransfer
         }
         foreach (var g in imported.MachineGroups)
         {
-            result.MachineGroups.RemoveAll(x => x.Name.Equals(g.Name, StringComparison.CurrentCultureIgnoreCase));
+            result.MachineGroups.RemoveAll(x => x.Name.Equals(g.Name, StringComparison.OrdinalIgnoreCase));
             result.MachineGroups.Add(g.Clone());
         }
         // Arbeitsbereiche: nur neue übernehmen (der aktive Stand steht bereits oben in Ordnern, Einträgen …)
         WorkspaceManager.EnsureInitialized(result);
-        foreach (var w in imported.Workspaces.Where(w => !w.Name.Equals(imported.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)))
+        foreach (var w in imported.Workspaces.Where(w => !w.Name.Equals(imported.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)))
             if (WorkspaceManager.Find(result, w.Name) == null) result.Workspaces.Add(w);
         // Panels bleiben wie sie sind (Lage und Monitore sind rechnerbezogen)
         return result;

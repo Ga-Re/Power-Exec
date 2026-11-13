@@ -390,7 +390,7 @@ public sealed class WorkspaceValueRow : ObservableObject
         get => VariableResolver.WorkspaceValue(_row.Model, Workspace) ?? string.Empty;
         set
         {
-            foreach (var k in _row.Model.WorkspaceValues.Keys.Where(k => k.Equals(Workspace, StringComparison.CurrentCultureIgnoreCase)).ToList())
+            foreach (var k in _row.Model.WorkspaceValues.Keys.Where(k => k.Equals(Workspace, StringComparison.OrdinalIgnoreCase)).ToList())
                 _row.Model.WorkspaceValues.Remove(k);
             if (!string.IsNullOrWhiteSpace(value)) _row.Model.WorkspaceValues[Workspace] = value;
             OnPropertyChanged();

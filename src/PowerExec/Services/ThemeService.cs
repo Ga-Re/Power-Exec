@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
@@ -23,7 +24,7 @@ public static class ThemeService
     private static bool _listening;
 
     /// <summary>Kennung des angewendeten Stands (Design, Kontrast, Akzentfarbe) – ändert sie sich, werden die Panels neu erzeugt.</summary>
-    public static string StateKey => $"{IsDark}|{IsHighContrast}|{(Overrides.TryGetValue("Accent", out var a) ? a.ToString() : string.Empty)}";
+    public static string StateKey => $"{IsDark}|{IsHighContrast}|{(Overrides.TryGetValue("Accent", out var a) ? a.ToString(CultureInfo.InvariantCulture) : string.Empty)}";
 
     /// <summary>Nur das Farbschema (z. B. Selbsttest ohne weitere Einstellungen).</summary>
     /// <summary>
@@ -116,9 +117,9 @@ public static class ThemeService
                 "OnAccent" => SystemColors.HighlightTextBrush,
                 "Bg.Hover" or "Bg.Pressed" or "Bg.Selected" => SystemColors.HighlightBrush,
                 "Text.Disabled" => SystemColors.GrayTextBrush,
-                _ when key.StartsWith("Text.") || key.StartsWith("Status.") || key == "Star" || key.EndsWith(".Fg") || key.EndsWith(".Icon") || key.EndsWith(".Text") || key.StartsWith("Code.")
+                _ when key.StartsWith("Text.", StringComparison.Ordinal) || key.StartsWith("Status.", StringComparison.Ordinal) || key == "Star" || key.EndsWith(".Fg", StringComparison.Ordinal) || key.EndsWith(".Icon", StringComparison.Ordinal) || key.EndsWith(".Text", StringComparison.Ordinal) || key.StartsWith("Code.", StringComparison.Ordinal)
                     => SystemColors.WindowTextBrush,
-                _ when key.StartsWith("Border.") || key.EndsWith(".Border") => SystemColors.WindowTextBrush,
+                _ when key.StartsWith("Border.", StringComparison.Ordinal) || key.EndsWith(".Border", StringComparison.Ordinal) => SystemColors.WindowTextBrush,
                 _ => SystemColors.WindowBrush
             };
             overrides[key] = brush;

@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Windows.Input;
 using PowerExec.Core.Config;
@@ -18,7 +19,7 @@ public sealed class HistoryRowViewModel
     }
 
     public HistoryEntry Entry { get; }
-    public string Time => Entry.StartUtc.ToLocalTime() is var t && t.Date == DateTime.Today ? t.ToString("HH:mm") : t.ToString("dd.MM. HH:mm");
+    public string Time => Entry.StartUtc.ToLocalTime() is var t && t.Date == DateTime.Today ? t.ToString("HH:mm", CultureInfo.InvariantCulture) : t.ToString("dd.MM. HH:mm", CultureInfo.InvariantCulture);
     public string Name => Entry.Name;
     public string Where => Entry.IsRemote
         ? (Entry.Targets.Count == 1 ? Entry.Targets[0] : L.F("{0} computers", Entry.Targets.Count))

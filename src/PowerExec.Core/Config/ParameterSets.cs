@@ -41,7 +41,7 @@ public static class ParameterSets
             entry = new EntryConfig { Path = item.FullPath };
             s.Entries.Add(entry);
         }
-        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) return L.F("A launch profile “{0}” already exists.", name);
+        if (entry.Profiles.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) return L.F("A launch profile “{0}” already exists.", name);
         if (entry.Profiles.Count == 0)
         {
             var standard = defaultProfile.Clone();

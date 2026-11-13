@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -136,11 +137,11 @@ public partial class AppController
     /// <summary>Wechselt den Arbeitsbereich (gilt für alle Panels) und durchsucht die Ordner neu.</summary>
     public void SwitchWorkspace(string name)
     {
-        if (name.Equals(Settings.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)) return;
+        if (name.Equals(Settings.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)) return;
         if (!WorkspaceManager.Switch(Settings, name)) return;
         ClearUndo();
         SaveSettings();
-        AppLog.Info(string.Format("Switched workspace: {0}", Settings.ActiveWorkspace));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Switched workspace: {0}", Settings.ActiveWorkspace));
         Repository.UpdateSettings(Settings);
         RebuildPanels();
         _settingsWindow?.Close(); // Einstellungen zeigen sonst noch den alten Arbeitsbereich

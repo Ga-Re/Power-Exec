@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
@@ -58,14 +59,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(string.Format("Computer group @{0}: {1} computers from AD", g.Name, names.Count));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Computer group @{0}: {1} computers from AD", g.Name, names.Count));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow; // nicht jede Minute erneut versuchen
-            AppLog.Info(string.Format("Computer group @{0}: AD unreachable ({1})", g.Name, ex.Message));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Computer group @{0}: AD unreachable ({1})", g.Name, ex.Message));
             return null;
         }
     }
@@ -81,14 +82,14 @@ public partial class AppController
             g.Machines = names.ToList();
             g.LastSyncUtc = DateTime.UtcNow;
             g.LastSyncError = null;
-            AppLog.Info(string.Format("Computer group @{0}: {1} computers from {2}", g.Name, names.Count, q.Path));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Computer group @{0}: {1} computers from {2}", g.Name, names.Count, q.Path));
             return names;
         }
         catch (Exception ex)
         {
             g.LastSyncError = ex.Message;
             g.LastSyncUtc = DateTime.UtcNow;
-            AppLog.Info(string.Format("Computer group @{0}: list not readable ({1})", g.Name, ex.Message));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Computer group @{0}: list not readable ({1})", g.Name, ex.Message));
             return null;
         }
     }

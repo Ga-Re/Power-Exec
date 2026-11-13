@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -34,11 +35,11 @@ public static class ClipboardText
         const string header = "Version:0.9\r\nStartHTML:{0:D10}\r\nEndHTML:{1:D10}\r\nStartFragment:{2:D10}\r\nEndFragment:{3:D10}\r\n";
         const string pre = "<html><body><!--StartFragment-->";
         const string post = "<!--EndFragment--></body></html>";
-        int headerLen = Encoding.UTF8.GetByteCount(string.Format(header, 0, 0, 0, 0));
+        int headerLen = Encoding.UTF8.GetByteCount(string.Format(CultureInfo.InvariantCulture, header, 0, 0, 0, 0));
         int startHtml = headerLen;
         int startFragment = startHtml + Encoding.UTF8.GetByteCount(pre);
         int endFragment = startFragment + Encoding.UTF8.GetByteCount(fragment);
         int endHtml = endFragment + Encoding.UTF8.GetByteCount(post);
-        return string.Format(header, startHtml, endHtml, startFragment, endFragment) + pre + fragment + post;
+        return string.Format(CultureInfo.InvariantCulture, header, startHtml, endHtml, startFragment, endFragment) + pre + fragment + post;
     }
 }

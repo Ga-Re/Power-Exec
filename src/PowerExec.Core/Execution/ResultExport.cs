@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Text;
 
@@ -36,15 +37,15 @@ public static class ResultExport
     {
         var list = results.ToList();
         var sb = new StringBuilder();
-        sb.AppendLine($"Power-Exec · {started:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"Power-Exec · {started:yyyy-MM-dd HH:mm:ss}");
         sb.AppendLine(L.F("Script:   {0}", scriptPath));
         sb.AppendLine(L.F("Account:  {0} (credentials not saved)", runAs));
-        sb.AppendLine($"Engine:   {engine}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"Engine:   {engine}");
         sb.AppendLine(L.F("Computers: {0}", list.Count));
         sb.AppendLine(new string('-', 72));
         foreach (var r in list)
         {
-            sb.AppendLine($"{r.Computer,-20} {StatusText(r.Status),-17} {r.DurationMs / 1000.0,6:0.0} s  {r.Error}");
+            sb.AppendLine(CultureInfo.CurrentCulture, $"{r.Computer,-20} {StatusText(r.Status),-17} {r.DurationMs / 1000.0,6:0.0} s  {r.Error}");
             if (r.Note.Length > 0) sb.AppendLine(L.T("    Note: ") + r.Note);
             if (r.Output.Length > 0)
                 foreach (var line in r.Output.Replace("\r", "").Split('\n'))

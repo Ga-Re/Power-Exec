@@ -83,7 +83,7 @@ public static class CodePreview
         {
             var line = lines[i];
             var trimmed = line.TrimStart().TrimStart('@');
-            var kind = trimmed.StartsWith("::") || trimmed.StartsWith("rem ", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("rem", StringComparison.OrdinalIgnoreCase)
+            var kind = trimmed.StartsWith("::", StringComparison.Ordinal) || trimmed.StartsWith("rem ", StringComparison.OrdinalIgnoreCase) || trimmed.Equals("rem", StringComparison.OrdinalIgnoreCase)
                 ? CodeTokenKind.Comment
                 : trimmed.StartsWith(':') ? CodeTokenKind.Keyword : CodeTokenKind.Text;
             result.Add(new CodeSegment(line + (i < lines.Length - 1 ? "\n" : string.Empty), kind));

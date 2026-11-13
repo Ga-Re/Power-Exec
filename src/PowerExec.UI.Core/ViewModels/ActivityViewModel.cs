@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -209,7 +210,7 @@ public sealed class ActivityList
         catch (Exception ex)
         {
             // Kein Zugriff auf den Prozess (z. B. anderes Konto): nicht weiter verfolgen
-            AppLog.Info(string.Format("Process isn't tracked: {0}", ex.Message));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Process isn't tracked: {0}", ex.Message));
             activity.Complete(ActivityState.Success, detail + L.T(" · started"));
             process.Dispose();
         }

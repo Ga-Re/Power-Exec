@@ -219,11 +219,11 @@ public sealed partial class SelfTestController
         };
 
         var md = new StringBuilder();
-        md.AppendLine($"### Leistungsmessung Power-Exec {summary.Version}");
+        md.AppendLine(CultureInfo.InvariantCulture, $"### Leistungsmessung Power-Exec {summary.Version}");
         md.AppendLine();
-        md.AppendLine($"{itemCount} Einträge · {summary.Machine} · Einlesen {F(scanMs)} ms · {PerfRounds} Runden nach einer Aufwärmrunde");
+        md.AppendLine(CultureInfo.InvariantCulture, $"{itemCount} Einträge · {summary.Machine} · Einlesen {F(scanMs)} ms · {PerfRounds} Runden nach einer Aufwärmrunde");
         md.AppendLine();
-        md.AppendLine($"**Tippen je Tastendruck (bis UI-Thread frei):** Mittel {F(summary.TypingMeanMs)} ms · p95 {F(summary.TypingP95Ms)} ms · Max {F(summary.TypingMaxMs)} ms · Grenzwert Mittel ≤ {F(PerfTypingLimitMs)} ms");
+        md.AppendLine(CultureInfo.InvariantCulture, $"**Tippen je Tastendruck (bis UI-Thread frei):** Mittel {F(summary.TypingMeanMs)} ms · p95 {F(summary.TypingP95Ms)} ms · Max {F(summary.TypingMaxMs)} ms · Grenzwert Mittel ≤ {F(PerfTypingLimitMs)} ms");
         md.AppendLine();
         md.AppendLine($"**A/B im selben Lauf:** ohne Wiederverwendung Mittel {F(summary.TypingFullMeanMs)} ms · mit {F(summary.TypingMeanMs)} ms" +
                       (summary.TypingMeanMs > 0 ? $" · Faktor {summary.TypingFullMeanMs / summary.TypingMeanMs:0.00}" : string.Empty));
@@ -233,7 +233,7 @@ public sealed partial class SelfTestController
         md.AppendLine("| Szenario | Eingabe | Rebuild | Layout | bis frei (Median) | bis frei (Max) | Listenänderungen |");
         md.AppendLine("|---|---|---:|---:|---:|---:|---|");
         foreach (var r in rows)
-            md.AppendLine($"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.LayoutMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
+            md.AppendLine(CultureInfo.InvariantCulture, $"| {r.Scenario} | {(r.Input.Length == 0 ? "–" : "`" + r.Input + "`")} | {F(r.SyncMedian)} ms | {F(r.LayoutMedian)} ms | {F(r.TotalMedian)} ms | {F(r.TotalMax)} ms | {r.Changes} |");
 
         md.AppendLine();
         md.AppendLine("**Ungültig nach dem Rebuild** (müssen neu gemessen werden):");

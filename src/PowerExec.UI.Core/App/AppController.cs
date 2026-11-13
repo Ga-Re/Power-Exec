@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -83,7 +84,7 @@ public partial class AppController : IDisposable
 
         Ui.CreateTray();
 
-        AppLog.Info(string.Format("Power-Exec {0} started ({1} folders)", UpdateService.CurrentVersionText, Settings.Folders.Count));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Power-Exec {0} started ({1} folders)", UpdateService.CurrentVersionText, Settings.Folders.Count));
         Repository.LoadCache();
         Repository.SetupWatchers();
         Repository.ScanAsync().Forget();

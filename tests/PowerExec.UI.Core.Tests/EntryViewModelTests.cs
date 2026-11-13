@@ -341,7 +341,7 @@ public class CustomEntryListViewModelTests
 
         vm.NewCommand.Execute(null);
 
-        Assert.Contains(host.Calls, c => c.StartsWith("EditEntryModal"));
+        Assert.Contains(host.Calls, c => c.StartsWith("EditEntryModal", StringComparison.Ordinal));
         Assert.Contains(@"CreateSmartGroupFor D:\Tools", host.Calls);
         Assert.Equal(3, vm.Count);
     }

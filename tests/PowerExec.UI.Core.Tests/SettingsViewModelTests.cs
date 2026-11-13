@@ -109,7 +109,7 @@ public class SettingsViewModelTests
 
         row.ConfigureCommand.Execute(null);
 
-        Assert.Contains(host.Calls, c => c.StartsWith("ShowProfilesDialog "));
+        Assert.Contains(host.Calls, c => c.StartsWith("ShowProfilesDialog ", StringComparison.Ordinal));
     }
 
     [Fact]

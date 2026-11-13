@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -573,7 +574,7 @@ public sealed class SettingsViewModel : ObservableObject
         foreach (var c in GroupManager.All(_s))
         {
             var cat = NewCategoryVm(c, GroupManager.IconOf(_s, c).ToString());
-            cat.Folder = Folders.FirstOrDefault(f => f.Config.Group.Equals(c, StringComparison.CurrentCultureIgnoreCase));
+            cat.Folder = Folders.FirstOrDefault(f => f.Config.Group.Equals(c, StringComparison.OrdinalIgnoreCase));
             Categories.Add(cat);
         }
         Categories.CollectionChanged += (_, _) => RebuildCategoryTree();
@@ -926,7 +927,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void AddGroup()
     {
         var name = L.T("Group");
-        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = L.F("Group {0}", i);
+        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase)); i++) name = L.F("Group {0}", i);
         MachineGroups.Add(new MachineGroupViewModel(_app, new MachineGroup { Name = name }, RemoveGroup));
         OnPropertyChanged(nameof(HasNoGroups));
     }
@@ -939,7 +940,7 @@ public sealed class SettingsViewModel : ObservableObject
         var name = System.IO.Path.GetFileNameWithoutExtension(file).Trim();
         if (name.Length == 0) name = L.T("Group");
         var unique = name;
-        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(unique, StringComparison.CurrentCultureIgnoreCase)); i++) unique = $"{name} {i}";
+        for (int i = 2; MachineGroups.Any(g => g.Name.Equals(unique, StringComparison.OrdinalIgnoreCase)); i++) unique = $"{name} {i}";
         var vm = new MachineGroupViewModel(_app, new MachineGroup { Name = unique }, RemoveGroup);
         vm.UseList(file);
         MachineGroups.Add(vm);
@@ -965,7 +966,7 @@ public sealed class SettingsViewModel : ObservableObject
     public void ApplyMachineSync()
     {
         foreach (var vm in MachineGroups)
-            if (_app.Settings.MachineGroups.FirstOrDefault(g => g.Name.Equals(vm.Name.Trim(), StringComparison.CurrentCultureIgnoreCase)) is { } g)
+            if (_app.Settings.MachineGroups.FirstOrDefault(g => g.Name.Equals(vm.Name.Trim(), StringComparison.OrdinalIgnoreCase)) is { } g)
                 vm.ApplySynced(g);
     }
 
@@ -988,7 +989,7 @@ public sealed class SettingsViewModel : ObservableObject
         var groups = Categories.Select(c => c.Name).ToList();
         foreach (var w in _s.Workspaces)
         {
-            bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase);
+            bool active = w.Name.Equals(_s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase);
             int favs = active ? _app.Settings.Favorites.Count : w.Favorites.Count;
             int hidden = groups.Count(g => !WorkspaceManager.ShowsGroupIn(w, g));
             var summary = L.F("{0} of {1} groups · {2} favorites", groups.Count - hidden, groups.Count, favs) + (active ? L.T(" · active") : string.Empty);
@@ -1039,7 +1040,7 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Weiche Bewegung der Lücke im Einstellungsfenster selbst (folgt auch der Einstellung „Animation“).</summary>
     public bool AnimateDropGap => _s.GroupDragAnimate && _s.Animation != AnimationMode.Off;
     public int RecentRunsCount { get => _s.RecentRunsCount; set { _s.RecentRunsCount = value; OnPropertyChanged(); OnPropertyChanged(nameof(RecentRunsText)); } }
-    public string RecentRunsText => _s.RecentRunsCount == 0 ? "aus" : _s.RecentRunsCount.ToString();
+    public string RecentRunsText => _s.RecentRunsCount == 0 ? "aus" : _s.RecentRunsCount.ToString(CultureInfo.InvariantCulture);
 
     // Gruppierung und Kategorien
     public GroupingMode Grouping { get => _s.Grouping; set { _s.Grouping = value; OnPropertyChanged(); OnPropertyChanged(nameof(IsCategoryGrouping)); } }
@@ -1079,7 +1080,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             c.NewSubgroupRequested = x => AddGroupPrompt(x.Name);
             var parentPath = GroupManager.ParentOf(c.Name);
-            var parent = parentPath == null ? null : Categories.FirstOrDefault(x => x.Name.Equals(parentPath, StringComparison.CurrentCultureIgnoreCase));
+            var parent = parentPath == null ? null : Categories.FirstOrDefault(x => x.Name.Equals(parentPath, StringComparison.OrdinalIgnoreCase));
             if (parent == null) roots.Add(c);
             else ((List<CategoryItemViewModel>)children[parent]).Add(c);
         }
@@ -1153,9 +1154,9 @@ public sealed class SettingsViewModel : ObservableObject
         if (_dragCategory == null) return null;
         if (_dragCategory.IsFixed || hovered.IsFixed) return PreviewTopLevelDrop(hovered, zone);
         var plan = GroupDropPlanner.Plan(Categories.Select(x => x.Name).ToList(), _dragCategory.Name, hovered.Name, zone, levelOffset,
-            siblingsOnly: false, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase)));
+            siblingsOnly: false, exists: p => Categories.Any(x => x.Name.Equals(p, StringComparison.OrdinalIgnoreCase)));
         _categoryPlan = plan;
-        var target = plan.IsValid ? Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.CurrentCultureIgnoreCase)) : null;
+        var target = plan.IsValid ? Categories.FirstOrDefault(x => x.Name.Equals(plan.Target, StringComparison.OrdinalIgnoreCase)) : null;
         var slot = plan.Position switch
         {
             GroupDropPosition.Before => GroupDropSlot.Before,
@@ -1207,8 +1208,8 @@ public sealed class SettingsViewModel : ObservableObject
             if (lastRoot == null || !MoveCategoryTo(dragged, new GroupDropPlan { IsValid = true, Target = lastRoot.Name, Position = GroupDropPosition.After })) return false;
             key = dragged.Name;
         }
-        var top = CategoryRoots.Select(r => r.Name).Where(n => !n.Equals(key, StringComparison.CurrentCultureIgnoreCase)).ToList();
-        var at = top.FindIndex(n => n.Equals(anchor.Name, StringComparison.CurrentCultureIgnoreCase));
+        var top = CategoryRoots.Select(r => r.Name).Where(n => !n.Equals(key, StringComparison.OrdinalIgnoreCase)).ToList();
+        var at = top.FindIndex(n => n.Equals(anchor.Name, StringComparison.OrdinalIgnoreCase));
         if (at < 0) return false;
         top.Insert(after ? at + 1 : at, key);
         FixedGroups.SetPositions(_s, top);
@@ -1272,7 +1273,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     public bool CanDropCategory(CategoryItemViewModel dragged, CategoryItemViewModel target) =>
         !ReferenceEquals(dragged, target) &&
-        string.Equals(GroupManager.ParentOf(dragged.Name), GroupManager.ParentOf(target.Name), StringComparison.CurrentCultureIgnoreCase);
+        string.Equals(GroupManager.ParentOf(dragged.Name), GroupManager.ParentOf(target.Name), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Gruppe vor bzw. hinter eine Geschwistergruppe schieben (Untergruppen wandern mit).</summary>
     public void DropCategory(CategoryItemViewModel dragged, CategoryItemViewModel target, bool after)
@@ -1287,7 +1288,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         for (int target = 0; target < order.Count; target++)
         {
-            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.CurrentCultureIgnoreCase));
+            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.OrdinalIgnoreCase));
             if (current >= 0 && current != target) Categories.Move(current, target);
         }
     }
@@ -1300,7 +1301,7 @@ public sealed class SettingsViewModel : ObservableObject
         var order = GroupManager.All(tmp);
         for (int target = 0; target < order.Count; target++)
         {
-            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.CurrentCultureIgnoreCase));
+            var current = Categories.ToList().FindIndex(x => x.Name.Equals(order[target], StringComparison.OrdinalIgnoreCase));
             if (current >= 0 && current != target) Categories.Move(current, target);
         }
     }
@@ -1331,7 +1332,7 @@ public sealed class SettingsViewModel : ObservableObject
             n =>
             {
                 var path = parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
-                return Categories.Any(x => x != c && x.Name.Equals(path, StringComparison.CurrentCultureIgnoreCase)) ? L.T("A group with this name already exists here.") : null;
+                return Categories.Any(x => x != c && x.Name.Equals(path, StringComparison.OrdinalIgnoreCase)) ? L.T("A group with this name already exists here.") : null;
             });
         if (newName == null || newName == c.Display) return;
         var oldPath = c.Name;
@@ -1350,11 +1351,11 @@ public sealed class SettingsViewModel : ObservableObject
     /// <summary>Gruppe (Pfad) oder Ordner einer smarten Gruppe hervorheben und aufklappen.</summary>
     public void FocusGroup(string groupOrFolder)
     {
-        var cat = Categories.FirstOrDefault(c => c.Name.Equals(groupOrFolder, StringComparison.CurrentCultureIgnoreCase))
+        var cat = Categories.FirstOrDefault(c => c.Name.Equals(groupOrFolder, StringComparison.OrdinalIgnoreCase))
                   ?? Categories.FirstOrDefault(c => c.Folder != null && c.Folder.Path.Equals(groupOrFolder, StringComparison.OrdinalIgnoreCase));
         // Untergruppe aus Unterordnern: zur smarten Gruppe darüber
         for (var p = GroupManager.ParentOf(groupOrFolder); cat == null && p != null; p = GroupManager.ParentOf(p))
-            cat = Categories.FirstOrDefault(c => c.Name.Equals(p, StringComparison.CurrentCultureIgnoreCase));
+            cat = Categories.FirstOrDefault(c => c.Name.Equals(p, StringComparison.OrdinalIgnoreCase));
         if (cat == null) return;
         cat.IsExpanded = true;
         if (cat.Folder != null) cat.Folder.IsHighlighted = true;
@@ -1370,7 +1371,7 @@ public sealed class SettingsViewModel : ObservableObject
         string PathOf(string n) => parent == null ? GroupManager.CleanName(n) : parent + GroupManager.Separator + GroupManager.CleanName(n);
         var spec = _app.Dialogs.AskNewGroup(parent == null ? L.T("New group") : L.F("New subgroup in “{0}”", GroupManager.LeafOf(parent)),
             parent == null ? L.T("New group") : L.T("New subgroup"),
-            n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.CurrentCultureIgnoreCase)) ? L.T("A group with this name already exists here.") : null,
+            n => Categories.Any(x => x.Name.Equals(PathOf(n), StringComparison.OrdinalIgnoreCase)) ? L.T("A group with this name already exists here.") : null,
             f => NewGroup.FolderError(Folders.Where(x => x.Path.Length > 0).Select(x => x.Config), f));
         if (spec == null) return;
         AddGroup(spec, PathOf(spec.Name), parent);
@@ -1412,7 +1413,7 @@ public sealed class SettingsViewModel : ObservableObject
             return;
         }
         var name = L.T("Examples");
-        for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)); i++) name = L.F("Examples {0}", i);
+        for (int i = 2; Categories.Any(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)); i++) name = L.F("Examples {0}", i);
         AddGroup(new NewGroupSpec(name, IconRef.None, folder, string.Empty, null), name, null);
         SamplesStatus = null;
         Snackbar.Show(L.F("Group “{0}” with the sample scripts from {1} added.", name, folder));
@@ -1426,7 +1427,7 @@ public sealed class SettingsViewModel : ObservableObject
     private void AddCategory()
     {
         var name = GroupManager.Normalize(NewCategory);
-        if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
+        if (name.Length > 0 && !Categories.Any(c => c.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             Categories.Add(NewCategoryVm(name));
         NewCategory = string.Empty;
     }
@@ -1596,7 +1597,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             File.WriteAllText(file, SettingsTransfer.Export(_app.Settings));
-            AppLog.Info(string.Format("Settings exported: {0}", file));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Settings exported: {0}", file));
             _app.Dialogs.Inform(L.T("The saved settings were exported.\nPasswords are not included."), L.T("Export"));
         }
         catch (Exception ex)
@@ -1676,7 +1677,7 @@ public sealed class SettingsViewModel : ObservableObject
         _s.CustomOrder = new Dictionary<string, List<string>>(_app.Settings.CustomOrder);
         _s.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
         // In der Liste entfernte Gruppen löschen (Einträge kommen zurück in ihren Ordner)
-        foreach (var removed in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.CurrentCultureIgnoreCase))).ToList())
+        foreach (var removed in GroupManager.All(_s).Where(g => !Categories.Any(c => c.Name.Equals(g, StringComparison.OrdinalIgnoreCase))).ToList())
             GroupManager.Delete(_s, removed);
         _s.CategoryOrder = Categories.Select(c => c.Name).ToList();
         _s.Machines = _app.Settings.Machines

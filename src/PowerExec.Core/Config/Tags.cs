@@ -35,7 +35,7 @@ public static class Tags
         if (newTag.Length == 0) return;
         foreach (var e in s.Entries.Where(e => e.Tags.Contains(oldTag, StringComparer.CurrentCultureIgnoreCase)))
         {
-            e.Tags = e.Tags.Where(t => !t.Equals(oldTag, StringComparison.CurrentCultureIgnoreCase) && !t.Equals(newTag, StringComparison.CurrentCultureIgnoreCase))
+            e.Tags = e.Tags.Where(t => !t.Equals(oldTag, StringComparison.OrdinalIgnoreCase) && !t.Equals(newTag, StringComparison.OrdinalIgnoreCase))
                 .Append(newTag).ToList();
         }
         var color = ColorOf(s, oldTag);
@@ -48,18 +48,18 @@ public static class Tags
     {
         int n = 0;
         foreach (var e in s.Entries)
-            n += e.Tags.RemoveAll(t => t.Equals(tag, StringComparison.CurrentCultureIgnoreCase)) > 0 ? 1 : 0;
+            n += e.Tags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase)) > 0 ? 1 : 0;
         s.Entries.RemoveAll(e => e.IsEmpty);
         SetColor(s, tag, null);
         return n;
     }
 
     public static string ColorOf(AppSettings s, string tag) =>
-        s.TagColors.FirstOrDefault(kv => kv.Key.Equals(tag, StringComparison.CurrentCultureIgnoreCase)).Value ?? string.Empty;
+        s.TagColors.FirstOrDefault(kv => kv.Key.Equals(tag, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
 
     public static void SetColor(AppSettings s, string tag, string? color)
     {
-        foreach (var k in s.TagColors.Keys.Where(k => k.Equals(tag, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.TagColors.Remove(k);
+        foreach (var k in s.TagColors.Keys.Where(k => k.Equals(tag, StringComparison.OrdinalIgnoreCase)).ToList()) s.TagColors.Remove(k);
         if (PanelColors.TryParse(color, out var c)) s.TagColors[tag] = c.Hex;
     }
 
@@ -105,7 +105,7 @@ public static class ClipboardClassifier
             return new CustomEntry { Kind = CustomEntryKind.Url, Target = t };
         if (t.StartsWith("ms-settings:", StringComparison.OrdinalIgnoreCase))
             return new CustomEntry { Kind = CustomEntryKind.Tool, Target = t };
-        if (t.Length > 2 && (t.StartsWith(@"\\") || (t.Length > 2 && t[1] == ':' && (t[2] == '\\' || t[2] == '/'))))
+        if (t.Length > 2 && (t.StartsWith(@"\\", StringComparison.Ordinal) || (t.Length > 2 && t[1] == ':' && (t[2] == '\\' || t[2] == '/'))))
         {
             if (isDirectory(t)) return new CustomEntry { Kind = CustomEntryKind.Folder, Target = t };
             if (isFile(t)) return new CustomEntry { Kind = CustomEntryKind.File, Target = t };

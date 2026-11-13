@@ -89,7 +89,7 @@ public sealed class IconService : IDisposable
             try
             {
                 if (key == "dir:") image = LoadShell("folder", FILE_ATTRIBUTE_DIRECTORY, SHGFI_USEFILEATTRIBUTES);
-                else if (key.StartsWith("file:")) image = LoadShell(key[5..key.LastIndexOf('|')], 0, 0);
+                else if (key.StartsWith("file:", StringComparison.Ordinal)) image = LoadShell(key[5..key.LastIndexOf('|')], 0, 0);
             }
             catch { /* Shell liefert kein Symbol (Datei weg, Freigabe offline): Standardsymbol */ }
             Complete(key, image);

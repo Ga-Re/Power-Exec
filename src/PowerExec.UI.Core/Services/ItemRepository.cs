@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.Concurrent;
 using PowerExec.UI.Infrastructure;
@@ -69,7 +70,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
         if (items.Count == 0) return;
         Items = items;
         FolderStatuses = statuses;
-        AppLog.Info(string.Format("Cache loaded: {0} entries", items.Count));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Cache loaded: {0} entries", items.Count));
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -122,7 +123,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 {
                     statuses.Add(new FolderStatus(folder.Path, 0, Array.Empty<ExcludedFile>(), error) { Duration = sw.Elapsed });
                 }
-                AppLog.Warn(string.Format("Folder {0}: {1}", folder.Path, error));
+                AppLog.Warn(string.Format(CultureInfo.InvariantCulture, "Folder {0}: {1}", folder.Path, error));
                 continue;
             }
 
@@ -143,7 +144,7 @@ public sealed class ItemRepository : IItemSource, IDisposable
                 Items = folderItems,
                 Excluded = result.Excluded.ToList()
             };
-            AppLog.Info(string.Format("Folder {0}: {1} files, {2} excluded by pattern, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Folder {0}: {1} files, {2} excluded by pattern, {3} ms", folder.Path, result.Files.Count, result.ExcludedCount, sw.ElapsedMilliseconds));
         }
 
         // Cache auf aktuelle Dateien begrenzen

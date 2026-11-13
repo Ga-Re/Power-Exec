@@ -169,10 +169,10 @@ public static class SearchSuggestions
         {
             var t = token.ToLowerInvariant();
             var typ = TypeKey.TrimEnd(':'); var grp = GroupKey.TrimEnd(':'); var ist = FlagKey.TrimEnd(':');
-            if (typ.StartsWith(t) && src.Kinds.Count > 0)
+            if (typ.StartsWith(t, StringComparison.Ordinal) && src.Kinds.Count > 0)
                 list.Add(new SearchSuggestion(TypeKey, TypeKey, L.F("filter by type ({0} …)", string.Join(", ", src.Kinds.Keys.Take(4).Select(k => KindNames[k].Alias))), src.Kinds.Values.Sum()));
-            if (grp.StartsWith(t) && src.Groups.Count > 0) list.Add(new SearchSuggestion(GroupKey, GroupKey, L.T("filter by group"), src.Groups.Count));
-            if (ist.StartsWith(t) && src.Favorites + src.Admin + src.Remote + src.Problems > 0) list.Add(new SearchSuggestion(FlagKey, FlagKey, L.T("Favorites, admin, remote, problems"), src.Favorites));
+            if (grp.StartsWith(t, StringComparison.Ordinal) && src.Groups.Count > 0) list.Add(new SearchSuggestion(GroupKey, GroupKey, L.T("filter by group"), src.Groups.Count));
+            if (ist.StartsWith(t, StringComparison.Ordinal) && src.Favorites + src.Admin + src.Remote + src.Problems > 0) list.Add(new SearchSuggestion(FlagKey, FlagKey, L.T("Favorites, admin, remote, problems"), src.Favorites));
         }
         return list;
     }

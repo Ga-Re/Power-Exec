@@ -84,7 +84,7 @@ public static class PathResolver
     {
         try
         {
-            if (path.Length < 3 || path[1] != ':' || path.StartsWith(@"\\")) return path;
+            if (path.Length < 3 || path[1] != ':' || path.StartsWith(@"\\", StringComparison.Ordinal)) return path;
             var drive = path[..2];
             if (OperatingSystem.IsWindows() && NativeMethods.NetworkPathOf(drive) is { } unc)
                 return unc.TrimEnd('\\') + path[2..];
@@ -96,7 +96,7 @@ public static class PathResolver
         return path;
     }
 
-    public static bool IsNetworkPath(string path) => path.StartsWith(@"\\");
+    public static bool IsNetworkPath(string path) => path.StartsWith(@"\\", StringComparison.Ordinal);
 
     public static string ServerShare(string uncPath)
     {

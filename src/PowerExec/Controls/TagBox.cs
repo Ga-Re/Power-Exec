@@ -189,7 +189,7 @@ public sealed class TagBox : Control
         tag = tag.Trim().TrimStart('#');
         if (tag.Length == 0 || _tags.Contains(tag, StringComparer.CurrentCultureIgnoreCase)) return;
         // Schreibweise eines vorhandenen (globalen) Schlagworts übernehmen
-        if (Suggestions?.Cast<object>().Select(o => o?.ToString()).FirstOrDefault(x => string.Equals(x, tag, StringComparison.CurrentCultureIgnoreCase)) is { } known) tag = known;
+        if (Suggestions?.Cast<object>().Select(o => o?.ToString()).FirstOrDefault(x => string.Equals(x, tag, StringComparison.OrdinalIgnoreCase)) is { } known) tag = known;
         _tags.Add(tag);
         Rebuild();
         PushText();
@@ -198,7 +198,7 @@ public sealed class TagBox : Control
 
     private void Remove(string tag)
     {
-        _tags.RemoveAll(t => t.Equals(tag, StringComparison.CurrentCultureIgnoreCase));
+        _tags.RemoveAll(t => t.Equals(tag, StringComparison.OrdinalIgnoreCase));
         Rebuild();
         PushText();
     }

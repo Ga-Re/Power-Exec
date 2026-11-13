@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using PowerExec.Core.Collections;
@@ -71,7 +72,7 @@ public class CollectionSyncTests
     [Fact]
     public void RandomSequencesAlwaysMatch()
     {
-        var pool = Enumerable.Range(0, 40).Select(i => new Box(i.ToString())).ToArray();
+        var pool = Enumerable.Range(0, 40).Select(i => new Box(i.ToString(CultureInfo.InvariantCulture))).ToArray();
         var rnd = new Random(3);
         var target = new ObservableCollection<Box>();
         for (int round = 0; round < 300; round++)

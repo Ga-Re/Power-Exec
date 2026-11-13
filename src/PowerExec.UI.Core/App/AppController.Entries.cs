@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -318,7 +319,7 @@ public partial class AppController
         try
         {
             File.WriteAllText(fileName, EntryShare.Export(source ?? Settings, entries, rootGroup));
-            AppLog.Info(string.Format("{0} custom entries exported: {1}", entries.Count, fileName));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "{0} custom entries exported: {1}", entries.Count, fileName));
             Ui.Notify(L.T("Exported"), (entries.Count == 1 ? L.T("1 entry saved.") : L.F("{0} entries saved.", entries.Count)));
         }
         catch (Exception ex)
@@ -340,7 +341,7 @@ public partial class AppController
             var file = EntryShare.Parse(File.ReadAllText(fileName));
             var (added, updated) = EntryShare.Import(Settings, file, intoGroup);
             CommitUserChange();
-            AppLog.Info(string.Format("Custom entries imported ({0} new, {1} updated): {2}", added, updated, fileName));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Custom entries imported ({0} new, {1} updated): {2}", added, updated, fileName));
             Dialogs.Inform(L.F("{0} new and {1} updated entries imported.", added, updated), L.T("Import"), owner);
             return added + updated > 0;
         }

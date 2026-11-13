@@ -104,7 +104,7 @@ public class GroupTests
             new DroppedTarget(CustomEntryKind.File, @"C:\Scripts\Scanned.ps1", "Scanned.ps1"),
             new DroppedTarget(CustomEntryKind.Url, "https://wiki", "wiki")
         };
-        var keys = DropClassifier.AddToSettings(s, targets, "Tools", p => p.StartsWith(@"C:\Scripts"));
+        var keys = DropClassifier.AddToSettings(s, targets, "Tools", p => p.StartsWith(@"C:\Scripts", StringComparison.Ordinal));
         Assert.Equal(2, s.CustomEntries.Count); // die gescannte Datei wird nur zugeordnet
         Assert.Equal(@"C:\Tools\Reset.ps1", keys[0]); // Datei-Eintrag: Schlüssel ist der Pfad
         Assert.StartsWith("custom:", keys[2]);

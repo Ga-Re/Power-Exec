@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -39,7 +40,7 @@ public partial class AppController
     {
         var clean = GroupManager.CleanName(name);
         var path = parent == null ? clean : parent + GroupManager.Separator + clean;
-        return GroupManager.Exists(Settings, path) && !path.Equals(exceptPath, StringComparison.CurrentCultureIgnoreCase)
+        return GroupManager.Exists(Settings, path) && !path.Equals(exceptPath, StringComparison.OrdinalIgnoreCase)
             ? L.T("A group with this name already exists here.") : null;
     }
 
@@ -216,7 +217,7 @@ public partial class AppController
         Repository.UpdateSettings(Settings);
         CommitUserChange();
         ShowUndoToast(L.F("Folder added as group “{0}”", GroupManager.LeafOf(path)));
-        AppLog.Info(string.Format("Folder added by drag & drop as smart group: {0} → {1}", folderPath, path));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Folder added by drag & drop as smart group: {0} → {1}", folderPath, path));
     }
 
     /// <summary>Symbol einer eigenen Gruppe wählen.</summary>

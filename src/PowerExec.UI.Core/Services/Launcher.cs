@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -75,7 +76,7 @@ public sealed class Launcher
         if (started != null && CommandBuilder.SupportsDoneFile(request))
         {
             try { doneFile = NewDoneFile(); }
-            catch (Exception ex) { AppLog.Info(string.Format("Completion marker not possible: {0}", ex.Message)); }
+            catch (Exception ex) { AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Completion marker not possible: {0}", ex.Message)); }
         }
         var spec = CommandBuilder.BuildLocal(request, doneFile);
         RunCredential? cred = null;

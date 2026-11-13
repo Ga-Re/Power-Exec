@@ -96,7 +96,7 @@ public sealed class TrayIcon : IDisposable
             var item = _app.FindItem(r.Path);
             if (item == null) continue;
             var profile = Core.Profiles.ProfileResolver.GetProfiles(s, item)
-                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.CurrentCultureIgnoreCase) || (p.IsImplicit && r.ProfileName == "Standard"));
+                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase) || (p.IsImplicit && r.ProfileName == "Standard"));
             var text = Label(item) + (profile != null && !profile.IsImplicit ? $"  ·  {profile.Name}" : string.Empty);
             _recent.DropDownItems.Add(text, null, (_, _) => Run(() => _app.RunProfile(item, profile)));
         }
@@ -108,7 +108,7 @@ public sealed class TrayIcon : IDisposable
             var name = w.Name;
             var mi = new Forms.ToolStripMenuItem(name, null, (_, _) => Run(() => _app.SwitchWorkspace(name)))
             {
-                Checked = name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)
+                Checked = name.Equals(s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)
             };
             _workspaces.DropDownItems.Add(mi);
         }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.IO;
 using Microsoft.Win32;
@@ -97,7 +98,7 @@ public static class BrowserCatalog
             }
             catch (Exception ex)
             {
-                AppLog.Info(string.Format("Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
+                AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Browser profiles of {0} not readable: {1}", DisplayName(b), ex.Message));
             }
             _profiles[b] = result;
             return result;
