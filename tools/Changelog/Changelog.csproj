@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Erzeugt CHANGELOG.md aus den Versionshinweisen im Code (dotnet run mit diesem Projekt). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PowerExec.Core\PowerExec.Core.csproj" />
+  </ItemGroup>
+</Project>
