@@ -267,6 +267,6 @@ public class MarketplaceViewModelTests
         vm.SettingsChanged();
         Assert.NotSame(before, vm.Page);
         Assert.False(vm.Page.AllItems.Single().IsInstalled);
-        vm.Tab = "Entry";
+        Assert.Equal("Design", vm.Tab); // der gewählte Reiter bleibt
     }
 }

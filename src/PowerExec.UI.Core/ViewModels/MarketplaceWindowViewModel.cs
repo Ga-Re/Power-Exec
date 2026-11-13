@@ -66,8 +66,11 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
     public void SettingsChanged()
     {
         if (_applying) return;
+        var tab = Page.Tab;
         Page = Load();
+        Page.Tab = tab; // der gewählte Reiter bleibt
         OnPropertyChanged(nameof(Page));
         OnPropertyChanged(nameof(Tab));
+        Page.EnsureLoadedAsync().Forget();
     }
 }

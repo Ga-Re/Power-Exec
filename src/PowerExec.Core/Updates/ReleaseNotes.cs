@@ -11,7 +11,8 @@ public static class ReleaseNotes
         new ReleaseNote(new Version(0, 33, 0), L.T("Marketplace in its own window; groups can be dragged to the top"), new[]
         {
             L.T("The marketplace opens in its own window – from the panel footer, the tray menu or the settings – and applies installs right away"),
-            L.T("Groups can be dragged to the first position reliably, in the panel and under Settings › Groups")
+            L.T("Groups can be dragged to the first position reliably, in the panel and under Settings › Groups"),
+            L.T("Dialogs and settings use even spacing; the computer field in the launch dialog uses the full width")
         }),
         new ReleaseNote(new Version(0, 32, 0), L.T("Panel always slides out completely; calmer look; corners setting"), new[]
         {
