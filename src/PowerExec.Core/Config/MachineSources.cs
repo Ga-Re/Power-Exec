@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Text;
 
@@ -214,7 +215,7 @@ public static class OuTree
         }
         void Sort(List<OuNode> list)
         {
-            list.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase));
+            list.Sort((a, b) => StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name));
             foreach (var n in list) Sort(n.Children);
         }
         Sort(roots);

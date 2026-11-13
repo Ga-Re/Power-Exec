@@ -2,6 +2,13 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.33.0 – Marktplatz als eigenes Fenster; Gruppen lassen sich an die erste Stelle ziehen
+
+- Der Marktplatz öffnet sich in einem eigenen Fenster – aus der Fußzeile des Panels, dem Tray-Menü oder den Einstellungen – und übernimmt Installationen sofort
+- Marktplatz als Galerie: Karten zeigen, was ein Eintrag ausführt, links filtern Kategorien, ein Klick klappt die Details auf
+- Gruppen lassen sich zuverlässig an die erste Stelle ziehen, im Panel und unter Einstellungen › Gruppen
+- Dialoge und Einstellungen haben gleichmäßige Abstände; das Rechner-Feld im Ausführen-Dialog nutzt die volle Breite
+
 ## 0.32.0 – Panel fährt immer ganz aus; ruhigere Oberfläche; Einstellung „Ecken“
 
 - Das Panel bleibt nach Standby, Docking oder geänderter Taskleiste nicht mehr teilweise außerhalb des Bildschirms: die Endlage wird nach dem Ausfahren geprüft, Monitordaten werden aufgefrischt

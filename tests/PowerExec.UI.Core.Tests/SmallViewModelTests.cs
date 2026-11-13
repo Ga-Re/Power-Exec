@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
 using PowerExec.Core.Models;
@@ -125,7 +126,7 @@ public class ScheduleViewModelTests
         Assert.Contains("mindestens", vm.Error);
 
         vm.IsOnce = true;
-        vm.OnceDate = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy");
+        vm.OnceDate = DateTime.Now.AddDays(-1).ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
         vm.OnceTime = "08:00";
         Assert.Equal("Der Zeitpunkt liegt in der Vergangenheit.", vm.Error);
 
@@ -284,7 +285,7 @@ public class WelcomeViewModelTests
     [Fact]
     public void AllSamplesAreShipped()
     {
-        var names = typeof(WelcomeViewModel).Assembly.GetManifestResourceNames().Where(n => n.StartsWith("PowerExec.Sample.")).ToList();
+        var names = typeof(WelcomeViewModel).Assembly.GetManifestResourceNames().Where(n => n.StartsWith("PowerExec.Sample.", StringComparison.Ordinal)).ToList();
         Assert.Contains("PowerExec.Sample.Get-DiskSpace.ps1", names);
         Assert.Contains("PowerExec.Sample.Test-NetworkConnection.ps1", names);
         Assert.True(names.Count >= 8, $"nur {names.Count} Beispiele eingebettet");

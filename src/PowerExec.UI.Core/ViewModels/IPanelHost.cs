@@ -86,6 +86,9 @@ public interface IPanelHost : IHistoryHost, IWorkflowHost
     // ── Fenster und Wechsel ──────────────────────────────────────────
     void ShowSettings(string? folderPath = null, string? section = null);
     void ShowProfiles(LaunchItem item);
+    /// <summary>Marktplatz-Fenster öffnen.</summary>
+    void ShowMarketplace(string? tab = null) { }
+
     void ShowSchedule(LaunchItem item);
     void OnProfilesSaved();
     void SwitchWorkspace(string name);

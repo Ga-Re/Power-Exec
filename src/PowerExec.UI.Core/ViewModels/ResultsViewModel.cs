@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -227,7 +228,7 @@ public sealed class ResultsViewModel : ObservableObject, IRemoteRunProgress
         IsRunning = false;
         RaiseCounts();
         WriteLog();
-        AppLog.Info(string.Format("Remote run finished: {0} · {1}", _request.Item.FileName, StatusLine) + (error != null ? " · Runner: " + error : string.Empty));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Remote run finished: {0} · {1}", _request.Item.FileName, StatusLine) + (error != null ? " · Runner: " + error : string.Empty));
         Finished?.Invoke();
         _session?.Dispose();
         _session = null;

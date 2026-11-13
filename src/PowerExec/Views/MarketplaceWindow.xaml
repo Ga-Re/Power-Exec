@@ -1,0 +1,61 @@
+<Window x:Class="PowerExec.Desktop.Views.MarketplaceWindow"
+        xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="clr-namespace:PowerExec.Desktop.Views"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="{l:T 'Power-Exec – Marketplace'}" Style="{StaticResource AppWindow}"
+        Width="1100" Height="760" MinWidth="720" MinHeight="460" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <!-- Navigation: Bereiche mit Anzahl, darunter die Kategorien des gewählten Bereichs -->
+        <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,1,0">
+            <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="12,20,12,12">
+                    <TextBlock Text="{l:T 'Marketplace'}" Style="{StaticResource PageTitle}" Margin="12,0,0,12"/>
+                    <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton Style="{StaticResource NavItem}" GroupName="MarketplaceTabs" Tag="{Binding Key}" FontSize="{StaticResource Font.Body}"
+                                             Checked="Tab_Checked" Loaded="Tab_Loaded" AutomationProperties.Name="{Binding Title}">
+                                    <DockPanel>
+                                        <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Foreground="{DynamicResource Text.Secondary}" FontWeight="Normal" Margin="8,0,4,0"/>
+                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel DataContext="{Binding Page}" Visibility="{Binding HasCategories, Converter={StaticResource Vis}}">
+                        <TextBlock Text="{l:T 'Categories'}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="14,20,0,4"/>
+                        <ItemsControl ItemsSource="{Binding Categories}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <ui:Button x:Name="Cat" Style="{StaticResource Btn.Subtle}" Command="{Binding SelectCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                               Padding="14,0,12,0" Height="32" MinHeight="32" Margin="0,1" AutomationProperties.Name="{Binding Name}">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding Count}" Foreground="{DynamicResource Text.Secondary}" Margin="8,0,0,0"/>
+                                            <TextBlock x:Name="CatName" Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                    </ui:Button>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter TargetName="Cat" Property="Background" Value="{DynamicResource Bg.Selected}"/>
+                                            <Setter TargetName="CatName" Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        <ScrollViewer Grid.Column="1" x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <v:MarketplaceView Margin="28,20,28,28" DataContext="{Binding Page}"/>
+        </ScrollViewer>
+    </Grid>
+</Window>

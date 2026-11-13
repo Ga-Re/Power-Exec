@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -70,7 +71,7 @@ public partial class AppController
         }
         catch (Exception ex)
         {
-            AppLog.Error(string.Format("Workflow {0} aborted", name), ex);
+            AppLog.Error(string.Format(CultureInfo.InvariantCulture, "Workflow {0} aborted", name), ex);
             failed++;
         }
         var text = cancelled ? L.F("aborted after {0} of {1} steps", done, steps.Count)
@@ -80,7 +81,7 @@ public partial class AppController
         activity.Complete(state, text);
         if (summary != null)
             CompleteHistory(summary, state switch { ActivityState.Success => HistoryResult.Success, ActivityState.Warning => HistoryResult.Warning, _ => HistoryResult.Error }, text);
-        AppLog.Info(string.Format("Workflow {0}: {1}", name, text));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Workflow {0}: {1}", name, text));
         return failed == 0 && !cancelled;
     }
 
@@ -90,12 +91,12 @@ public partial class AppController
         var item = FindItem(step.Path);
         if (item == null)
         {
-            AppLog.Info(string.Format("Workflow {0}: step {1} not found ({2})", workflowName, step.Name, step.Path));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Workflow {0}: step {1} not found ({2})", workflowName, step.Name, step.Path));
             return HistoryResult.Error;
         }
         if (item.Source?.Kind == CustomEntryKind.Workflow) return HistoryResult.Error; // keine verschachtelten Abläufe
         var profiles = ProfileResolver.GetProfiles(Settings, item);
-        var profile = (profiles.FirstOrDefault(p => p.Name.Equals(step.ProfileName, StringComparison.CurrentCultureIgnoreCase))
+        var profile = (profiles.FirstOrDefault(p => p.Name.Equals(step.ProfileName, StringComparison.OrdinalIgnoreCase))
                        ?? profiles.FirstOrDefault(p => p.IsDefault) ?? profiles[0]).Clone();
         profile.NoExit = false; // sonst bliebe die Konsole offen und der Ablauf stünde
 

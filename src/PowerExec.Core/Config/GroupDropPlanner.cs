@@ -53,7 +53,7 @@ public static class GroupDropPlanner
             return new GroupDropPlan { IsValid = true, IsNoOp = true, Position = GroupDropPosition.Before, Target = dragged, NewParent = draggedParent, Depth = draggedDepth, MinDepth = draggedDepth, MaxDepth = draggedDepth };
 
         var rest = visibleOrder.Select(GroupManager.Normalize).Where(p => !GroupManager.IsSameOrBelow(p, dragged)).ToList();
-        int i = rest.FindIndex(p => p.Equals(hovered, StringComparison.CurrentCultureIgnoreCase));
+        int i = rest.FindIndex(p => p.Equals(hovered, StringComparison.OrdinalIgnoreCase));
         if (i < 0) return Invalid(L.T("A group can't be dropped here."));
 
         GroupDropPosition position;
@@ -105,7 +105,7 @@ public static class GroupDropPlanner
             MaxDepth = max
         };
 
-        bool sameParent = string.Equals(newParent, draggedParent, StringComparison.CurrentCultureIgnoreCase);
+        bool sameParent = string.Equals(newParent, draggedParent, StringComparison.OrdinalIgnoreCase);
         if (siblingsOnly && !sameParent)
             return plan with
             {
@@ -149,7 +149,7 @@ public static class GroupDropPlanner
         var subtree = all.Where(p => GroupManager.IsSameOrBelow(p, dragged)).ToList();
         var rest = all.Where(p => !GroupManager.IsSameOrBelow(p, dragged)).ToList();
         int index = position == GroupDropPosition.Before
-            ? rest.FindIndex(p => p.Equals(target, StringComparison.CurrentCultureIgnoreCase))
+            ? rest.FindIndex(p => p.Equals(target, StringComparison.OrdinalIgnoreCase))
             : rest.FindLastIndex(p => GroupManager.IsSameOrBelow(p, target)) + 1;
         if (index < 0) index = rest.Count;
         rest.InsertRange(index, subtree);

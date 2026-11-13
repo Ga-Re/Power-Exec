@@ -464,7 +464,7 @@ public partial class PanelWindow : Window
     private void Workspace_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count == 1 && e.AddedItems[0] is string name &&
-            !name.Equals(Vm.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase))
+            !name.Equals(Vm.ActiveWorkspace, StringComparison.OrdinalIgnoreCase))
             Dispatcher.BeginInvoke(() => Vm.SwitchWorkspaceCommand.Execute(name));
     }
 

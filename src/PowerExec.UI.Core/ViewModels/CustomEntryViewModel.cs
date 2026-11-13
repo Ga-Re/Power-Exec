@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.ComponentModel;
 using System.IO;
@@ -219,7 +220,7 @@ public sealed class CustomEntryViewModel : ObservableObject
     public string User { get => _e.User; set { _e.User = value ?? string.Empty; Touch(); } }
     public string PortText
     {
-        get => _e.Port > 0 ? _e.Port.ToString() : string.Empty;
+        get => _e.Port > 0 ? _e.Port.ToString(CultureInfo.InvariantCulture) : string.Empty;
         set { _e.Port = int.TryParse(value, out var p) ? p : value?.Trim().Length > 0 ? -1 : 0; Touch(); }
     }
     public string PortHint => IsRdp ? "3389" : "22";
@@ -240,8 +241,8 @@ public sealed class CustomEntryViewModel : ObservableObject
     public string RdpFile { get => _e.RdpFile; set { _e.RdpFile = value ?? string.Empty; Touch(); } }
     public RdpScreen Screen { get => _e.Screen; set { _e.Screen = value; Touch(); OnPropertyChanged(nameof(IsRdpWindow)); } }
     public bool IsRdpWindow => _e.Screen == RdpScreen.Window;
-    public string ScreenWidthText { get => _e.ScreenWidth > 0 ? _e.ScreenWidth.ToString() : string.Empty; set { _e.ScreenWidth = int.TryParse(value, out var w) ? w : 0; Touch(); } }
-    public string ScreenHeightText { get => _e.ScreenHeight > 0 ? _e.ScreenHeight.ToString() : string.Empty; set { _e.ScreenHeight = int.TryParse(value, out var h) ? h : 0; Touch(); } }
+    public string ScreenWidthText { get => _e.ScreenWidth > 0 ? _e.ScreenWidth.ToString(CultureInfo.InvariantCulture) : string.Empty; set { _e.ScreenWidth = int.TryParse(value, out var w) ? w : 0; Touch(); } }
+    public string ScreenHeightText { get => _e.ScreenHeight > 0 ? _e.ScreenHeight.ToString(CultureInfo.InvariantCulture) : string.Empty; set { _e.ScreenHeight = int.TryParse(value, out var h) ? h : 0; Touch(); } }
     public bool AllMonitors { get => _e.AllMonitors; set { _e.AllMonitors = value; Touch(); } }
     public bool AdminSession { get => _e.AdminSession; set { _e.AdminSession = value; Touch(); } }
     public string Gateway { get => _e.Gateway; set { _e.Gateway = value ?? string.Empty; Touch(); } }
@@ -299,7 +300,7 @@ public sealed class CustomEntryViewModel : ObservableObject
         get
         {
             var unknown = Placeholders.VariableNames(_e.Target, _e.Arguments, _e.Code, _e.User, _e.RemoteCommand, _e.WorkingDirectory)
-                .Where(n => !Variables.IsBuiltin(n) && !_app.UserVariables.Any(v => v.Name.Equals(Variables.Normalize(n), StringComparison.CurrentCultureIgnoreCase)))
+                .Where(n => !Variables.IsBuiltin(n) && !_app.UserVariables.Any(v => v.Name.Equals(Variables.Normalize(n), StringComparison.OrdinalIgnoreCase)))
                 .Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
             return unknown.Count == 0 ? null
                 : (unknown.Count == 1 ? L.F("The variable {{{{{0}}}}} doesn't exist", unknown[0]) : L.T("These variables don't exist: ") + string.Join(", ", unknown.Select(n => "{{" + n + "}}")))

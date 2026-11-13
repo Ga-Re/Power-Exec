@@ -25,7 +25,7 @@ public partial class GroupPickerWindow : Window
         w.Prompt.Visibility = string.IsNullOrEmpty(prompt) ? Visibility.Collapsed : Visibility.Visible;
         w.GroupBox.ItemsSource = groups;
         w.NewBox.Text = suggestion;
-        var match = groups.FirstOrDefault(g => g.Equals(GroupManager.Normalize(suggestion), StringComparison.CurrentCultureIgnoreCase));
+        var match = groups.FirstOrDefault(g => g.Equals(GroupManager.Normalize(suggestion), StringComparison.OrdinalIgnoreCase));
         if (match != null) { w.GroupBox.SelectedItem = match; w.ExistingOption.IsChecked = true; }
         else
         {

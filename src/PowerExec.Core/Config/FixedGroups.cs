@@ -77,7 +77,7 @@ public static class FixedGroups
     /// <returns>Neuer Schlüssel (Pfad ändert sich, wenn eine Untergruppe nach oben wandert) oder null, wenn nichts geht.</returns>
     public static string? MoveTopLevel(AppSettings s, string key, string anchor, bool after)
     {
-        static bool Eq(string a, string b) => a.Equals(b, StringComparison.CurrentCultureIgnoreCase);
+        static bool Eq(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
         if (Eq(key, anchor)) return null;
         if (!IsFixed(key) && GroupManager.ParentOf(key) != null)
         {

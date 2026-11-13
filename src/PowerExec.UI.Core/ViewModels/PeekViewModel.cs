@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Metadata;
@@ -66,7 +67,7 @@ public sealed class PeekViewModel
         if (li.UsesReadHost) facts.Add(new PeekFact(L.T("Hint"), L.T("uses Read-Host – not suitable for remote")));
         if (item.HasNotes) facts.Add(new PeekFact(L.T("Note"), item.Notes));
         if (li.LastWriteTimeUtc > DateTime.MinValue.AddYears(1) && !li.IsCustom)
-            facts.Add(new PeekFact(L.T("Modified"), li.LastWriteTimeUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")));
+            facts.Add(new PeekFact(L.T("Modified"), li.LastWriteTimeUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture)));
         var stat = app.Settings.RunStats.FirstOrDefault(kv => kv.Key.Equals(li.FullPath, StringComparison.OrdinalIgnoreCase)).Value;
         if (stat != null && stat.Count > 0)
             facts.Add(new PeekFact(L.T("Launched"), L.F("{0}× · last {1}", stat.Count, RecentRunList.Ago(stat.LastUtc))));

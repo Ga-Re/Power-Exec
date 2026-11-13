@@ -70,9 +70,9 @@ public sealed class ScheduleViewModel : ObservableObject
 
     private void LoadFields()
     {
-        _onceDate = _editing.OnceAt.ToString("dd.MM.yyyy");
-        _onceTime = _editing.OnceAt.ToString("HH:mm");
-        _dailyTime = _editing.TimeOfDay.ToString(@"hh\:mm");
+        _onceDate = _editing.OnceAt.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+        _onceTime = _editing.OnceAt.ToString("HH:mm", CultureInfo.InvariantCulture);
+        _dailyTime = _editing.TimeOfDay.ToString(@"hh\:mm", CultureInfo.InvariantCulture);
         _interval = _editing.IntervalMinutes.ToString(CultureInfo.InvariantCulture);
         Days.Clear();
         foreach (var (d, n) in new[] { (DayOfWeek.Monday, L.T("Mon")), (DayOfWeek.Tuesday, L.T("Tue")), (DayOfWeek.Wednesday, L.T("Wed")), (DayOfWeek.Thursday, L.T("Thu")), (DayOfWeek.Friday, L.T("Fri")), (DayOfWeek.Saturday, L.T("Sat")), (DayOfWeek.Sunday, L.T("Sun")) })

@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 namespace PowerExec.Core.Config;
 
@@ -22,7 +23,7 @@ public static class MachineList
             var n = raw.Trim();
             if (n.StartsWith('@'))
             {
-                var g = settings.MachineGroups.FirstOrDefault(x => x.Name.Equals(n[1..].Trim(), StringComparison.CurrentCultureIgnoreCase));
+                var g = settings.MachineGroups.FirstOrDefault(x => x.Name.Equals(n[1..].Trim(), StringComparison.OrdinalIgnoreCase));
                 if (g != null) result.AddRange(g.Machines);
             }
             else if (n.Length > 0) result.Add(n.ToUpperInvariant());
@@ -102,6 +103,6 @@ public static class MachineList
         var days = (now.Date - t.Date).Days;
         if (days < 7) return L.F("{0} days ago", days);
         if (days < 14) return L.T("last week");
-        return t.ToString("dd.MM.yyyy");
+        return t.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
     }
 }

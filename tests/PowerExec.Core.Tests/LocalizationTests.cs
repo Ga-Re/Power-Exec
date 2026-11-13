@@ -52,7 +52,7 @@ public class LocalizationTests
                 yield return ("IconLibrary.cs", m.Groups[1].Value);
         }
         var cs = new Regex(@"\bL\.[TF]\(""((?:[^""\\]|\\.)*)""");
-        foreach (var f in SourceFiles("*.cs").Where(f => !Path.GetFileName(f).StartsWith("SelfTest")))
+        foreach (var f in SourceFiles("*.cs").Where(f => !Path.GetFileName(f).StartsWith("SelfTest", StringComparison.Ordinal)))
             foreach (Match m in cs.Matches(File.ReadAllText(f)))
                 yield return (Path.GetFileName(f), UnescapeCs(m.Groups[1].Value));
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using PowerExec.Core.Config;
 
@@ -47,7 +48,7 @@ public class AdRulesTests
         Assert.Contains("(userAccountControl:1.2.840.113556.1.4.803:=2)", disabled);
         Assert.DoesNotContain("(!", disabled);
 
-        var ft = Now.AddDays(-30).ToFileTimeUtc().ToString();
+        var ft = Now.AddDays(-30).ToFileTimeUtc().ToString(CultureInfo.InvariantCulture);
         var recent = AdRules.BuildFilter(new AdGroupQuery { Blocks = { new AdRuleBlock { Rules = { R(AdRules.LastLogonDays, AdOperator.AtMost, "30") } } } }, Now);
         Assert.Contains($"(lastLogonTimestamp>={ft})", recent);
         var stale = AdRules.BuildFilter(new AdGroupQuery { Blocks = { new AdRuleBlock { Rules = { R(AdRules.LastLogonDays, AdOperator.AtLeast, "30") } } } }, Now);

@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Models;
 
@@ -353,14 +354,14 @@ public sealed class CustomEntry
         {
             parts.Add("-ssh");
             parts.Add(SshTarget());
-            if (Port > 0) { parts.Add("-P"); parts.Add(Port.ToString()); }
+            if (Port > 0) { parts.Add("-P"); parts.Add(Port.ToString(CultureInfo.InvariantCulture)); }
             if (KeyFile.Trim().Length > 0) { parts.Add("-i"); parts.Add(Quote(KeyFile.Trim())); }
             foreach (var f in Forwards()) { parts.Add("-L"); parts.Add(f); }
             if (Arguments.Trim().Length > 0) parts.Add(Arguments.Trim());
             return (ItemType.Executable, "putty.exe", string.Join(' ', parts));
         }
         parts.Add(SshTarget());
-        if (Port > 0 && Port != 22) { parts.Add("-p"); parts.Add(Port.ToString()); }
+        if (Port > 0 && Port != 22) { parts.Add("-p"); parts.Add(Port.ToString(CultureInfo.InvariantCulture)); }
         if (KeyFile.Trim().Length > 0) { parts.Add("-i"); parts.Add(Quote(KeyFile.Trim())); }
         if (JumpHost.Trim().Length > 0) { parts.Add("-J"); parts.Add(JumpHost.Trim()); }
         foreach (var f in Forwards()) { parts.Add("-L"); parts.Add(f); }
@@ -463,7 +464,7 @@ public sealed class CustomEntry
     public static string CommandLinePath(string path)
     {
         var p = path.Trim().Trim('"');
-        if (p.Length > 3 || p.StartsWith(@"\\")) p = p.TrimEnd('\\', '/');
+        if (p.Length > 3 || p.StartsWith(@"\\", StringComparison.Ordinal)) p = p.TrimEnd('\\', '/');
         if (p.Length == 2 && p[1] == ':') p += @"\.";
         else if (p.Length == 3 && p[1] == ':' && p[2] is '\\' or '/') p = p[..2] + @"\.";
         return p;

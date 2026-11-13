@@ -12,7 +12,7 @@ public static class SmartGroups
     public const string CustomFallbackKey = "custom";
 
     public static FolderConfig? FolderOf(AppSettings s, string groupPath) =>
-        s.Folders.FirstOrDefault(f => f.Group.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase));
+        s.Folders.FirstOrDefault(f => f.Group.Equals(groupPath, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Jeder Ordner bekommt eine Gruppe (Name = Ordnername bzw. Anzeigename, eindeutig).</summary>
     public static void EnsureFolderGroups(AppSettings s)
@@ -28,7 +28,7 @@ public static class SmartGroups
             var name = GroupManager.CleanName(LeafName(f.Path));
             if (name.Length == 0) name = L.T("Folder");
             var candidate = name;
-            for (int i = 2; GroupManager.Exists(s, candidate) || s.Folders.Any(o => !ReferenceEquals(o, f) && o.Group.Equals(candidate, StringComparison.CurrentCultureIgnoreCase)); i++)
+            for (int i = 2; GroupManager.Exists(s, candidate) || s.Folders.Any(o => !ReferenceEquals(o, f) && o.Group.Equals(candidate, StringComparison.OrdinalIgnoreCase)); i++)
                 candidate = $"{name} {i}";
             f.Group = candidate;
             s.CategoryOrder.Add(candidate);

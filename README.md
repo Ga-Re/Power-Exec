@@ -13,7 +13,7 @@ oder remote auf einem oder vielen Rechnern.
 - **Eigene Einträge:** Webseiten, Ordner, RDP, SSH, Snippets, Windows-Werkzeuge, Befehle; Platzhalter und Variablen
 - **Smarte Gruppen:** Ordner (auch Freigaben) erscheinen als Gruppe, Unterordner als Untergruppen
 - **Abläufe und Zeitpläne:** mehrere Einträge nacheinander, einmalig oder wiederkehrend
-- **Arbeitsbereiche, Team-Kataloge, Marktplatz:** Inhalte je Kunde oder Aufgabe, im Team teilen, fertige Einträge und Designs laden
+- **Arbeitsbereiche, Team-Kataloge, Marktplatz:** Inhalte je Kunde oder Aufgabe, im Team teilen, fertige Einträge und Designs laden (Marktplatz als eigenes Fenster)
 - **Aussehen:** Designvorlagen, Glas oder Vollton, Panelfarbe, Akzent, Ecken, Schriftgröße; Deutsch und Englisch
 
 Alle Funktionen im Einzelnen: [docs/FEATURES.md](docs/FEATURES.md) · Änderungen je Version: [CHANGELOG.md](CHANGELOG.md) ·

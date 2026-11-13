@@ -34,7 +34,7 @@ public static class BatchInfoReader
                 continue;
 
             string? comment = null;
-            if (t.StartsWith("::")) comment = t[2..];
+            if (t.StartsWith("::", StringComparison.Ordinal)) comment = t[2..];
             else if (t.Equals("rem", StringComparison.OrdinalIgnoreCase)) continue;
             else if (t.StartsWith("rem ", StringComparison.OrdinalIgnoreCase)) comment = t[4..];
 

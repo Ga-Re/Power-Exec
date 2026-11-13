@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -219,7 +220,7 @@ public sealed class GroupViewModel : ObservableObject
     /// <summary>Gruppe eines abonnierten Team-Katalogs.</summary>
     public bool IsCatalog => GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.IsSameOrBelow(GroupPath, GroupManager.Normalize(c.Name)));
 
-    public string IconGlyph => IsCatalog && GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.Normalize(c.Name).Equals(GroupPath, StringComparison.CurrentCultureIgnoreCase)) ? "\uE72E" : Kind switch
+    public string IconGlyph => IsCatalog && GroupPath != null && _app.Settings.Catalogs.Any(c => GroupManager.Normalize(c.Name).Equals(GroupPath, StringComparison.OrdinalIgnoreCase)) ? "\uE72E" : Kind switch
     {
         "fav" => "\uE735",
         "recent" => "\uE81C",
@@ -234,7 +235,7 @@ public sealed class GroupViewModel : ObservableObject
     public string? FolderPath { get; }
     /// <summary>Einträge der Gruppe; beim Rebuild abgeglichen (siehe <see cref="Core.Collections.CollectionSync"/>).</summary>
     public ObservableCollection<ItemViewModel> Items { get; }
-    public string CountText => TotalCount.ToString();
+    public string CountText => TotalCount.ToString(CultureInfo.InvariantCulture);
     public string? Error { get; }
     public bool HasError => !string.IsNullOrEmpty(Error);
 

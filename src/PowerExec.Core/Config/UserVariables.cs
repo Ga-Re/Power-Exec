@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using System.Text.RegularExpressions;
 
@@ -86,7 +87,7 @@ public static class Variables
         if (n.Length == 0) return L.T("Please enter a name.");
         if (!NamePattern.IsMatch(n)) return L.T("Only letters, digits and _ – no spaces, not starting with a digit.");
         if (IsBuiltin(n)) return $"${n} ist eine eingebaute Variable.";
-        if (s.Variables.Any(v => !ReferenceEquals(v, self) && v.Name.Equals(n, StringComparison.CurrentCultureIgnoreCase)))
+        if (s.Variables.Any(v => !ReferenceEquals(v, self) && v.Name.Equals(n, StringComparison.OrdinalIgnoreCase)))
             return $"${n} gibt es schon.";
         return null;
     }
@@ -94,7 +95,7 @@ public static class Variables
     public static UserVariable? Find(AppSettings s, string name)
     {
         var n = Normalize(name);
-        return s.Variables.FirstOrDefault(v => v.Name.Equals(n, StringComparison.CurrentCultureIgnoreCase));
+        return s.Variables.FirstOrDefault(v => v.Name.Equals(n, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>Gibt es die Variable (eingebaut oder eigen)?</summary>
@@ -234,11 +235,11 @@ public sealed class VariableResolver
 
     /// <summary>Wert für einen Arbeitsbereich (Groß-/Kleinschreibung egal – auch nach dem Einlesen aus JSON).</summary>
     public static string? WorkspaceValue(UserVariable v, string? workspace) =>
-        v.WorkspaceValues.FirstOrDefault(kv => kv.Key.Equals(workspace ?? string.Empty, StringComparison.CurrentCultureIgnoreCase)).Value;
+        v.WorkspaceValues.FirstOrDefault(kv => kv.Key.Equals(workspace ?? string.Empty, StringComparison.OrdinalIgnoreCase)).Value;
 
     private static string Format(DateTime t, string? format, string fallback)
     {
-        try { return t.ToString(string.IsNullOrWhiteSpace(format) ? fallback : format); }
-        catch (FormatException) { return t.ToString(fallback); }
+        try { return t.ToString(string.IsNullOrWhiteSpace(format) ? fallback : format, CultureInfo.CurrentCulture); }
+        catch (FormatException) { return t.ToString(fallback, CultureInfo.CurrentCulture); }
     }
 }

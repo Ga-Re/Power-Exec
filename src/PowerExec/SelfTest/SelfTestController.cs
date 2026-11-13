@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
@@ -440,7 +441,7 @@ public sealed partial class SelfTestController : AppController
                 var report = new System.Text.StringBuilder();
                 report.AppendLine("### Hintergrund hinter dem Panel");
                 report.AppendLine();
-                report.AppendLine($"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(transparency ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
+                report.AppendLine(CultureInfo.InvariantCulture, $"Windows-Build {Environment.OSVersion.Version.Build} · Transparenzeffekte {(transparency ? "an" : "aus")} · Deckkraft 40 %, Breite 560");
                 report.AppendLine();
                 report.AppendLine("| Variante | Läuft als | Weichzeichner | Helligkeitsschicht (WPF) | Fenster (px) | Panelrahmen (px) | Kontrast hinter dem Panel (0–255) | Kontrast nach 1,5 s | Gleiten: Bilder · längstes Bild |");
                 report.AppendLine("|---|---|---|---:|---|---|---:|---:|---|");
@@ -508,7 +509,7 @@ public sealed partial class SelfTestController : AppController
                     await Task.Delay(1500);
                     var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                     var glassState = host.Window.GlassActive ? "aktiv" : host.Window.GlassError is { } ge ? "Fehler: " + ge.Replace("|", "/") : "–";
-                    report.AppendLine($"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
+                    report.AppendLine(CultureInfo.InvariantCulture, $"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
                     if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
                         Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
                     if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + name);
@@ -540,7 +541,7 @@ public sealed partial class SelfTestController : AppController
                         host.Config.Pinned = pinned;
                         var c3 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                         ScreenCapture(wr.Left, wr.Top, wr.Right - wr.Left, wr.Bottom - wr.Top, "panel-bildschirm-glas-inaktiv");
-                        report.AppendLine($"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
+                        report.AppendLine(CultureInfo.InvariantCulture, $"| glas, Panel inaktiv | Glass | aktiv | – | – | – | {c3:0.0} | – | – |");
                     }
                     host.Window.HidePanel();
                     await Settle();
@@ -559,7 +560,7 @@ public sealed partial class SelfTestController : AppController
                         System.Windows.Media.CompositionTarget.Rendering -= onFrame2;
                         await Task.Delay(400);
                         if (!host.Window.IsSettledForTest) Fail("Glas: Panel steht nach dem Ausfahren nicht an seiner Ziellage");
-                        report.AppendLine($"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
+                        report.AppendLine(CultureInfo.InvariantCulture, $"| glas, erneut ausgefahren (geparkt) | Glass | aktiv | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
                         host.Window.HidePanel();
                         await Settle();
                     }
@@ -675,9 +676,9 @@ public sealed partial class SelfTestController : AppController
                 }
                 catch (Exception ex) { Fail("Variablen: PowerShell-Variable – " + ex.Message); }
                 var secret = SecretProtector.Protect("geheim äöü");
-                if (!secret.StartsWith("dpapi:") || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
+                if (!secret.StartsWith("dpapi:", StringComparison.Ordinal) || SecretProtector.Unprotect(secret) != "geheim äöü") Fail("Variablen: geheimer Wert lässt sich nicht ver-/entschlüsseln");
                 var gruss = Settings.CustomEntries.First(e => e.Name == "Firmengruß").WithValues(new Dictionary<string, string>());
-                if (!gruss.Code.StartsWith("Grüße von Med360° am ")) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
+                if (!gruss.Code.StartsWith("Grüße von Med360° am ", StringComparison.Ordinal)) Fail($"Variablen: Snippet ergibt „{gruss.Code}“");
                 // Bearbeiten-Dialog einer Variable (je Art andere Felder)
                 var varPage = new VariablesViewModel(this, SettingsStore.Clone(Settings));
                 foreach (var row in varPage.Items) await ShowAndClose(VariableWindow.ForTest(row));
@@ -956,7 +957,7 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
                 if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
-                if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe"))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
+                if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
                 var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
                 if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
                 await ShowAndClose(ColorPickerWindow.ForTest());
@@ -990,7 +991,7 @@ public sealed partial class SelfTestController : AppController
 
             Step("Feste Gruppen: Reihenfolge und Arbeitsbereich");
             {
-                var vm0 = _hosts[0].ViewModel;
+                var vm0 = Hosts[0].ViewModel;
                 vm0.Rebuild();
                 if (!vm0.Groups.Any(g => g.Kind == "fav")) Fail("Feste Gruppen: Favoriten fehlen im Panel");
                 var ws = WorkspaceManager.Active(Settings);
@@ -1013,11 +1014,11 @@ public sealed partial class SelfTestController : AppController
 
             Step("Gruppenfarbe und Darstellung je Gruppe");
             {
-                var ad = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
+                var ad = Hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin/AD");
                 if (ad == null || !ad.HasColor || ad.ColorHex != "#22C55E") Fail("Gruppenfarbe wird nicht an die Untergruppe vererbt");
                 if (ad == null || !ad.IsGrid) Fail("Darstellung je Gruppe (Raster) wird nicht übernommen");
-                var admin = _hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
-                if (admin != null && _hosts[0].ViewModel.IsGrid == false && admin.IsGrid) Fail("Gruppe ohne eigene Darstellung folgt nicht dem Panel");
+                var admin = Hosts[0].ViewModel.AllGroups.FirstOrDefault(g => g.GroupPath == "Admin");
+                if (admin != null && Hosts[0].ViewModel.IsGrid == false && admin.IsGrid) Fail("Gruppe ohne eigene Darstellung folgt nicht dem Panel");
             }
 
             Step("Einstellungen");
@@ -1032,14 +1033,14 @@ public sealed partial class SelfTestController : AppController
 
             // Live-Übernahme: allgemeine Einstellung ohne Neuaufbau der Panels, Panel-Einstellung mit
             Step("Live-Übernahme");
-            var hostBefore = _hosts[0];
+            var hostBefore = Hosts[0];
             settingsVm.RecentRunsCount = 7;
             settingsWindow.ApplyNowForTest();
             if (Settings.RecentRunsCount != 7) Fail("Live-Übernahme: allgemeine Einstellung nicht übernommen");
-            if (!ReferenceEquals(hostBefore, _hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
+            if (!ReferenceEquals(hostBefore, Hosts[0])) Fail("Live-Übernahme: Panels unnötig neu erzeugt");
             settingsVm.Panel.PanelWidth = 512;
             settingsWindow.ApplyNowForTest();
-            if (Settings.Panels[0].PanelWidth != 512 || _hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
+            if (Settings.Panels[0].PanelWidth != 512 || Hosts[0].Config.PanelWidth != 512) Fail("Live-Übernahme: Panelbreite nicht übernommen");
 
             // Ecken: die Einstellung überschreibt die Radius-Tokens für alle Fenster und kehrt sauber zurück
             Step("Ecken");
@@ -1063,8 +1064,8 @@ public sealed partial class SelfTestController : AppController
             // Änderung im Panel (Eintrag in Gruppe ziehen) → Einstellungsfenster zeigt den neuen Stand
             Step("Änderung im Panel");
             var entryKey = Settings.CustomEntries.First(c => c.Name == "Intranet").Key;
-            var leer = _hosts[0].ViewModel.AllGroups.First(g => g.GroupPath == "Leer");
-            _hosts[0].ViewModel.MoveKeyToGroup(entryKey, leer);
+            var leer = Hosts[0].ViewModel.AllGroups.First(g => g.GroupPath == "Leer");
+            Hosts[0].ViewModel.MoveKeyToGroup(entryKey, leer);
             await Settle();
             if (GroupManager.GroupOf(Settings, entryKey) != "Leer") Fail("Ablegen in Gruppe: Zuordnung fehlt");
             var reloaded = settingsWindow.CurrentViewModel;
@@ -1094,7 +1095,7 @@ public sealed partial class SelfTestController : AppController
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (WorkspaceManager.ShowsGroup(Settings, "Leer")) Fail("Arbeitsbereich: Gruppe ausblenden nicht übernommen");
-                if (_hosts[0].ViewModel.AllGroups.Any(g => g.GroupPath == "Leer")) Fail("Arbeitsbereich: ausgeblendete Gruppe weiter im Panel");
+                if (Hosts[0].ViewModel.AllGroups.Any(g => g.GroupPath == "Leer")) Fail("Arbeitsbereich: ausgeblendete Gruppe weiter im Panel");
                 settingsVm = settingsWindow.CurrentViewModel;
                 settingsVm.Section = "workspaces";
                 await Settle();
@@ -1192,7 +1193,7 @@ public sealed partial class SelfTestController : AppController
                 if (listGroup.MachinesInline != "SRV-B1, SRV-B2") Fail($"Rechnergruppen: Listenfilter liefert {listGroup.MachinesInline}");
                 if (listGroup.ToGroup().ListQuery?.Filters.Count != 1) Fail("Rechnergruppen: Listen-Gruppe geht beim Speichern verloren");
             }
-            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "market-entries", "market-scripts", "market-designs", "market-installed", "market-sources", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+            foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
             {
                 settingsVm.Section = section;
                 Step("Einstellungen " + section);
@@ -1200,6 +1201,52 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement root) Screenshot(root, "settings-" + section);
                 if (settingsWindow.NavigationSectionForTest != section)
                     Fail($"Navigation: Abschnitt „{section}“ ist in der Leiste nicht ausgewählt ({settingsWindow.NavigationSectionForTest ?? "nichts"})");
+                await Settle();
+            }
+
+            Step("Marktplatz als eigenes Fenster");
+            {
+                var marketVm = new MarketplaceWindowViewModel(this, _ => { });
+                var marketWindow = new MarketplaceWindow(marketVm);
+                marketWindow.Show();
+                // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
+                await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
+                await Settle();
+                if (marketVm.Tabs.Count != 6) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 6");
+                if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
+                if (marketVm.Page.Cards.Count == 0) Fail("Marktplatz: keine Karten in „Entdecken“");
+                else
+                {
+                    if (marketVm.Page.Categories.Count == 0) Fail("Marktplatz: keine Kategorien in der Navigation");
+                    // Details aufklappen: die Karte nimmt die ganze Zeile ein, es ist immer nur eine offen
+                    var firstCard = marketVm.Page.Cards[0];
+                    firstCard.TogglePreviewCommand.Execute(null);
+                    await Settle();
+                    if (marketWindow.Content is FrameworkElement openRoot) Screenshot(openRoot, "marktplatz-details");
+                    if (marketVm.Page.Cards.Count > 1)
+                    {
+                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+                        if (firstCard.IsPreviewOpen || !marketVm.Page.Cards[1].IsPreviewOpen) Fail("Marktplatz: mehr als eine Karte aufgeklappt");
+                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+                    }
+                    if (marketVm.Page.Categories.Count > 0)
+                    {
+                        var category = marketVm.Page.Categories[0];
+                        category.SelectCommand.Execute(null);
+                        await Settle();
+                        if (marketVm.Page.Cards.Count != category.Count) Fail($"Marktplatz: Kategorie „{category.Name}“ zeigt {marketVm.Page.Cards.Count} statt {category.Count} Karten");
+                        if (marketWindow.Content is FrameworkElement catRoot) Screenshot(catRoot, "marktplatz-kategorie");
+                        marketVm.Page.Category = string.Empty;
+                    }
+                }
+                foreach (var tab in marketVm.Tabs.Select(t => t.Key).ToList())
+                {
+                    marketVm.Tab = tab;
+                    await Settle();
+                    if (marketVm.Tab != tab) Fail($"Marktplatz: Reiter „{tab}“ lässt sich nicht wählen");
+                    if (marketWindow.Content is FrameworkElement marketRoot) Screenshot(marketRoot, "marktplatz-" + tab.ToLowerInvariant());
+                }
+                marketWindow.Close();
                 await Settle();
             }
 
@@ -1219,11 +1266,13 @@ public sealed partial class SelfTestController : AppController
                 if (settingsWindow.Content is FrameworkElement compactRoot) Screenshot(compactRoot, "settings-navigation-eingeklappt");
                 nav.IsPaneOpen = true;
                 await Settle();
-                // Oberkategorien (Inhalte, Marktplatz, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
+                // Oberkategorien (Inhalte, Panel, Ausführung, Hilfe) lassen sich ein- und ausklappen
                 var categories = nav.MenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Where(i => i.MenuItems.Count > 0).ToList();
-                if (categories.Count != 5) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 5");
-                if (categories.FirstOrDefault(c => (c.Content as string) == "Marktplatz") is not { } market || market.MenuItems.Count != 5)
-                    Fail("Navigation: Marktplatz fehlt als eigener Bereich mit Einträge, Scripte, Designs, Installiert und Quellen");
+                if (categories.Count != 4) Fail($"Navigation: {categories.Count} einklappbare Oberkategorien statt 4");
+                // Der Marktplatz ist ein eigenes Fenster: in den Einstellungen nur noch ein Verweis in der Fußzeile
+                if (categories.Any(c => (c.Content as string) == "Marktplatz")) Fail("Navigation: Marktplatz steht noch als Bereich in den Einstellungen");
+                if (!nav.FooterMenuItems.OfType<Wpf.Ui.Controls.NavigationViewItem>().Any(i => (i.Content as string) == "Marktplatz"))
+                    Fail("Navigation: Verweis auf den Marktplatz fehlt in der Fußzeile");
                 if (categories.FirstOrDefault(c => (c.Content as string) == "Ausführung") is { } exec)
                 {
                     // Weiches Auf-/Zuklappen: kurz nach dem Klick ist die Liste noch unterwegs, danach ganz da bzw. weg.
@@ -1232,22 +1281,31 @@ public sealed partial class SelfTestController : AppController
                     await Settle();
                     var fullHeight = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     if (fullHeight < 1) Fail("Navigation: aufgeklappte Oberkategorie zeigt keine Unterpunkte");
+                    // Zwischenstand abtasten statt einmal nach fester Zeit messen: auf langsamen Rechnern beginnt die Bewegung später.
+                    async Task<double> MidHeight()
+                    {
+                        double h = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                        for (int i = 0; i < 40 && !(h > 0.5 && h < fullHeight - 0.5); i++)
+                        {
+                            await Task.Delay(15);
+                            h = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                        }
+                        return h;
+                    }
                     exec.IsExpanded = false;
-                    await Task.Delay(70);
-                    var midClose = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    var midClose = await MidHeight();
                     await Settle();
                     var closed = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     exec.IsExpanded = true;
-                    await Task.Delay(70);
-                    var midOpen = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
+                    var midOpen = await MidHeight();
                     await Settle();
                     var reopened = Infrastructure.NavigationMotion.ChildrenHeightForTest(exec);
                     Step($"Navigation: Unterpunkte {fullHeight:0} → zu {midClose:0} … {closed:0} → auf {midOpen:0} … {reopened:0} px");
                     Step("Navigation: Unterpunkte " + Infrastructure.NavigationMotion.ChildrenStateForTest(exec));
                     if (Settings.Animation != AnimationMode.Off)
                     {
-                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px nach 70 ms)");
-                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px nach 70 ms)");
+                        if (!(midClose > 0 && midClose < fullHeight)) Fail($"Navigation: Zuklappen ohne Bewegung ({midClose:0} von {fullHeight:0} px)");
+                        if (!(midOpen > 0 && midOpen < fullHeight)) Fail($"Navigation: Aufklappen ohne Bewegung ({midOpen:0} von {fullHeight:0} px)");
                     }
                     if (closed > 0.5 || Math.Abs(reopened - fullHeight) > 1) Fail($"Navigation: nach dem Klappen {closed:0} bzw. {reopened:0} statt 0 bzw. {fullHeight:0} px");
                     exec.IsExpanded = false;
@@ -1368,7 +1426,7 @@ public sealed partial class SelfTestController : AppController
                 var enWindow = new SettingsWindow(enVm, this);
                 enWindow.Show();
                 await Settle();
-                foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "market-entries", "market-scripts", "market-designs", "market-installed", "market-sources", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
+                foreach (var section in new[] { "general", "groups", "custom", "tags", "workspaces", "variables", "look", "behavior", "exec", "remote", "machines", "samples", "diag" })
                 {
                     enVm.Section = section;
                     await Settle();
@@ -1425,6 +1483,44 @@ public sealed partial class SelfTestController : AppController
                 await ShowAndClose(new ResultsWindow(tilesVm));
             }
             await ShowAndClose(IconPickerWindow.ForTest());
+
+            Step("Eingaben mit Vorlage: Schlagworte und Rechner");
+            {
+                var tagBox = new Controls.TagBox { TagsText = "alpha, beta", Suggestions = new[] { "alpha", "beta", "gamma" } };
+                var machineBox = new Controls.MachineBox { Text = "SRV-01, @Server", Margin = new Thickness(0, 12, 0, 0) };
+                var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(16) };
+                stack.Children.Add(tagBox);
+                stack.Children.Add(machineBox);
+                var boxWindow = new Window { Content = stack, Width = 520, Height = 180, Style = (Style)Application.Current.FindResource("AppWindow"), Title = "Eingaben" };
+                boxWindow.Show();
+                await Settle();
+                static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+                {
+                    for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+                    {
+                        var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                        if (child is T hit) yield return hit;
+                        foreach (var deeper in Descendants<T>(child)) yield return deeper;
+                    }
+                }
+                var removeButtons = Descendants<Wpf.Ui.Controls.Button>(tagBox).ToList();
+                if (removeButtons.Count != 2) Fail($"TagBox: {removeButtons.Count} Chips statt 2");
+                else
+                {
+                    if (removeButtons[0].Command is System.Windows.Input.RoutedCommand rc) rc.Execute(removeButtons[0].CommandParameter, removeButtons[0]);
+                    await Settle();
+                    if (tagBox.TagsText != "beta") Fail($"TagBox: Entfernen eines Chips ergibt „{tagBox.TagsText}“ statt „beta“");
+                }
+                if (Descendants<System.Windows.Controls.TextBox>(machineBox).FirstOrDefault() is not { } machineInput) Fail("MachineBox: Eingabefeld fehlt in der Vorlage");
+                else
+                {
+                    if (machineInput.Text != "SRV-01, @Server") Fail($"MachineBox: Eingabe zeigt „{machineInput.Text}“");
+                    machineInput.Text = "SRV-02";
+                    if (machineBox.Text != "SRV-02") Fail("MachineBox: Eingabe wird nicht in Text übernommen");
+                }
+                Screenshot(stack, "eingaben-vorlagen");
+                boxWindow.Close();
+            }
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(NewGroupWindow.ForTest());
             await ShowAndClose(ChoiceWindow.ForTest());
@@ -1489,11 +1585,11 @@ public sealed partial class SelfTestController : AppController
             var snippet = Settings.CustomEntries.First(c => c.Name == "Ping");
             var snippetItem = DescribeCustom(snippet);
             if (!File.Exists(snippet.SnippetPath) || snippetItem.Parameters.Count != 1) Fail("PowerShell-Snippet: Datei oder param() nicht erkannt");
-            if (!_hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
+            if (!Hosts[0].ViewModel.AllItems.Any(i => i.IsSingleClick)) Fail("Ein-Klick-Eintrag fehlt im Panel");
             // Jeder eigene Eintrag muss im Hauptpanel erscheinen (Snippets haben kein Ziel!)
-            _hosts[0].ViewModel.ResetForNextOpen();
+            Hosts[0].ViewModel.ResetForNextOpen();
             foreach (var c in Settings.CustomEntries)
-                if (!_hosts[0].ViewModel.AllItems.Any(i => i.Item.FullPath.Equals(c.Key, StringComparison.OrdinalIgnoreCase)))
+                if (!Hosts[0].ViewModel.AllItems.Any(i => i.Item.FullPath.Equals(c.Key, StringComparison.OrdinalIgnoreCase)))
                     Fail($"Eigener Eintrag fehlt im Panel: {c.Name} ({c.Kind})");
 
             Step("Arbeitsbereich wechseln");
@@ -1523,9 +1619,9 @@ public sealed partial class SelfTestController : AppController
     private void Fail(string message) => _selfTestErrors.Add(message);
 
     /// <summary>WPF-Seite der Panels (Fenster, Hover-Zonen, Docks) für die Prüfungen.</summary>
-    private IReadOnlyList<PanelHost> WpfHosts => _hosts.Select(h => (PanelHost)h.View).ToList();
+    private IReadOnlyList<PanelHost> WpfHosts => Hosts.Select(h => (PanelHost)h.View).ToList();
 
-    private PanelHost WpfHost(int index) => (PanelHost)_hosts[index].View;
+    private PanelHost WpfHost(int index) => (PanelHost)Hosts[index].View;
 
     /// <summary>Bildschirmfoto eines Fensters (Inhalt) für die Sichtprüfung als CI-Artefakt.</summary>
     private void Screenshot(FrameworkElement element, string name)

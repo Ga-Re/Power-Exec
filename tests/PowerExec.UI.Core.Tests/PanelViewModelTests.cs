@@ -112,7 +112,7 @@ public class PanelViewModelTests
         item.EditCommand.Execute(null);
         item.ToggleFavoriteCommand.Execute(null);
 
-        Assert.Contains(host.Calls, c => c.StartsWith("RunProfile procexp Administrator") || c.StartsWith("OpenRunDialog procexp Administrator"));
+        Assert.Contains(host.Calls, c => c.StartsWith("RunProfile procexp Administrator", StringComparison.Ordinal) || c.StartsWith("OpenRunDialog procexp Administrator", StringComparison.Ordinal));
         Assert.Equal(new[] { @"C:\Scripts\procexp.exe" }, host.FakeShell.Clipboard);
         Assert.Equal((@"C:\Scripts\procexp.exe", false), Assert.Single(host.FakeShell.Opened));
         Assert.Contains("ToggleFavorite procexp", host.Calls);
@@ -127,7 +127,7 @@ public class PanelViewModelTests
         Assert.False(g.HasColor);
         Assert.Null(g.AccentColor);
         Assert.Equal(ArgbColor.Transparent, g.CardBackgroundColor);
-        Assert.Contains(g.ColorChoices, c => c.Name.StartsWith("Eigene Farbe"));
+        Assert.Contains(g.ColorChoices, c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal));
         Assert.DoesNotContain(g.ColorChoices, c => c.Name == "Farbe entfernen");
         Assert.True(g.ColorChoices.Where(c => !c.IsAction).All(c => c.SwatchColor != null));
     }
@@ -191,7 +191,7 @@ public class PanelViewModelTests
 
         vm.SaveCheckedAsWorkflowCommand.Execute(null);
 
-        Assert.DoesNotContain(host.Calls, c => c.StartsWith("CreateWorkflow"));
+        Assert.DoesNotContain(host.Calls, c => c.StartsWith("CreateWorkflow", StringComparison.Ordinal));
         Assert.True(vm.HasMultiSelection);
     }
 

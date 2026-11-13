@@ -87,6 +87,7 @@ public sealed class WpfAppUi : IAppUi
 
     public IAppWindow ShowSchedule(ScheduleViewModel vm) => Show(new ScheduleWindow(vm));
     public IAppWindow ShowWorkflow(WorkflowEditorViewModel vm) => Show(new WorkflowWindow(vm));
+    public IAppWindow ShowMarketplace(MarketplaceWindowViewModel vm) => Show(new MarketplaceWindow(vm));
     public IAppWindow ShowWelcome(WelcomeViewModel vm, Action<bool> finished) => Show(new WelcomeWindow(vm, finished));
 
     public ISettingsWindow ShowSettings(SettingsViewModel vm)

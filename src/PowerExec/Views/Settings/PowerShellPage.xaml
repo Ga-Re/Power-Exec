@@ -43,7 +43,7 @@
         </c:SettingsCard>
         <TextBlock Text="{l:T 'Good to know'}" Style="{StaticResource SettingsSection}"/>
         <c:SettingsExpander Icon="&#xE946;" Header="{l:T 'How Power-Exec runs scripts'}" Description="{l:T 'Network drives, companion files, delegation'}">
-            <StackPanel Margin="0,6">
+            <StackPanel Margin="0,8">
                 <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Network paths: '}"/><Run Text="{l:T 'Mapped drives are converted to UNC paths before launch – elevated processes and other accounts don\'t see mapped drives.'}"/></TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Companion files for remote: '}"/><Run Text="{l:T '“Send script folder along” copies modules and files via the remote session and deletes them afterwards. Permanently with “PowerExec: CopyFolder” under .NOTES.'}"/></TextBlock>
                 <TextBlock TextWrapping="Wrap" Margin="0,4"><Run FontWeight="SemiBold" Text="{l:T 'Delegation (CredSSP): '}"/><Run Text="{l:T 'is deliberately not supported because credentials would be passed on to the target computer.'}"/></TextBlock>

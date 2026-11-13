@@ -57,6 +57,7 @@ public interface IAppUi : IDisposable
     void ShowProfilesModal(ProfilesViewModel vm, object? owner);
     IAppWindow ShowSchedule(ScheduleViewModel vm);
     IAppWindow ShowWorkflow(WorkflowEditorViewModel vm);
+    IAppWindow ShowMarketplace(MarketplaceWindowViewModel vm);
 
     /// <summary>Einführung; <paramref name="finished"/> mit true, wenn danach das Panel gezeigt werden soll.</summary>
     IAppWindow ShowWelcome(WelcomeViewModel vm, Action<bool> finished);

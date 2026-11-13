@@ -55,7 +55,7 @@ public sealed class ExclusionMatcher
     {
         var e = Normalize(exclusion);
         if (e.IndexOfAny(['*', '?']) < 0) return ExclusionKind.File;
-        if (e.StartsWith("*.") && e.IndexOfAny(['\\', '*', '?'], 2) < 0) return ExclusionKind.Type;
+        if (e.StartsWith("*.", StringComparison.Ordinal) && e.IndexOfAny(['\\', '*', '?'], 2) < 0) return ExclusionKind.Type;
         return ExclusionKind.Pattern;
     }
 

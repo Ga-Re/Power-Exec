@@ -331,7 +331,7 @@ public sealed class ItemViewModel : ObservableObject
 
     /// <summary>Menü „In Gruppe verschieben“: alle eigenen Gruppen außer der aktuellen.</summary>
     public IReadOnlyList<GroupChoice> GroupChoices => GroupManager.All(_app.Settings)
-        .Where(g => !g.Equals(GroupName, StringComparison.CurrentCultureIgnoreCase))
+        .Where(g => !g.Equals(GroupName, StringComparison.OrdinalIgnoreCase))
         .Select(g => new GroupChoice(GroupManager.Display(g), new RelayCommand(() => _app.AssignGroup(Item.FullPath, g))))
         .ToList();
     public bool HasGroupChoices => GroupChoices.Count > 0;

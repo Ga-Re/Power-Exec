@@ -17,8 +17,8 @@
         <DockPanel Margin="0,0,0,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                 <ui:Button Style="{StaticResource Btn.Accent}" Click="NewEntryMenu_Click" Margin="8,0,0,0">
-                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'New'}"/>
-                        <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}" Margin="6,0,0,0"/></StackPanel>
+                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'New'}"/>
+                        <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}" Margin="8,0,0,0"/></StackPanel>
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="{l:T 'New entry …'}" Command="{Binding NewCommand}"/>
@@ -41,7 +41,7 @@
             </StackPanel>
             <Grid>
                 <TextBox Text="{Binding Query, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="28,0,8,0" Tag="{l:T 'Search (name, target, code, #tag)'}"/>
-                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
             </Grid>
         </DockPanel>
         <!-- Typ-Filter: die häufigsten als Chips, der Rest im Dropdown – bleibt auch in schmalen Fenstern einzeilig -->
@@ -56,7 +56,7 @@
         <DockPanel Margin="0,0,0,8">
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding CheckCommand}"
                     ToolTip="{l:T 'Check websites, folders, files, RDP/SSH ports and programs (selection or all visible)'}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/><TextBlock Text="{Binding CheckText}"/></StackPanel>
             </ui:Button>
             <StackPanel Orientation="Horizontal">
                 <ComboBox Width="190" ItemsSource="{Binding GroupFilters}" SelectedValue="{Binding GroupFilter}" DisplayMemberPath="Value" SelectedValuePath="Key">
@@ -88,11 +88,11 @@
         <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Margin="0,0,0,8"
                 Visibility="{Binding HasSelection, Converter={StaticResource Vis}}">
             <WrapPanel VerticalAlignment="Center">
-                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,14,0"/>
-                <ComboBox Width="190" IsEditable="True" ItemsSource="{Binding MoveTargets}" Text="{Binding MoveTarget, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,6,2"/>
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Move to group'}" Command="{Binding MoveSelectedCommand}" Margin="0,2,10,2" />
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Export …'}" Command="{Binding ExportCommand}" Margin="0,2,6,2" />
-                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,6,2" />
+                <TextBlock Text="{Binding SelectionText}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <ComboBox Width="190" IsEditable="True" ItemsSource="{Binding MoveTargets}" Text="{Binding MoveTarget, UpdateSourceTrigger=PropertyChanged}" Margin="0,2,8,2"/>
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Move to group'}" Command="{Binding MoveSelectedCommand}" Margin="0,2,12,2" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Export …'}" Command="{Binding ExportCommand}" Margin="0,2,8,2" />
+                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding RemoveSelectedCommand}" Margin="0,2,8,2" />
                 <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Clear selection'}" Command="{Binding ClearSelectionCommand}" Margin="0,2,0,2" />
             </WrapPanel>
         </Border>
@@ -104,7 +104,7 @@
         <Border Style="{StaticResource Card}" Padding="0" Visibility="{Binding IsEmpty, Converter={StaticResource Vis}, ConverterParameter=invert}">
             <StackPanel>
                 <!-- Kopfzeile -->
-                <Grid Margin="10,8,10,6">
+                <Grid Margin="12,8,12,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="28"/>
                         <ColumnDefinition Width="40"/>
@@ -121,7 +121,7 @@
                 <ItemsControl ItemsSource="{Binding VisibleRows}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border x:Name="EntryRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="10,5" Background="Transparent"
+                            <Border x:Name="EntryRow" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="12,5" Background="Transparent"
                                     PreviewMouseLeftButtonDown="EntryRow_PreviewMouseLeftButtonDown" PreviewMouseMove="EntryRow_PreviewMouseMove"
                                     ToolTip="{l:T 'Drag into the panel to sort it in (to the screen edge, the panel slides out)'}" ToolTipService.InitialShowDelay="1500">
                                 <Grid>
@@ -143,13 +143,13 @@
                                                Visibility="{Binding HasImage, Converter={StaticResource Vis}}"/>
                                         <c:IconPresenter Icon="{Binding Icon}" Size="20" Visibility="{Binding HasIcon, Converter={StaticResource Vis}}" Foreground="{DynamicResource Text.Primary}"/>
                                     </Grid>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,12,0">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="320"/>
                                             <TextBlock Text="{Binding KindText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
-                                            <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="6,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
+                                            <TextBlock Text="&#xE8B0;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="8,1,0,0" Foreground="{DynamicResource Text.Tertiary}"
                                                        ToolTip="{l:T 'Starts with one click'}" Visibility="{Binding SingleClick, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Text="{}{{…}}" FontSize="{StaticResource Font.Caption}" Margin="6,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="{l:T 'With placeholders'}"
+                                            <TextBlock Text="{}{{…}}" FontSize="{StaticResource Font.Caption}" Margin="8,1,0,0" Foreground="{DynamicResource Accent}" ToolTip="{l:T 'With placeholders'}"
                                                        Visibility="{Binding HasPlaceholders, Converter={StaticResource Vis}}"/>
                                         </StackPanel>
                                         <TextBlock Text="{Binding Detail}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>

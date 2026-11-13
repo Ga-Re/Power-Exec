@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace PowerExec.Core.Config;
@@ -23,7 +24,7 @@ public static class Placeholders
             {
                 var name = m.Groups[1].Value.Trim();
                 if (IsBuiltin(name)) continue; // {{$Date}} usw. werden nicht abgefragt
-                if (name.Length == 0 || result.Any(p => p.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase))) continue;
+                if (name.Length == 0 || result.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) continue;
                 result.Add(new Placeholder(name, m.Groups[2].Success ? m.Groups[2].Value : string.Empty));
             }
         }
@@ -60,8 +61,8 @@ public static class Placeholders
         var t = now ?? DateTime.Now;
         return Variables.Normalize(name).ToLowerInvariant() switch
         {
-            "date" => t.ToString(Variables.DefaultDateFormat),
-            "time" => t.ToString(Variables.DefaultTimeFormat),
+            "date" => t.ToString(Variables.DefaultDateFormat, CultureInfo.CurrentCulture),
+            "time" => t.ToString(Variables.DefaultTimeFormat, CultureInfo.CurrentCulture),
             "user" => Environment.UserName,
             "computer" => Environment.MachineName,
             "clipboard" => ClipboardText?.Invoke() ?? string.Empty,
@@ -87,7 +88,7 @@ public static class Placeholders
                 if (powerShell) variable = Variables.EscapeForPowerShell(variable);
                 return urlEncode && query >= 0 && m.Index > query ? Uri.EscapeDataString(variable) : variable;
             }
-            var value = values.FirstOrDefault(kv => kv.Key.Equals(name, StringComparison.CurrentCultureIgnoreCase)).Value
+            var value = values.FirstOrDefault(kv => kv.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value
                         ?? (m.Groups[2].Success ? m.Groups[2].Value : string.Empty);
             return urlEncode ? Uri.EscapeDataString(value) : value;
         });

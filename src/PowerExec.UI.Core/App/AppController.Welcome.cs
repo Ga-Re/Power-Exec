@@ -20,7 +20,7 @@ public partial class AppController
         var w = Ui.ShowWelcome(new WelcomeViewModel(this), tryPanel =>
         {
             _welcome = null;
-            if (tryPanel) ShowPanelFromHotkey(_hosts.FirstOrDefault());
+            if (tryPanel) ShowPanelFromHotkey(Hosts.FirstOrDefault());
         });
         _welcome = w;
         w.Closed += () => { if (_welcome == w) _welcome = null; };
@@ -32,7 +32,7 @@ public partial class AppController
         WhatsNew = null;
         Settings.LastSeenVersion = UpdateService.CurrentVersionText;
         SaveSettings();
-        foreach (var h in _hosts) h.ViewModel.RefreshWhatsNew();
+        foreach (var h in Hosts) h.ViewModel.RefreshWhatsNew();
     }
 
     /// <summary>Selbsttest: Namenseingabe ohne Dialog beantworten.</summary>
@@ -42,6 +42,6 @@ public partial class AppController
     internal void ShowWhatsNewForTest(ReleaseNote note)
     {
         WhatsNew = note;
-        foreach (var h in _hosts) h.ViewModel.RefreshWhatsNew();
+        foreach (var h in Hosts) h.ViewModel.RefreshWhatsNew();
     }
 }

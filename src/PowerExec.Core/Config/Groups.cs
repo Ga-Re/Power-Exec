@@ -34,7 +34,7 @@ public static class GroupManager
     public static string Display(string path) => path.Replace(Separator.ToString(), " › ");
 
     public static bool IsSameOrBelow(string path, string ancestor) =>
-        path.Equals(ancestor, StringComparison.CurrentCultureIgnoreCase) ||
+        path.Equals(ancestor, StringComparison.OrdinalIgnoreCase) ||
         path.StartsWith(ancestor + Separator, StringComparison.CurrentCultureIgnoreCase);
 
     /// <summary>Alle Gruppen (Pfade) in Anzeigereihenfolge; übergeordnete Gruppen stehen immer vor ihren Untergruppen.</summary>
@@ -56,7 +56,7 @@ public static class GroupManager
     }
 
     public static IReadOnlyList<string> ChildrenOf(AppSettings s, string? parent) =>
-        All(s).Where(p => string.Equals(ParentOf(p), parent, StringComparison.CurrentCultureIgnoreCase)).ToList();
+        All(s).Where(p => string.Equals(ParentOf(p), parent, StringComparison.OrdinalIgnoreCase)).ToList();
 
     public static bool Exists(AppSettings s, string path) =>
         All(s).Contains(Normalize(path), StringComparer.CurrentCultureIgnoreCase);
@@ -94,7 +94,7 @@ public static class GroupManager
         if (newName.Length == 0 || !Exists(s, path)) return false;
         var parent = ParentOf(path);
         var newPath = parent == null ? newName : parent + Separator + newName;
-        if (!newPath.Equals(path, StringComparison.CurrentCultureIgnoreCase) && Exists(s, newPath)) return false;
+        if (!newPath.Equals(path, StringComparison.OrdinalIgnoreCase) && Exists(s, newPath)) return false;
         RenamePath(s, path, newPath);
         return true;
     }
@@ -109,9 +109,9 @@ public static class GroupManager
         // Smarte Gruppe gelöscht: Ordner wird nicht mehr eingelesen
         s.Folders.RemoveAll(f => f.Group.Length > 0 && IsSameOrBelow(f.Group, path));
         foreach (var ws in s.Workspaces) ws.HiddenGroups.RemoveAll(h => IsSameOrBelow(h, path));
-        foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path)).ToList())
+        foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix, StringComparison.Ordinal) && IsSameOrBelow(k[KeyPrefix.Length..], path)).ToList())
             s.CustomOrder.Remove(key);
-        s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], path));
+        s.CollapsedGroups.RemoveAll(k => k.StartsWith(KeyPrefix, StringComparison.Ordinal) && IsSameOrBelow(k[KeyPrefix.Length..], path));
         foreach (var key in s.GroupIcons.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) s.GroupIcons.Remove(key);
         foreach (var dict in new[] { s.GroupColors, s.GroupLayouts, s.GroupItemSizes })
             foreach (var key in dict.Keys.Where(k => IsSameOrBelow(k, path)).ToList()) dict.Remove(key);
@@ -120,14 +120,14 @@ public static class GroupManager
 
     /// <summary>Anzahl der Untergruppen (alle Ebenen).</summary>
     public static int DescendantCount(AppSettings s, string path) =>
-        All(s).Count(p => !p.Equals(path, StringComparison.CurrentCultureIgnoreCase) && IsSameOrBelow(p, path));
+        All(s).Count(p => !p.Equals(path, StringComparison.OrdinalIgnoreCase) && IsSameOrBelow(p, path));
 
     /// <summary>Gruppe unter ihren Geschwistern verschieben (−1 = nach oben, +1 = nach unten).</summary>
     public static void Move(AppSettings s, string path, int delta)
     {
         path = Normalize(path);
         var siblings = ChildrenOf(s, ParentOf(path)).ToList();
-        var i = siblings.FindIndex(c => c.Equals(path, StringComparison.CurrentCultureIgnoreCase));
+        var i = siblings.FindIndex(c => c.Equals(path, StringComparison.OrdinalIgnoreCase));
         var j = i + delta;
         if (i < 0 || j < 0 || j >= siblings.Count) return;
         MoveGroup(s, path, siblings[j], delta < 0 ? GroupDropPosition.Before : GroupDropPosition.After);
@@ -145,7 +145,7 @@ public static class GroupManager
         if (!Exists(s, path) || !Exists(s, target) || IsSameOrBelow(target, path)) return null;
         var newParent = position == GroupDropPosition.Into ? target : ParentOf(target);
         var newPath = newParent == null ? LeafOf(path) : newParent + Separator + LeafOf(path);
-        if (!newPath.Equals(path, StringComparison.CurrentCultureIgnoreCase))
+        if (!newPath.Equals(path, StringComparison.OrdinalIgnoreCase))
         {
             if (Exists(s, newPath)) return null; // gleichnamige Gruppe am Ziel
             RenamePath(s, path, newPath);
@@ -157,7 +157,7 @@ public static class GroupManager
         order.RemoveAll(p => IsSameOrBelow(p, newPath));
         int index;
         if (position == GroupDropPosition.Before)
-            index = order.FindIndex(p => p.Equals(target, StringComparison.CurrentCultureIgnoreCase));
+            index = order.FindIndex(p => p.Equals(target, StringComparison.OrdinalIgnoreCase));
         else
         {
             var last = order.FindLastIndex(p => IsSameOrBelow(p, target));
@@ -190,11 +190,11 @@ public static class GroupManager
     public static string GroupOf(AppSettings s, string path) => Normalize(s.FindEntry(path)?.Category);
 
     public static IconRef IconOf(AppSettings s, string groupPath) =>
-        s.GroupIcons.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)) is { Value: { } v } ? IconRef.Parse(v) : IconRef.None;
+        s.GroupIcons.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)) is { Value: { } v } ? IconRef.Parse(v) : IconRef.None;
 
     /// <summary>Eigene Farbe der Gruppe (ohne Vererbung), leer = keine.</summary>
     public static string OwnColorOf(AppSettings s, string groupPath) =>
-        s.GroupColors.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value ?? string.Empty;
+        s.GroupColors.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
 
     /// <summary>Wirksame Farbe: eigene oder die der nächsten übergeordneten Gruppe.</summary>
     public static string ColorOf(AppSettings s, string groupPath)
@@ -206,13 +206,13 @@ public static class GroupManager
 
     public static void SetColor(AppSettings s, string groupPath, string? color)
     {
-        foreach (var k in s.GroupColors.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupColors.Remove(k);
+        foreach (var k in s.GroupColors.Keys.Where(k => k.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).ToList()) s.GroupColors.Remove(k);
         if (PanelColors.TryParse(color, out var c)) s.GroupColors[Normalize(groupPath)] = c.Hex;
     }
 
     /// <summary>Darstellung der Gruppe: null = wie das Panel, sonst Liste oder Raster.</summary>
     public static ItemLayout? LayoutOf(AppSettings s, string groupPath) =>
-        s.GroupLayouts.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value switch
+        s.GroupLayouts.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).Value switch
         {
             "Grid" => ItemLayout.Grid,
             "List" => ItemLayout.List,
@@ -221,24 +221,24 @@ public static class GroupManager
 
     public static void SetLayout(AppSettings s, string groupPath, ItemLayout? layout)
     {
-        foreach (var k in s.GroupLayouts.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupLayouts.Remove(k);
+        foreach (var k in s.GroupLayouts.Keys.Where(k => k.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).ToList()) s.GroupLayouts.Remove(k);
         if (layout is ItemLayout.Grid or ItemLayout.List) s.GroupLayouts[Normalize(groupPath)] = layout == ItemLayout.Grid ? "Grid" : "List";
     }
 
     /// <summary>Elementgröße der Gruppe: null = wie das Panel.</summary>
     public static ItemSize? ItemSizeOf(AppSettings s, string groupPath) =>
-        Enum.TryParse<ItemSize>(s.GroupItemSizes.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).Value, out var size)
+        Enum.TryParse<ItemSize>(s.GroupItemSizes.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).Value, out var size)
             ? size : null;
 
     public static void SetItemSize(AppSettings s, string groupPath, ItemSize? size)
     {
-        foreach (var k in s.GroupItemSizes.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupItemSizes.Remove(k);
+        foreach (var k in s.GroupItemSizes.Keys.Where(k => k.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).ToList()) s.GroupItemSizes.Remove(k);
         if (size is { } v) s.GroupItemSizes[Normalize(groupPath)] = v.ToString();
     }
 
     public static void SetIcon(AppSettings s, string groupPath, IconRef icon)
     {
-        foreach (var k in s.GroupIcons.Keys.Where(k => k.Equals(groupPath, StringComparison.CurrentCultureIgnoreCase)).ToList()) s.GroupIcons.Remove(k);
+        foreach (var k in s.GroupIcons.Keys.Where(k => k.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).ToList()) s.GroupIcons.Remove(k);
         if (!icon.IsEmpty) s.GroupIcons[Normalize(groupPath)] = icon.ToString();
     }
 
@@ -252,7 +252,7 @@ public static class GroupManager
             var c = Normalize(e.Category);
             if (c.Length > 0 && IsSameOrBelow(c, oldPath)) e.Category = Map(c);
         }
-        foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix) && IsSameOrBelow(k[KeyPrefix.Length..], oldPath)).ToList())
+        foreach (var key in s.CustomOrder.Keys.Where(k => k.StartsWith(KeyPrefix, StringComparison.Ordinal) && IsSameOrBelow(k[KeyPrefix.Length..], oldPath)).ToList())
         {
             s.CustomOrder.Remove(key, out var order);
             s.CustomOrder[KeyPrefix + Map(key[KeyPrefix.Length..])] = order!;
@@ -268,7 +268,7 @@ public static class GroupManager
                 dict[Map(key)] = value!;
             }
         for (int i = 0; i < s.CollapsedGroups.Count; i++)
-            if (s.CollapsedGroups[i].StartsWith(KeyPrefix) && IsSameOrBelow(s.CollapsedGroups[i][KeyPrefix.Length..], oldPath))
+            if (s.CollapsedGroups[i].StartsWith(KeyPrefix, StringComparison.Ordinal) && IsSameOrBelow(s.CollapsedGroups[i][KeyPrefix.Length..], oldPath))
                 s.CollapsedGroups[i] = KeyPrefix + Map(s.CollapsedGroups[i][KeyPrefix.Length..]);
         foreach (var p in s.Panels)
             for (int i = 0; i < p.Categories.Count; i++)

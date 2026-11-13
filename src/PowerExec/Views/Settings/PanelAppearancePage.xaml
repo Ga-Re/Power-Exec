@@ -50,7 +50,7 @@
 
         <!-- Farbkachel wie in den Windows-Einstellungen: Quadrat, ausgewählt mit Rahmen und Häkchen -->
         <DataTemplate x:Key="ColorTile">
-            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,6,6" Cursor="Hand"
+            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
                     AutomationProperties.Name="{Binding ToolTip}" FocusVisualStyle="{StaticResource FocusVisual}">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
@@ -89,9 +89,9 @@
             <c:SettingsExpander.HeaderContent>
                 <c:DesignPreview Width="132" Height="70" Design="{Binding CurrentDesign}" ToolTip="{Binding CurrentPresetText}"/>
             </c:SettingsExpander.HeaderContent>
-            <StackPanel Margin="0,10,0,4">
+            <StackPanel Margin="0,12,0,4">
                 <TextBlock Text="{l:T 'Sets design, panel color, background, opacity, frosted glass and accent color at once – adjustable individually afterwards.'}"
-                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
                 <ItemsControl ItemsSource="{Binding DesignPresets}" Focusable="False">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
@@ -108,7 +108,7 @@
                                         <Border x:Name="Card" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                             <StackPanel>
                                                 <c:DesignPreview Height="84" Design="{Binding Preset}"/>
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding BackdropText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                                 <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
@@ -204,7 +204,7 @@
                         <Border Width="28" Height="28" CornerRadius="{DynamicResource Radius.Control}" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
                                 Background="{Binding AccentPreview, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
                         <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose color'}" Command="{Binding PickAccentCommand}"/>
-                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'From panel color'}" Command="{Binding ResetAccentCommand}" Margin="6,0,0,0"
+                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'From panel color'}" Command="{Binding ResetAccentCommand}" Margin="8,0,0,0"
                                    Visibility="{Binding HasAccentColor, Converter={StaticResource Vis}}"/>
                     </StackPanel>
                     <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
@@ -215,17 +215,17 @@
                     </StackPanel>
                 </DockPanel>
                 <TextBlock Text="{l:T 'The panel uses the surface of the light or dark design. For your own color, choose “Manual” above.'}"
-                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,10"
+                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,12"
                            Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                 <StackPanel Margin="0,8,0,4" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
                     <StackPanel Visibility="{Binding HasRecentColors, Converter={StaticResource Vis}}">
                         <TextBlock Text="{l:T 'Recently used colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
-                        <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                        <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,12">
                             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         </ItemsControl>
                     </StackPanel>
                     <TextBlock Text="{l:T 'Panel colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
-                    <ItemsControl ItemsSource="{Binding PanelColorChoices}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,10">
+                    <ItemsControl ItemsSource="{Binding PanelColorChoices}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,12">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                     </ItemsControl>
                     <TextBlock Text="{l:T 'Windows colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>

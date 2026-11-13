@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Models;
 
@@ -61,7 +62,7 @@ public sealed class PerfDataset
         {
             var sub = Subfolders[i % Subfolders.Length];
             string name;
-            do name = Verbs[rnd.Next(Verbs.Length)] + "-" + Nouns[rnd.Next(Nouns.Length)] + (rnd.Next(4) == 0 ? rnd.Next(2, 9).ToString() : string.Empty);
+            do name = Verbs[rnd.Next(Verbs.Length)] + "-" + Nouns[rnd.Next(Nouns.Length)] + (rnd.Next(4) == 0 ? rnd.Next(2, 9).ToString(CultureInfo.InvariantCulture) : string.Empty);
             while (!used.Add(sub + "/" + name));
             var roll = rnd.Next(100);
             var type = roll < 80 ? ItemType.PowerShell : roll < 92 ? ItemType.Batch : ItemType.Executable;

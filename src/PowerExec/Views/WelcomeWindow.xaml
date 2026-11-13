@@ -14,12 +14,12 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="Card" Width="120" Padding="10" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.Card}">
+                        <Border x:Name="Card" Width="120" Padding="12" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.Card}">
                             <StackPanel>
                                 <Grid Height="54" Background="{DynamicResource Bg.Subtle}">
                                     <Border x:Name="Strip" Background="{DynamicResource Accent}" CornerRadius="{DynamicResource Radius.Bar}"/>
                                 </Grid>
-                                <ContentPresenter Margin="0,6,0,0" HorizontalAlignment="Center"/>
+                                <ContentPresenter Margin="0,8,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -76,9 +76,9 @@
         </Border>
 
         <!-- Schrittleiste -->
-        <UniformGrid DockPanel.Dock="Top" Rows="1" Margin="24,18,24,0">
-            <Border x:Name="S0" Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,6,0" Background="{DynamicResource Accent}"/>
-            <Border Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,6,0">
+        <UniformGrid DockPanel.Dock="Top" Rows="1" Margin="24,20,24,0">
+            <Border x:Name="S0" Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,8,0" Background="{DynamicResource Accent}"/>
+            <Border Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,8,0">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Background" Value="{DynamicResource Bg.Chip}"/>
@@ -88,7 +88,7 @@
                     </Style>
                 </Border.Style>
             </Border>
-            <Border Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,6,0">
+            <Border Height="4" CornerRadius="{DynamicResource Radius.Bar}" Margin="0,0,8,0">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Background" Value="{DynamicResource Accent}"/>
@@ -111,12 +111,12 @@
             </Border>
         </UniformGrid>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,18,24,12">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,20,24,12">
             <Grid>
                 <!-- 1: Scripte -->
                 <StackPanel Visibility="{Binding IsStep0, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'Where are your scripts?'}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
+                    <TextBlock Style="{StaticResource Tip}" Margin="0,8,0,16"
                                Text="{l:T 'Power-Exec scans a folder with scripts and programs and shows them as a smart group in the panel. New files appear automatically. You add websites, folders, RDP and SSH later with a right-click in the panel.'}"/>
                     <ui:Button Style="{StaticResource Btn.Accent}" HorizontalAlignment="Left" Command="{Binding ChooseFolderCommand}">
                         <StackPanel Orientation="Horizontal">
@@ -140,7 +140,7 @@
                 <!-- 2: Rand -->
                 <StackPanel Visibility="{Binding IsStep1, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'On which edge should the panel appear?'}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
+                    <TextBlock Style="{StaticResource Tip}" Margin="0,8,0,16"
                                Text="{l:T 'When the mouse reaches this edge, the panel slides out after a short dwell time. You can set the monitor, length and dwell time later under Panel › Behavior.'}"/>
                     <WrapPanel>
                         <RadioButton Style="{StaticResource EdgeChoice}" Tag="Left" Content="{l:T 'Left'}" GroupName="Edge" Command="{Binding SetEdgeCommand}" CommandParameter="Left"
@@ -158,29 +158,29 @@
                 <!-- 3: Tastenkürzel und Start -->
                 <StackPanel Visibility="{Binding IsStep2, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'Faster with the keyboard'}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16"
+                    <TextBlock Style="{StaticResource Tip}" Margin="0,8,0,16"
                                Text="{l:T 'With the hotkey the panel opens anywhere, the cursor is in the search box. Type, Enter – done.'}"/>
-                    <Border Padding="14,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" HorizontalAlignment="Left">
+                    <Border Padding="16,12" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" HorizontalAlignment="Left">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{l:T 'Hotkey:'}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Hotkey:'}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,12,0" VerticalAlignment="Center"/>
                                 <TextBox x:Name="HotkeyBox" Width="220" IsReadOnly="True" Text="{Binding HotkeyText, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas"
                                          PreviewKeyDown="HotkeyBox_PreviewKeyDown" AutomationProperties.Name="{l:T 'Hotkey'}"
                                          ToolTip="{l:T 'Click and press the desired key combination; Del removes the shortcut'}"/>
                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Default'}" Margin="8,0,0,0" Command="{Binding ResetHotkeyCommand}"
                                            ToolTip="{l:T 'Ctrl+Alt+Space'}"/>
                             </StackPanel>
-                            <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,0" Text="{l:T 'To change it, click into the field and press the combination.'}"/>
+                            <TextBlock Style="{StaticResource Tip}" Margin="0,8,0,0" Text="{l:T 'To change it, click into the field and press the combination.'}"/>
                         </StackPanel>
                     </Border>
-                    <CheckBox Content="{l:T 'Start with Windows'}" IsChecked="{Binding StartWithWindows}" Margin="0,18,0,0"/>
+                    <CheckBox Content="{l:T 'Start with Windows'}" IsChecked="{Binding StartWithWindows}" Margin="0,20,0,0"/>
                     <CheckBox Content="{l:T 'Use Windows accent color'}" IsChecked="{Binding UseWindowsAccent}" Margin="0,8,0,0"/>
                 </StackPanel>
 
                 <!-- 4: Fertig -->
                 <StackPanel Visibility="{Binding IsStep3, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'All set'}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
-                    <TextBlock Style="{StaticResource Tip}" Margin="0,6,0,16" Text="{l:T '“Done” applies everything and opens the panel once as a trial. A few tips to get started:'}"/>
+                    <TextBlock Style="{StaticResource Tip}" Margin="0,8,0,16" Text="{l:T '“Done” applies everything and opens the panel once as a trial. A few tips to get started:'}"/>
                     <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Search: just type – initials too (“gds”) and filters like type:ps1 or #tag.'}"/>
                     <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Enter runs, Ctrl+Enter as administrator, Space shows a preview.'}"/>
                     <TextBlock Style="{StaticResource Tip}" Text="{l:T '• Right-click an empty area: new group, website, RDP, SSH, snippet …'}"/>

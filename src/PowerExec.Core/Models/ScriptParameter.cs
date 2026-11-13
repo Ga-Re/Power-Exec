@@ -39,8 +39,8 @@ public sealed class ScriptParameter
             var t = NormalizedType;
             if (IsSecure) return ParameterKind.Secure;
             if (t is "switch" or "switchparameter") return ParameterKind.Switch;
-            if (ValidValues.Count > 0 && !t.EndsWith("[]")) return ParameterKind.Choice;
-            if (t.EndsWith("[]")) return ParameterKind.List;
+            if (ValidValues.Count > 0 && !t.EndsWith("[]", StringComparison.Ordinal)) return ParameterKind.Choice;
+            if (t.EndsWith("[]", StringComparison.Ordinal)) return ParameterKind.List;
             if (t is "bool" or "boolean") return ParameterKind.Boolean;
             if (IsNumericType(t)) return ParameterKind.Number;
             return ParameterKind.Text;
@@ -65,8 +65,8 @@ public sealed class ScriptParameter
         get
         {
             var t = TypeName.Trim().ToLowerInvariant();
-            if (t.StartsWith("system.management.automation.")) t = t["system.management.automation.".Length..];
-            if (t.StartsWith("system.")) t = t["system.".Length..];
+            if (t.StartsWith("system.management.automation.", StringComparison.Ordinal)) t = t["system.management.automation.".Length..];
+            if (t.StartsWith("system.", StringComparison.Ordinal)) t = t["system.".Length..];
             return t;
         }
     }

@@ -25,10 +25,10 @@
                 <ItemsControl ItemsSource="{Binding Steps}" Focusable="False" Margin="4">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="8,6" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1">
+                            <Border Padding="8,8" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                                        <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding ProfileName}" Width="130" Height="28" Margin="0,0,6,0"
+                                        <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding ProfileName}" Width="130" Height="28" Margin="0,0,8,0"
                                                   Visibility="{Binding HasProfiles, Converter={StaticResource Vis}}" ToolTip="{l:T 'Launch profile of this step'}"/>
                                         <ui:Button Style="{StaticResource Btn.Icon}" Width="28" Height="28" ToolTip="{l:T 'Move up'}"
                                                 Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
@@ -43,7 +43,7 @@
                                             <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                         </ui:Button>
                                     </StackPanel>
-                                    <Border DockPanel.Dock="Left" Width="22" Height="22" infra:Pill.IsEnabled="True" Background="{DynamicResource Bg.Chip}" Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <Border DockPanel.Dock="Left" Width="22" Height="22" infra:Pill.IsEnabled="True" Background="{DynamicResource Bg.Chip}" Margin="0,0,12,0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Number}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <StackPanel VerticalAlignment="Center">

@@ -50,11 +50,12 @@ dotnet_naming_style.underscore_camel.required_prefix = _
 # Der Build läuft mit AnalysisLevel=latest-recommended und Warnungen als Fehler (Directory.Build.props).
 # Die folgenden Regeln sind bewusst nur Hinweise:
 
-# Kultur bei Vergleichen und Formatierung: Namen, Suche und Sortierung richten sich absichtlich nach der Sprache des
-# Benutzers. Neue Stellen geben die Art des Vergleichs ausdrücklich an; der Bestand wird schrittweise nachgezogen.
-dotnet_diagnostic.CA1305.severity = suggestion
-dotnet_diagnostic.CA1309.severity = suggestion
-dotnet_diagnostic.CA1310.severity = suggestion
+# Kultur bei Vergleichen und Formatierung: jede Stelle gibt sie ausdrücklich an. Gleichheit von Namen (Gruppen, Tags,
+# Variablen) ist ordinal ohne Groß-/Kleinschreibung, damit Einstellungsdateien auf jedem Rechner gleich gelesen werden;
+# Sortierung und Anzeige von Datum/Zeit folgen der Sprache des Benutzers, Protokoll und Dateien sind invariant.
+dotnet_diagnostic.CA1305.severity = warning
+dotnet_diagnostic.CA1309.severity = warning
+dotnet_diagnostic.CA1310.severity = warning
 # ViewModel-Eigenschaften werden gebunden und müssen Instanzmitglieder bleiben
 dotnet_diagnostic.CA1822.severity = suggestion
 # Mikro-Optimierungen ohne messbaren Nutzen im Panel

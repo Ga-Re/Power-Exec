@@ -1774,6 +1774,10 @@
                     <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding RescanCommand}" ToolTip="{l:T 'Rescan folders'}">
                         <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                     </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding MarketplaceCommand}" ToolTip="{l:T 'Marketplace: ready-made entries, scripts and designs'}"
+                               AutomationProperties.Name="{l:T 'Marketplace'}">
+                        <TextBlock Text="&#xE719;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
+                    </ui:Button>
                     <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="{l:T 'New group'}">
                         <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                     </ui:Button>

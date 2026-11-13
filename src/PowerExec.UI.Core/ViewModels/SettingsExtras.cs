@@ -488,7 +488,7 @@ public sealed class AdRuleViewModel : ObservableObject
         set
         {
             var text = (value ?? string.Empty).Trim();
-            var match = AdRules.Attributes.FirstOrDefault(a => a.Label.Equals(text, StringComparison.CurrentCultureIgnoreCase) || a.Key.Equals(text, StringComparison.OrdinalIgnoreCase));
+            var match = AdRules.Attributes.FirstOrDefault(a => a.Label.Equals(text, StringComparison.OrdinalIgnoreCase) || a.Key.Equals(text, StringComparison.OrdinalIgnoreCase));
             Attribute = match?.Key ?? text;
         }
     }

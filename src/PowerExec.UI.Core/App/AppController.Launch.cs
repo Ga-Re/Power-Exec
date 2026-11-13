@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -141,7 +142,7 @@ public partial class AppController
     {
         if (WindowsMetadata.Unblock(item.FullPath))
         {
-            AppLog.Info(string.Format("Unblocked: {0}", item.FullPath));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Unblocked: {0}", item.FullPath));
             Repository.Reload(item);
             Repository.ScanAsync().Forget();
         }

@@ -20,13 +20,13 @@
                     </StackPanel>
             </c:SettingsExpander.HeaderContent>
             <StackPanel>
-                <TextBlock Text="{l:T 'No team catalog subscribed yet.'}" Style="{StaticResource Caption}" Margin="0,10,0,4"
+                <TextBlock Text="{l:T 'No team catalog subscribed yet.'}" Style="{StaticResource Caption}" Margin="0,12,0,4"
                            Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                 <c:InfoBar Severity="Error" Message="{Binding CatalogError}" Margin="0,8,0,0"/>
                 <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="10,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}">
+                            <Border Padding="12,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                                         <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" Command="{Binding ApplyCommand}" Foreground="{DynamicResource Accent}"

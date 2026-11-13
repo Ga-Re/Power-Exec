@@ -9,14 +9,14 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
         <TextBlock Text="{l:T 'Computer groups'}" Style="{StaticResource PageTitle}"/>
-        <TextBlock Text="{l:T 'Groups bundle computers. In the Run dialog you pick a group with one click; in launch profiles you enter it as @Name (e.g. @Webservers). Groups are resolved at launch – changes apply immediately to all profiles.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,14"/>
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+        <TextBlock Text="{l:T 'Groups bundle computers. In the Run dialog you pick a group with one click; in launch profiles you enter it as @Name (e.g. @Webservers). Groups are resolved at launch – changes apply immediately to all profiles.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
             <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding AddGroupCommand}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Add group'}"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'Add group'}"/></StackPanel>
             </ui:Button>
             <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding ImportGroupFromListCommand}" Margin="8,0,0,0"
                        ToolTip="{l:T 'New group from a name list or CSV file – dynamic, with filters'}">
-                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/><TextBlock Text="{l:T 'Import group from list …'}"/></StackPanel>
+                <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8B5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'Import group from list …'}"/></StackPanel>
             </ui:Button>
         </StackPanel>
         <TextBlock Text="{l:T 'No groups yet.'}" Style="{StaticResource Caption}" Visibility="{Binding HasNoGroups, Converter={StaticResource Vis}}"/>
@@ -26,7 +26,7 @@
                     <Border Style="{StaticResource Card}" Padding="8,8,16,8" MinHeight="0">
                         <StackPanel>
                             <DockPanel>
-                                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="{l:T 'Show computers'}" Margin="0,0,6,0">
+                                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding ToggleCommand}" ToolTip="{l:T 'Show computers'}" Margin="0,0,8,0">
                                     <TextBlock Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" RenderTransformOrigin="0.5,0.5">
                                         <TextBlock.RenderTransform><RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/></TextBlock.RenderTransform>
                                     </TextBlock>
@@ -62,10 +62,10 @@
                                 </StackPanel>
                             </DockPanel>
                             <!-- Dynamisch aus einer Liste: Datei, Namensspalte, Filter -->
-                            <StackPanel Visibility="{Binding IsListSource, Converter={StaticResource Vis}}" Margin="0,10,0,0">
+                            <StackPanel Visibility="{Binding IsListSource, Converter={StaticResource Vis}}" Margin="0,12,0,0">
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{l:T 'List'}" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
-                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose file …'}" Command="{Binding ChooseListCommand}" Margin="6,0,0,0"/>
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose file …'}" Command="{Binding ChooseListCommand}" Margin="8,0,0,0"/>
                                     <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                              Tag="{l:T 'Text (one computer per line) or CSV with columns'}"/>
                                 </DockPanel>
@@ -79,35 +79,35 @@
                                 <ItemsControl ItemsSource="{Binding ListFilters}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <DockPanel Margin="0,0,0,6">
+                                            <DockPanel Margin="0,0,0,8">
                                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
                                                            ToolTip="{l:T 'Remove filter'}" AutomationProperties.Name="{l:T 'Remove filter'}">
                                                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
                                                 </ui:Button>
                                                 <ComboBox DockPanel.Dock="Left" Width="190" ItemsSource="{Binding Columns}" SelectedItem="{Binding Column}"
                                                           AutomationProperties.Name="{l:T 'Column'}"/>
-                                                <ComboBox DockPanel.Dock="Left" Width="170" Margin="6,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
+                                                <ComboBox DockPanel.Dock="Left" Width="170" Margin="8,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
                                                           SelectedValuePath="Key" SelectedValue="{Binding Operator}" AutomationProperties.Name="{l:T 'Comparison'}"/>
-                                                <TextBox Margin="6,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="{l:T 'Value (with “equals”, * and ? work)'}"
+                                                <TextBox Margin="8,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="{l:T 'Value (with “equals”, * and ? work)'}"
                                                          Visibility="{Binding NeedsValue, Converter={StaticResource Vis}}"/>
                                             </DockPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddFilterCommand}" Padding="6,0">
+                                <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddFilterCommand}" Padding="8,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                        <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0" Foreground="{DynamicResource Accent}"/>
                                         <TextBlock Text="{l:T 'Filter (AND)'}" Foreground="{DynamicResource Accent}"/>
                                     </StackPanel>
                                 </ui:Button>
-                                <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                            Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
                             </StackPanel>
                             <StackPanel Visibility="{Binding IsStatic, Converter={StaticResource Vis}}">
                             <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
-                                     MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
+                                     MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,8"
                                      FontFamily="{StaticResource MonoFont}" Margin="0,8,0,0" Tag="{l:T 'One computer per line (or separated by commas)'}"/>
                             <DockPanel Margin="0,8,0,0">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -120,13 +120,13 @@
                             </DockPanel>
                             </StackPanel>
                             <!-- Regelblöcke: innerhalb UND, zwischen den Blöcken ODER -->
-                            <StackPanel Visibility="{Binding IsDynamic, Converter={StaticResource Vis}}" Margin="0,10,0,0">
+                            <StackPanel Visibility="{Binding IsDynamic, Converter={StaticResource Vis}}" Margin="0,12,0,0">
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{l:T 'From OU'}" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
-                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding PickOuCommand}" Margin="6,0,0,0"
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding PickOuCommand}" Margin="8,0,0,0"
                                                ToolTip="{l:T 'Show the OU tree from Active Directory and select an OU'}" AutomationProperties.Name="{l:T 'Select OU'}">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="&#xE8B7;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                                             <TextBlock Text="{l:T 'Choose OU …'}"/>
                                         </StackPanel>
                                     </ui:Button>
@@ -139,9 +139,9 @@
                                             <StackPanel>
                                                 <TextBlock Text="{l:T 'OR'}" FontSize="{StaticResource Font.Caption}" FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="12,4,0,4"
                                                            Visibility="{Binding IsFirst, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
-                                                <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="10,8" Background="{DynamicResource Bg.CardAlt}">
+                                                <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="12,8" Background="{DynamicResource Bg.CardAlt}">
                                                     <StackPanel>
-                                                        <DockPanel Margin="0,0,0,6">
+                                                        <DockPanel Margin="0,0,0,8">
                                                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding RemoveCommand}"
                                                                     ToolTip="{l:T 'Remove block'}" AutomationProperties.Name="{l:T 'Remove block'}">
                                                                 <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
@@ -151,7 +151,7 @@
                                                         <ItemsControl ItemsSource="{Binding Rules}" Focusable="False">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <DockPanel Margin="0,0,0,6">
+                                                                    <DockPanel Margin="0,0,0,8">
                                                                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="30" Command="{Binding RemoveCommand}"
                                                                                 ToolTip="{l:T 'Remove rule'}" AutomationProperties.Name="{l:T 'Remove rule'}">
                                                                             <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
@@ -159,17 +159,17 @@
                                                                         <!-- Attribut: Vorgabe wählen oder eigenes LDAP-Attribut eintippen -->
                                                                         <ComboBox DockPanel.Dock="Left" Width="190" IsEditable="True" ItemsSource="{Binding AttributeChoices}" DisplayMemberPath="Value"
                                                                                   Text="{Binding AttributeText, UpdateSourceTrigger=LostFocus}" ToolTip="{l:T 'Attribute – you can also type your own LDAP attribute'}"/>
-                                                                        <ComboBox DockPanel.Dock="Left" Width="170" Margin="6,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
+                                                                        <ComboBox DockPanel.Dock="Left" Width="170" Margin="8,0,0,0" ItemsSource="{Binding Operators}" DisplayMemberPath="Value"
                                                                                   SelectedValuePath="Key" SelectedValue="{Binding Operator}"/>
-                                                                        <TextBox Margin="6,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="{Binding ValueHint}"
+                                                                        <TextBox Margin="8,0,4,0" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=300}" Tag="{Binding ValueHint}"
                                                                                  Visibility="{Binding NeedsValue, Converter={StaticResource Vis}}"/>
                                                                     </DockPanel>
                                                                 </DataTemplate>
                                                             </ItemsControl.ItemTemplate>
                                                         </ItemsControl>
-                                                        <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddRuleCommand}" Padding="6,0">
+                                                        <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalAlignment="Left" Command="{Binding AddRuleCommand}" Padding="8,0">
                                                             <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0" Foreground="{DynamicResource Accent}"/>
+                                                                <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0" Foreground="{DynamicResource Accent}"/>
                                                                 <TextBlock Text="{l:T 'Rule (AND)'}" Foreground="{DynamicResource Accent}"/>
                                                             </StackPanel>
                                                         </ui:Button>
@@ -182,37 +182,37 @@
                                 <DockPanel Margin="0,8,0,0">
                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding SyncNowCommand}" Padding="12,0">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="&#xE72C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                                             <TextBlock Text="{l:T 'Read from AD now'}"/>
                                         </StackPanel>
                                     </ui:Button>
                                     <ui:Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Command="{Binding AddBlockCommand}">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                                             <TextBlock Text="{l:T 'Block (OR)'}"/>
                                         </StackPanel>
                                     </ui:Button>
                                 </DockPanel>
-                                <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,6,0,0" TextWrapping="Wrap"
+                                <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" TextWrapping="Wrap"
                                            Visibility="{Binding HasRulesError, Converter={StaticResource Vis}}"/>
-                                <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                            Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
-                                <Expander Header="{l:T 'Show LDAP filter'}" Margin="0,6,0,0" FontSize="{StaticResource Font.Caption}">
+                                <Expander Header="{l:T 'Show LDAP filter'}" Margin="0,8,0,0" FontSize="{StaticResource Font.Caption}">
                                     <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}"
-                                             Padding="6,4" Margin="0,4,0,0"/>
+                                             Padding="8,4" Margin="0,4,0,0"/>
                                 </Expander>
                             </StackPanel>
                             </StackPanel>
                             <!-- Rückmeldung (Synchronisieren, Export, OU) – auch im eingeklappten Zustand -->
-                            <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="36,6,0,0" TextWrapping="Wrap"
+                            <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="36,8,0,0" TextWrapping="Wrap"
                                        Visibility="{Binding Status, Converter={StaticResource Vis}}"/>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,6,0,0" TextWrapping="Wrap"
+        <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"
                    Text="{l:T 'The AD search runs with your signed-in account. A name with * as wildcard, an OU (all computers in it) or your own LDAP filter in parentheses.'}"/>
         <c:SettingsCard Icon="&#xE895;" Header="{l:T 'Refresh dynamic groups'}" Margin="0,12,0,0"
                         Description="{l:T 'At Power-Exec startup and then at this interval in the background. Without a connection to AD, the last found list stays.'}">

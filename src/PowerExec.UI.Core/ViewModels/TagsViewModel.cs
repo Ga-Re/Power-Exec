@@ -117,7 +117,7 @@ public sealed class TagsViewModel : ObservableObject
             t => t.Trim().TrimStart('#').Length == 0 ? L.T("Please enter a name.") : t.Contains(',') || t.Contains(';') ? L.T("Without comma or semicolon.") : null);
         if (name == null || name.Trim().TrimStart('#') == row.Tag) return;
         var target = name.Trim().TrimStart('#');
-        var existing = Tags.All(_s).FirstOrDefault(t => t.Equals(target, StringComparison.CurrentCultureIgnoreCase) && !t.Equals(row.Tag, StringComparison.CurrentCultureIgnoreCase));
+        var existing = Tags.All(_s).FirstOrDefault(t => t.Equals(target, StringComparison.OrdinalIgnoreCase) && !t.Equals(row.Tag, StringComparison.OrdinalIgnoreCase));
         if (existing != null && !_app.Dialogs.Confirm(L.F("“#{0}” already exists. Merge “#{1}” into it?", existing, row.Tag), L.T("Merge tags"), owner: Owner())) return;
         _beforeChange();
         Tags.Rename(_s, row.Tag, existing ?? target);
@@ -140,7 +140,7 @@ public sealed class TagsViewModel : ObservableObject
     internal void RemoveFromEntry(TagRowViewModel row, string key)
     {
         _beforeChange();
-        Tags.Set(_s, key, Tags.Of(_s, key).Where(t => !t.Equals(row.Tag, StringComparison.CurrentCultureIgnoreCase)).ToList());
+        Tags.Set(_s, key, Tags.Of(_s, key).Where(t => !t.Equals(row.Tag, StringComparison.OrdinalIgnoreCase)).ToList());
         _afterChange();
         Load();
     }

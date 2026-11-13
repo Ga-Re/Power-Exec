@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.Core.Config;
 using PowerExec.Core.Execution;
@@ -82,7 +83,7 @@ public partial class AppController
             {
                 PathMigration.Apply(Settings, m);
                 History.Rename(m.OldPath, m.NewPath);
-                AppLog.Info(string.Format("Renamed/moved detected: {0} → {1} (profiles and favorite carried over)", m.OldPath, m.NewPath));
+                AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Renamed/moved detected: {0} → {1} (profiles and favorite carried over)", m.OldPath, m.NewPath));
             }
             Settings.Fingerprints = snapshot.Fingerprints;
             SaveSettings();

@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
@@ -74,12 +75,12 @@ public partial class AppController
             sub.LastHash = hash;
             changed = true;
             if (!diff.IsEmpty) messages.Add($"{sub.Name}: {diff.Summary}");
-            AppLog.Info(string.Format("Catalog {0} ({1}): {2}", sub.Name, sub.Path, diff.Summary));
+            AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Catalog {0} ({1}): {2}", sub.Name, sub.Path, diff.Summary));
         }
         SaveSettings();
         if (changed) CommitUserChange();
         CatalogsChanged?.Invoke();
-        foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
+        foreach (var h in Hosts) h.ViewModel.RefreshCatalogs();
         if (messages.Count > 0) ShowUndoToast(L.T("Team catalog updated – ") + string.Join(" · ", messages));
     }
 
@@ -108,7 +109,7 @@ public partial class AppController
         TeamCatalogs.Unsubscribe(Settings, sub);
         CommitUserChange();
         CatalogsChanged?.Invoke();
-        foreach (var h in _hosts) h.ViewModel.RefreshCatalogs();
+        foreach (var h in Hosts) h.ViewModel.RefreshCatalogs();
         ShowUndoToast(L.F("Catalog “{0}” unsubscribed", sub.Name));
     }
 

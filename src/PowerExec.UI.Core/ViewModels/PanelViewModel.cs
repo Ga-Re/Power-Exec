@@ -279,7 +279,7 @@ public sealed class PanelViewModel : ObservableObject
         _suggestionSource ??= BuildSuggestionSource();
         var list = SearchSuggestions.For(text, caret, _suggestionSource);
         // Schon vollständig getippt und eindeutig: nicht mehr anbieten
-        if (list.Count == 1 && list[0].Insert.Equals(token, StringComparison.CurrentCultureIgnoreCase)) list = Array.Empty<SearchSuggestion>();
+        if (list.Count == 1 && list[0].Insert.Equals(token, StringComparison.OrdinalIgnoreCase)) list = Array.Empty<SearchSuggestion>();
         SuggestionsTakeKeys = token.StartsWith('#') || token.Contains(':');
         Suggestions = list;
     }
@@ -516,7 +516,7 @@ public sealed class PanelViewModel : ObservableObject
     public void JumpTo(GroupViewModel group)
     {
         for (var parent = group.GroupPath == null ? null : GroupManager.ParentOf(group.GroupPath); parent != null; parent = GroupManager.ParentOf(parent))
-            if (AllGroups.FirstOrDefault(g => parent.Equals(g.GroupPath, StringComparison.CurrentCultureIgnoreCase)) is { IsExpanded: false } p)
+            if (AllGroups.FirstOrDefault(g => parent.Equals(g.GroupPath, StringComparison.OrdinalIgnoreCase)) is { IsExpanded: false } p)
                 p.IsExpanded = true;
         if (!group.IsExpanded) group.IsExpanded = true;
         ShowGroupJump = false;
@@ -1170,8 +1170,8 @@ public sealed class PanelViewModel : ObservableObject
         var wanted = target.GroupName ?? string.Empty;
         // Zurück in die eigene smarte Gruppe bzw. ihren Unterordner: ausdrückliche Zuordnung entfernen
         if (_app.FindItem(path) is { } found && SmartGroups.ImplicitGroup(_app.Settings, found.FullPath, found.RootFolder)
-                .Equals(wanted, StringComparison.CurrentCultureIgnoreCase)) wanted = string.Empty;
-        if (current.Equals(wanted, StringComparison.CurrentCultureIgnoreCase) && near == null) return;
+                .Equals(wanted, StringComparison.OrdinalIgnoreCase)) wanted = string.Empty;
+        if (current.Equals(wanted, StringComparison.OrdinalIgnoreCase) && near == null) return;
         _app.AssignGroup(path, wanted, target.Key, near?.Item.FullPath, after, target.Items.Select(i => i.Item.FullPath).ToList());
     }
 
@@ -1186,6 +1186,7 @@ public sealed class PanelViewModel : ObservableObject
         _app.AddDropped(targets, group?.GroupName);
 
     public ICommand NewGroupCommand => new RelayCommand(() => _app.CreateGroup());
+    public ICommand MarketplaceCommand => new RelayCommand(() => _app.ShowMarketplace());
 
     // ---- Gruppen ziehen: Lücke an der Zielstelle (Optionen unter Panel › Verhalten) ----------------
 
@@ -1253,7 +1254,7 @@ public sealed class PanelViewModel : ObservableObject
         GroupDropSlot slot = GroupDropSlot.None;
         if (plan.IsValid && !(plan.IsNoOp && GroupManager.IsSameOrBelow(hovered.GroupPath ?? string.Empty, dragged)))
         {
-            target = AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, plan.Target, StringComparison.CurrentCultureIgnoreCase));
+            target = AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, plan.Target, StringComparison.OrdinalIgnoreCase));
             slot = plan.Position switch
             {
                 GroupDropPosition.Before => GroupDropSlot.Before,
@@ -1265,6 +1266,17 @@ public sealed class PanelViewModel : ObservableObject
         _gapGroup = target;
         if (target != null) target.DropSlot = slot;
         return plan;
+    }
+
+    /// <summary>Geht an dieser Gruppe nur „davor“ oder „dahinter“ (feste Gruppe gezogen oder Ziel)?</summary>
+    public bool GroupDropIsTopLevelOnly(GroupViewModel hovered) => _dragGroup?.FixedKey != null || hovered.FixedKey != null;
+
+    /// <summary>Über dem Anfang der Liste: vor die erste Gruppe.</summary>
+    public GroupDropPlan? PreviewGroupDropAtStart()
+    {
+        if (_dragGroup == null) return null;
+        var first = Groups.FirstOrDefault(g => g.Kind != "best" && TopKeyOf(g) != null);
+        return first == null ? null : PreviewGroupDrop(first, GroupDropZone.Before, 0);
     }
 
     /// <summary>Feste Gruppe beteiligt: oberste Ebene, Lücke vor oder hinter der Gruppe der obersten Ebene unter der Maus.</summary>
@@ -1306,7 +1318,7 @@ public sealed class PanelViewModel : ObservableObject
         if (_dragGroup?.FixedKey != null)
             return Groups.LastOrDefault(g => !ReferenceEquals(g, _dragGroup) && TopKeyOf(g) != null) is { } lastTop ? PreviewGroupDrop(lastTop, GroupDropZone.After, levelOffset) : null;
         var last = VisibleUserGroupOrder().LastOrDefault(p => _dragGroup?.GroupPath == null || !GroupManager.IsSameOrBelow(p, _dragGroup.GroupPath));
-        var lastVm = last == null ? null : AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, last, StringComparison.CurrentCultureIgnoreCase));
+        var lastVm = last == null ? null : AllGroups.FirstOrDefault(g => string.Equals(g.GroupPath, last, StringComparison.OrdinalIgnoreCase));
         return lastVm == null ? null : PreviewGroupDrop(lastVm, GroupDropZone.After, levelOffset);
     }
 

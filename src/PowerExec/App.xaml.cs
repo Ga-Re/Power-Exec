@@ -87,7 +87,7 @@ public partial class App : Application
         // Ort des Fehlers (erste Stelle im Power-Exec-Code) und Version mit anzeigen, damit sich der Fehler zuordnen lässt
         var frame = new System.Diagnostics.StackTrace(e.Exception, false).GetFrames()
             .Select(f => f.GetMethod())
-            .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec") == true);
+            .FirstOrDefault(m => m?.DeclaringType?.Namespace?.StartsWith("PowerExec", StringComparison.Ordinal) == true);
         var where = frame != null ? $"{frame.DeclaringType!.Name}.{frame.Name}" : e.Exception.TargetSite?.Name ?? "unbekannt";
         var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Power-Exec", "error.log");
         var text = L.F("An unexpected error occurred:\n\n{0}\n\nLocation: {1} · version {2}\n", e.Exception.Message, where, UpdateService.CurrentVersionText) +

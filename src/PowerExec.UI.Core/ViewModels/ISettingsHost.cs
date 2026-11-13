@@ -30,6 +30,9 @@ public interface ISettingsHost
     /// <summary>PowerShell-Befehl einer Variable ausführen (Ausgabe als Text; wirft bei Fehler).</summary>
     string RunVariableCommand(string command) => VariableCommandRunner.Run(command, Settings.DefaultEngine);
 
+    /// <summary>Marktplatz-Fenster öffnen (bzw. nach vorn holen), optional mit einem Bereich („Entry“, „Script“, „Design“ …).</summary>
+    void ShowMarketplace(string? tab = null) { }
+
     /// <summary>Text-Datei aus dem Netz laden (Marktplatz).</summary>
     Task<string> DownloadTextAsync(Uri uri) => MarketplaceClient.DownloadTextAsync(uri);
 

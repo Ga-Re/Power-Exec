@@ -77,7 +77,7 @@
                 <StackPanel>
                     <StackPanel Margin="0,0,0,16">
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="36" Height="22" CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Badge.PowerShell.Bg}" Margin="0,0,10,0"
+                            <Border Width="36" Height="22" CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Badge.PowerShell.Bg}" Margin="0,0,12,0"
                                     Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                                 <TextBlock Text="{l:T 'PS1'}" FontSize="{StaticResource Font.Micro}" FontWeight="Bold" Foreground="{DynamicResource Badge.PowerShell.Fg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
@@ -85,20 +85,20 @@
                         </StackPanel>
                         <TextBlock Text="{Binding PathText}" Style="{StaticResource Mono}" Foreground="{DynamicResource Text.Tertiary}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding Synopsis}" FontSize="{StaticResource Font.Subtitle}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                        <TextBlock Text="{Binding ProfileText}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,6,0,0"
+                        <TextBlock Text="{Binding ProfileText}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" Margin="0,8,0,0"
                                    Visibility="{Binding HasProfile, Converter={StaticResource Vis}}"/>
-                        <Border Background="{DynamicResource Bg.CardAlt}" CornerRadius="{DynamicResource Radius.Control}" Padding="8,6" Margin="0,8,0,0" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
+                        <Border Background="{DynamicResource Bg.CardAlt}" CornerRadius="{DynamicResource Radius.Control}" Padding="8,8" Margin="0,8,0,0" Visibility="{Binding HasNotes, Converter={StaticResource Vis}}">
                             <DockPanel>
                                 <TextBlock Text="&#xE70B;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,2,8,0" VerticalAlignment="Top" Foreground="{DynamicResource Text.Secondary}"/>
                                 <TextBlock Text="{Binding Notes}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                             </DockPanel>
                         </Border>
-                        <TextBlock Text="{Binding RequirementsInfo}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,6,0,0"
+                        <TextBlock Text="{Binding RequirementsInfo}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" Margin="0,8,0,0"
                                    Visibility="{Binding RequirementsInfo, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,4,0,0"
                                    Visibility="{Binding HasDescription, Converter={StaticResource Vis}}"/>
                         <TextBlock Text="{Binding ParseError, StringFormat=Hinweis: Das Script enthält einen Fehler ({0})}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Warning}"
-                                   TextWrapping="Wrap" Margin="0,6,0,0" Visibility="{Binding ParseError, Converter={StaticResource Vis}}"/>
+                                   TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{Binding ParseError, Converter={StaticResource Vis}}"/>
                     </StackPanel>
 
                     <!-- Parameter -->
@@ -116,13 +116,13 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel Margin="0,0,16,14">
+                                        <StackPanel Margin="0,0,16,16">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold"/>
-                                                <TextBlock Text="{Binding TypeLabel}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="6,0,0,0"/>
-                                                <TextBlock Text="{l:T 'Required'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Error}" Margin="6,0,0,0"
+                                                <TextBlock Text="{Binding TypeLabel}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0"/>
+                                                <TextBlock Text="{l:T 'Required'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Error}" Margin="8,0,0,0"
                                                            Visibility="{Binding IsMandatory, Converter={StaticResource Vis}}"/>
-                                                <TextBlock Text="{l:T 'fixed in the profile'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Accent}" Margin="6,0,0,0"
+                                                <TextBlock Text="{l:T 'fixed in the profile'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Accent}" Margin="8,0,0,0"
                                                            Visibility="{Binding IsFixed, Converter={StaticResource Vis}}"/>
                                             </StackPanel>
                                             <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding Placeholder}" IsEnabled="{Binding IsEditable}"
@@ -132,7 +132,7 @@
                                                       Visibility="{Binding IsTextWithSuggestions, Converter={StaticResource Vis}}"/>
                                             <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsChoice, Converter={StaticResource Vis}}"/>
-                                            <CheckBox IsChecked="{Binding BoolValue}" Content="{l:T 'Enable'}" Margin="0,6,0,0" IsEnabled="{Binding IsEditable}"
+                                            <CheckBox IsChecked="{Binding BoolValue}" Content="{l:T 'Enable'}" Margin="0,8,0,0" IsEnabled="{Binding IsEditable}"
                                                       Visibility="{Binding IsCheck, Converter={StaticResource Vis}}"/>
                                             <TextBlock Text="{l:T 'Not saved or passed – the script asks itself if needed.'}" Style="{StaticResource Caption}"
                                                        Visibility="{Binding IsSecure, Converter={StaticResource Vis}}"/>
@@ -161,12 +161,12 @@
                                                  IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=OtherUser}"/>
                                 </UniformGrid>
                             </Border>
-                            <DockPanel Margin="0,10,0,0">
+                            <DockPanel Margin="0,12,0,0">
                                 <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" VerticalAlignment="Top" Margin="0,1,8,0" FontSize="{StaticResource Icon.L}"/>
                                 <TextBlock Text="{Binding ModeInfo}" Style="{StaticResource Caption}"/>
                             </DockPanel>
 
-                            <WrapPanel Margin="0,14,0,0" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
+                            <WrapPanel Margin="0,16,0,0" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                                 <StackPanel Width="250" Margin="0,0,24,0">
                                     <TextBlock Text="{l:T 'PowerShell version'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Margin="0,0,0,4"/>
                                     <ComboBox ItemsSource="{Binding Engines}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"/>
@@ -202,7 +202,7 @@
 
                     <DockPanel Visibility="{Binding IsRemote, Converter={StaticResource Vis}}" Margin="0,12,0,0">
                         <StackPanel DockPanel.Dock="Top">
-                            <StackPanel Visibility="{Binding HasGroups, Converter={StaticResource Vis}}" Margin="0,0,0,6">
+                            <StackPanel Visibility="{Binding HasGroups, Converter={StaticResource Vis}}" Margin="0,0,0,8">
                                 <TextBlock Text="{l:T 'Groups'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
                                 <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
                                     <ItemsControl.ItemsPanel>
@@ -210,12 +210,12 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding Command}" Height="28" MinHeight="28" Padding="10,0" Margin="0,0,6,6"
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding Command}" Height="28" MinHeight="28" Padding="12,0" Margin="0,0,8,8"
                                                     FontSize="{StaticResource Font.Body}" ToolTip="{Binding Members}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="&#xE902;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="&#xE902;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{Binding CountText}" Foreground="{DynamicResource Text.Secondary}" Margin="6,0,0,0"/>
+                                                    <TextBlock Text="{Binding CountText}" Foreground="{DynamicResource Text.Secondary}" Margin="8,0,0,0"/>
                                                 </StackPanel>
                                             </ui:Button>
                                         </DataTemplate>
@@ -229,7 +229,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Height="28" infra:Pill.IsEnabled="True" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1"
-                                                Padding="10,0,2,0" Margin="0,0,6,6">
+                                                Padding="12,0,2,0" Margin="0,0,8,8">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center"/>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
@@ -241,22 +241,22 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <DockPanel Margin="0,0,0,10">
+                            <DockPanel Margin="0,0,0,12">
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Add'}" Margin="8,0,0,0" Command="{Binding AddMachineCommand}" />
                                 <c:MachineBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
-                                              Placeholder="Rechnername(n) oder @Gruppe, mit Komma getrennt – Enter fügt hinzu" KeyDown="MachineBox_KeyDown"/>
+                                              Placeholder="{l:T 'Computer name(s) or @group, separated by commas – Enter adds them'}" KeyDown="MachineBox_KeyDown"/>
                             </DockPanel>
-                            <DockPanel Margin="0,0,0,10">
+                            <DockPanel Margin="0,0,0,12">
                                 <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Command="{Binding TestConnectionCommand}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
+                                        <TextBlock Text="&#xE703;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding TestButtonText}"/>
                                     </StackPanel>
                                 </ui:Button>
-                                <TextBlock Text="{Binding SslHint}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center" Margin="10,0,0,0"
+                                <TextBlock Text="{Binding SslHint}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center" Margin="12,0,0,0"
                                            ToolTip="{l:T 'Checks WinRM, sign-in, PowerShell version and the PowerShell.7 endpoint for the selected computers. HTTPS is set under Settings › Execution.'}"/>
                             </DockPanel>
-                            <Border Padding="10,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" Margin="0,0,0,8">
+                            <Border Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" Margin="0,0,0,8">
                                 <StackPanel>
                                     <CheckBox IsChecked="{Binding CopyFolder}">
                                         <TextBlock Text="{l:T 'Send script folder along'}" FontWeight="SemiBold"/>
@@ -265,18 +265,18 @@
                                                Text="{l:T 'Copies companion files and modules to the target computer via the remote session and deletes them afterwards. The target computer doesn\'t need access to the share.'}"/>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Text="{Binding ReadHostWarning}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,6"
+                            <TextBlock Text="{Binding ReadHostWarning}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Warning}" TextWrapping="Wrap" Margin="0,0,0,8"
                                        Visibility="{Binding ReadHostWarning, Converter={StaticResource Vis}}"/>
-                            <TextBlock Text="{Binding ModulesInfo}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,0,0,6"
+                            <TextBlock Text="{Binding ModulesInfo}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,0,0,8"
                                        Visibility="{Binding ModulesInfo, Converter={StaticResource Vis}}"/>
                         </StackPanel>
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <TextBlock Text="{l:T 'Favorites'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,4,0,2"/>
-                                <TextBlock Text="{l:T 'No favorites yet – star a computer.'}" Style="{StaticResource Caption}" Margin="8,2,0,6"
+                                <TextBlock Text="{l:T 'No favorites yet – star a computer.'}" Style="{StaticResource Caption}" Margin="8,2,0,8"
                                            Visibility="{Binding FavoriteMachines.Count, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                                 <ItemsControl ItemsSource="{Binding FavoriteMachines}" ItemTemplate="{StaticResource MachineTemplate}" Focusable="False"/>
-                                <TextBlock Text="{l:T 'Recently used'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,10,0,2"/>
+                                <TextBlock Text="{l:T 'Recently used'}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,12,0,2"/>
                                 <ItemsControl ItemsSource="{Binding RecentMachines}" ItemTemplate="{StaticResource MachineTemplate}" Focusable="False"/>
                             </StackPanel>
                         </ScrollViewer>
@@ -286,7 +286,7 @@
         </Grid>
 
         <!-- Fußzeile -->
-        <Border Grid.Row="1" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,14">
+        <Border Grid.Row="1" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,16">
             <StackPanel>
                 <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="12,8" MaxHeight="110">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -294,7 +294,7 @@
                                  FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
                     </ScrollViewer>
                 </Border>
-                <DockPanel Margin="0,10,0,0">
+                <DockPanel Margin="0,12,0,0">
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding RunCommand}" MinWidth="140" Height="34" Margin="8,0,0,0" IsDefault="True">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,8,0"/>

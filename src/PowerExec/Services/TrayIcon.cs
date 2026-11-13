@@ -34,6 +34,7 @@ public sealed class TrayIcon : IDisposable
         menu.Opening += (_, _) => RebuildQuickMenus();
         menu.Items.Add(L.T("Rescan folders"), null, (_, _) => app.Repository.ScanAsync().Forget());
         menu.Items.Add(L.T("Settings"), null, (_, _) => app.ShowSettings());
+        menu.Items.Add(L.T("Marketplace"), null, (_, _) => app.ShowMarketplace());
         menu.Items.Add(L.T("Check for updates"), null, async (_, _) =>
         {
             var r = await app.CheckUpdatesAsync(manual: true, includePrereleases: app.Settings.IncludePrereleases);
@@ -95,7 +96,7 @@ public sealed class TrayIcon : IDisposable
             var item = _app.FindItem(r.Path);
             if (item == null) continue;
             var profile = Core.Profiles.ProfileResolver.GetProfiles(s, item)
-                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.CurrentCultureIgnoreCase) || (p.IsImplicit && r.ProfileName == "Standard"));
+                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase) || (p.IsImplicit && r.ProfileName == "Standard"));
             var text = Label(item) + (profile != null && !profile.IsImplicit ? $"  ·  {profile.Name}" : string.Empty);
             _recent.DropDownItems.Add(text, null, (_, _) => Run(() => _app.RunProfile(item, profile)));
         }
@@ -107,7 +108,7 @@ public sealed class TrayIcon : IDisposable
             var name = w.Name;
             var mi = new Forms.ToolStripMenuItem(name, null, (_, _) => Run(() => _app.SwitchWorkspace(name)))
             {
-                Checked = name.Equals(s.ActiveWorkspace, StringComparison.CurrentCultureIgnoreCase)
+                Checked = name.Equals(s.ActiveWorkspace, StringComparison.OrdinalIgnoreCase)
             };
             _workspaces.DropDownItems.Add(mi);
         }

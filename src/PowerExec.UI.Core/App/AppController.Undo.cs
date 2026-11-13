@@ -1,3 +1,4 @@
+using System.Globalization;
 using PowerExec.Core.Localization;
 using PowerExec.UI.Infrastructure;
 using PowerExec.Core.Config;
@@ -59,7 +60,7 @@ public partial class AppController
 
     private void RefreshUndo()
     {
-        foreach (var h in _hosts) h.ViewModel.RefreshUndo();
+        foreach (var h in Hosts) h.ViewModel.RefreshUndo();
     }
 
     /// <summary>Letzte Änderung zurücknehmen. Laufzeitstand (Verlauf, Häufigkeit, Parameter) bleibt erhalten.</summary>
@@ -78,7 +79,7 @@ public partial class AppController
         try { ApplySettings(restored); }
         finally { _undoing = false; }
         SettingsChangedOutside?.Invoke();
-        AppLog.Info(string.Format("Undo: {0}", step.Description));
+        AppLog.Info(string.Format(CultureInfo.InvariantCulture, "Undo: {0}", step.Description));
         UndoToast = null;
         _undoTimer?.Stop();
         RefreshUndo();

@@ -44,7 +44,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Tile}"
-                                Padding="14,14" Height="96">
+                                Padding="16,16" Height="96">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -73,7 +73,7 @@
                     <StackPanel Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding TypeLabel}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="6,1,0,0"/>
+                            <TextBlock Text="{Binding TypeLabel}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
                         </StackPanel>
                         <TextBlock x:Name="Note" Text="{Binding Note}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                     </StackPanel>
@@ -115,7 +115,7 @@
                 <!-- Startoptionen der Art (Browser, Anzeige, Öffnen mit …) -->
                 <v:CustomEntryForm DataContext="{Binding Options}" Visibility="{Binding HasOptions, Converter={StaticResource Vis}}" Margin="0,0,0,4"/>
                 <StackPanel Visibility="{Binding DataContext.ShowRunAs, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                <TextBlock Text="{l:T 'Run as'}" Style="{StaticResource FieldLabel}" Margin="0,10,0,4"/>
+                <TextBlock Text="{l:T 'Run as'}" Style="{StaticResource FieldLabel}" Margin="0,12,0,4"/>
                 <Border Style="{StaticResource SegmentHost}">
                     <StackPanel Orientation="Horizontal">
                         <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Current account'}" Width="140"
@@ -124,7 +124,7 @@
                                      IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=admin}"
                                      Visibility="{Binding DataContext.ShowAdminMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,6,0"/>
+                                <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Administrator'}"/>
                             </StackPanel>
                         </RadioButton>
@@ -151,11 +151,11 @@
                     </Border>
                     <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0"
                                   Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
-                    <WrapPanel Margin="0,10,0,0">
-                        <ComboBox Width="210" Margin="0,0,16,6" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
+                    <WrapPanel Margin="0,12,0,0">
+                        <ComboBox Width="210" Margin="0,0,16,8" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
                                   ItemsSource="{Binding DataContext.Engines, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                        <CheckBox Content="{l:T 'Keep console open (-NoExit)'}" IsChecked="{Binding NoExit}" Margin="0,6,16,6"/>
-                        <CheckBox Content="{l:T 'Without profile (-NoProfile)'}" IsChecked="{Binding NoProfile}" Margin="0,6,0,6"/>
+                        <CheckBox Content="{l:T 'Keep console open (-NoExit)'}" IsChecked="{Binding NoExit}" Margin="0,8,16,8"/>
+                        <CheckBox Content="{l:T 'Without profile (-NoProfile)'}" IsChecked="{Binding NoProfile}" Margin="0,8,0,8"/>
                     </WrapPanel>
                     <TextBlock Text="{l:T 'Run dialog'}" Style="{StaticResource FieldLabel}"/>
                     <Border Style="{StaticResource SegmentHost}">
@@ -170,8 +170,8 @@
                     </Border>
                     <TextBlock Text="{Binding DialogHint}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
                     <StackPanel Visibility="{Binding DataContext.HasParameters, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                        <TextBlock Text="{l:T 'Parameters'}" Style="{StaticResource FieldLabel}" Margin="0,14,0,0"/>
-                        <TextBlock Text="{l:T 'Fixed = always passed · Prefilled = editable in the dialog · Ask = field stays empty'}" Style="{StaticResource Caption}" Margin="0,0,0,6"/>
+                        <TextBlock Text="{l:T 'Parameters'}" Style="{StaticResource FieldLabel}" Margin="0,16,0,0"/>
+                        <TextBlock Text="{l:T 'Fixed = always passed · Prefilled = editable in the dialog · Ask = field stays empty'}" Style="{StaticResource Caption}" Margin="0,0,0,8"/>
                         <ItemsControl ItemsSource="{Binding Parameters}" ItemTemplate="{StaticResource ParamRow}" Focusable="False"/>
                     </StackPanel>
                 </StackPanel>
@@ -197,7 +197,7 @@
         </Grid.RowDefinitions>
 
         <!-- ===== Kopf: Symbol, Anzeigename, Beschreibung ===== -->
-        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="24,16,24,14" Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
+        <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="24,16,24,16" Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
             <DockPanel>
                 <!-- Symbol -->
                 <StackPanel DockPanel.Dock="Left" Margin="0,0,16,0">
@@ -219,13 +219,13 @@
                 <!-- Art -->
                 <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top">
                     <TextBlock Text="{Binding PathText}" Style="{StaticResource Caption}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
-                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Change type …'}" Command="{Binding ChangeKindCommand}" FontSize="{StaticResource Font.Body}" Padding="6,0" MinHeight="26" Height="26"
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Change type …'}" Command="{Binding ChangeKindCommand}" FontSize="{StaticResource Font.Body}" Padding="8,0" MinHeight="26" Height="26"
                             HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding CanChangeKind, Converter={StaticResource Vis}}" />
                 </StackPanel>
                 <StackPanel VerticalAlignment="Center">
                     <TextBox x:Name="NameBox" Text="{Binding HeaderName, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding HeaderNameHint}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"
                              ToolTip="{l:T 'Display name in the panel'}"/>
-                    <TextBox Text="{Binding HeaderDescription, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding HeaderDescriptionHint}" Margin="0,6,0,0"
+                    <TextBox Text="{Binding HeaderDescription, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding HeaderDescriptionHint}" Margin="0,8,0,0"
                              ToolTip="{l:T 'Description in the panel'}"/>
                 </StackPanel>
             </DockPanel>
@@ -251,15 +251,15 @@
                                         CommandParameter="{Binding Key}" AutomationProperties.Name="{Binding Label}">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.Hero}" HorizontalAlignment="Left" Foreground="{DynamicResource Accent}"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource Font.Subtitle}" Margin="0,10,0,0" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource Font.Subtitle}" Margin="0,12,0,0" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Button>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <TextBlock Text="{l:T 'Or'}" Style="{StaticResource FieldLabel}" Margin="0,8,0,6"/>
-                    <Border Style="{StaticResource SectionCard}" Padding="14,10" Visibility="{Binding HasClipboardSuggestion, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{l:T 'Or'}" Style="{StaticResource FieldLabel}" Margin="0,8,0,8"/>
+                    <Border Style="{StaticResource SectionCard}" Padding="16,12" Visibility="{Binding HasClipboardSuggestion, Converter={StaticResource Vis}}">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" Command="{Binding UseClipboardCommand}" Margin="12,0,0,0" />
                             <TextBlock Text="&#xE77F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XXL}" VerticalAlignment="Center" Margin="0,0,12,0"/>
@@ -293,7 +293,7 @@
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Show in Explorer'}" Command="{Binding OpenFileLocationCommand}" />
                                 <TextBlock Text="{Binding FileKindText}" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" Margin="0,10,0,0"/>
+                            <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" Margin="0,12,0,0"/>
                             <TextBlock Text="{Binding FileInfo}" Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding FileParametersText}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                        Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
@@ -303,7 +303,7 @@
                     <!-- Startprofile: Liste links, Einstellungen rechts -->
                     <Border Style="{StaticResource SectionCard}" Padding="0">
                         <StackPanel>
-                            <StackPanel Margin="18,14,18,10">
+                            <StackPanel Margin="20,16,20,12">
                                 <TextBlock Text="{l:T 'Launch profiles'}" Style="{StaticResource CardTitle}"/>
                                 <TextBlock Text="{l:T '★ = default (click in the panel). More profiles are in the panel in the menu on the Run button.'}" Style="{StaticResource Caption}"/>
                             </StackPanel>
@@ -313,11 +313,11 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,1,0" CornerRadius="{DynamicResource Radius.Tile.BottomLeft}">
-                                    <DockPanel Margin="10,12">
+                                    <DockPanel Margin="12,12">
                                         <WrapPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ New'}" Command="{Binding AddCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Duplicate'}" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
-                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding DeleteCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ New'}" Command="{Binding AddCommand}" Margin="0,0,8,8" FontSize="{StaticResource Font.Body}" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Duplicate'}" Command="{Binding DuplicateCommand}" Margin="0,0,8,8" FontSize="{StaticResource Font.Body}" />
+                                            <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding DeleteCommand}" Margin="0,0,8,8" FontSize="{StaticResource Font.Body}" />
                                         </WrapPanel>
                                         <ItemsControl ItemsSource="{Binding Profiles}" Focusable="False">
                                             <ItemsControl.ItemTemplate>
@@ -325,10 +325,10 @@
                                                     <Button Command="{Binding SelectCommand}" Margin="0,0,0,4" Cursor="Hand" FocusVisualStyle="{StaticResource FocusVisual}" HorizontalContentAlignment="Stretch">
                                                         <Button.Template>
                                                             <ControlTemplate TargetType="Button">
-                                                                <Border x:Name="Bd" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Padding="10,8">
+                                                                <Border x:Name="Bd" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Padding="12,8">
                                                                     <StackPanel>
                                                                         <StackPanel Orientation="Horizontal">
-                                                                            <TextBlock Text="★" Foreground="{DynamicResource Accent}" Margin="0,0,6,0" Visibility="{Binding IsDefault, Converter={StaticResource Vis}}"/>
+                                                                            <TextBlock Text="★" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" Visibility="{Binding IsDefault, Converter={StaticResource Vis}}"/>
                                                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
                                                                         </StackPanel>
                                                                         <TextBlock Text="{Binding Detail}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" Margin="0,3,0,0" TextWrapping="Wrap"/>
@@ -350,7 +350,7 @@
                                     </DockPanel>
                                 </Border>
                                 <Border Grid.Column="1" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0">
-                                    <StackPanel Margin="18,12,18,16" DataContext="{Binding Selected}">
+                                    <StackPanel Margin="20,12,20,16" DataContext="{Binding Selected}">
                                         <WrapPanel>
                                             <StackPanel Width="240" Margin="0,0,16,0">
                                                 <TextBlock Text="{l:T 'Profile name'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
@@ -386,7 +386,7 @@
                                 </StackPanel>
                             </Grid>
                             <CheckBox Margin="0,12,0,0" IsChecked="{Binding SingleClick}" Content="{l:T 'Start with one click (instead of expanding the entry in the panel)'}"/>
-                            <DockPanel Margin="0,10,0,0">
+                            <DockPanel Margin="0,12,0,0">
                                 <ComboBox DockPanel.Dock="Right" Width="250" ItemsSource="{Binding AskProfileChoices}" DisplayMemberPath="Value" SelectedValuePath="Key"
                                           SelectedValue="{Binding AskProfile}" AutomationProperties.Name="{l:T 'Ask for the profile at launch'}"/>
                                 <TextBlock Text="{l:T 'Ask for the profile at launch'}" VerticalAlignment="Center"
@@ -394,7 +394,7 @@
                             </DockPanel>
                             <TextBlock Text="{l:T 'Note'}" Style="{StaticResource FieldLabel}"/>
                             <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="32" MaxHeight="90"
-                                     VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,6"
+                                     VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,8"
                                      Tag="{l:T 'e.g. “Only after consulting the DBA” – appears in the panel and the Run dialog'}"/>
                         </StackPanel>
                     </Border>
@@ -406,7 +406,7 @@
         <Border Grid.Row="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
             <StackPanel>
                 <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="12,8" MaxHeight="76"
-                        Margin="0,0,0,10">
+                        Margin="0,0,0,12">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Visibility" Value="Collapsed"/>

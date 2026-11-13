@@ -53,27 +53,6 @@
                         </ui:NavigationViewItem>
                     </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
-                <!-- Marktplatz: eigene Oberkategorie mit den Kategorien des Repositorys -->
-                <ui:NavigationViewItem Content="{l:T 'Marketplace'}" IsExpanded="False" AutomationProperties.Name="{l:T 'Marketplace'}">
-                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                    <ui:NavigationViewItem.MenuItems>
-                        <ui:NavigationViewItem Content="{l:T 'Entries'}" TargetPageTag="market-entries" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE71B;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Scripts'}" TargetPageTag="market-scripts" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE756;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Designs'}" TargetPageTag="market-designs" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE790;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Installed'}" TargetPageTag="market-installed" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE73E;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                        <ui:NavigationViewItem Content="{l:T 'Sources'}" TargetPageTag="market-sources" TargetPageType="{x:Type v:SettingsSectionPage}">
-                            <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE774;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
-                        </ui:NavigationViewItem>
-                    </ui:NavigationViewItem.MenuItems>
-                </ui:NavigationViewItem>
                 <!-- Panel: einklappbare Oberkategorie (Klick klappt auf/zu, navigiert selbst nicht) -->
                 <ui:NavigationViewItem Content="{l:T 'Panel'}" IsExpanded="True" AutomationProperties.Name="{l:T 'Panel'}">
                     <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE737;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
@@ -114,6 +93,13 @@
                     </ui:NavigationViewItem.MenuItems>
                 </ui:NavigationViewItem>
             </ui:NavigationView.MenuItems>
+            <ui:NavigationView.FooterMenuItems>
+                <!-- Der Marktplatz ist ein eigenes Fenster -->
+                <ui:NavigationViewItem Content="{l:T 'Marketplace'}" Click="Marketplace_Click" AutomationProperties.Name="{l:T 'Marketplace'}"
+                                       ToolTip="{l:T 'Opens the marketplace in its own window'}">
+                    <ui:NavigationViewItem.Icon><ui:FontIcon Glyph="&#xE719;" FontFamily="{StaticResource IconFont}"/></ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
             <ui:NavigationView.PaneFooter>
                 <TextBlock Text="{Binding CurrentVersion, StringFormat=Power-Exec {0}}" Style="{StaticResource Caption}" Margin="16,8,0,12"/>
             </ui:NavigationView.PaneFooter>
@@ -124,14 +110,14 @@
             <TextBox x:Name="SettingsSearch" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="30,0,8,0" Tag="{l:T 'Search settings'}">
                     <TextBox.Resources><CornerRadius x:Key="TextBox.CornerRadius">12</CornerRadius></TextBox.Resources>
                 </TextBox>
-            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+            <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="12,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
             <Popup IsOpen="{Binding HasSearchResults, Mode=OneWay}" PlacementTarget="{Binding ElementName=SettingsSearch}" Placement="Bottom" AllowsTransparency="True"
                    StaysOpen="True" Width="{Binding ActualWidth, ElementName=SettingsSearch}">
                 <Border Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}" Padding="4" Margin="0,4,0,0">
                     <ItemsControl ItemsSource="{Binding SearchResults}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalContentAlignment="Stretch" Padding="10,4" MinHeight="40"
+                                <ui:Button Style="{StaticResource Btn.Subtle}" HorizontalContentAlignment="Stretch" Padding="12,4" MinHeight="40"
                                         Command="{Binding DataContext.OpenSearchHitCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.BodyStrong}"/>
@@ -145,7 +131,7 @@
             </Popup>
         </Grid>
         <!-- Update-Hinweis: erscheint in allen Bereichen, sobald eine neue Version gefunden wurde -->
-        <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="14,12" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
+        <Border DockPanel.Dock="Top" Margin="16,12,28,4" Padding="16,12" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}"
                 BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1" Visibility="{Binding HasUpdate, Converter={StaticResource Vis}}">
             <DockPanel>
                 <TextBlock Text="&#xE946;" Style="{StaticResource Icon}" Foreground="{DynamicResource Accent}" FontSize="{StaticResource Icon.XXL}" VerticalAlignment="Top" Margin="0,1,12,0"/>
@@ -168,7 +154,6 @@
                 <s:CustomEntriesPage/>
                 <s:MachineGroupsPage/>
                 <s:TagsPage/>
-                <s:MarketplacePage/>
                 <s:VariablesPage/>
                 <s:WorkspacesPage/>
                 <s:GeneralPage/>
@@ -202,14 +187,14 @@
 
         <!-- Snackbar: kurze Rückmeldung unten, blendet nach einigen Sekunden aus -->
         <Border x:Name="SnackbarHost" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,20"
-                Padding="16,10" CornerRadius="{DynamicResource Radius.Tile}" BorderThickness="1" Visibility="Collapsed" Opacity="0" MaxWidth="640" Panel.ZIndex="100"
+                Padding="16,12" CornerRadius="{DynamicResource Radius.Tile}" BorderThickness="1" Visibility="Collapsed" Opacity="0" MaxWidth="640" Panel.ZIndex="100"
                 Background="{DynamicResource Bg.Menu}" BorderBrush="{DynamicResource Border.Control}">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="18" ShadowDepth="3" Opacity="0.35" Color="{DynamicResource ShadowColor}"/>
             </Border.Effect>
             <Border.RenderTransform><TranslateTransform x:Name="SnackbarShift" Y="12"/></Border.RenderTransform>
             <DockPanel>
-                <TextBlock DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" VerticalAlignment="Center" Margin="0,0,10,0"
+                <TextBlock DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" VerticalAlignment="Center" Margin="0,0,12,0"
                            Foreground="{DynamicResource Status.Success}"/>
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" MinHeight="28" Margin="12,0,0,0" Click="SnackbarClose_Click"
                            ToolTip="{l:T 'Close'}" AutomationProperties.Name="{l:T 'Close message'}">

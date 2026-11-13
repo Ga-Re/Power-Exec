@@ -63,7 +63,7 @@ public static class EntryValidation
                 break;
             case CustomEntryKind.File:
                 if (target.Length == 0) list.Add(new(EntryField.Target, L.T("Please choose a file.")));
-                else if (!Path.IsPathRooted(target) && !target.StartsWith("{{")) list.Add(new(EntryField.Target, L.T("Please enter the full path.")));
+                else if (!Path.IsPathRooted(target) && !target.StartsWith("{{", StringComparison.Ordinal)) list.Add(new(EntryField.Target, L.T("Please enter the full path.")));
                 break;
         }
         if (e.Kind is CustomEntryKind.Rdp or CustomEntryKind.Ssh && e.Port is < 0 or > 65535)

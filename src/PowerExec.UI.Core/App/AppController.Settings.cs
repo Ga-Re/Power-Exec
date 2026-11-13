@@ -23,7 +23,6 @@ public partial class AppController
         }
     }
 
-    /// <returns>Fehlermeldung zum Tastenkürzel oder null.</returns>
     /// <summary>
     /// Änderung aus dem Panel (Gruppe, Favorit, eigener Eintrag …): speichern, Panels neu aufbauen und
     /// ein offenes Einstellungsfenster informieren, damit es den neuen Stand zeigt.
@@ -46,27 +45,25 @@ public partial class AppController
     public string? ApplySettings(AppSettings updated)
     {
         ClearUndo();
-        var foldersChanged = !FoldersEqual(Settings, updated);
-        var panelsChanged = PanelKey(Settings) != PanelKey(updated);
+        var change = SettingsChange.Between(Settings, updated);
         var previousPanels = Settings.Panels;
-        var themeChanged = AppearanceKey(Settings) != AppearanceKey(updated);
-        var autostartChanged = Settings.StartWithWindows != updated.StartWithWindows;
         Settings = updated;
         WarmVariables();
         SaveSettings();
-        if (themeChanged) Ui.ApplyTheme(Settings);
-        if (autostartChanged) AutostartService.Apply(Settings.StartWithWindows);
+        if (change.Appearance) Ui.ApplyTheme(Settings);
+        if (change.Autostart) AutostartService.Apply(Settings.StartWithWindows);
         string? hotkeyError = null;
         // Panels möglichst im bestehenden Fenster anpassen (kein Neuaufbau, kein Flackern); neu erzeugt wird nur, wenn sich
         // das Design oder die Fensterart (Klarglas ↔ Glas) ändert oder Panels hinzukommen bzw. wegfallen
-        if (themeChanged || _hosts.Count == 0 || (panelsChanged && !CanUpdateInPlace(previousPanels))) hotkeyError = CreateHosts();
-        else if (panelsChanged) hotkeyError = UpdateHostsInPlace(previousPanels);
-        if (foldersChanged) Repository.UpdateSettings(Settings);
+        if (change.Appearance || Hosts.Count == 0 || (change.Panels && !Panels.CanUpdateInPlace(previousPanels))) hotkeyError = Panels.Create();
+        else if (change.Panels) hotkeyError = Panels.UpdateInPlace(previousPanels);
+        if (change.Folders) Repository.UpdateSettings(Settings);
         else
         {
             Repository.SetupWatchers();
             RebuildPanels();
         }
+        _marketplace?.SettingsChanged(); // offenes Marktplatz-Fenster arbeitet mit dem neuen Stand weiter
         return hotkeyError;
     }
 
@@ -89,27 +86,11 @@ public partial class AppController
         Task.Run(resolver.Warm).Forget();
     }
 
-    /// <summary>Design, Akzent, Fensterhintergrund und Größe: Änderung erzeugt Panels und Farben neu.</summary>
-    private static (ThemeMode Theme, bool UseWindowsAccent, int UiScalePercent, CornerStyle Corners) AppearanceKey(AppSettings s) =>
-        (s.Theme, s.UseWindowsAccent, s.UiScalePercent, s.Corners);
-
     /// <summary>Windows-Design, Akzentfarbe oder Kontrastdesign geändert: Farben neu anwenden.</summary>
     private void OnSystemThemeChanged()
     {
         var before = Ui.ThemeStateKey;
         Ui.ApplyTheme(Settings);
         if (before != Ui.ThemeStateKey) CreateHosts();
-    }
-
-    /// <summary>Alles, was Panelfenster und Hover-Zonen betrifft (ohne „angeheftet“).</summary>
-    private static string PanelKey(AppSettings s) =>
-        System.Text.Json.JsonSerializer.Serialize(s.Panels.Select(p => { var c = p.Clone(); c.Pinned = false; return c; })) +
-        $"|{s.HoverDelayMs}|{s.HideHotZoneInFullscreen}";
-
-    private static bool FoldersEqual(AppSettings a, AppSettings b)
-    {
-        string Key(AppSettings s) => string.Join("|", s.Folders.Select(f => $"{f.Path}*{f.Recursive}*{string.Join(",", f.Extensions)}*{string.Join(",", f.Excludes)}"))
-                                     + "#" + string.Join(",", s.DefaultExtensions) + "#" + string.Join(",", s.GlobalExcludes);
-        return Key(a) == Key(b);
     }
 }
