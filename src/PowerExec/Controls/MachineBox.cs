@@ -1,20 +1,25 @@
-using PowerExec.Core.Localization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 using PowerExec.Core.Config;
-using PowerExec.Desktop.Infrastructure;
+using PowerExec.Core.Localization;
 
 namespace PowerExec.Desktop.Controls;
 
 /// <summary>
 /// Eingabe für Rechnernamen: beim Tippen von „@“ erscheinen die Rechnergruppen als Vorschläge,
 /// der Knopf „Gruppe einfügen ▾“ fügt eine Gruppe mit einem Klick ein. Gebunden wird <see cref="Text"/>.
+/// Aussehen: Vorlage in <c>Themes/Controls.xaml</c>.
 /// </summary>
+[TemplatePart(Name = PartInput, Type = typeof(TextBox))]
+[TemplatePart(Name = PartButton, Type = typeof(ButtonBase))]
+[TemplatePart(Name = PartPopup, Type = typeof(Popup))]
+[TemplatePart(Name = PartList, Type = typeof(ListBox))]
 public sealed class MachineBox : Control
 {
+    private const string PartInput = "PART_Input", PartButton = "PART_Button", PartPopup = "PART_Popup", PartList = "PART_List";
+
     /// <summary>Rechnergruppen der App (setzt der AppController).</summary>
     public static Func<IReadOnlyList<MachineGroup>>? GroupSource { get; set; }
 
@@ -23,68 +28,91 @@ public sealed class MachineBox : Control
         new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, (d, e) => ((MachineBox)d).OnTextChanged((string)e.NewValue)));
 
     public static readonly DependencyProperty PlaceholderProperty = DependencyProperty.Register(
-        nameof(Placeholder), typeof(string), typeof(MachineBox), new PropertyMetadata("Rechnernamen oder @Gruppe, mit Komma getrennt", (d, e) => ((MachineBox)d)._input.Tag = e.NewValue));
+        nameof(Placeholder), typeof(string), typeof(MachineBox), new PropertyMetadata(string.Empty));
+
+    static MachineBox() => DefaultStyleKeyProperty.OverrideMetadata(typeof(MachineBox), new FrameworkPropertyMetadata(typeof(MachineBox)));
+
+    public MachineBox() => Placeholder = L.T("Computer names or @group, separated by commas");
 
     public string Text { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value); }
     public string Placeholder { get => (string)GetValue(PlaceholderProperty); set => SetValue(PlaceholderProperty, value); }
 
-    private readonly TextBox _input;
-    private readonly Button _button;
-    private readonly Popup _popup;
-    private readonly ListBox _list;
-    private readonly DockPanel _root;
+    private TextBox? _input;
+    private ButtonBase? _button;
+    private Popup? _popup;
+    private ListBox? _list;
     private bool _syncing;
 
-    public MachineBox()
+    public override void OnApplyTemplate()
     {
-        Focusable = false;
-        _input = new TextBox { Tag = Placeholder };
-        _input.SetResourceReference(TextBox.FontFamilyProperty, "MonoFont");
-        _input.TextChanged += (_, _) =>
+        base.OnApplyTemplate();
+        if (_input != null)
         {
-            if (_syncing) return;
+            _input.TextChanged -= Input_TextChanged;
+            _input.PreviewKeyDown -= Input_PreviewKeyDown;
+            _input.LostKeyboardFocus -= Input_LostKeyboardFocus;
+        }
+        if (_list != null)
+        {
+            _list.PreviewMouseLeftButtonUp -= List_MouseUp;
+            _list.PreviewKeyDown -= List_PreviewKeyDown;
+        }
+        if (_button != null) _button.Click -= Button_Click;
+
+        _input = GetTemplateChild(PartInput) as TextBox;
+        _button = GetTemplateChild(PartButton) as ButtonBase;
+        _popup = GetTemplateChild(PartPopup) as Popup;
+        _list = GetTemplateChild(PartList) as ListBox;
+
+        if (_input != null)
+        {
             _syncing = true;
-            Text = _input.Text;
+            _input.Text = Text ?? string.Empty;
             _syncing = false;
-            ShowSuggestions();
-        };
-        _input.PreviewKeyDown += Input_PreviewKeyDown;
-        _input.LostKeyboardFocus += (_, e) => { if (e.NewFocus is not ListBoxItem) _popup!.IsOpen = false; };
-
-        _list = new ListBox { MaxHeight = 220, MinWidth = 220 };
-        _list.PreviewMouseLeftButtonUp += (_, _) => Pick();
-        _list.PreviewKeyDown += (_, e) =>
+            _input.TextChanged += Input_TextChanged;
+            _input.PreviewKeyDown += Input_PreviewKeyDown;
+            _input.LostKeyboardFocus += Input_LostKeyboardFocus;
+        }
+        if (_list != null)
         {
-            if (e.Key is Key.Enter or Key.Tab) { Pick(); e.Handled = true; }
-            else if (e.Key == Key.Escape) { _popup!.IsOpen = false; _input.Focus(); e.Handled = true; }
-        };
-        var border = new Border { Child = _list, CornerRadius = Tokens.RadiusCard, BorderThickness = new Thickness(1), Padding = new Thickness(4) };
-        border.SetResourceReference(Border.BackgroundProperty, "Bg.Menu");
-        border.SetResourceReference(Border.BorderBrushProperty, "Border.Control");
-        _popup = new Popup { Child = border, PlacementTarget = _input, Placement = PlacementMode.Bottom, StaysOpen = false, AllowsTransparency = true };
-
-        // Fluent-Schaltfläche: „Btn.Standard“ ist in allen Fenstern ein Stil für Wpf.Ui.Controls.Button
-        _button = new Wpf.Ui.Controls.Button { Content = L.T("Insert group ▾"), Margin = new Thickness(6, 0, 0, 0), ToolTip = L.T("Insert computer group (resolved at launch)") };
-        _button.SetResourceReference(StyleProperty, "Btn.Standard");
-        _button.Click += (_, _) => OpenGroupMenu();
-
-        _root = new DockPanel();
-        DockPanel.SetDock(_button, Dock.Right);
-        _root.Children.Add(_button);
-        _root.Children.Add(_input);
-        _root.Children.Add(_popup);
-        AddVisualChild(_root);
-        AddLogicalChild(_root);
+            _list.PreviewMouseLeftButtonUp += List_MouseUp;
+            _list.PreviewKeyDown += List_PreviewKeyDown;
+        }
+        if (_button != null) _button.Click += Button_Click;
     }
 
-    protected override int VisualChildrenCount => 1;
-    protected override Visual GetVisualChild(int index) => _root;
-    protected override Size MeasureOverride(Size constraint) { _root.Measure(constraint); return _root.DesiredSize; }
-    protected override Size ArrangeOverride(Size arrangeBounds) { _root.Arrange(new Rect(arrangeBounds)); return arrangeBounds; }
+    private void Input_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncing || _input == null) return;
+        _syncing = true;
+        SetCurrentValue(TextProperty, _input.Text);
+        _syncing = false;
+        ShowSuggestions();
+    }
+
+    private void Input_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (e.NewFocus is not ListBoxItem) ClosePopup();
+    }
+
+    private void List_MouseUp(object sender, MouseButtonEventArgs e) => Pick();
+
+    private void List_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Enter or Key.Tab) { Pick(); e.Handled = true; }
+        else if (e.Key == Key.Escape) { ClosePopup(); _input?.Focus(); e.Handled = true; }
+    }
+
+    private void Button_Click(object sender, RoutedEventArgs e) => OpenGroupMenu();
+
+    private void ClosePopup()
+    {
+        if (_popup != null) _popup.IsOpen = false;
+    }
 
     private void OnTextChanged(string text)
     {
-        if (_syncing) return;
+        if (_syncing || _input == null) return;
         _syncing = true;
         _input.Text = text ?? string.Empty;
         _syncing = false;
@@ -110,6 +138,7 @@ public sealed class MachineBox : Control
     /// <summary>Aktuelles Wort vor dem Cursor (getrennt durch Komma, Semikolon, Leerzeichen, Zeilenumbruch).</summary>
     private (int Start, string Token) CurrentToken()
     {
+        if (_input == null) return (0, string.Empty);
         var text = _input.Text;
         var caret = _input.CaretIndex;
         int start = caret;
@@ -119,6 +148,7 @@ public sealed class MachineBox : Control
 
     private void ShowSuggestions()
     {
+        if (_input == null || _popup == null || _list == null) return;
         var (_, token) = CurrentToken();
         if (!token.StartsWith('@') || !_input.IsKeyboardFocused) { _popup.IsOpen = false; return; }
         var prefix = token[1..];
@@ -131,7 +161,7 @@ public sealed class MachineBox : Control
 
     private void Input_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (!_popup.IsOpen) return;
+        if (_popup is not { IsOpen: true } || _list == null) return;
         switch (e.Key)
         {
             case Key.Down:
@@ -151,12 +181,13 @@ public sealed class MachineBox : Control
 
     private void Pick()
     {
-        if (_list.SelectedItem is ListBoxItem { Tag: string name }) Insert("@" + name, replaceToken: true);
-        _popup.IsOpen = false;
+        if (_list?.SelectedItem is ListBoxItem { Tag: string name }) Insert("@" + name, replaceToken: true);
+        ClosePopup();
     }
 
     private void Insert(string value, bool replaceToken)
     {
+        if (_input == null) return;
         var text = _input.Text;
         int start, end;
         if (replaceToken) { (start, _) = CurrentToken(); end = _input.CaretIndex; }

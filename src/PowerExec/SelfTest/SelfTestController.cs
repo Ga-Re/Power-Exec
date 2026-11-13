@@ -1446,6 +1446,44 @@ public sealed partial class SelfTestController : AppController
                 await ShowAndClose(new ResultsWindow(tilesVm));
             }
             await ShowAndClose(IconPickerWindow.ForTest());
+
+            Step("Eingaben mit Vorlage: Schlagworte und Rechner");
+            {
+                var tagBox = new Controls.TagBox { TagsText = "alpha, beta", Suggestions = new[] { "alpha", "beta", "gamma" } };
+                var machineBox = new Controls.MachineBox { Text = "SRV-01, @Server", Margin = new Thickness(0, 12, 0, 0) };
+                var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(16) };
+                stack.Children.Add(tagBox);
+                stack.Children.Add(machineBox);
+                var boxWindow = new Window { Content = stack, Width = 520, Height = 180, Style = (Style)Application.Current.FindResource("AppWindow"), Title = "Eingaben" };
+                boxWindow.Show();
+                await Settle();
+                static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+                {
+                    for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+                    {
+                        var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+                        if (child is T hit) yield return hit;
+                        foreach (var deeper in Descendants<T>(child)) yield return deeper;
+                    }
+                }
+                var removeButtons = Descendants<Wpf.Ui.Controls.Button>(tagBox).ToList();
+                if (removeButtons.Count != 2) Fail($"TagBox: {removeButtons.Count} Chips statt 2");
+                else
+                {
+                    if (removeButtons[0].Command is System.Windows.Input.RoutedCommand rc) rc.Execute(removeButtons[0].CommandParameter, removeButtons[0]);
+                    await Settle();
+                    if (tagBox.TagsText != "beta") Fail($"TagBox: Entfernen eines Chips ergibt „{tagBox.TagsText}“ statt „beta“");
+                }
+                if (Descendants<System.Windows.Controls.TextBox>(machineBox).FirstOrDefault() is not { } machineInput) Fail("MachineBox: Eingabefeld fehlt in der Vorlage");
+                else
+                {
+                    if (machineInput.Text != "SRV-01, @Server") Fail($"MachineBox: Eingabe zeigt „{machineInput.Text}“");
+                    machineInput.Text = "SRV-02";
+                    if (machineBox.Text != "SRV-02") Fail("MachineBox: Eingabe wird nicht in Text übernommen");
+                }
+                Screenshot(stack, "eingaben-vorlagen");
+                boxWindow.Close();
+            }
             await ShowAndClose(CatalogWindow.ForTest());
             await ShowAndClose(NewGroupWindow.ForTest());
             await ShowAndClose(ChoiceWindow.ForTest());

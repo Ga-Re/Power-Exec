@@ -244,7 +244,7 @@
                             <DockPanel Margin="0,0,0,10">
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Add'}" Margin="8,0,0,0" Command="{Binding AddMachineCommand}" />
                                 <c:MachineBox x:Name="MachineBox" Text="{Binding NewMachine, UpdateSourceTrigger=PropertyChanged}"
-                                              Placeholder="Rechnername(n) oder @Gruppe, mit Komma getrennt – Enter fügt hinzu" KeyDown="MachineBox_KeyDown"/>
+                                              Placeholder="{l:T 'Computer name(s) or @group, separated by commas – Enter adds them'}" KeyDown="MachineBox_KeyDown"/>
                             </DockPanel>
                             <DockPanel Margin="0,0,0,10">
                                 <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Command="{Binding TestConnectionCommand}">
