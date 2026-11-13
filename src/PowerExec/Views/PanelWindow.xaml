@@ -461,7 +461,7 @@
         <!-- Kachel für die Rasteransicht (kompakt: kleiner, eine Zeile) -->
         <DataTemplate x:Key="TileTemplate">
             <!-- Schwebende Kachel: in Ruhe fast durchsichtig, beim Darüberfahren heller mit feinem Rand -->
-            <Border x:Name="Row" CornerRadius="{DynamicResource Radius.Tile}" Background="{DynamicResource Bg.Tile}" Margin="2" Width="74" BorderBrush="Transparent" BorderThickness="1"
+            <Border x:Name="Row" CornerRadius="{DynamicResource Radius.Tile}" Background="{DynamicResource Bg.Tile}" Margin="2" BorderBrush="Transparent" BorderThickness="1"
                     AllowDrop="True" PreviewMouseLeftButtonDown="Row_PreviewMouseLeftButtonDown" PreviewMouseMove="Row_PreviewMouseMove"
                     DragOver="Row_DragOver" DragLeave="Row_DragLeave" Drop="Row_Drop">
                 <Button Style="{StaticResource RowButton}" Command="{Binding SelectCommand}" ToolTip="{Binding ToolTipText}" MouseDoubleClick="Row_DoubleClick"
@@ -486,7 +486,7 @@
                             <TextBlock Text="&#xE735;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}" Foreground="{DynamicResource Accent}"
                                        Visibility="{Binding IsFavorite, Converter={StaticResource Vis}}"/>
                         </StackPanel>
-                        <TextBlock x:Name="TileName" Grid.Row="1" infra:Highlight.Parts="{Binding NameParts}" FontSize="{StaticResource Font.Caption}" TextAlignment="Center" TextWrapping="Wrap"
+                        <TextBlock x:Name="TileName" Grid.Row="1" infra:Highlight.SoftBreaks="True" infra:Highlight.Parts="{Binding NameParts}" FontSize="{StaticResource Font.Caption}" TextAlignment="Center" TextWrapping="Wrap"
                                    TextTrimming="CharacterEllipsis" MaxHeight="30" Margin="0,3,0,0" VerticalAlignment="Top"/>
                     </Grid>
                 </Button>
@@ -507,7 +507,6 @@
                     <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Border.TileHover}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
-                    <Setter TargetName="Row" Property="Width" Value="60"/>
                     <Setter TargetName="TileGrid" Property="Height" Value="46"/>
                     <Setter TargetName="TileGrid" Property="Margin" Value="2,4,2,2"/>
                     <Setter TargetName="IconRow" Property="Height" Value="24"/>
@@ -522,7 +521,6 @@
                     <Setter TargetName="TileName" Property="Margin" Value="0,2,0,0"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DataContext.IsLarge, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
-                    <Setter TargetName="Row" Property="Width" Value="96"/>
                     <Setter TargetName="TileGrid" Property="Height" Value="84"/>
                     <Setter TargetName="IconRow" Property="Height" Value="40"/>
                     <Setter TargetName="TileImage" Property="Width" Value="34"/>
@@ -789,7 +787,24 @@
                                             <Setter Property="ItemTemplate" Value="{StaticResource TileTemplate}"/>
                                             <Setter Property="ItemsPanel">
                                                 <Setter.Value>
-                                                    <ItemsPanelTemplate><WrapPanel Margin="4,0,0,0"/></ItemsPanelTemplate>
+                                                    <!-- Kacheln füllen die Zeile: Spaltenzahl nach der Mindestbreite je Elementgröße -->
+                                                    <ItemsPanelTemplate>
+                                                        <c:TilePanel Margin="4,0,4,0">
+                                                            <c:TilePanel.Style>
+                                                                <Style TargetType="c:TilePanel">
+                                                                    <Setter Property="MinItemWidth" Value="88"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
+                                                                            <Setter Property="MinItemWidth" Value="68"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding DataContext.IsLarge, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
+                                                                            <Setter Property="MinItemWidth" Value="108"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </c:TilePanel.Style>
+                                                        </c:TilePanel>
+                                                    </ItemsPanelTemplate>
                                                 </Setter.Value>
                                             </Setter>
                                         </DataTrigger>
@@ -951,13 +966,19 @@
                           ItemsSource="{Binding Workspaces}" SelectedItem="{Binding ActiveWorkspace, Mode=OneWay}" SelectionChanged="Workspace_SelectionChanged"
                           ToolTip="{l:T 'Switch workspace'}" Visibility="{Binding HasWorkspaces, Converter={StaticResource Vis}}"/>
                 <StackPanel Grid.Column="3" Orientation="Horizontal">
-                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Command="{Binding ToggleGridCommand}" ToolTip="{Binding LayoutToolTip}">
+                    <!-- Ansicht: Liste/Raster und Elementgröße in einem Menü (das Symbol zeigt die aktuelle Darstellung) -->
+                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="{l:T 'View: list or grid, item size'}"
+                               AutomationProperties.Name="{l:T 'View'}">
                         <TextBlock Text="{Binding LayoutGlyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XL}"/>
-                    </ui:Button>
-                    <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Click="MenuButton_Click" ToolTip="{l:T 'Item size: small, medium, large'}">
-                        <TextBlock Text="&#xE8E9;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XL}"/>
                         <Button.ContextMenu>
                             <ContextMenu>
+                                <MenuItem Header="{l:T 'List'}" Command="{Binding SetLayoutCommand}" CommandParameter="List">
+                                    <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding IsList, Converter={StaticResource Vis}}"/></MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="{l:T 'Grid'}" Command="{Binding SetLayoutCommand}" CommandParameter="Grid">
+                                    <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding IsGrid, Converter={StaticResource Vis}}"/></MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
                                 <MenuItem Header="{l:T 'Small'}" Command="{Binding SetItemSizeCommand}" CommandParameter="Small">
                                     <MenuItem.Icon><TextBlock Text="&#xE73E;" Style="{StaticResource Icon}" Visibility="{Binding ItemSize, Converter={StaticResource EqVis}, ConverterParameter=Small}"/></MenuItem.Icon>
                                 </MenuItem>
@@ -1046,7 +1067,7 @@
             <!-- Suche -->
             <Grid Grid.Row="2" Margin="16,0">
                 <TextBox x:Name="SearchBox" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Height="38"
-                         Padding="30,0,8,0" Tag="{l:T 'Search …'}" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
+                         Padding="30,0,8,0" Tag="{Binding SearchPlaceholder}" PreviewKeyDown="SearchBox_PreviewKeyDown" PreviewTextInput="SearchBox_PreviewTextInput"
                          TextChanged="SearchBox_TextChanged" SelectionChanged="SearchBox_SelectionChanged" LostKeyboardFocus="SearchBox_LostKeyboardFocus"
                          PreviewMouseLeftButtonUp="SearchBox_PreviewMouseUp"
                          ToolTip="{Binding SearchHelp}" ToolTipService.InitialShowDelay="1500"
@@ -1335,13 +1356,14 @@
                           ItemsSource="{Binding Groups}" Visibility="{Binding ShowJumpRail, Converter={StaticResource Vis}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Button Width="14" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding RailToolTip}" Focusable="False"
+                        <Button Width="16" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding RailToolTip}" Focusable="False"
+                                ToolTipService.InitialShowDelay="80" ToolTipService.Placement="Left"
                                 Command="{Binding DataContext.RailClickCommand, RelativeSource={RelativeSource AncestorType=c:PanelRoot}}" CommandParameter="{Binding}"
                                 AutomationProperties.Name="{Binding Title}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Grid Background="Transparent">
-                                        <Ellipse x:Name="Dot" Width="7" Height="7" Opacity="0.75" Style="{StaticResource GroupDot}"/>
+                                        <Ellipse x:Name="Dot" Width="8" Height="8" Opacity="0.8" Style="{StaticResource GroupDot}"/>
                                     </Grid>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -1353,7 +1375,7 @@
                                             <DataTrigger.Binding>
                                                 <MultiBinding Converter="{StaticResource StringEquals}">
                                                     <Binding Path="Key"/>
-                                                    <Binding Path="DataContext.StickyTopKey" RelativeSource="{RelativeSource AncestorType=Window}"/>
+                                                    <Binding Path="DataContext.StickyTopKey" RelativeSource="{RelativeSource AncestorType=c:PanelRoot}"/>
                                                 </MultiBinding>
                                             </DataTrigger.Binding>
                                             <Setter TargetName="Dot" Property="Width" Value="10"/>
@@ -1755,8 +1777,6 @@
                     <ui:Button Style="{StaticResource Btn.Icon}" DockPanel.Dock="Right" Command="{Binding NewGroupCommand}" ToolTip="{l:T 'New group'}">
                         <TextBlock Text="&#xE8F4;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}"/>
                     </ui:Button>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding VersionText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center"
-                               Margin="8,0,4,0" ToolTip="{l:T 'Running UI and version; in parentheses the version installed by the installer'}"/>
                     <TextBlock Text="{Binding Footer}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
                 </StackPanel>

@@ -81,12 +81,12 @@ public sealed class TrayIcon : IDisposable
             }
 
         _favorites.DropDownItems.Clear();
-        foreach (var path in s.Favorites)
-        {
-            var item = _app.FindItem(path);
-            if (item == null) continue;
+        // Dieselbe Liste wie die Gruppe „Favoriten“ im Panel und das Mini-Dock (Reihenfolge, nur vorhandene Einträge)
+        var favorites = _app.Hosts.Count > 0
+            ? _app.Hosts[0].ViewModel.FavoriteItems
+            : s.Favorites.Select(_app.FindItem).OfType<Core.Models.LaunchItem>().ToList();
+        foreach (var item in favorites)
             _favorites.DropDownItems.Add(Label(item), null, (_, _) => Run(() => _app.RunProfile(item, null)));
-        }
         _favorites.Enabled = _favorites.DropDownItems.Count > 0;
 
         _recent.DropDownItems.Clear();

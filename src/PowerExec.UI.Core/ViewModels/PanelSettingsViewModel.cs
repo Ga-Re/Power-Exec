@@ -87,6 +87,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
     public bool IsHotZoneMiddle => _c.HotZone == HotZoneMode.Middle;
     public int HotZoneThickness { get => _c.HotZoneThickness; set { _c.HotZoneThickness = value; OnPropertyChanged(); } }
     public int HotZoneLength { get => _c.HotZoneLength; set { _c.HotZoneLength = value; OnPropertyChanged(); } }
+    public bool HotZoneAutoHide { get => _c.HotZoneAutoHide; set { _c.HotZoneAutoHide = value; OnPropertyChanged(); } }
     public IReadOnlyList<KeyValuePair<HotZoneMode, string>> HotZones { get; } = new[]
     {
         new KeyValuePair<HotZoneMode, string>(HotZoneMode.Middle, L.T("Middle · custom length")),

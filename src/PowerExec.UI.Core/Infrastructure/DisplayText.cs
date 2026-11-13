@@ -18,4 +18,23 @@ public static class DisplayText
             "Space" => "Leertaste",
             var x => x
         }));
+
+    /// <summary>Unsichtbares Leerzeichen: hier darf eine Zeile umbrechen.</summary>
+    public const char SoftBreak = '\u200B';
+
+    /// <summary>
+    /// Namen für schmale Flächen (Kacheln) umbrechbar machen: nach „-“, „_“ und „.“ darf die Zeile umbrechen
+    /// („Get-DiskSpace“ → „Get-“ / „DiskSpace“ statt „Get-DiskS…“). Am Ende und vor einem weiteren Trennzeichen nicht.
+    /// </summary>
+    public static string WithSoftBreaks(string text)
+    {
+        if (text.Length < 2 || text.AsSpan().IndexOfAny('-', '_', '.') < 0) return text;
+        var sb = new System.Text.StringBuilder(text.Length + 4);
+        for (int i = 0; i < text.Length; i++)
+        {
+            sb.Append(text[i]);
+            if (text[i] is '-' or '_' or '.' && i > 0 && i < text.Length - 1 && char.IsLetterOrDigit(text[i + 1])) sb.Append(SoftBreak);
+        }
+        return sb.ToString();
+    }
 }

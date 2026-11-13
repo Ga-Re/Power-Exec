@@ -415,7 +415,7 @@ public sealed class PanelViewModel : ObservableObject
     public IReadOnlyList<LaunchItem> QuickItems => _quickItems;
 
     /// <summary>Favoriten fürs Mini-Dock (Anzahl einstellbar).</summary>
-    public IReadOnlyList<LaunchItem> DockItems => _favoriteItems.Take(_host.Config.DockCount).ToList();
+    public IReadOnlyList<LaunchItem> DockItems => FavoriteItems.Take(_host.Config.DockCount).ToList();
 
     /// <summary>Die Favoriten haben sich geändert (Mini-Dock neu aufbauen).</summary>
     public event Action? QuickItemsChanged;
@@ -774,6 +774,27 @@ public sealed class PanelViewModel : ObservableObject
     public IReadOnlyList<SearchChip> SearchChips { get => _searchChips; private set { if (Set(ref _searchChips, value)) OnPropertyChanged(nameof(HasSearchChips)); } }
     public bool HasSearchChips => _searchChips.Count > 0;
     public string SearchHelp => SearchQuery.Help;
+
+    /// <summary>
+    /// Hinweistext im leeren Suchfeld: bei jedem Öffnen ein anderes Beispiel, damit die Filter (#Schlagwort, Typ, Gruppe,
+    /// Merkmal) auffallen, ohne dass man die Hilfe öffnen muss.
+    /// </summary>
+    public string SearchPlaceholder => SearchPlaceholders[_placeholderIndex % SearchPlaceholders.Length];
+
+    private int _placeholderIndex;
+
+    private static string[] SearchPlaceholders =>
+    [
+        L.T("Search …"),
+        L.T("Search …   e.g. #tag"),
+        L.T("Search …   e.g. type:ps1"),
+        L.T("Search …   e.g. is:fav"),
+        L.T("Search …   e.g. group:Name"),
+        L.T("Search …   ? shows all shortcuts")
+    ];
+
+    /// <summary>Favoriten in der Reihenfolge der Gruppe „Favoriten“ (für Mini-Dock und Tray-Menü).</summary>
+    public IReadOnlyList<LaunchItem> FavoriteItems => _favoriteItems;
 
     private void UpdateSearchChips(SearchQuery query)
     {
@@ -1404,6 +1425,8 @@ public sealed class PanelViewModel : ObservableObject
         ShowGroupJump = false;
         Peek = null;
         _suggestionSource = null; // beim nächsten Öffnen frisch (neue Schlagworte, Gruppen …)
+        _placeholderIndex++;
+        OnPropertyChanged(nameof(SearchPlaceholder));
         Suggestions = Array.Empty<SearchSuggestion>();
         ShowHistory = false;
         OnPropertyChanged(nameof(SearchText));

@@ -133,7 +133,7 @@ public sealed class WelcomeViewModel : ObservableObject
         s.StartWithWindows = _startWithWindows;
         s.UseWindowsAccent = _useWindowsAccent;
         if (s.Panels.Count == 0) s.Panels.Add(new PanelConfig());
-        foreach (var p in s.Panels) p.Edge = _edge;
+        foreach (var p in s.Panels) { p.Edge = _edge; p.HotZoneAutoHide = true; } // neue Installation: Streifen erst beim Annähern
         s.Panels[0].Hotkey = _hotkey;
         var folder = _folder;
         if (folder != null && !s.Folders.Any(f => f.Path.Equals(folder, StringComparison.OrdinalIgnoreCase)))

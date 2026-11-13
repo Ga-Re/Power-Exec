@@ -385,6 +385,13 @@
                         <TextBlock Text="{l:T 'How far the trigger area reaches from the edge into the screen. Wider = easier to hit, but more noticeable.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </DockPanel>
+                <DockPanel Style="{StaticResource SubSetting}">
+                    <ui:ToggleSwitch DockPanel.Dock="Right" IsChecked="{Binding HotZoneAutoHide}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Show only when the pointer is near'}"/>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{l:T 'Show only when the pointer is near'}"/>
+                        <TextBlock Text="{l:T 'The strip stays invisible until the pointer comes close to the edge; it triggers either way.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DockPanel>
             </StackPanel>
         </c:SettingsExpander>
         </StackPanel>

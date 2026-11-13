@@ -49,7 +49,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Rectangle Margin="-2" RadiusX="{DynamicResource Radius.Card.Value}" RadiusY="{DynamicResource Radius.Card.Value}" Stroke="{DynamicResource Text.Primary}" StrokeThickness="1.5" SnapsToDevicePixels="True"/>
+                    <Rectangle Margin="-2" RadiusX="{DynamicResource Radius.Card.Value}" RadiusY="{DynamicResource Radius.Card.Value}" Stroke="{DynamicResource Accent}" StrokeThickness="2" SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -172,7 +172,9 @@
     </Style>
 
     <!-- Eckenradius der Eingabefelder (Themes/Fluent.xaml); Suchfelder setzen ihn in ihren Resources größer -->
-    <StaticResource x:Key="TextBox.CornerRadius" ResourceKey="Radius.Control"/>
+    <!-- Gleicher Wert wie Radius.Control; ThemeService.ApplyCorners zieht beide gemeinsam nach. (Ein Alias per
+         <StaticResource x:Key=…/> löst in WPF falsch auf und liefert die nächste Ressource.) -->
+    <CornerRadius x:Key="TextBox.CornerRadius">4</CornerRadius>
 
     <!-- Karte für Einstellungszeilen -->
     <Style x:Key="Card" TargetType="Border">

@@ -27,6 +27,12 @@ public sealed class PanelConfig
     public HotZoneMode HotZone { get; set; } = HotZoneMode.Middle;
     public int HotZoneThickness { get; set; } = 4;
     public int HotZoneLength { get; set; } = 200;
+
+    /// <summary>
+    /// Hover-Zone erst zeigen, wenn sich der Mauszeiger nähert (sonst unsichtbar, aber weiter auslösend). Bei neuen
+    /// Installationen an; vorhandene Einstellungen behalten den dauerhaft sichtbaren Streifen.
+    /// </summary>
+    public bool HotZoneAutoHide { get; set; }
     public int PanelWidth { get; set; } = 400;
     public int PanelHeightPercent { get; set; } = 100;
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
@@ -115,6 +121,7 @@ public sealed class PanelConfig
         HotZone = HotZone,
         HotZoneThickness = HotZoneThickness,
         HotZoneLength = HotZoneLength,
+        HotZoneAutoHide = HotZoneAutoHide,
         PanelWidth = PanelWidth,
         PanelHeightPercent = PanelHeightPercent,
         PanelAlignment = PanelAlignment,
@@ -154,7 +161,7 @@ public sealed class PanelConfig
 
     /// <summary>Alles, was Hover-Zonen und Mini-Docks betrifft (ändert es sich, werden sie neu angelegt).</summary>
     public TriggerSettings TriggerKey => new(Edge, MonitorMode, MonitorIndex, HotZone, HotZoneThickness, HotZoneLength, PanelWidth,
-        PanelHeightPercent, PanelAlignment, PanelColor, AccentColor, PanelOpacity, Backdrop, ShowDock, DockCount);
+        PanelHeightPercent, PanelAlignment, PanelColor, AccentColor, PanelOpacity, Backdrop, ShowDock, DockCount, HotZoneAutoHide);
 
     public static PanelConfig FromLegacy(AppSettings s) => new()
     {
@@ -207,4 +214,4 @@ public sealed class PanelConfig
 /// </summary>
 public readonly record struct TriggerSettings(ScreenEdge Edge, MonitorMode MonitorMode, int MonitorIndex, HotZoneMode HotZone, int HotZoneThickness,
     int HotZoneLength, int PanelWidth, int PanelHeightPercent, PanelAlignment PanelAlignment, string PanelColor, string AccentColor, int PanelOpacity,
-    PanelBackdrop? Backdrop, bool ShowDock, int DockCount);
+    PanelBackdrop? Backdrop, bool ShowDock, int DockCount, bool HotZoneAutoHide);
