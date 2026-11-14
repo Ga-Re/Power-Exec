@@ -2,6 +2,10 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.33.1 – Glas: kein Schatten auf dem Nachbarmonitor
+
+- Bei mehreren Monitoren wirft das Glas-Panel Schatten und Rand nicht mehr auf den Monitor daneben
+
 ## 0.33.0 – Marktplatz als eigenes Fenster; Gruppen lassen sich an die erste Stelle ziehen
 
 - Der Marktplatz öffnet sich in einem eigenen Fenster – aus der Fußzeile des Panels, dem Tray-Menü oder den Einstellungen – und übernimmt Installationen sofort

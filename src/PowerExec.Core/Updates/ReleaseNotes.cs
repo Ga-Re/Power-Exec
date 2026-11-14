@@ -8,6 +8,10 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 33, 1), L.T("Glass: no shadow on the neighboring monitor"), new[]
+        {
+            L.T("With several monitors the glass panel no longer casts its shadow and border onto the monitor next to it")
+        }),
         new ReleaseNote(new Version(0, 33, 0), L.T("Marketplace in its own window; groups can be dragged to the top"), new[]
         {
             L.T("The marketplace opens in its own window – from the panel footer, the tray menu or the settings – and applies installs right away"),
