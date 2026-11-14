@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Synthwave",
+  "Description": "Retro-Lila mit Sonnenuntergangs-Orange",
+  "Theme": "Dark",
+  "PanelColor": "#241034",
+  "Opacity": 88,
+  "Frost": 15,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 50,
+  "GlassSaturation": 140,
+  "AccentColor": "#FF6C11",
+  "Corners": "Rounded"
+}

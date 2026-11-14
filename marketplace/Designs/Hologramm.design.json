@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Hologramm",
+  "Description": "Kühles Glas mit irisierendem Violett",
+  "Theme": "Dark",
+  "PanelColor": "#1A1F3A",
+  "Opacity": 70,
+  "Frost": 35,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 65,
+  "GlassSaturation": 160,
+  "AccentColor": "#A78BFA",
+  "Corners": "Rounded"
+}

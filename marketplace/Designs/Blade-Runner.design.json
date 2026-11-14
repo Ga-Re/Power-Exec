@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Blade Runner",
+  "Description": "Smog-Petrol mit Bernstein-Licht",
+  "Theme": "Dark",
+  "PanelColor": "#0E1B22",
+  "Opacity": 90,
+  "Frost": 25,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 60,
+  "GlassSaturation": 90,
+  "AccentColor": "#FFA630",
+  "Corners": "Standard"
+}

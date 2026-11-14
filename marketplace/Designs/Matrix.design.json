@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Matrix",
+  "Description": "Terminal-Schwarz mit Phosphorgrün",
+  "Theme": "Dark",
+  "PanelColor": "#020A04",
+  "Opacity": 97,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Solid",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#00FF41",
+  "Corners": "Square"
+}

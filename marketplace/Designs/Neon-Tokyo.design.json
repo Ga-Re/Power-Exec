@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Neon Tokyo",
+  "Description": "Regennasses Indigo mit Leuchtreklame-Pink",
+  "Theme": "Dark",
+  "PanelColor": "#0F1033",
+  "Opacity": 90,
+  "Frost": 15,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 50,
+  "GlassSaturation": 135,
+  "AccentColor": "#FF4F8B",
+  "Corners": "Rounded"
+}

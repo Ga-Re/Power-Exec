@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Glitch",
+  "Description": "Anthrazit mit Rot-Cyan-Störsignal",
+  "Theme": "Dark",
+  "PanelColor": "#16161C",
+  "Opacity": 94,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#FF3B5C",
+  "Corners": "Square"
+}

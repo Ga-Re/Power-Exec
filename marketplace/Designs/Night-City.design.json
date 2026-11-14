@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Night City",
+  "Description": "Nachtschwarz mit Signalgelb, kantig",
+  "Theme": "Dark",
+  "PanelColor": "#0D0D12",
+  "Opacity": 96,
+  "Frost": 0,
+  "WindowsAccent": false,
+  "Backdrop": "Clear",
+  "GlassBlur": 50,
+  "GlassSaturation": 100,
+  "AccentColor": "#FCEE0A",
+  "Corners": "Square"
+}

@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Tron",
+  "Description": "Gitter-Schwarz mit leuchtendem Cyan",
+  "Theme": "Dark",
+  "PanelColor": "#05121A",
+  "Opacity": 93,
+  "Frost": 5,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 40,
+  "GlassSaturation": 120,
+  "AccentColor": "#00E5FF",
+  "Corners": "Square"
+}

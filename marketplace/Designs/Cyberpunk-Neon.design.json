@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Cyberpunk Neon",
+  "Description": "Tiefviolett mit grellem Neon-Magenta",
+  "Theme": "Dark",
+  "PanelColor": "#120A1F",
+  "Opacity": 92,
+  "Frost": 10,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 45,
+  "GlassSaturation": 150,
+  "AccentColor": "#FF2BD6",
+  "Corners": "Square"
+}

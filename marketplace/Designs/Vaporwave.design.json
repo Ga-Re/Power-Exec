@@ -1,0 +1,15 @@
+{
+  "Key": "",
+  "Name": "Vaporwave",
+  "Description": "Pastell-Rosa mit Türkis-Akzent",
+  "Theme": "Light",
+  "PanelColor": "#F6D6F0",
+  "Opacity": 90,
+  "Frost": 20,
+  "WindowsAccent": false,
+  "Backdrop": "Glass",
+  "GlassBlur": 55,
+  "GlassSaturation": 120,
+  "AccentColor": "#0BB5A8",
+  "Corners": "Rounded"
+}
