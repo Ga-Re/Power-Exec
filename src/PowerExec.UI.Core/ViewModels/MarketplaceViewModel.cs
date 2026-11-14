@@ -719,7 +719,14 @@ public sealed class MarketplaceItemRow : MarketplaceRow
         }
     }
     public string DesignBackdropText => _details?.Design is { } d
-        ? $"{PanelBackdrops.Label(d.Backdrop)} · {d.Opacity} %" : string.Empty;
+        ? string.Join(" · ", new[]
+        {
+            PanelBackdrops.Label(d.Backdrop), $"{d.Opacity} %",
+            d.Pair != null ? L.T("light and dark variant") : string.Empty,
+            d.Palette is { IsEmpty: false } ? L.T("own palette") : string.Empty,
+            string.IsNullOrEmpty(d.FontFamily) ? string.Empty : L.F("font {0}", d.FontFamily),
+            Appearance.SplitColors(d.GroupColors).Count is > 0 and var n ? L.F("{0} group colors", n) : string.Empty
+        }.Where(t => t.Length > 0)) : string.Empty;
 }
 
 /// <summary>Eine Quelle in der Liste „Quellen“.</summary>

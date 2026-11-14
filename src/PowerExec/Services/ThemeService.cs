@@ -67,6 +67,21 @@ public static class ThemeService
         res["OverlayCornerRadius"] = new CornerRadius(r.Card);
     }
 
+    /// <summary>Schrift des Designs für Text; null = Schrift der App.</summary>
+    public static FontFamily? TextFont { get; private set; }
+
+    /// <summary>
+    /// Schriften des Designs: Text über die Fenster (<see cref="Views.WindowHelper.ApplyFont"/>), Pfade und Code über die
+    /// Ressource <c>MonoFont</c>. Fehlt eine Schrift auf dem Rechner, greift die Schrift der App dahinter.
+    /// </summary>
+    private static void ApplyFonts(DesignLook look)
+    {
+        var res = Application.Current.Resources;
+        TextFont = look.FontFamily.Length > 0 ? new FontFamily(look.FontFamily + ", Segoe UI Variable Text, Segoe UI") : null;
+        res.Remove("MonoFont");
+        if (look.MonoFontFamily.Length > 0) res["MonoFont"] = new FontFamily(look.MonoFontFamily + ", Cascadia Mono, Consolas, Courier New");
+    }
+
     public static void Apply(ThemeMode mode) => Apply(new AppSettings { Theme = mode });
 
     public static void Apply(AppSettings settings)
@@ -100,6 +115,7 @@ public static class ThemeService
         if (merged.Count > 0) merged[0] = dict;
         else merged.Insert(0, dict);
         ApplyCorners(settings.Corners);
+        ApplyFonts(settings.Look);
         PowerExec.Desktop.Views.WindowHelper.RefreshOpenWindows();
         Infrastructure.FluentTheme.Refresh();
         Listen();

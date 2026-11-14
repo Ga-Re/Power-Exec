@@ -43,9 +43,10 @@ public sealed class EdgeTriggerWindow : Window
         // Die sichtbare Leiste füllt die ganze Hover-Zone: mit „Akzentfarbe von Windows“ in der Windows-Akzentfarbe,
         // sonst in der eigenen Akzentfarbe bzw. der Panelfarbe (ohne beides: Akzentfarbe des Designs).
         var settings = host.Config;
+        var colors = Appearance.Effective(app.Settings, settings, ThemeService.IsDark); // Variante für hell bzw. dunkel
         Brush fill;
         Brush outline = Brushes.Transparent;
-        if (!app.Settings.UseWindowsAccent && (PanelColors.TryParse(settings.AccentColor, out var rgb) || PanelColors.TryParse(settings.PanelColor, out rgb)))
+        if (!app.Settings.UseWindowsAccent && (PanelColors.TryParse(colors.AccentColor, out var rgb) || PanelColors.TryParse(colors.PanelColor, out rgb)))
         {
             fill = rgb.ToBrush();
             // Feiner Rand, damit auch sehr dunkle oder sehr helle Farben auf dem Desktop sichtbar bleiben

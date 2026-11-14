@@ -95,4 +95,23 @@ public class PanelSlideTests
         var bottom = new Rectangle(760, 900, 400, 408);
         Assert.Equal(new Rectangle(0, 0, 400, 132), PanelSlide.Visible(bottom, Work));
     }
+
+    [Fact]
+    public void ShadowGuardOnlyWhenAnotherMonitorIsWithinReach()
+    {
+        var home = new Rectangle(0, 0, 1920, 1080);
+        var right = new Rectangle(1920, 0, 1920, 1080);
+        var docked = new Rectangle(1920 - 420, 0, 420, 1040);   // am rechten Rand, direkt an der Kante zum Nachbarn
+        var inner = new Rectangle(0, 100, 420, 800);           // am linken Rand, weit weg vom Nachbarn
+
+        Assert.False(PanelSlide.ShadowReachesOtherMonitor(docked, new[] { home }));
+        Assert.True(PanelSlide.ShadowReachesOtherMonitor(docked, new[] { home, right }));
+        Assert.False(PanelSlide.ShadowReachesOtherMonitor(inner, new[] { home, right }));
+        // Monitor darüber: ein Panel über die volle Höhe reicht mit dem Schatten hinein
+        var above = new Rectangle(0, -1080, 1920, 1080);
+        Assert.True(PanelSlide.ShadowReachesOtherMonitor(new Rectangle(0, 0, 420, 1040), new[] { home, above }));
+        // Lücke größer als die Reichweite des Schattens: kein Schutz nötig
+        var far = new Rectangle(1920 + PanelSlide.ShadowReach + 1, 0, 1920, 1080);
+        Assert.False(PanelSlide.ShadowReachesOtherMonitor(docked, new[] { home, far }));
+    }
 }

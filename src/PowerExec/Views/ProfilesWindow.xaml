@@ -73,7 +73,7 @@
                     <StackPanel Margin="0,0,12,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding TypeLabel}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
+                            <TextBlock Text="{Binding TypeLabel}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
                         </StackPanel>
                         <TextBlock x:Name="Note" Text="{Binding Note}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
                     </StackPanel>
@@ -179,7 +179,7 @@
                 <!-- Programme -->
                 <StackPanel Visibility="{Binding DataContext.ShowProgramArgs, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'Additional arguments at launch'}" Style="{StaticResource FieldLabel}"/>
-                    <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'optional, e.g. /v:SRV-APP02'}"/>
+                    <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'optional, e.g. /v:SRV-APP02'}"/>
                     <CheckBox Content="{l:T 'Keep console open after finishing'}" IsChecked="{Binding NoExit}" Margin="0,8,0,0"
                               Visibility="{Binding DataContext.SupportsNoExit, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
                 </StackPanel>
@@ -293,7 +293,7 @@
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Show in Explorer'}" Command="{Binding OpenFileLocationCommand}" />
                                 <TextBlock Text="{Binding FileKindText}" Style="{StaticResource CardTitle}" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{StaticResource MonoFont}" Margin="0,12,0,0"/>
+                            <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{DynamicResource MonoFont}" Margin="0,12,0,0"/>
                             <TextBlock Text="{Binding FileInfo}" Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                             <TextBlock Text="{Binding FileParametersText}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                        Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}"/>
@@ -423,7 +423,7 @@
                     </Border.Style>
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <TextBox Text="{Binding Selected.Preview, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"
-                                 FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}"/>
+                                 FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}"/>
                     </ScrollViewer>
                 </Border>
                 <DockPanel>

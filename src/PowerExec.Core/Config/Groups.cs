@@ -196,12 +196,20 @@ public static class GroupManager
     public static string OwnColorOf(AppSettings s, string groupPath) =>
         s.GroupColors.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
 
-    /// <summary>Wirksame Farbe: eigene oder die der nächsten übergeordneten Gruppe.</summary>
+    /// <summary>
+    /// Wirksame Farbe: eigene oder die der nächsten übergeordneten Gruppe; sonst die Farbe aus der Reihe des Designs,
+    /// die der Gruppe der obersten Ebene nach ihrer Reihenfolge zufällt (leer, wenn das Design keine Reihe hat).
+    /// </summary>
     public static string ColorOf(AppSettings s, string groupPath)
     {
-        for (string? p = Normalize(groupPath); p != null && p.Length > 0; p = ParentOf(p))
+        var path = Normalize(groupPath);
+        for (string? p = path; p != null && p.Length > 0; p = ParentOf(p))
             if (OwnColorOf(s, p) is { Length: > 0 } c) return c;
-        return string.Empty;
+        if (s.Look.GroupColors.Count == 0 || path.Length == 0) return string.Empty;
+        var top = path.Split('/')[0];
+        var index = s.CategoryOrder.Select(c => c.Split('/')[0]).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+            .FindIndex(c => c.Equals(top, StringComparison.OrdinalIgnoreCase));
+        return Appearance.SeriesColor(s, index >= 0 ? index : Appearance.SeriesIndex(top));
     }
 
     public static void SetColor(AppSettings s, string groupPath, string? color)

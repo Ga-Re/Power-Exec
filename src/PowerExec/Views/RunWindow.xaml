@@ -37,7 +37,7 @@
                     <TextBlock DockPanel.Dock="Right" Text="{Binding LastUsed}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Tertiary}" VerticalAlignment="Center" Margin="8,0"/>
                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center">
                         <StackPanel>
-                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}"/>
+                            <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource MonoFont}"/>
                             <TextBlock x:Name="TestInfo" Text="{Binding TestText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"
                                        MaxWidth="230" ToolTip="{Binding TestText}" Visibility="{Binding HasTest, Converter={StaticResource Vis}}"/>
                         </StackPanel>
@@ -119,7 +119,7 @@
                                         <StackPanel Margin="0,0,16,16">
                                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Body}" FontWeight="SemiBold"/>
-                                                <TextBlock Text="{Binding TypeLabel}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0"/>
+                                                <TextBlock Text="{Binding TypeLabel}" FontSize="{StaticResource Font.Body}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0"/>
                                                 <TextBlock Text="{l:T 'Required'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Error}" Margin="8,0,0,0"
                                                            Visibility="{Binding IsMandatory, Converter={StaticResource Vis}}"/>
                                                 <TextBlock Text="{l:T 'fixed in the profile'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Accent}" Margin="8,0,0,0"
@@ -231,7 +231,7 @@
                                         <Border Height="28" infra:Pill.IsEnabled="True" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1"
                                                 Padding="12,0,2,0" Margin="0,0,8,8">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Name}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center"/>
                                                 <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
                                                         ToolTip="{l:T 'Remove'}">
                                                     <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}"/>
@@ -291,7 +291,7 @@
                 <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="12,8" MaxHeight="110">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <TextBox Text="{Binding Preview, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                 FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
+                                 FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
                     </ScrollViewer>
                 </Border>
                 <DockPanel Margin="0,12,0,0">

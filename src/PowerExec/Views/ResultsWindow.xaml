@@ -115,12 +115,12 @@
                     <DockPanel Margin="24,12,24,12">
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
                             <TextBlock DockPanel.Dock="Right" Text="{Binding Duration}" Foreground="{DynamicResource Text.Secondary}"/>
-                            <TextBlock Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Computer}" FontFamily="{DynamicResource MonoFont}" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding StatusText, StringFormat=' · {0}'}" Foreground="{DynamicResource Text.Secondary}"/>
                         </DockPanel>
                         <Border Padding="12,12" Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                     FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
+                                     FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" VerticalScrollBarVisibility="Auto"
                                      Foreground="{DynamicResource Text.Secondary}"/>
                         </Border>
                     </DockPanel>
@@ -212,7 +212,7 @@
                                                         <RotateTransform Angle="{Binding IsExpanded, Converter={StaticResource ExpandAngle}}"/>
                                                     </TextBlock.RenderTransform>
                                                 </TextBlock>
-                                                <TextBlock Grid.Column="1" Text="{Binding Computer}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Computer}" FontFamily="{DynamicResource MonoFont}" VerticalAlignment="Center"/>
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <TextBlock x:Name="StatusIcon" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0" Text="&#xE916;"
                                                                Foreground="{DynamicResource Text.Secondary}"/>
@@ -225,7 +225,7 @@
                                         <Border Visibility="{Binding IsExpanded, Converter={StaticResource Vis}}" Margin="48,0,16,12" Padding="12,12"
                                                 Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}">
                                             <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0"
-                                                     FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
+                                                     FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" MinHeight="0" Foreground="{DynamicResource Text.Secondary}"/>
                                         </Border>
                                     </StackPanel>
                                 </Border>
@@ -260,7 +260,7 @@
                         <TextBlock Text="{l:T 'Log'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </DockPanel>
                     <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="16,4,16,16"
-                             FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                             FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
                 </DockPanel>
             </Border>

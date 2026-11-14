@@ -95,7 +95,7 @@ public sealed class TagsViewModel : ObservableObject
         {
             if (_query.Trim().Length > 0 && !tag.Contains(_query.Trim().TrimStart('#'), StringComparison.CurrentCultureIgnoreCase)) continue;
             var entries = Tags.EntriesWith(_s, tag).Select(k => (k, NameOf(k))).OrderBy(e => e.Item2, StringComparer.CurrentCultureIgnoreCase).ToList();
-            Rows.Add(new TagRowViewModel(this, tag, count, Tags.ColorOf(_s, tag), entries) { IsExpanded = expanded.Contains(tag) });
+            Rows.Add(new TagRowViewModel(this, tag, count, Tags.OwnColorOf(_s, tag), entries) { IsExpanded = expanded.Contains(tag) });
         }
         OnPropertyChanged(nameof(IsEmpty));
     }

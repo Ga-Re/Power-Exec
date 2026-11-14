@@ -41,7 +41,7 @@
                                             <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="{StaticResource Font.Caption}"/>
                                             <Run Text="{Binding Name, Mode=OneWay}"/>
                                         </TextBlock>
-                                        <TextBlock Text="{Binding Path}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Path}" FontSize="{StaticResource Font.Caption}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
                                     </StackPanel>
                                 </DockPanel>

@@ -22,7 +22,7 @@
                             <DockPanel Margin="0,2">
                                 <TextBlock x:Name="Info" DockPanel.Dock="Right" Text="{Binding Text}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" Margin="12,0,0,0"
                                            TextTrimming="CharacterEllipsis" MaxWidth="420"/>
-                                <TextBlock Text="{Binding Path}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Path}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"/>
                             </DockPanel>
                             <DataTemplate.Triggers>
                                 <DataTrigger Binding="{Binding IsProblem}" Value="True">
@@ -52,7 +52,7 @@
                 </DockPanel>
                 <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Height="280">
                     <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="12,8"
-                             FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
+                             FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" TextWrapping="NoWrap" VerticalContentAlignment="Top"
                              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Foreground="{DynamicResource Text.Secondary}"/>
                 </Border>
                 <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0"

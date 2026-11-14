@@ -50,6 +50,7 @@ internal sealed class FakeAppUi : IAppUi
     public IAppWindow ShowRun(RunViewModel vm) => Open("Run", vm);
     public IAppWindow ShowProfiles(ProfilesViewModel vm) => Open("Profiles", vm);
     public void ShowProfilesModal(ProfilesViewModel vm, object? owner) => Open("ProfilesModal", vm);
+    public void ShowDesignEditorModal(DesignEditorViewModel vm, object? owner) => Open("DesignEditorModal", vm);
     public IAppWindow ShowSchedule(ScheduleViewModel vm) => Open("Schedule", vm);
     public IAppWindow ShowWorkflow(WorkflowEditorViewModel vm) => Open("Workflow", vm);
     public IAppWindow ShowMarketplace(MarketplaceWindowViewModel vm) => Open("Marketplace", vm);

@@ -55,6 +55,9 @@ public interface IAppUi : IDisposable
 
     /// <summary>Profil-Dialog modal über <paramref name="owner"/> (aus den Einstellungen).</summary>
     void ShowProfilesModal(ProfilesViewModel vm, object? owner);
+
+    /// <summary>Design-Editor modal zeigen (kehrt zurück, wenn er geschlossen ist).</summary>
+    void ShowDesignEditorModal(DesignEditorViewModel vm, object? owner);
     IAppWindow ShowSchedule(ScheduleViewModel vm);
     IAppWindow ShowWorkflow(WorkflowEditorViewModel vm);
     IAppWindow ShowMarketplace(MarketplaceWindowViewModel vm);

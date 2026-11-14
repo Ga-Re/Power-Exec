@@ -8,6 +8,14 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 34, 0), L.T("Design editor: palette, light and dark, fonts, group colors"), new[]
+        {
+            L.T("New under Appearance: Edit design – colors for surface, cards, text and lines with a live preview and a contrast check"),
+            L.T("A design can carry a light and a dark variant and then switches with Windows"),
+            L.T("Designs set the fonts for text and for paths and code, and a color series for groups and tags without a color of their own"),
+            L.T("Designs can be exported as a file; the marketplace designs come with palettes and group colors"),
+            L.T("With several monitors the glass panel no longer casts its shadow and border onto the monitor next to it")
+        }),
         new ReleaseNote(new Version(0, 33, 0), L.T("Marketplace in its own window; groups can be dragged to the top"), new[]
         {
             L.T("The marketplace opens in its own window – from the panel footer, the tray menu or the settings – and applies installs right away"),

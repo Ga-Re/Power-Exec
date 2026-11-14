@@ -135,13 +135,23 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <ui:Button Style="{StaticResource Btn.Standard}" HorizontalAlignment="Left" Margin="0,4,0,0" Command="{Binding SaveDesignCommand}"
-                           ToolTip="{l:T 'Save the panel\'s color, background, opacity, frosted glass and accent as your own template'}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBlock Text="{l:T 'Save current design …'}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </ui:Button>
+                <WrapPanel Margin="0,4,0,0">
+                    <ui:Button Style="{StaticResource Btn.Accent}" Margin="0,0,8,0" Command="{Binding EditDesignCommand}"
+                               ToolTip="{l:T 'Colors for light and dark, fonts and group colors with a live preview; saved as your own design'}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE790;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{l:T 'Edit design …'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding SaveDesignCommand}"
+                               ToolTip="{l:T 'Save the panel\'s color, background, opacity, frosted glass and accent as your own template'}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="{l:T 'Save current design …'}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </ui:Button>
+                </WrapPanel>
+                <TextBlock Text="{Binding LookText}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
             </StackPanel>
         </c:SettingsExpander>
         <c:SettingsCard Icon="&#xE790;" Header="{l:T 'Design'}" Description="{l:T 'Light or dark for all windows. If a Windows contrast theme is active, Power-Exec uses its colors automatically.'}">
@@ -239,7 +249,7 @@
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="{l:T 'Custom colors'}"/>
                         <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}">
-                            <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                            <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{DynamicResource MonoFont}"/>
                         </TextBlock>
                     </StackPanel>
                 </DockPanel>

@@ -50,6 +50,21 @@ public static class PanelSlide
         return monitors.Any(m => m.IntersectsWith(outside));
     }
 
+    /// <summary>So weit reichen Schatten und Rand, die Windows um ein Fenster zeichnet (Pixel, großzügig bemessen).</summary>
+    public const int ShadowReach = 32;
+
+    /// <summary>
+    /// Läge der Schatten des ausgefahrenen Panels auf einem anderen Monitor? Das ist der Fall, wenn ein Monitor, auf dem
+    /// das Panel nicht steht, näher als <see cref="ShadowReach"/> an dessen Rand liegt – etwa wenn das Panel an der
+    /// Kante zum Nachbarmonitor andockt. Dann bekommt das Fenster einen Fensterbereich: Windows zeichnet dafür keinen Schatten.
+    /// </summary>
+    public static bool ShadowReachesOtherMonitor(Rectangle panel, IEnumerable<Rectangle> monitors)
+    {
+        var center = new Point(panel.X + panel.Width / 2, panel.Y + panel.Height / 2);
+        var reach = Rectangle.Inflate(panel, ShadowReach, ShadowReach);
+        return monitors.Any(m => !m.Contains(center) && m.IntersectsWith(reach));
+    }
+
     /// <summary>
     /// Steht das ausgefahrene Fenster an seiner Ziellage? Je Kante sind <paramref name="tolerance"/> Pixel Abweichung
     /// erlaubt (Rundung, wenn WPF Lage und Größe über DIP setzt); 0 verlangt die genaue Lage.

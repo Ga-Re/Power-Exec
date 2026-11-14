@@ -1484,6 +1484,36 @@ public sealed partial class SelfTestController : AppController
             }
             await ShowAndClose(IconPickerWindow.ForTest());
 
+            Step("Design-Editor");
+            {
+                var start = new DesignPreset("custom:selftest", "Abendrot", string.Empty, ThemeMode.Dark, "#2D1B2E", 90, 15, false, AccentColor: "#FF8A65", IsCustom: true,
+                    Palette: new DesignPalette(Card: "#4F3542"), GroupColors: "#EE8463, #63EE84, #63CCEE", FontFamily: "Bahnschrift");
+                var designVm = new DesignEditorViewModel(Dialogs, start, _ => null) { HasPair = true };
+                var designWindow = new DesignEditorWindow(designVm);
+                designWindow.Show();
+                await Settle();
+                if (designVm.Slots.Count != 8) Fail($"Design-Editor: {designVm.Slots.Count} Farbfelder statt 8");
+                if (designVm.Slots.Single(x => x.Key == "Card").IsDerived) Fail("Design-Editor: gesetzte Kartenfarbe gilt als abgeleitet");
+                if (!designVm.Slots.Single(x => x.Key == "Line").IsDerived) Fail("Design-Editor: nicht gesetzte Linienfarbe gilt als gesetzt");
+                if (designVm.Checks.Count != 4) Fail($"Design-Editor: {designVm.Checks.Count} Kontrastprüfungen statt 4");
+                if (designWindow.Content is FrameworkElement designRoot) Screenshot(designRoot, "design-editor-dunkel");
+                designVm.EditLight = true;
+                await Settle();
+                if (designWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "design-editor-hell");
+                designVm.SaveCommand.Execute(null);
+                await Settle();
+                if (designVm.Result is not { Pair: not null } saved) Fail("Design-Editor: Speichern liefert kein Design mit zwei Varianten");
+                else
+                {
+                    // Angewendet: die Variante zum laufenden Windows-Design, Schrift und Gruppenfarben greifen
+                    var probe = SettingsStore.Clone(Settings);
+                    Appearance.Apply(probe, saved);
+                    if (probe.Theme != ThemeMode.System) Fail("Design mit zwei Varianten stellt nicht auf „wie Windows“");
+                    if (probe.Look.FontFamily != "Bahnschrift" || probe.Look.GroupColors.Count != 3) Fail("Design: Schrift oder Gruppenfarben gehen beim Anwenden verloren");
+                }
+                if (designWindow.IsVisible) Fail("Design-Editor: Speichern schließt das Fenster nicht");
+            }
+
             Step("Eingaben mit Vorlage: Schlagworte und Rechner");
             {
                 var tagBox = new Controls.TagBox { TagsText = "alpha, beta", Suggestions = new[] { "alpha", "beta", "gamma" } };

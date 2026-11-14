@@ -14,9 +14,9 @@ public sealed record SettingsChange(bool Folders, bool Panels, bool Appearance, 
         Appearance: AppearanceKey(before) != AppearanceKey(after),
         Autostart: before.StartWithWindows != after.StartWithWindows);
 
-    /// <summary>Design, Akzent, Größe und Ecken: eine Änderung erzeugt Panels und Farben neu.</summary>
-    private static (ThemeMode Theme, bool UseWindowsAccent, int UiScalePercent, CornerStyle Corners) AppearanceKey(AppSettings s) =>
-        (s.Theme, s.UseWindowsAccent, s.UiScalePercent, s.Corners);
+    /// <summary>Design, Akzent, Größe, Ecken und der app-weite Teil des Designs: eine Änderung erzeugt Panels und Farben neu.</summary>
+    private static (ThemeMode Theme, bool UseWindowsAccent, int UiScalePercent, CornerStyle Corners, string Look) AppearanceKey(AppSettings s) =>
+        (s.Theme, s.UseWindowsAccent, s.UiScalePercent, s.Corners, s.Look.Key);
 
     /// <summary>Alles, was Panelfenster und Hover-Zonen betrifft (ohne „angeheftet“).</summary>
     private static string PanelKey(AppSettings s) =>

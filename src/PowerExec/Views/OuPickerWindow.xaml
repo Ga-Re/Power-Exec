@@ -15,7 +15,7 @@
             <TextBox x:Name="Filter" Tag="{l:T 'Filter OUs …'}" Margin="0,0,0,8" TextChanged="Filter_TextChanged" AutomationProperties.Name="{l:T 'Filter OUs'}"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Bottom">
-            <TextBlock x:Name="Selected" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" TextWrapping="Wrap"
+            <TextBlock x:Name="Selected" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" TextWrapping="Wrap"
                        Foreground="{DynamicResource Text.Secondary}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Margin="0,0,8,0"/>

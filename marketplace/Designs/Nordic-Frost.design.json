@@ -10,5 +10,27 @@
   "Backdrop": "Glass",
   "GlassBlur": 40,
   "GlassSaturation": 110,
-  "AccentColor": "#88C0D0"
+  "AccentColor": "#88C0D0",
+  "Palette": {
+    "Card": "#454F5B",
+    "Input": "#222730",
+    "Line": "#5B6B77",
+    "Text": "#F8FBFC",
+    "TextSecondary": "#B7BBC0",
+    "Selected": "#4D5D69"
+  },
+  "GroupColors": "#81BECF, #9381CF, #CF81BE, #CF9381, #BECF81, #81CF93",
+  "GroupColorsForTags": true,
+  "Pair": {
+    "PanelColor": "#F0F2F4",
+    "AccentColor": "#88C0D0",
+    "Palette": {
+      "Card": "#D6DCE0",
+      "Input": "#F9FAFB",
+      "Line": "#BCCACF",
+      "Text": "#202324",
+      "TextSecondary": "#636567",
+      "Selected": "#CCD9DE"
+    }
+  }
 }

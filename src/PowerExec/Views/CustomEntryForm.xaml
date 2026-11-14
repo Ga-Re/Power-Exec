@@ -37,7 +37,7 @@
         </Style>
         <!-- Chips zum Einfügen eingebauter Variablen -->
         <DataTemplate x:Key="BuiltinChip">
-            <ui:Button Style="{StaticResource Btn.Subtle}" Content="{Binding}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Padding="8,0" Height="24" MinHeight="24"
+            <ui:Button Style="{StaticResource Btn.Subtle}" Content="{Binding}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Padding="8,0" Height="24" MinHeight="24"
                     Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{Binding}" ToolTip="{l:T 'Insert at cursor position'}" />
         </DataTemplate>
       </ResourceDictionary>
@@ -61,9 +61,9 @@
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Fetch title'}" Command="{Binding FetchTitleCommand}" Margin="8,0,0,0"
                             ToolTip="{l:T 'Use page title as display name'}" />
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="8,0,0,0" FontFamily="{StaticResource MonoFont}"
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="8,0,0,0" FontFamily="{DynamicResource MonoFont}"
                             Click="InsertPlaceholder_Click" ToolTip="{l:T 'Insert placeholder – asked at launch, e.g. https://ticket/\{\{Number\}\}'}" />
-                    <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TitleStatus}" Style="{StaticResource Hint}" Visibility="{Binding TitleStatus, Converter={StaticResource Vis}}"/>
@@ -91,7 +91,7 @@
                 <TextBlock Text="{l:T 'Path'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="8,0,0,0" />
-                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TargetStatus}" Style="{StaticResource Hint}" Visibility="{Binding TargetStatus, Converter={StaticResource Vis}}"/>
@@ -110,7 +110,7 @@
                 <StackPanel Visibility="{Binding IsOpenWithProgram, Converter={StaticResource Vis}}" Margin="0,8,0,0">
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseOpenWithCommand}" Margin="8,0,0,0" />
-                        <TextBox Text="{Binding OpenWithProgram, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. C:\\Program Files\\totalcmd\\TOTALCMD64.EXE'}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding OpenWithProgram, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. C:\\Program Files\\totalcmd\\TOTALCMD64.EXE'}" FontFamily="{DynamicResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding OpenWithProgramError}" Style="{StaticResource FieldError}" Visibility="{Binding OpenWithProgramError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
@@ -137,7 +137,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="{l:T 'Computer'}" Style="{StaticResource FieldLabel}"/>
-                            <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                            <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="{l:T 'Port'}" Style="{StaticResource FieldLabel}"/>
@@ -187,7 +187,7 @@
                     <TextBlock Text="{l:T '.rdp file'}" Style="{StaticResource FieldLabel}"/>
                     <DockPanel>
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseRdpFileCommand}" Margin="8,0,0,0" />
-                        <TextBox Text="{Binding RdpFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '\\\\server\\connections\\Server A.rdp'}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding RdpFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '\\\\server\\connections\\Server A.rdp'}" FontFamily="{DynamicResource MonoFont}"/>
                     </DockPanel>
                     <TextBlock Text="{Binding RdpFileError}" Style="{StaticResource FieldError}" Visibility="{Binding RdpFileError, Converter={StaticResource Vis}}"/>
                     <TextBlock Text="{l:T 'All settings (computer, display, gateway …) come from the file.'}" Style="{StaticResource Hint}"/>
@@ -210,7 +210,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="{l:T 'Computer'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="{l:T 'Port'}" Style="{StaticResource FieldLabel}"/>
@@ -228,7 +228,7 @@
                 <TextBlock Text="{l:T 'Key file (optional)'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseKeyCommand}" Margin="8,0,0,0" />
-                    <TextBox Text="{Binding KeyFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '%USERPROFILE%\\.ssh\\id_ed25519'}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox Text="{Binding KeyFile, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '%USERPROFILE%\\.ssh\\id_ed25519'}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
@@ -248,7 +248,7 @@
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{l:T 'Command after login (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding RemoteCommand, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. sudo -i  or  tail -f /var/log/syslog'}" FontFamily="{StaticResource MonoFont}"/>
+                <TextBox Text="{Binding RemoteCommand, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. sudo -i  or  tail -f /var/log/syslog'}" FontFamily="{DynamicResource MonoFont}"/>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -257,18 +257,18 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="{l:T 'Jump server (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding JumpHost, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'admin@bastion.company.com'}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding JumpHost, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'admin@bastion.company.com'}" FontFamily="{DynamicResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="{l:T 'Port forwarding (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding PortForward, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '8080:localhost:80; 5432:db:5432'}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding PortForward, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T '8080:localhost:80; 5432:db:5432'}" FontFamily="{DynamicResource MonoFont}"/>
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding PortForwardError}" Style="{StaticResource FieldError}" Visibility="{Binding PortForwardError, Converter={StaticResource Vis}}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowBase, Converter={StaticResource Vis}}">
                 <TextBlock Text="{l:T 'Additional arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. -o ServerAliveInterval=30'}" FontFamily="{StaticResource MonoFont}"/>
+                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. -o ServerAliveInterval=30'}" FontFamily="{DynamicResource MonoFont}"/>
             </StackPanel>
             <StackPanel Visibility="{Binding ShowOptions, Converter={StaticResource Vis}}">
                 <TextBlock Text="{l:T 'Passwords are not saved – SSH asks for them when connecting.'}" Style="{StaticResource Hint}" Margin="0,8,0,0"/>
@@ -286,11 +286,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <ScrollViewer x:Name="LineScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Focusable="False" Height="{Binding ActualHeight, ElementName=PsCodeBox}">
-                            <TextBlock Text="{Binding LineNumbers}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.BodyStrong}" Foreground="{DynamicResource Text.Tertiary}"
+                            <TextBlock Text="{Binding LineNumbers}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.BodyStrong}" Foreground="{DynamicResource Text.Tertiary}"
                                        TextAlignment="Right" Padding="8,7,8,7" MinWidth="34"/>
                         </ScrollViewer>
                         <TextBox x:Name="PsCodeBox" Grid.Column="1" Text="{Binding Code, UpdateSourceTrigger=PropertyChanged, Delay=200}" AcceptsReturn="True" AcceptsTab="True"
-                                 FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.BodyStrong}" MinHeight="220" MaxHeight="420" TextWrapping="NoWrap"
+                                 FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.BodyStrong}" MinHeight="220" MaxHeight="420" TextWrapping="NoWrap"
                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8"
                                  BorderThickness="0" Background="Transparent" ScrollViewer.ScrollChanged="CodeBox_ScrollChanged"
                                  Tag="{l:T 'param([string]$Computer = \'localhost\')&#x0a;Test-Connection $Computer -Count 1'}"/>
@@ -326,7 +326,7 @@
                 <TextBlock Text="{l:T 'Insert variables'}" Style="{StaticResource FieldLabel}"/>
                 <WrapPanel>
                     <ItemsControl ItemsSource="{Binding Builtins}" ItemTemplate="{StaticResource BuiltinChip}" ItemsPanel="{StaticResource TagPanel}" Focusable="False"/>
-                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T '\{\{Query\}\}'}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Padding="8,0" Height="24" MinHeight="24"
+                    <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T '\{\{Query\}\}'}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Padding="8,0" Height="24" MinHeight="24"
                             Margin="0,0,4,4" Click="InsertIntoCode_Click" Tag="{l:T '\{\{Name\}\}'}" ToolTip="{l:T 'Placeholder asked when copying'}" />
                 </WrapPanel>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
@@ -374,11 +374,11 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="{l:T 'Tool'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                        <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="{l:T 'Arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'e.g. /computer=SRV-01'}"/>
+                        <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'e.g. /computer=SRV-01'}"/>
                     </StackPanel>
                 </Grid>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
@@ -391,12 +391,12 @@
                 <TextBlock Text="{l:T 'Program'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="8,0,0,0" />
-                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TargetStatus}" Style="{StaticResource Hint}" Visibility="{Binding TargetStatus, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{l:T 'Arguments (optional)'}" Style="{StaticResource FieldLabel}"/>
-                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'e.g. /k ipconfig /all  or  \{\{Computer\}\}'}"/>
+                <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'e.g. /k ipconfig /all  or  \{\{Computer\}\}'}"/>
                 <TextBlock Text="{Binding PlaceholderInfo}" Style="{StaticResource Hint}"/>
                 <TextBlock Text="{Binding VariableWarning}" Style="{StaticResource FieldError}" Visibility="{Binding HasVariableWarning, Converter={StaticResource Vis}}"/>
             </StackPanel>
@@ -408,7 +408,7 @@
                 <TextBlock Text="{l:T 'File'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="8,0,0,0" />
-                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>
                 <TextBlock Text="{Binding TargetStatus}" Style="{StaticResource Hint}" Visibility="{Binding TargetStatus, Converter={StaticResource Vis}}"/>
@@ -428,7 +428,7 @@
                 <TextBlock Text="{l:T 'Working folder (optional)'}" Style="{StaticResource FieldLabel}"/>
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="…" Command="{Binding BrowseWorkDirCommand}" Margin="8,0,0,0" Width="34" ToolTip="{l:T 'Choose folder'}" />
-                    <TextBox Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'empty = automatic'}" FontFamily="{StaticResource MonoFont}"/>
+                    <TextBox Text="{Binding WorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'empty = automatic'}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
             </StackPanel>
             <StackPanel Grid.Column="2">

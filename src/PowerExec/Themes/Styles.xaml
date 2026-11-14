@@ -41,7 +41,7 @@
     </Style>
 
     <Style x:Key="Mono" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource MonoFont}"/>
         <Setter Property="FontSize" Value="{StaticResource Font.Body}"/>
     </Style>
 

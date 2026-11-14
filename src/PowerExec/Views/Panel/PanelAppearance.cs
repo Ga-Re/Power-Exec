@@ -41,7 +41,11 @@ internal sealed class PanelAppearance
 
     private static readonly string[] Keys =
         ["Bg.Panel", "Bg.Hover", "Bg.Selected", "Bg.Subtle", "Bg.Input", "Bg.Chip", "Border.Panel", "Border.Default",
-         "Accent", "Accent.Hover", "Accent.Pressed", "OnAccent", "Search.Highlight"];
+         "Accent", "Accent.Hover", "Accent.Pressed", "OnAccent", "Search.Highlight",
+         "Bg.Card", "Bg.Tile", "Border.Control", "Text.Primary", "Text.Secondary", "Text.Tertiary"];
+
+    /// <summary>Farben der Variante, die zum laufenden Windows-Design gehört (Design mit hell/dunkel-Paar).</summary>
+    private DesignColors DesignColors => Appearance.Effective(_app.Settings, _config(), ThemeService.IsDark);
 
     private static bool IsOwnPalette(ResourceDictionary d) =>
         d.Source?.OriginalString is { } src && (src.EndsWith("/Themes/Light.xaml", StringComparison.OrdinalIgnoreCase) || src.EndsWith("/Themes/Dark.xaml", StringComparison.OrdinalIgnoreCase));
@@ -53,7 +57,9 @@ internal sealed class PanelAppearance
     public void Apply()
     {
         var s = _config();
+        var colors = DesignColors;
         if (_window.PanelBorder.Child is FrameworkElement panelContent) WindowHelper.ApplyContentScale(panelContent);
+        WindowHelper.ApplyFont(_window);
         // Nur das eigene Gegen-Farbschema entfernen – Themes/Fluent.xaml und das Fluent-Design bleiben eingebunden
         foreach (var d in Resources.MergedDictionaries.Where(IsOwnPalette).ToList()) Resources.MergedDictionaries.Remove(d);
         foreach (var key in Keys) Resources.Remove(key);
@@ -62,7 +68,7 @@ internal sealed class PanelAppearance
         if (ThemeService.IsHighContrast) opacity = 1; // Kontrastdesign: deckend, Systemfarben
         ApplyBackdrop();
 
-        if (!ThemeService.IsHighContrast && PanelColors.TryParse(s.PanelColor, out var rgb))
+        if (!ThemeService.IsHighContrast && PanelColors.TryParse(colors.PanelColor, out var rgb))
         {
             bool light = PanelColors.IsLight(rgb);
             if (light == ThemeService.IsDark)
@@ -101,6 +107,7 @@ internal sealed class PanelAppearance
                     Resources["Bg.Selected"] = sel.Color.ToRgb().ToBrush(SelectedAlpha(opacity));
             }
         }
+        if (!ThemeService.IsHighContrast && colors.Palette is { IsEmpty: false } palette) ApplyPalette(palette, opacity);
         ApplyAccent();
         // Glas: auch Flächen in den Details (Parameter) lassen den Weichzeichner durchscheinen
         if (_backdrop == PanelBackdrop.Glass && !ThemeService.IsHighContrast && _window.TryFindResource("Bg.Subtle") is SolidColorBrush subtle)
@@ -116,16 +123,52 @@ internal sealed class PanelAppearance
     /// </summary>
     private void ApplyAccent()
     {
-        var s = _config();
+        var s = DesignColors;
         if (ThemeService.IsHighContrast || _app.Settings.UseWindowsAccent) return;
         if (!PanelColors.TryParse(s.AccentColor, out var source) && !PanelColors.TryParse(s.PanelColor, out source)) return;
         bool dark = _darkSurface();
-        var a = Appearance.Derive(source, dark);
+        // Gegen die tatsächliche Panelfläche prüfen: auf mittleren Tönen reichte die Annahme „hell“ bzw. „dunkel“ nicht
+        var a = PanelColors.TryParse(s.PanelColor, out var surface) ? Appearance.Derive(source, dark, surface) : Appearance.Derive(source, dark);
         Resources["Accent"] = a.Accent.ToBrush();
         Resources["Accent.Hover"] = a.Hover.ToBrush();
         Resources["Accent.Pressed"] = a.Pressed.ToBrush();
         Resources["OnAccent"] = a.OnAccent.ToBrush();
         Resources["Search.Highlight"] = a.Highlight.ToBrush(dark ? 0.33 : 0.25);
+    }
+
+    /// <summary>
+    /// Palette des Designs: was es ausdrücklich setzt, überdeckt die aus der Panelfarbe abgeleiteten Farben. Flächen
+    /// behalten ihre Durchsicht (Glas), Text und Linien sind deckend.
+    /// </summary>
+    private void ApplyPalette(DesignPalette p, double opacity)
+    {
+        if (PanelColors.TryParse(p.Card, out var card))
+        {
+            Resources["Bg.Card"] = card.ToBrush(HoverAlpha(opacity));
+            Resources["Bg.Tile"] = card.ToBrush(HoverAlpha(opacity));
+            Resources["Bg.Subtle"] = card.ToBrush(HoverAlpha(opacity));
+        }
+        if (PanelColors.TryParse(p.Input, out var input)) Resources["Bg.Input"] = input.ToBrush();
+        if (PanelColors.TryParse(p.Line, out var line))
+        {
+            Resources["Border.Default"] = line.ToBrush();
+            Resources["Border.Panel"] = line.ToBrush();
+            Resources["Border.Control"] = line.ToBrush();
+        }
+        if (PanelColors.TryParse(p.Selected, out var selected))
+        {
+            Resources["Bg.Selected"] = selected.ToBrush(SelectedAlpha(opacity));
+            Resources["Bg.Chip"] = selected.ToBrush();
+            // Hover: halber Weg zwischen Fläche und Auswahl
+            var surface = _window.TryFindResource("Bg.Panel") is SolidColorBrush b ? b.Color.ToRgb() : selected;
+            Resources["Bg.Hover"] = PanelColors.Blend(surface, selected, 0.5).ToBrush(HoverAlpha(opacity));
+        }
+        if (PanelColors.TryParse(p.Text, out var text)) Resources["Text.Primary"] = text.ToBrush();
+        if (PanelColors.TryParse(p.TextSecondary, out var second))
+        {
+            Resources["Text.Secondary"] = second.ToBrush();
+            Resources["Text.Tertiary"] = second.ToBrush(0.8);
+        }
     }
 
     /// <summary>
