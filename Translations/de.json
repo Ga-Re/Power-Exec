@@ -629,7 +629,7 @@
  "Eight ready-made scripts (system info, network test, disk space, large files, installed programs, error log, temp cleanup, passwords) under Documents › Power-Exec › Scripts – shown in the panel as the group “Examples”.": "Acht fertige Scripte (Systeminfo, Netzwerktest, Speicherplatz, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter) unter Dokumente › Power-Exec › Scripte – im Panel als Gruppe „Beispiele“.",
  "Eight sample scripts (system info, network test, large files, installed programs, error log, temp cleanup, passwords, disk space) – under Content › Groups with “Create sample scripts”": "Acht Beispielscripte (Systeminfo, Netzwerktest, große Dateien, installierte Programme, Fehlerprotokoll, Temp aufräumen, Kennwörter, Speicherplatz) – unter Inhalte › Gruppen mit „Beispielscripte anlegen“",
  "Emoji": "Emoji",
- "Empty = font of the app. The size is set under Appearance › Size of the interface.": "Leer = Schrift der App. Die Größe stellt man unter Darstellung › Größe der Oberfläche ein.",
+ "Empty = font of the app. The size is set under Appearance › Font and element size.": "Leer = Schrift der App. Die Größe stellt man unter Darstellung › Schrift- und Elementgröße ein.",
  "Empty design file.": "Leere Design-Datei.",
  "Empty entry file.": "Leere Eintragsdatei.",
  "Enable": "Aktivieren",

@@ -112,7 +112,7 @@
                                     <ComboBox x:Name="MonoFontBox" IsEditable="True" Text="{Binding MonoFontFamily, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="{l:T 'Font for paths and code'}"/>
                                 </StackPanel>
                             </UniformGrid>
-                            <TextBlock Text="{l:T 'Empty = font of the app. The size is set under Appearance › Size of the interface.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            <TextBlock Text="{l:T 'Empty = font of the app. The size is set under Appearance › Font and element size.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Border>
 
@@ -166,8 +166,8 @@
             </ScrollViewer>
 
             <!-- Vorschau: Panel der bearbeiteten Variante, daneben klein die andere -->
-            <Border Grid.Column="2" CornerRadius="{DynamicResource Radius.Card}" Background="#6F8FB3" Padding="24">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <Border Grid.Column="2" CornerRadius="{DynamicResource Radius.Card}" Background="#6F8FB3" Padding="16,24">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top">
                     <Border x:Name="PreviewPanel" Width="300" CornerRadius="{DynamicResource Radius.Tile}" Padding="12" Background="{Binding SurfaceHex, Converter={StaticResource HexBrush}}"
                             BorderBrush="{Binding LineHex, Converter={StaticResource HexBrush}}" BorderThickness="1" TextElement.Foreground="{Binding TextHex, Converter={StaticResource HexBrush}}">
                         <StackPanel>
@@ -218,7 +218,7 @@
                             </Border>
                         </StackPanel>
                     </Border>
-                    <StackPanel Margin="20,0,0,0" Width="140" Visibility="{Binding HasPair, Converter={StaticResource Vis}}">
+                    <StackPanel Margin="0,16,0,0" Width="140" Visibility="{Binding HasPair, Converter={StaticResource Vis}}">
                         <Border CornerRadius="{DynamicResource Radius.Card}" Padding="8" Background="{Binding OtherSurfaceHex, Converter={StaticResource HexBrush}}"
                                 TextElement.Foreground="{Binding OtherTextHex, Converter={StaticResource HexBrush}}">
                             <StackPanel>
