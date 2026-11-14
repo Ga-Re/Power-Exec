@@ -269,6 +269,9 @@ public sealed class AppSettings
     /// <summary>Eigene, gespeicherte Designs (erscheinen hinter den mitgelieferten Designvorlagen).</summary>
     public List<DesignPreset> CustomDesigns { get; set; } = new();
 
+    /// <summary>App-weiter Teil des aktiven Designs: Palette, zweite Variante (hell/dunkel), Schrift und Gruppenfarben.</summary>
+    public DesignLook Look { get; set; } = new();
+
     /// <summary>Position der festen Gruppen unter den Gruppen der obersten Ebene (siehe <see cref="FixedGroups"/>).</summary>
     public Dictionary<string, int> FixedGroupPositions { get; set; } = new();
 

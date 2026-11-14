@@ -82,7 +82,7 @@
         <!-- Vorschau und Wert -->
         <DockPanel Margin="0,8,0,0">
             <Border x:Name="Preview" DockPanel.Dock="Left" Width="44" Height="32" CornerRadius="{DynamicResource Radius.Control}" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" Margin="0,0,12,0"/>
-            <TextBox x:Name="HexBox" Height="32" Padding="8,0" FontFamily="{StaticResource MonoFont}" TextChanged="Hex_TextChanged" AutomationProperties.Name="{l:T 'Color value #RRGGBB'}"/>
+            <TextBox x:Name="HexBox" Height="32" Padding="8,0" FontFamily="{DynamicResource MonoFont}" TextChanged="Hex_TextChanged" AutomationProperties.Name="{l:T 'Color value #RRGGBB'}"/>
         </DockPanel>
         <TextBlock x:Name="ErrorText" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" Visibility="Collapsed" Text="{l:T 'Please enter as #RRGGBB, e.g. #3B82F6.'}"/>
 

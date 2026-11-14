@@ -9,7 +9,7 @@
     <DockPanel Margin="24,20,24,20">
         <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
             <TextBlock FontSize="{StaticResource Font.Title}" FontWeight="SemiBold">
-                <Run x:Name="Heading" Text="{l:T 'Edit variable'}"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Accent}"/>
+                <Run x:Name="Heading" Text="{l:T 'Edit variable'}"/> <Run Text="{Binding Token, Mode=OneWay}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Accent}"/>
             </TextBlock>
             <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                        Text="{l:T 'Use as \{\{$Name\}\} in text – Power-Exec inserts the value at launch.'}"/>
@@ -35,7 +35,7 @@
             </DockPanel>
             <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding IsSecret, Converter={StaticResource Vis}, ConverterParameter=invert}">
                 <TextBox DockPanel.Dock="Right" Width="280" Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=400}" VerticalAlignment="Center"
-                         FontFamily="{StaticResource MonoFont}" AutomationProperties.Name="{l:T 'Variable value'}"
+                         FontFamily="{DynamicResource MonoFont}" AutomationProperties.Name="{l:T 'Variable value'}"
                          AcceptsReturn="{Binding IsPowerShell}" TextWrapping="Wrap" MaxHeight="120" VerticalScrollBarVisibility="Auto"/>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
                     <TextBlock Text="{Binding ValueLabel}"/>

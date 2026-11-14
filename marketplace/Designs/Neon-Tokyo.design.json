@@ -11,5 +11,16 @@
   "GlassBlur": 50,
   "GlassSaturation": 135,
   "AccentColor": "#FF4F8B",
-  "Corners": "Rounded"
+  "Corners": "Rounded",
+  "Palette": {
+    "Card": "#362749",
+    "Input": "#0B0C26",
+    "Line": "#613B5F",
+    "Text": "#FFF4F8",
+    "TextSecondary": "#B2ABB9",
+    "Selected": "#4F2B51"
+  },
+  "GroupColors": "#EE6392, #EEBE63, #92EE63, #63EEBE, #6392EE, #BE63EE",
+  "GroupColorsForTags": true,
+  "FontFamily": "Bahnschrift"
 }

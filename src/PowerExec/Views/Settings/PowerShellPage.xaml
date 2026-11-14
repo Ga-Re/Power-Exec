@@ -37,7 +37,7 @@
         </c:SettingsCard>
         <c:SettingsCard Icon="&#xE8E5;" Header="{l:T 'Custom editor'}" Description="{l:T 'Path to the EXE'}" Visibility="{Binding IsCustomEditor, Converter={StaticResource Vis}}">
             <StackPanel Orientation="Horizontal">
-                <TextBox Width="320" Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'C:\\Program Files\\Notepad++\\notepad++.exe'}"/>
+                <TextBox Width="320" Text="{Binding EditorPath, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'C:\\Program Files\\Notepad++\\notepad++.exe'}"/>
                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseEditorCommand}" Margin="8,0,0,0" />
             </StackPanel>
         </c:SettingsCard>

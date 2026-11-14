@@ -69,7 +69,7 @@ public sealed class PanelViewModel : ObservableObject
     public PanelConfig Config => _host.Config;
 
     /// <summary>Dunkle Panelfläche (Design bzw. eigene Panelfarbe) – für lesbare Gruppenfarben.</summary>
-    public bool IsDarkSurface => !_app.Theme.IsHighContrast && PanelColors.TryParse(_host.Config.PanelColor, out var c)
+    public bool IsDarkSurface => !_app.Theme.IsHighContrast && PanelColors.TryParse(Appearance.Effective(_app.Settings, _host.Config, _app.Theme.IsDark).PanelColor, out var c)
         ? !PanelColors.IsLight(c)
         : _app.Theme.IsDark;
     public string PanelName => _host.Config.Name;

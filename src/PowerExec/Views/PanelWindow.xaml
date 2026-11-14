@@ -1130,7 +1130,7 @@
                                                        Foreground="{DynamicResource Text.Tertiary}" Visibility="Collapsed"/>
                                             <TextBlock x:Name="Glyph" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Width="18" Margin="0,0,8,0"
                                                        Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Visibility="Collapsed"/>
-                                            <TextBlock x:Name="Label" Text="{Binding Label}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="Label" Text="{Binding Label}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding Detail}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" Margin="10,0,0,0" VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis"/>
                                         </DockPanel>

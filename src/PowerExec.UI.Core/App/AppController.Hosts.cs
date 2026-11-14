@@ -122,6 +122,8 @@ public partial class AppController : IRunHost, IHistoryHost, IScheduleHost, IWor
 
     void ISettingsWindowHost.ShowProfilesDialog(ProfilesViewModel vm, object? owner) => Ui.ShowProfilesModal(vm, owner);
 
+    void ISettingsWindowHost.ShowDesignEditor(DesignEditorViewModel vm, object? owner) => Ui.ShowDesignEditorModal(vm, owner);
+
     // ── Einführung ───────────────────────────────────────────────────
 
     string? IWelcomeHost.PickFolder(string title) => Dialogs.PickFolder(title);

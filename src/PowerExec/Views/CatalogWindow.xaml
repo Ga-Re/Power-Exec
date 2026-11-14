@@ -36,8 +36,8 @@
                                         <StackPanel>
                                             <TextBlock Text="{Binding Template.Name}"/>
                                             <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" TextTrimming="CharacterEllipsis">
-                                                <Run Text="{Binding Template.Target, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
-                                                <Run Text="{Binding Template.Arguments, Mode=OneWay}" FontFamily="{StaticResource MonoFont}"/>
+                                                <Run Text="{Binding Template.Target, Mode=OneWay}" FontFamily="{DynamicResource MonoFont}"/>
+                                                <Run Text="{Binding Template.Arguments, Mode=OneWay}" FontFamily="{DynamicResource MonoFont}"/>
                                                 <Run Text=" · "/>
                                                 <Run Text="{Binding Template.Description, Mode=OneWay}"/>
                                             </TextBlock>

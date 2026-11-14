@@ -123,7 +123,7 @@
                                                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Detach folder'}" Command="{Binding RemoveCommand}" Margin="8,0,0,0"
                                                                             ToolTip="{l:T 'Stop scanning the folder; the group stays as a normal group'}" />
                                                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Browse …'}" Command="{Binding BrowseCommand}" Margin="8,0,0,0" />
-                                                                    <TextBox Text="{Binding Path, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'Path, e.g. C:\\Scripts or \\\\server\\share'}"/>
+                                                                    <TextBox Text="{Binding Path, UpdateSourceTrigger=LostFocus}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'Path, e.g. C:\\Scripts or \\\\server\\share'}"/>
                                                                 </DockPanel>
                                                                 <WrapPanel Margin="0,12,0,0">
                                                                     <CheckBox Content="{l:T 'Include subfolders'}" IsChecked="{Binding Recursive}" Margin="0,0,20,8" VerticalAlignment="Center"/>
@@ -132,7 +132,7 @@
                                                                     <TextBlock Text="{l:T 'File extensions:'}" VerticalAlignment="Center" Margin="0,0,8,8" Foreground="{DynamicResource Text.Secondary}"/>
                                                                     <StackPanel Margin="0,0,0,8">
                                                                         <TextBox Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" Width="220"
-                                                                                 Tag="{l:T 'empty = default; e.g. .ps1; .cmd'}" FontFamily="{StaticResource MonoFont}"
+                                                                                 Tag="{l:T 'empty = default; e.g. .ps1; .cmd'}" FontFamily="{DynamicResource MonoFont}"
                                                                                  ToolTip="{l:T 'Separated by semicolons, e.g. .ps1; .cmd; .exe'}"/>
                                                                         <TextBlock Text="{Binding ExtensionsError}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" MaxWidth="220"
                                                                                    Visibility="{Binding ExtensionsError, Converter={StaticResource Vis}}"/>
@@ -288,7 +288,7 @@
                                                             BorderThickness="1" Padding="12,0,2,0" Margin="0,0,8,8">
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="{Binding Kind}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error.Text}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                            <TextBlock Text="{Binding Value}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Value}" FontSize="{StaticResource Font.Caption}" FontFamily="{DynamicResource MonoFont}" VerticalAlignment="Center"/>
                                                             <ui:Button Style="{StaticResource Btn.Icon}" Width="22" Height="22" MinHeight="22" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
                                                                     ToolTip="{l:T 'Remove exclusion'}" Foreground="{DynamicResource Status.Error.Text}">
                                                                 <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XS}"/>
@@ -427,13 +427,13 @@
         <TextBlock Text="{l:T 'For all smart groups (folders)'}" Style="{StaticResource SettingsSection}"/>
         <c:SettingsCard Icon="&#xE8A5;" Header="{l:T 'Default file extensions'}" Description="{l:T 'Applies to smart groups without their own setting. Separated by semicolons, e.g. .ps1; .cmd; .exe'}">
                 <StackPanel Width="300">
-                    <TextBox Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T '.ps1; .cmd; .exe'}"/>
+                    <TextBox Text="{Binding DefaultExtensions, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T '.ps1; .cmd; .exe'}"/>
                     <TextBlock Text="{Binding DefaultExtensionsError}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Error}" TextWrapping="Wrap" Margin="0,4,0,0"
                                Visibility="{Binding DefaultExtensionsError, Converter={StaticResource Vis}}"/>
                 </StackPanel>
         </c:SettingsCard>
         <c:SettingsCard Icon="&#xE8D8;" Header="{l:T 'Global exclusions'}" Description="{l:T 'Apply to all folders, separated by semicolons. “Hide” in the panel creates exclusions on the respective folder.'}">
-                <TextBox Width="300" Text="{Binding GlobalExcludes, UpdateSourceTrigger=PropertyChanged}" FontFamily="{StaticResource MonoFont}" Tag="{l:T 'e.g. *.bak.ps1; *\\Old\\*'}"/>
+                <TextBox Width="300" Text="{Binding GlobalExcludes, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'e.g. *.bak.ps1; *\\Old\\*'}"/>
         </c:SettingsCard>
         <c:SettingsCard Icon="&#xE72C;" Header="{l:T 'Rescan automatically on changes'}" Description="{l:T 'New, renamed or deleted files appear immediately.'}">
                 <ui:ToggleSwitch IsChecked="{Binding AutoRescan}" AutomationProperties.Name="{l:T 'Rescan automatically on changes'}"/>

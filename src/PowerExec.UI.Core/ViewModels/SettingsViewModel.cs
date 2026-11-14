@@ -654,6 +654,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("look", L.T("Appearance"), L.T("Item size"), L.T("small medium large compact")),
         new("look", L.T("Appearance"), L.T("Panel color and opacity"), L.T("color transparency")),
         new("look", L.T("Appearance"), L.T("Panel dimensions"), L.T("width height position size")),
+        new("look", L.T("Appearance"), L.T("Design editor"), L.T("design editor palette colors font typeface group colors light dark variant export")),
         new("look", L.T("Appearance"), L.T("Design templates"), L.T("template design oled nordic espresso fluent glass custom design save")),
         new("look", L.T("Appearance"), L.T("Accent color"), L.T("accent windows color hover zone")),
         new("look", L.T("Appearance"), L.T("Mini dock"), L.T("dock favorites bar")),
@@ -804,7 +805,9 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void ApplyPreset(DesignPreset p)
     {
-        Theme = p.Theme;
+        // App-weiter Teil des Designs: Palette, zweite Variante, Schrift, Gruppenfarben
+        _s.Look = Appearance.LookOf(p);
+        Theme = p.Pair != null ? ThemeMode.System : p.Theme; // Design mit zwei Varianten wechselt mit Windows mit
         UseWindowsAccent = p.WindowsAccent;
         if (p.Corners is { } corners) Corners = corners;
         Panel.ApplyDesign(p);
@@ -823,6 +826,42 @@ public sealed class SettingsViewModel : ObservableObject
     });
     private ICommand? _saveDesign;
 
+    /// <summary>
+    /// Design-Editor für das aktuelle Aussehen: Farben, helle und dunkle Variante, Schrift, Gruppenfarben. Ein eigenes
+    /// Design wird dabei ersetzt, alles andere wird als neues eigenes Design gespeichert und angewendet.
+    /// </summary>
+    public ICommand EditDesignCommand => _editDesign ??= new RelayCommand(() =>
+    {
+        var current = CurrentPreset;
+        var start = current ?? CurrentDesign;
+        var vm = new DesignEditorViewModel(_app.Dialogs, start, name =>
+            Appearance.All(_s).Any(d => d.IsCustom && d.Key != start.Key && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                ? L.T("A custom design with this name already exists.") : null);
+        _app.ShowDesignEditor(vm, _app.SettingsDialogOwner);
+        if (vm.Result is not { } saved) return;
+        _s.CustomDesigns.RemoveAll(d => d.Key == saved.Key);
+        _s.CustomDesigns.Add(saved);
+        ApplyPreset(saved);
+    });
+    private ICommand? _editDesign;
+
+    /// <summary>Was das aktive Design über Farbe und Hintergrund hinaus festlegt (Zeile unter den Designvorlagen).</summary>
+    public string LookText
+    {
+        get
+        {
+            var look = _s.Look;
+            var parts = new[]
+            {
+                look.Pair != null ? L.T("light and dark variant") : string.Empty,
+                look.Palette != null ? L.T("own palette") : string.Empty,
+                look.FontFamily.Length > 0 ? L.F("font {0}", look.FontFamily) : string.Empty,
+                look.GroupColors.Count > 0 ? L.F("{0} group colors", look.GroupColors.Count) : string.Empty
+            }.Where(t => t.Length > 0).ToList();
+            return parts.Count == 0 ? L.T("Palette, fonts, group colors and a light/dark pair are set in the design editor.") : L.T("This design also sets: ") + string.Join(", ", parts);
+        }
+    }
+
     private void DeleteDesign(DesignPreset p)
     {
         if (!_app.Dialogs.Confirm(L.F("Delete the custom design “{0}”?", p.Name), L.T("Delete design"), destructive: true, owner: _app.SettingsDialogOwner)) return;
@@ -837,6 +876,7 @@ public sealed class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(DesignPresets));
         OnPropertyChanged(nameof(CurrentPresetText));
         OnPropertyChanged(nameof(CurrentDesign));
+        OnPropertyChanged(nameof(LookText));
     }
 
     public ICommand ShowWelcomeCommand { get; }

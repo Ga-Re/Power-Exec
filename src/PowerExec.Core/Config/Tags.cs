@@ -38,9 +38,9 @@ public static class Tags
             e.Tags = e.Tags.Where(t => !t.Equals(oldTag, StringComparison.OrdinalIgnoreCase) && !t.Equals(newTag, StringComparison.OrdinalIgnoreCase))
                 .Append(newTag).ToList();
         }
-        var color = ColorOf(s, oldTag);
+        var color = OwnColorOf(s, oldTag);
         SetColor(s, oldTag, null);
-        if (color.Length > 0 && ColorOf(s, newTag).Length == 0) SetColor(s, newTag, color);
+        if (color.Length > 0 && OwnColorOf(s, newTag).Length == 0) SetColor(s, newTag, color);
     }
 
     /// <summary>Schlagwort von allen Einträgen entfernen.</summary>
@@ -54,8 +54,14 @@ public static class Tags
         return n;
     }
 
-    public static string ColorOf(AppSettings s, string tag) =>
+    /// <summary>Eigene Farbe des Schlagworts, leer = keine.</summary>
+    public static string OwnColorOf(AppSettings s, string tag) =>
         s.TagColors.FirstOrDefault(kv => kv.Key.Equals(tag, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
+
+    /// <summary>Wirksame Farbe: die eigene, sonst – wenn das Design es vorsieht – eine aus seiner Farbreihe (je Name gleich bleibend).</summary>
+    public static string ColorOf(AppSettings s, string tag) =>
+        OwnColorOf(s, tag) is { Length: > 0 } own ? own
+        : s.Look.GroupColorsForTags ? Appearance.SeriesColor(s, Appearance.SeriesIndex(tag)) : string.Empty;
 
     public static void SetColor(AppSettings s, string tag, string? color)
     {

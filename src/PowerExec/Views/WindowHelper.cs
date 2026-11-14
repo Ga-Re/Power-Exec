@@ -22,6 +22,7 @@ internal static class WindowHelper
         foreach (Window w in Application.Current.Windows)
         {
             NativeMethods.SetDarkTitleBar(new WindowInteropHelper(w).Handle, ThemeService.IsDark);
+            ApplyFont(w);
         }
     }
 
@@ -52,10 +53,18 @@ internal static class WindowHelper
     {
         TrackActivation(w);
         ApplyScale(w);
+        ApplyFont(w);
         void Apply() => NativeMethods.SetDarkTitleBar(new WindowInteropHelper(w).Handle, ThemeService.IsDark);
 
         if (new WindowInteropHelper(w).Handle != IntPtr.Zero) Apply();
         else w.SourceInitialized += (_, _) => Apply();
+    }
+
+    /// <summary>Schrift des Designs für Text (leer = Schrift der App aus dem Fensterstil).</summary>
+    public static void ApplyFont(Window w)
+    {
+        if (ThemeService.TextFont is { } font) w.FontFamily = font;
+        else w.ClearValue(System.Windows.Controls.Control.FontFamilyProperty);
     }
 
     /// <summary>Größe von Schrift und Bedienelementen (80–150 %): Inhalt skalieren, Fenster entsprechend größer.</summary>

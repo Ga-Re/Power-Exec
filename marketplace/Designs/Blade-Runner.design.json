@@ -11,5 +11,15 @@
   "GlassBlur": 60,
   "GlassSaturation": 90,
   "AccentColor": "#FFA630",
-  "Corners": "Standard"
+  "Corners": "Standard",
+  "Palette": {
+    "Card": "#353833",
+    "Input": "#0A141A",
+    "Line": "#605540",
+    "Text": "#FFFAF3",
+    "TextSecondary": "#B2B2B0",
+    "Selected": "#4E4532"
+  },
+  "GroupColors": "#EEB263, #9FEE63, #63EEB2, #639FEE, #B263EE, #EE639F",
+  "GroupColorsForTags": true
 }

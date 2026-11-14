@@ -22,7 +22,7 @@
                             <DockPanel Style="{StaticResource SubSetting}">
                                 <TextBlock DockPanel.Dock="Right" Text="{Binding Preview}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center"
                                            MaxWidth="260" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock DockPanel.Dock="Left" Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" Width="190" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding Token}" FontFamily="{DynamicResource MonoFont}" Width="190" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                             </DockPanel>
                         </DataTemplate>
@@ -100,11 +100,11 @@
                                     </Grid.ColumnDefinitions>
                                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Select'}"/>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                                        <TextBlock Text="{Binding Token}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Token}" FontFamily="{DynamicResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="{Binding KindText}" FontSize="{StaticResource Font.Body}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Grid.Column="3" Text="{Binding Preview}" FontSize="{StaticResource Font.Body}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Secondary}"
+                                    <TextBlock Grid.Column="3" Text="{Binding Preview}" FontSize="{StaticResource Font.Body}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Text.Secondary}"
                                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Preview}"/>
                                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
                                         <ui:Button Style="{StaticResource Btn.Icon}" Width="32" Height="32" Command="{Binding CopyTokenCommand}" ToolTip="{l:T 'Copy \{\{$Name\}\}'}">

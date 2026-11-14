@@ -11,5 +11,16 @@
   "GlassBlur": 50,
   "GlassSaturation": 100,
   "AccentColor": "#00FF41",
-  "Corners": "Square"
+  "Corners": "Square",
+  "Palette": {
+    "Card": "#14321B",
+    "Input": "#020803",
+    "Line": "#205D30",
+    "Text": "#F0FFF4",
+    "TextSecondary": "#A4B1A7",
+    "Selected": "#114B20"
+  },
+  "GroupColors": "#63EE86, #63CAEE, #8663EE, #EE63CA, #EE8663, #CAEE63",
+  "GroupColorsForTags": true,
+  "MonoFontFamily": "Cascadia Code"
 }

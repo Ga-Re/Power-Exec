@@ -78,6 +78,13 @@ public sealed class WpfAppUi : IAppUi
     public IAppWindow ShowRun(RunViewModel vm) => Show(new RunWindow(vm));
     public IAppWindow ShowProfiles(ProfilesViewModel vm) => Show(new ProfilesWindow(vm, _app));
 
+    public void ShowDesignEditorModal(DesignEditorViewModel vm, object? owner)
+    {
+        var w = new DesignEditorWindow(vm);
+        if (owner is Window o) w.Owner = o;
+        w.ShowDialog();
+    }
+
     public void ShowProfilesModal(ProfilesViewModel vm, object? owner)
     {
         var w = new ProfilesWindow(vm, _app);

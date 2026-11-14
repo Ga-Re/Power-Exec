@@ -46,7 +46,7 @@
                                 <TextBlock Text="@" FontSize="{StaticResource Font.Large}" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="{DynamicResource Text.Secondary}"/>
                                 <TextBox Width="220" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'Group name'}"/>
                                 <TextBlock Text="{Binding CountText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                <TextBlock Text="{Binding Preview}" Style="{StaticResource Caption}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center"
+                                <TextBlock Text="{Binding Preview}" Style="{StaticResource Caption}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" VerticalAlignment="Center"
                                            Margin="12,0,8,0" TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding IsExpanded, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
                             </DockPanel>
@@ -66,7 +66,7 @@
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{l:T 'List'}" Width="60" VerticalAlignment="Center" Style="{StaticResource Caption}"/>
                                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose file …'}" Command="{Binding ChooseListCommand}" Margin="8,0,0,0"/>
-                                    <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
+                                    <TextBox Text="{Binding ListPath, UpdateSourceTrigger=LostFocus}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                              Tag="{l:T 'Text (one computer per line) or CSV with columns'}"/>
                                 </DockPanel>
                                 <DockPanel Margin="0,0,0,8" Visibility="{Binding IsCsv, Converter={StaticResource Vis}}">
@@ -102,20 +102,20 @@
                                 </ui:Button>
                                 <TextBlock Text="{Binding ListSummary}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                <TextBlock Text="{Binding MachinesInline}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                            Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
                             </StackPanel>
                             <StackPanel Visibility="{Binding IsStatic, Converter={StaticResource Vis}}">
                             <TextBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged, Delay=300}" AcceptsReturn="True" TextWrapping="Wrap"
                                      MinHeight="80" MaxHeight="220" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8,8"
-                                     FontFamily="{StaticResource MonoFont}" Margin="0,8,0,0" Tag="{l:T 'One computer per line (or separated by commas)'}"/>
+                                     FontFamily="{DynamicResource MonoFont}" Margin="0,8,0,0" Tag="{l:T 'One computer per line (or separated by commas)'}"/>
                             <DockPanel Margin="0,8,0,0">
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                                     <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Sort'}" Command="{Binding SortCommand}" Margin="8,0,0,0" />
                                     <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Import CSV/text …'}" Command="{Binding ImportCommand}" Margin="8,0,0,0" />
                                 </StackPanel>
                                 <TextBox Text="{Binding AdQuery, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'AD: SRV-*  ·  OU=Server,DC=company,DC=local  ·  (operatingSystem=*Server*)'}"
-                                         Width="380" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"/>
+                                         Width="380" HorizontalAlignment="Left" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"/>
                                 <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Add from AD'}" Command="{Binding AdSearchCommand}" Margin="8,0,0,0" HorizontalAlignment="Left" />
                             </DockPanel>
                             </StackPanel>
@@ -130,7 +130,7 @@
                                             <TextBlock Text="{l:T 'Choose OU …'}"/>
                                         </StackPanel>
                                     </ui:Button>
-                                    <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
+                                    <TextBox Text="{Binding SearchBase, UpdateSourceTrigger=PropertyChanged, Delay=300}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                              Tag="{l:T 'empty = whole domain · e.g. OU=Server,DC=company,DC=local'}"/>
                                 </DockPanel>
                                 <ItemsControl ItemsSource="{Binding Blocks}" Focusable="False">
@@ -196,10 +196,10 @@
                                 <TextBlock Text="{Binding RulesError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Margin="0,8,0,0" TextWrapping="Wrap"
                                            Visibility="{Binding HasRulesError, Converter={StaticResource Vis}}"/>
                                 <TextBlock Text="{Binding SyncText}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding MachinesInline}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                <TextBlock Text="{Binding MachinesInline}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Margin="0,4,0,0" TextWrapping="Wrap"
                                            Foreground="{DynamicResource Text.Secondary}" MaxHeight="90"/>
                                 <Expander Header="{l:T 'Show LDAP filter'}" Margin="0,8,0,0" FontSize="{StaticResource Font.Caption}">
-                                    <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}"
+                                    <TextBox Text="{Binding FilterPreview, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}"
                                              Padding="8,4" Margin="0,4,0,0"/>
                                 </Expander>
                             </StackPanel>

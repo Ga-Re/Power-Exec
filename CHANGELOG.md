@@ -2,8 +2,12 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
-## 0.33.1 – Glas: kein Schatten auf dem Nachbarmonitor
+## 0.34.0 – Design-Editor: Palette, hell und dunkel, Schrift, Gruppenfarben
 
+- Neu unter Darstellung: Design bearbeiten – Farben für Fläche, Karten, Text und Linien mit Live-Vorschau und Kontrastprüfung
+- Ein Design kann eine helle und eine dunkle Variante enthalten und wechselt dann mit Windows mit
+- Designs legen die Schrift für Text sowie für Pfade und Code fest und eine Farbreihe für Gruppen und Schlagworte ohne eigene Farbe
+- Designs lassen sich als Datei exportieren; die Marktplatz-Designs bringen Paletten und Gruppenfarben mit
 - Bei mehreren Monitoren wirft das Glas-Panel Schatten und Rand nicht mehr auf den Monitor daneben
 
 ## 0.33.0 – Marktplatz als eigenes Fenster; Gruppen lassen sich an die erste Stelle ziehen

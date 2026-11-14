@@ -10,5 +10,15 @@
   "Backdrop": "Clear",
   "GlassBlur": 50,
   "GlassSaturation": 100,
-  "AccentColor": "#FF8A65"
+  "AccentColor": "#FF8A65",
+  "Palette": {
+    "Card": "#4F3542",
+    "Input": "#221422",
+    "Line": "#744F53",
+    "Text": "#FFF8F6",
+    "TextSecondary": "#BCB1B6",
+    "Selected": "#654046"
+  },
+  "GroupColors": "#EE8463, #CCEE63, #63EE84, #63CCEE, #8463EE, #EE63CC",
+  "GroupColorsForTags": true
 }

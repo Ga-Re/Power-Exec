@@ -48,7 +48,7 @@
                             </TextBlock>
                             <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Url}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Url}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
                                 <TextBlock x:Name="SourceSummary" Text="{Binding Summary}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
                             </StackPanel>
                         </DockPanel>
@@ -122,7 +122,7 @@
                                             Visibility="{Binding IsEntryOrScript, Converter={StaticResource Vis}}">
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Top" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="White" HorizontalAlignment="Left"/>
-                                            <TextBlock Text="{Binding PreviewLine}" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="White"
+                                            <TextBlock Text="{Binding PreviewLine}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="White"
                                                        TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="32" VerticalAlignment="Bottom"/>
                                         </DockPanel>
                                     </Border>
@@ -148,7 +148,7 @@
                                     </DockPanel>
                                     <TextBlock Text="{Binding Description}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="52" Margin="0,4,0,0"
                                                ToolTip="{Binding Description}"/>
-                                    <TextBlock Text="{Binding Needs}" FontSize="{StaticResource Font.Caption}" FontFamily="{StaticResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
+                                    <TextBlock Text="{Binding Needs}" FontSize="{StaticResource Font.Caption}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"
                                                Margin="0,4,0,0" Visibility="{Binding Needs, Converter={StaticResource Vis}}"/>
                                 </StackPanel>
                             </DockPanel>
@@ -160,7 +160,7 @@
                                                Visibility="{Binding IsInstalled, Converter={StaticResource Vis}}"/>
                                     <StackPanel>
                                         <TextBlock Text="{Binding EntryKindText}" FontSize="{StaticResource Font.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}"/>
-                                        <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{StaticResource MonoFont}" FontSize="{StaticResource Font.Body}"
+                                        <TextBox Text="{Binding PreviewText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"
                                                  MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" BorderThickness="0" Background="Transparent" Padding="0"
                                                  Visibility="{Binding IsEntryOrScript, Converter={StaticResource Vis}}"/>
                                         <TextBlock Text="{Binding DesignBackdropText}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="{Binding HasDesign, Converter={StaticResource Vis}}"/>

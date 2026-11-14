@@ -76,6 +76,21 @@ public class MarketplaceTests
         Assert.True(files.Count(f => f.Type == MarketplaceItemType.Script) >= 8);
         var details = files.ToDictionary(f => f.Path, f => Marketplace.Describe(f, File.ReadAllText(Path.Combine(root, f.Path))));
         Assert.All(details.Values, d => Assert.False(string.IsNullOrWhiteSpace(d.Name)));
+        // Designs: jede Variante bleibt lesbar (Text 4,5:1, Akzent 3:1 zur Fläche) und bringt Gruppenfarben mit
+        foreach (var design in details.Values.Select(d => d.Design).OfType<DesignPreset>())
+        {
+            var variants = new List<(DesignColors Colors, bool Dark)> { (new DesignColors(design.PanelColor, design.AccentColor, design.Palette), design.PrimaryIsDark) };
+            if (design.Pair is { } pair) variants.Add((new DesignColors(pair.PanelColor, pair.AccentColor, pair.Palette), !design.PrimaryIsDark));
+            foreach (var (colors, dark) in variants)
+            {
+                var r = Appearance.Resolve(colors, dark);
+                Assert.True(PanelColors.Contrast(r.Text, r.Surface) >= 4.5, $"{design.Name}: Text auf Fläche");
+                Assert.True(PanelColors.Contrast(r.Text, r.Card) >= 4.5, $"{design.Name}: Text auf Karte");
+                Assert.True(PanelColors.Contrast(r.TextSecondary, r.Surface) >= 4.5, $"{design.Name}: Zweittext");
+                Assert.True(PanelColors.Contrast(r.Accent, r.Surface) >= 3.0, $"{design.Name}: Akzent");
+            }
+            Assert.True(Appearance.SplitColors(design.GroupColors).Count >= 3, $"{design.Name}: Gruppenfarben");
+        }
         Assert.All(files.Where(f => f.Type == MarketplaceItemType.Entry), f => Assert.False(string.IsNullOrWhiteSpace(details[f.Path].Description)));
         Assert.Contains(details, kv => kv.Key.StartsWith("Einträge/Matrix42/", StringComparison.Ordinal) && kv.Value.Variables.Any(v => v.Name == "Matrix42Url"));
         // Variablen der Einträge sind deklariert

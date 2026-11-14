@@ -42,4 +42,7 @@ public interface ISettingsWindowHost : ICustomEntryListHost, IProfilesHost
     IReadOnlyList<KeyValuePair<int, string>> Monitors { get; }
     /// <summary>Profil-Dialog modal zeigen (arbeitet auf der Arbeitskopie des Einstellungsfensters).</summary>
     void ShowProfilesDialog(ProfilesViewModel vm, object? owner);
+
+    /// <summary>Design-Editor modal zeigen; das Ergebnis steht danach in <see cref="DesignEditorViewModel.Result"/>.</summary>
+    void ShowDesignEditor(DesignEditorViewModel vm, object? owner) { }
 }
