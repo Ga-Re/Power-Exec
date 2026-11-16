@@ -61,8 +61,41 @@
                 <DockPanel>
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Fetch title'}" Command="{Binding FetchTitleCommand}" Margin="8,0,0,0"
                             ToolTip="{l:T 'Use page title as display name'}" />
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="8,0,0,0" FontFamily="{DynamicResource MonoFont}"
+                    <ui:Button x:Name="VariableButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="8,0,0,0" FontFamily="{DynamicResource MonoFont}"
                             Click="InsertPlaceholder_Click" ToolTip="{l:T 'Insert a variable or a value asked at launch'}" AutomationProperties.Name="{l:T 'Insert variable'}" />
+                    <!-- Auswahl der Variablen: Suche oben, darunter scrollbar nach Bereichen gruppiert -->
+                    <Popup x:Name="VariablePopup" PlacementTarget="{Binding ElementName=VariableButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
+                        <Border Style="{StaticResource SuggestionPopupBorder}" Width="420">
+                            <DockPanel>
+                                <Grid DockPanel.Dock="Top" Margin="4,4,4,8">
+                                    <TextBox x:Name="VariableSearch" Padding="28,0,8,0" Tag="{l:T 'Search variables'}" AutomationProperties.Name="{l:T 'Search variables'}"
+                                             TextChanged="VariableSearch_TextChanged" PreviewKeyDown="VariableSearch_PreviewKeyDown"/>
+                                    <TextBlock Text="&#xE721;" Style="{StaticResource Icon}" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False" Foreground="{DynamicResource Text.Secondary}"/>
+                                </Grid>
+                                <TextBlock x:Name="VariableEmpty" DockPanel.Dock="Top" Text="{l:T 'No matching variable.'}" Style="{StaticResource Caption}" Margin="8,0,8,8" Visibility="Collapsed"/>
+                                <ListBox x:Name="VariableList" MaxHeight="380" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         PreviewMouseLeftButtonUp="VariableList_MouseUp" PreviewKeyDown="VariableList_PreviewKeyDown">
+                                    <ListBox.GroupStyle>
+                                        <GroupStyle>
+                                            <GroupStyle.HeaderTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Secondary}" Margin="8,8,0,4"/>
+                                                </DataTemplate>
+                                            </GroupStyle.HeaderTemplate>
+                                        </GroupStyle>
+                                    </ListBox.GroupStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,2">
+                                                <TextBlock Text="{Binding Token}" FontWeight="SemiBold" FontFamily="{DynamicResource MonoFont}"/>
+                                                <TextBlock Text="{Binding Description}" TextWrapping="Wrap" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </DockPanel>
+                        </Border>
+                    </Popup>
                     <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>

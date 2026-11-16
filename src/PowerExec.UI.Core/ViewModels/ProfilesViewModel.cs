@@ -581,7 +581,7 @@ public sealed class ProfilesViewModel : ObservableObject
     };
 
     /// <summary>Vorhandene Schlagworte (global) für Vorschläge.</summary>
-    public IReadOnlyList<string> AllTagsList => Core.Config.Tags.All(_target);
+    public IReadOnlyList<string> AllTagsList => Core.Config.Tags.Suggested(_target);
 
     private string _error = string.Empty;
     public string Error { get => _error; private set => Set(ref _error, value); }
@@ -719,6 +719,7 @@ public sealed class ProfilesViewModel : ObservableObject
             _target.CategoryOrder = GroupManager.All(_target).Append(entry.Category).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
         _target.Entries.RemoveAll(e => string.Equals(e.Path, key, StringComparison.OrdinalIgnoreCase));
         _target.Entries.Add(entry);
+        Core.Config.Tags.Remember(_target, entry.Tags);
         SavedKey = key;
         if (_saveImmediately) _app.OnProfilesSaved();
         Saved?.Invoke();

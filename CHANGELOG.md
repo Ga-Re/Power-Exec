@@ -2,6 +2,11 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.35.1 – Variablen-Auswahl mit Suche, Schlagwort-Vorschläge beim Hineinklicken
+
+- Der Knopf {{…}} öffnet eine Auswahl mit Suchfeld; lange Listen scrollen statt abgeschnitten zu werden
+- Ein Klick ins Schlagwort-Feld zeigt zuerst die zuletzt verwendeten, dann alle vorhandenen Schlagworte
+
 ## 0.35.0 – Designs in hell und dunkel, Glas bleibt auf seinem Monitor, Variablen-Auswahl
 
 - Alle Marktplatz-Designs haben jetzt eine helle und eine dunkle Variante; die zweite Variante wird aus der ersten abgeleitet statt einfach weiß zu sein

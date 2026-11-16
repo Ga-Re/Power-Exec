@@ -17,6 +17,18 @@ public static class Tags
     public static IReadOnlyList<string> All(AppSettings s) =>
         s.Entries.SelectMany(e => e.Tags).Distinct(StringComparer.CurrentCultureIgnoreCase).OrderBy(t => t, StringComparer.CurrentCultureIgnoreCase).ToList();
 
+    /// <summary>Höchstens so viele zuletzt verwendete Schlagworte.</summary>
+    public const int RecentCount = 8;
+
+    /// <summary>Vorschläge fürs Schlagwort-Feld: zuerst die zuletzt verwendeten, dann alle übrigen vorhandenen.</summary>
+    public static IReadOnlyList<string> Suggested(AppSettings s) =>
+        s.RecentTags.Concat(All(s)).Where(t => t.Length > 0).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+
+    /// <summary>Vergebene Schlagworte vorn in die Liste der zuletzt verwendeten setzen.</summary>
+    public static void Remember(AppSettings s, IEnumerable<string> tags) =>
+        s.RecentTags = tags.Concat(s.RecentTags).Where(t => t.Trim().Length > 0)
+            .Distinct(StringComparer.CurrentCultureIgnoreCase).Take(RecentCount).ToList();
+
     /// <summary>Schlagworte mit Anzahl der Einträge.</summary>
     public static IReadOnlyList<(string Tag, int Count)> Counts(AppSettings s) =>
         s.Entries.SelectMany(e => e.Tags.Distinct(StringComparer.CurrentCultureIgnoreCase))

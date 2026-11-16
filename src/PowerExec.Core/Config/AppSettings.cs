@@ -174,6 +174,9 @@ public sealed class AppSettings
     /// <summary>Zuletzt gewählte Panelfarben (#RRGGBB, neueste zuerst, höchstens <see cref="PanelColors.RecentCount"/>).</summary>
     public List<string> RecentColors { get; set; } = new();
 
+    /// <summary>Zuletzt vergebene Schlagworte (neueste zuerst) – erscheinen beim Hineinklicken ins Schlagwort-Feld oben.</summary>
+    public List<string> RecentTags { get; set; } = new();
+
     // Panel-Zustand
     public List<string> Favorites { get; set; } = new();
     public List<string> CollapsedGroups { get; set; } = new();

@@ -8,6 +8,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 35, 1), L.T("Searchable variable picker, tag suggestions on click"), new[]
+        {
+            L.T("The {{…}} button opens a picker with a search box; long lists scroll instead of being cut off"),
+            L.T("Clicking into the tag field shows the recently used tags first, then all existing ones")
+        }),
         new ReleaseNote(new Version(0, 35, 0), L.T("Designs in light and dark, glass stays on its monitor, variable picker"), new[]
         {
             L.T("All marketplace designs now have a light and a dark variant; the second variant is derived from the first instead of plain white"),
