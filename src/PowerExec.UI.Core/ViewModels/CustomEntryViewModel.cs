@@ -83,6 +83,15 @@ public sealed class CustomEntryViewModel : ObservableObject
         Revalidate();
     }
 
+    /// <summary>Profil-Editor: Startoptionen eines anderen Profils übernehmen (geerbt vom Standard).</summary>
+    public void ApplyOptions(EntryOptions options)
+    {
+        options.ApplyTo(_e);
+        _useRdpFile = _e.RdpFile.Trim().Length > 0;
+        OnPropertyChanged(string.Empty);
+        Revalidate();
+    }
+
     /// <summary>Fehler in Startoptionen (für Profile).</summary>
     public bool OptionsValid => !_issues.Any(i => i.IsError && i.Field is EntryField.ScreenSize or EntryField.PortForward or EntryField.OpenWithProgram);
 

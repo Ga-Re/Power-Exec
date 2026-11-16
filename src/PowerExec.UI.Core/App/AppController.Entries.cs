@@ -231,6 +231,9 @@ public partial class AppController
         RunProfile(item, profile, null, record: false);
     }
 
+    /// <summary>Datei-Eintrag aus dem Dialog testen (Profil wie eingestellt, ohne „Zuletzt ausgeführt“).</summary>
+    public void TestRunItem(LaunchItem item, LaunchProfile profile) => RunProfile(item, profile, null, record: false);
+
     /// <summary>Eigenen Eintrag bearbeiten – im selben Dialog wie die Startprofile.</summary>
     public void EditCustomEntry(LaunchItem item)
     {

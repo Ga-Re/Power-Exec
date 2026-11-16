@@ -8,6 +8,15 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 36, 0), L.T("New entry editor: tabs, profiles that inherit from ★ Standard, variables per profile"), new[]
+        {
+            L.T("The entry window has two tabs: General (tags, note, behavior in the panel) and Profiles with collapsible sections"),
+            L.T("Profiles inherit everything from ★ Standard and only change single values – target or code, variables, run as, window; ✎ customizes, ↺ goes back"),
+            L.T("Variables per profile: override a global {{$Variable}}, preset or fix a query, or add a variable just for this entry"),
+            L.T("Choice queries {{Server:A;B;C}} show a list at launch; the first value is preselected and you can still type your own"),
+            L.T("Preview shows the whole script with syntax colors; script files can be edited right there – saved to the file with a backup"),
+            L.T("Existing profiles are taken over automatically: values equal to ★ Standard count as inherited")
+        }),
         new ReleaseNote(new Version(0, 35, 1), L.T("Searchable variable picker, tag suggestions on click"), new[]
         {
             L.T("The {{…}} button opens a picker with a search box; long lists scroll instead of being cut off"),

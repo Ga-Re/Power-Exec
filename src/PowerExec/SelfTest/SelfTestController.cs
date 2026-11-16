@@ -1502,6 +1502,53 @@ public sealed partial class SelfTestController : AppController
             // Dialoge
             var item = Repository.Items.First(i => i.FullPath.Equals(script, StringComparison.OrdinalIgnoreCase));
             await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false), this));
+
+            Step("Eintrag: Reiter, Profile mit Vererbung, Vorschau des Scripts");
+            {
+                var profilesVm = new ProfilesViewModel(this, item, Settings, saveImmediately: false);
+                var editor = new ProfilesWindow(profilesVm, this);
+                editor.Show();
+                await Settle();
+                if (!profilesVm.IsProfilesPage) Fail("Eintrag: öffnet nicht mit dem Reiter „Profile“");
+                if (editor.Content is FrameworkElement standardRoot) Screenshot(standardRoot, "eintrag-profil-standard");
+                profilesVm.IsGeneralPage = true;
+                await Settle();
+                if (editor.Content is FrameworkElement generalRoot) Screenshot(generalRoot, "eintrag-allgemein");
+                profilesVm.IsProfilesPage = true;
+                if (profilesVm.Profiles.All(p => p.IsDefault)) profilesVm.AddCommand.Execute(null);
+                var other = profilesVm.Profiles.First(p => !p.IsDefault);
+                profilesVm.Selected = other;
+                await Settle();
+                // Vererbung: Werte kommen vom Standard; ✎ macht sie eigen, ↺ setzt zurück
+                var standardEdit = profilesVm.Profiles.First(p => p.IsDefault);
+                if (!other.RunAsInherit.IsOwn)
+                {
+                    standardEdit.Dialog = standardEdit.Dialog == DialogMode.Always ? DialogMode.Never : DialogMode.Always;
+                    if (!other.WindowInherit.IsOwn && other.Dialog != standardEdit.Dialog) Fail("Vererbung: Änderung am Standard kommt im Profil nicht an");
+                }
+                other.RunAsInherit.MakeOwnCommand.Execute(null);
+                if (!other.RunAsInherit.IsOwn || other.OwnCount == 0) Fail("Vererbung: „Anpassen“ macht den Wert nicht eigen");
+                await Settle();
+                if (editor.Content is FrameworkElement inheritRoot) Screenshot(inheritRoot, "eintrag-profil-geerbt");
+                other.RunAsInherit.ResetCommand.Execute(null);
+                if (other.RunAsInherit.IsOwn) Fail("Vererbung: ↺ setzt den Wert nicht auf den Standard zurück");
+                // Vorschau aufklappen: Script mit Syntaxfarben
+                profilesVm.Selected = standardEdit;
+                await Settle();
+                if (!standardEdit.HasCode) Fail("Vorschau: Script-Inhalt fehlt");
+                if (!standardEdit.CanEditFile) Fail("Vorschau: Script-Datei lässt sich nicht bearbeiten");
+                foreach (var expander in VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().ToList()) expander.IsExpanded = false;
+                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } preview) preview.IsExpanded = true;
+                await Settle();
+                if (editor.Content is FrameworkElement previewRoot) Screenshot(previewRoot, "eintrag-vorschau");
+                standardEdit.EditCodeCommand.Execute(null);
+                await Settle();
+                if (!standardEdit.IsEditingCode) Fail("Vorschau: „Bearbeiten“ öffnet den Editor nicht");
+                if (editor.Content is FrameworkElement editRoot) Screenshot(editRoot, "eintrag-vorschau-bearbeiten");
+                standardEdit.CancelEditCodeCommand.Execute(null);
+                editor.Close();
+                await Settle();
+            }
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: false)));
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: true)));
             var request = new ExecutionRequest { Item = item, Targets = ["WEB1", "WEB2"] };
@@ -1640,6 +1687,8 @@ public sealed partial class SelfTestController : AppController
                     // zweites Profil mit anderem Browser-Profil
                     vm.AddCommand.Execute(null);
                     var second = vm.Profiles.Last();
+                    if (!second.WindowInherit.IsInherited) Fail("Webseite: neues Profil übernimmt die Startoptionen nicht vom Standard");
+                    second.WindowInherit.MakeOwnCommand.Execute(null);
                     second.Options!.Private = true;
                     if (!second.Detail.Contains("privat")) Fail("Webseite: Kurzinfo des Profils zeigt die Startoptionen nicht");
                     if (second.ToProfile().Options?.Private != true) Fail("Webseite: Startoptionen des Profils werden nicht gespeichert");
