@@ -43,14 +43,26 @@ public sealed class TagRowViewModel : ObservableObject
         get => _color;
         set
         {
-            if (!Set(ref _color, value ?? string.Empty)) return;
+            // null: die Auswahlliste wurde neu gefüllt und hat ihre Auswahl verloren – keine Eingabe
+            if (value == null) return;
+            var before = Colors;
+            if (!Set(ref _color, value)) return;
             _owner.SetColor(this, _color);
-            OnPropertyChanged(nameof(Colors));
+            if (!ReferenceEquals(before, Colors)) OnPropertyChanged(nameof(Colors));
             OnPropertyChanged(nameof(ChipColor));
         }
     }
-    /// <summary>Vom Design (automatisch), Farben des Designs, Akzentfarben, eigene, keine.</summary>
-    public IReadOnlyList<ColorOption> Colors => ColorChoices.For(_owner.Settings, _color, Tags.AutoColorOf(_owner.Settings, Tag));
+    /// <summary>Vom Design (automatisch), Farben des Designs, Akzentfarben, eigene, keine – dieselbe Liste, solange sie den Wert enthält.</summary>
+    public IReadOnlyList<ColorOption> Colors
+    {
+        get
+        {
+            if (_colors == null || !_colors.Any(o => o.Key.Equals(_color, StringComparison.OrdinalIgnoreCase)))
+                _colors = ColorChoices.For(_owner.Settings, _color, Tags.AutoColorOf(_owner.Settings, Tag));
+            return _colors;
+        }
+    }
+    private IReadOnlyList<ColorOption>? _colors;
 
     /// <summary>Getönter Chip in der wirksamen Farbe; null = Chip-Farbe des Designs.</summary>
     public ArgbColor? ChipColor => ArgbColor.FromHex(Tags.ColorOf(_owner.Settings, Tag), 0x55);

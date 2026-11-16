@@ -142,6 +142,32 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void GroupColorListStaysStableSoTheComboBoxDoesNotLoop()
+    {
+        var (_, vm) = Create();
+        var group = vm.Categories.Single(c => c.Name == "Kunde A");
+        var raised = new List<string?>();
+        group.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        var list = group.Colors;
+        Assert.Same(list, group.Colors);                     // dieselbe Liste bei jedem Abruf
+        Assert.Equal(string.Empty, list[0].Key);             // „Vom Design (automatisch)“ oben
+        Assert.Equal(Appearance.NoColor, list[^1].Key);
+
+        group.ColorOwn = null!;                              // Auswahl verloren (Liste neu gefüllt): keine Eingabe
+        group.ColorOwn = string.Empty;                       // unverändert: nichts melden
+        Assert.Empty(raised);
+
+        group.ColorOwn = PanelColors.AccentPresets[0].Hex;   // Vorgabe: steht schon in der Liste
+        Assert.Same(list, group.Colors);
+        Assert.DoesNotContain(nameof(group.Colors), raised);
+
+        group.ColorOwn = "#123456";                          // eigene Farbe: neue Liste mit ihr
+        Assert.NotSame(list, group.Colors);
+        Assert.Contains(group.Colors, o => o.Key == "#123456");
+    }
+
+    [Fact]
     public void RemovingGroupAsksAndKeepsItWhenDeclined()
     {
         var (host, vm) = Create();

@@ -480,18 +480,34 @@ public sealed class CategoryItemViewModel : ObservableObject
     public object? DialogOwner { get; init; }
 
     /// <summary>Vom Design (automatisch bzw. wie die übergeordnete Gruppe), Farben des Designs, Akzentfarben, eigene, keine.</summary>
-    public IReadOnlyList<ColorOption> Colors => Settings == null ? Array.Empty<ColorOption>()
-        : ColorChoices.For(Settings, ColorOwn, GroupManager.AutoColorOf(Settings, Name), GroupManager.ParentOf(Name) != null);
+    /// <remarks>
+    /// Dieselbe Liste, solange sie den Wert enthält: eine neue Liste setzt die Auswahl zurück, das schriebe den Wert
+    /// zurück und baute wieder eine neue Liste – ohne Ende.
+    /// </remarks>
+    public IReadOnlyList<ColorOption> Colors
+    {
+        get
+        {
+            if (Settings == null) return Array.Empty<ColorOption>();
+            var own = ColorOwn;
+            if (_colors == null || !_colors.Any(o => o.Key.Equals(own, StringComparison.OrdinalIgnoreCase)))
+                _colors = ColorChoices.For(Settings, own, GroupManager.AutoColorOf(Settings, Name), GroupManager.ParentOf(Name) != null);
+            return _colors;
+        }
+    }
+    private IReadOnlyList<ColorOption>? _colors;
 
     public string ColorOwn
     {
         get => Settings != null ? GroupManager.OwnColorOf(Settings, Name) : string.Empty;
         set
         {
-            if (Settings == null) return;
+            // null: die Auswahlliste wurde neu gefüllt und hat ihre Auswahl verloren – keine Eingabe
+            if (Settings == null || value == null || value.Equals(ColorOwn, StringComparison.OrdinalIgnoreCase)) return;
+            var before = Colors;
             GroupManager.SetColor(Settings, Name, value);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Colors));
+            if (!ReferenceEquals(before, Colors)) OnPropertyChanged(nameof(Colors));
             OnPropertyChanged(nameof(SwatchColor));
         }
     }
