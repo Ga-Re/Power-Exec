@@ -429,7 +429,9 @@ public sealed class MarketplaceViewModel : ObservableObject
                           + (loaded.Count > 8 ? L.F("\n\n… and {0} more", loaded.Count - 8) : string.Empty);
             if (preview.Length > 2500) preview = preview[..2500] + "\n…";
             var heading = loaded.Count == 1 ? L.F("Download “{0}”?", loaded[0].Details.Name) : L.F("Download {0} items?", loaded.Count);
-            if (!_app.Dialogs.Confirm($"{heading}\n\n{preview}", L.T("Marketplace – preview"), owner: _app.SettingsDialogOwner)) return;
+            // Designs zeigen ihre Vorschau schon auf der Karte und ändern nichts, bevor man sie anwendet: keine Rückfrage
+            var onlyDesigns = loaded.All(l => l.Row.File.Type == MarketplaceItemType.Design);
+            if (!onlyDesigns && !_app.Dialogs.Confirm($"{heading}\n\n{preview}", L.T("Marketplace – preview"), owner: _app.SettingsDialogOwner)) return;
 
             foreach (var v in Marketplace.MissingVariables(_s, loaded.SelectMany(l => l.Details.Variables)))
             {
@@ -467,6 +469,18 @@ public sealed class MarketplaceViewModel : ObservableObject
                 }
             }
             Error = null;
+            // Genau ein Design geladen: gleich anwenden? (Mehrere: Auswahl unter Darstellung › Designvorlagen)
+            var newDesigns = loaded.Where(l => l.Row.File.Type == MarketplaceItemType.Design).ToList();
+            if (newDesigns.Count == 1 && Marketplace.FindInstall(_s, newDesigns[0].Row.Source, newDesigns[0].Row.File.Path) is { DesignKey.Length: > 0 } installed
+                && _s.CustomDesigns.FirstOrDefault(d => d.Key == installed.DesignKey) is { } design
+                && _app.Dialogs.Confirm(L.F("Apply “{0}” now?", design.Name), L.T("Design downloaded"), owner: _app.SettingsDialogOwner))
+            {
+                Appearance.Apply(_s, design);
+                foreach (var i in _items) i.SetChecked(false);
+                Snackbar.Show(L.F("“{0}” is now active.", design.Name));
+                _changed();
+                return;
+            }
             Snackbar.Show(L.T("Downloaded: ") + string.Join(", ", new[]
             {
                 entries > 0 ? (entries == 1 ? L.T("1 entry") : L.F("{0} entries", entries)) : null,

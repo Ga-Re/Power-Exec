@@ -39,26 +39,33 @@ public class DesignEditorViewModelTests
     }
 
     [Fact]
-    public void PairKeepsBothVariantsAndSingleDesignMovesWithTheSwitch()
+    public void OtherVariantStartsAsMatchingCounterpartNotWhite()
     {
-        var dialogs = new FakeDialogs { ColorAnswer = "#F5F5F5" };
-        var vm = new DesignEditorViewModel(dialogs, Start(), _ => null);
+        var abendrot = new DesignPreset("x", "Abendrot", "", ThemeMode.Dark, "#2D1B2E", 90, 15, false, AccentColor: "#FF8A65");
+        var vm = new DesignEditorViewModel(new FakeDialogs { ColorAnswer = "#F5F5F5" }, abendrot, _ => null);
 
-        // Ohne Paar: „Hell“ macht aus dem Design ein helles – die Farben ziehen mit
+        // Ohne Paar: „Hell“ zeigt das helle Gegenstück (gleicher Farbton, gleicher Akzent) – nicht dieselben Farben
         vm.EditLight = true;
-        Assert.Equal(ThemeMode.Light, vm.Preview.Theme);
-        Assert.Equal("#000000", vm.Preview.PanelColor);
+        var light = vm.Preview;
+        Assert.Equal(ThemeMode.Light, light.Theme);
+        Assert.NotEqual("#2D1B2E", light.PanelColor);
+        Assert.True(PanelColors.TryParse(light.PanelColor, out var surface) && PanelColors.IsLight(surface));
+        Assert.Equal("#FF8A65", light.AccentColor);
+        Assert.NotNull(light.Palette);
+        // zurück: das Original ist unverändert da
         vm.EditDark = true;
-        Assert.Equal(ThemeMode.Dark, vm.Preview.Theme);
+        Assert.Equal("#2D1B2E", vm.Preview.PanelColor);
 
-        // Mit Paar: die helle Variante bekommt eigene Farben, die dunkle bleibt
+        // Mit Paar: beide Varianten, die helle ist das Gegenstück
         vm.HasPair = true;
+        var both = vm.Preview;
+        Assert.Equal("#2D1B2E", both.PanelColor);
+        Assert.Equal(light.PanelColor, both.Pair!.PanelColor);
         vm.EditLight = true;
-        vm.Slots.Single(s => s.Key == "Surface").PickCommand.Execute(null);
-        var design = vm.Preview;
-        Assert.Equal("#000000", design.PanelColor);
-        Assert.Equal("#F5F5F5", design.Pair!.PanelColor);
-        Assert.Equal(ThemeMode.Dark, design.Theme);
+        vm.Slots.Single(x => x.Key == "Surface").PickCommand.Execute(null);
+        Assert.Equal("#F5F5F5", vm.Preview.Pair!.PanelColor);
+        vm.RegenerateOtherCommand.Execute(null);                     // dunkle Variante neu aus der hellen
+        Assert.NotEqual("#2D1B2E", vm.Preview.PanelColor);
     }
 
     [Fact]

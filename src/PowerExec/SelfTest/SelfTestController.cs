@@ -575,6 +575,46 @@ public sealed partial class SelfTestController : AppController
                 CreateHosts();
             }
 
+            Step("Glas an der Kante zur Taskleiste: das Fenster bleibt in seinem Monitor");
+            if (PanelBackdrops.Effective(PanelBackdrop.Glass, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast, ThemeService.TransparencyEffects()) == PanelBackdrop.Glass)
+            {
+                var cfg = Settings.Panels[0];
+                var (edgeBefore, backdropBefore) = (cfg.Edge, cfg.Backdrop);
+                cfg.Edge = ScreenEdge.Bottom; // Taskleiste unten: Zuschnitt nötig, also wachsendes Fenster
+                cfg.Backdrop = PanelBackdrop.Glass;
+                CreateHosts();
+                var host = WpfHost(0);
+                var monitor = ScreenService.TriggerMonitors(host.Config)[0];
+                var outside = new List<string>();
+                int frames = 0;
+                EventHandler onFrame = (_, _) =>
+                {
+                    if (!host.Window.IsVisible || host.Window.IsCloaked || host.Window.WorkAreaForTest is not { } wa) return;
+                    frames++;
+                    var r = host.Window.WindowRectForTest;
+                    if (!wa.Contains(r) && outside.Count < 5) outside.Add($"{r} außerhalb von {wa}");
+                };
+                System.Windows.Media.CompositionTarget.Rendering += onFrame;
+                host.Window.ShowPanel(monitor, viaHotkey: false);
+                await Settle();
+                await Task.Delay(500);
+                var clips = host.Window.ClipsForTest;
+                if (!host.Window.IsSettledForTest) Fail("Glas unten: Panel steht nach dem Ausfahren nicht an seiner Ziellage");
+                var (client, content) = host.Window.SizesForTest();
+                if (content is { } cs && (Math.Abs(cs.W - client.W) > 1 || Math.Abs(cs.H - client.H) > 1))
+                    Fail($"Glas unten: Kindfenster {cs.W}×{cs.H} statt {client.W}×{client.H} nach dem Ausfahren");
+                ScreenCaptureWindow(host.Window, "panel-glas-unten");
+                host.Window.HidePanel();
+                await Settle();
+                await Task.Delay(500);
+                System.Windows.Media.CompositionTarget.Rendering -= onFrame;
+                Step($"Glas unten: Zuschnitt {(clips ? "ja (wachsendes Fenster)" : "nein (Taskleiste nicht unten)")}, {frames} Bilder geprüft");
+                if (clips && outside.Count > 0) Fail("Glas unten: Fenster ragt beim Gleiten aus dem Arbeitsbereich – " + string.Join("; ", outside));
+                (cfg.Edge, cfg.Backdrop) = (edgeBefore, backdropBefore);
+                CreateHosts();
+                await Settle();
+            }
+
             Step("Angeheftet: Wechsel Glas ↔ Klarglas über die Einstellungen");
             if (PanelBackdrops.Effective(PanelBackdrop.Glass, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast, ThemeService.TransparencyEffects()) == PanelBackdrop.Glass)
             {

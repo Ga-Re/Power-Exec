@@ -62,7 +62,7 @@
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Fetch title'}" Command="{Binding FetchTitleCommand}" Margin="8,0,0,0"
                             ToolTip="{l:T 'Use page title as display name'}" />
                     <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{}{{…}}" Margin="8,0,0,0" FontFamily="{DynamicResource MonoFont}"
-                            Click="InsertPlaceholder_Click" ToolTip="{l:T 'Insert placeholder – asked at launch, e.g. https://ticket/\{\{Number\}\}'}" />
+                            Click="InsertPlaceholder_Click" ToolTip="{l:T 'Insert a variable or a value asked at launch'}" AutomationProperties.Name="{l:T 'Insert variable'}" />
                     <TextBox x:Name="UrlBox" Text="{Binding Target, UpdateSourceTrigger=PropertyChanged, Delay=250}" Tag="{Binding TargetHint}" FontFamily="{DynamicResource MonoFont}"/>
                 </DockPanel>
                 <TextBlock Text="{Binding TargetError}" Style="{StaticResource FieldError}" Visibility="{Binding TargetError, Converter={StaticResource Vis}}"/>

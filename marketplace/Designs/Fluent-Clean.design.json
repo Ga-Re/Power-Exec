@@ -12,12 +12,12 @@
   "GlassSaturation": 100,
   "AccentColor": "",
   "Palette": {
-    "Card": "#2D3840",
+    "Card": "#303030",
     "Input": "#181818",
-    "Line": "#344E62",
-    "Text": "#F0F7FC",
-    "TextSecondary": "#ADB2B6",
-    "Selected": "#274053"
+    "Line": "#3B3B3B",
+    "Text": "#F2F2F2",
+    "TextSecondary": "#AFAFAF",
+    "Selected": "#2D2D2D"
   },
   "GroupColors": "#63B1EE, #9F63EE, #EE63B1, #EE9F63, #B1EE63, #63EE9F",
   "GroupColorsForTags": true,

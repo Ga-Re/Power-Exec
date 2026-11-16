@@ -12,13 +12,25 @@
   "GlassSaturation": 100,
   "AccentColor": "",
   "Palette": {
-    "Card": "#233959",
+    "Card": "#24314B",
     "Input": "#0F192E",
-    "Line": "#2C4F75",
-    "Text": "#F0F7FC",
-    "TextSecondary": "#A9B2BF",
-    "Selected": "#1E4068"
+    "Line": "#303C54",
+    "Text": "#F1F2F3",
+    "TextSecondary": "#AAAFB9",
+    "Selected": "#222E49"
   },
   "GroupColors": "#63B1EE, #9F63EE, #EE63B1, #EE9F63, #B1EE63, #63EE9F",
-  "GroupColorsForTags": true
+  "GroupColorsForTags": true,
+  "Pair": {
+    "PanelColor": "#F1F3F6",
+    "AccentColor": "",
+    "Palette": {
+      "Card": "#F6F7F9",
+      "Input": "#FCFDFD",
+      "Line": "#B1B4BB",
+      "Text": "#1A1B1D",
+      "TextSecondary": "#5F6062",
+      "Selected": "#CED1D8"
+    }
+  }
 }

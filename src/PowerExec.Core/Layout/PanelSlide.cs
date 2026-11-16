@@ -50,6 +50,16 @@ public static class PanelSlide
         return monitors.Any(m => m.IntersectsWith(outside));
     }
 
+    /// <summary>
+    /// Fensterlage beim Gleiten innerhalb des Monitors: der Teil des Panels, der im Arbeitsbereich liegt. Das Fenster
+    /// wächst so von der Kante her und verlässt seinen Monitor nie – auch nicht für ein einzelnes Bild. Leer = nichts sichtbar.
+    /// </summary>
+    public static Rectangle Inside(Rectangle panelAt, Rectangle workArea)
+    {
+        var r = Rectangle.Intersect(panelAt, workArea);
+        return r.Width <= 0 || r.Height <= 0 ? Rectangle.Empty : r;
+    }
+
     /// <summary>So weit reichen Schatten und Rand, die Windows um ein Fenster zeichnet (Pixel, großzügig bemessen).</summary>
     public const int ShadowReach = 32;
 

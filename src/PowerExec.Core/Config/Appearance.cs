@@ -25,6 +25,7 @@ public sealed record DesignPreset(string Key, string Name, string Description, T
 /// </summary>
 public sealed record DesignPalette(string Card = "", string Input = "", string Line = "", string Text = "", string TextSecondary = "", string Selected = "")
 {
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => Card.Length + Input.Length + Line.Length + Text.Length + TextSecondary.Length + Selected.Length == 0;
 }
 
@@ -203,6 +204,87 @@ public static class Appearance
         var accentSource = PanelColors.TryParse(c.AccentColor, out var a) ? a : PanelColors.TryParse(c.PanelColor, out var own) ? own : new Rgb(0x00, 0x78, 0xD4);
         return new ResolvedPalette(surface, Or(palette.Card, d.Hover), Or(palette.Input, d.Input), Or(palette.Line, d.Border), text,
             Or(palette.TextSecondary, PanelColors.Blend(text, surface, 0.35)), Derive(accentSource, !light, surface).Accent, Or(palette.Selected, d.Selected));
+    }
+
+    /// <summary>
+    /// Gegenstück einer Variante für das andere Windows-Design: gleicher Farbton und gleicher Akzent, Helligkeit
+    /// umgekehrt (dunkel → helle, leicht getönte Fläche; hell → dunkle). Die Palette wird passend dazu berechnet, damit
+    /// das Gegenstück wie dasselbe Design aussieht und nicht wie Weiß mit Akzent. Ohne eigene Fläche folgt auch das
+    /// Gegenstück der Fläche des Designs.
+    /// </summary>
+    public static DesignVariant Counterpart(DesignColors from, bool fromDark)
+    {
+        if (!PanelColors.TryParse(from.PanelColor, out var surface)) return new DesignVariant(string.Empty, from.AccentColor, null);
+        var (h, sat, _) = ToHsl(surface);
+        var accent = PanelColors.TryParse(from.AccentColor, out var a) ? a : surface;
+        // Hell: fast weiß mit einem Hauch des Farbtons; dunkel: tief, leicht gesättigt
+        var other = fromDark ? FromHsl(h, Math.Min(sat, 0.35) * 0.55, 0.955) : FromHsl(h, Math.Min(sat, 0.45), 0.12);
+        return new DesignVariant(other.Hex, from.AccentColor, PaletteFor(other, accent));
+    }
+
+    /// <summary>
+    /// Stimmige Palette zu Fläche und Akzent: Karten, Linien und Auswahl leicht zum Akzent getönt, Text mit genug
+    /// Kontrast (mindestens 7:1, Zweittext 4,6:1). Grundlage für Gegenstücke und die Designs im Marktplatz.
+    /// </summary>
+    public static DesignPalette PaletteFor(Rgb surface, Rgb accent)
+    {
+        Rgb white = new(255, 255, 255), black = new(0, 0, 0);
+        bool light = PanelColors.IsLight(surface);
+        Rgb card, input, line, selected, text;
+        if (light)
+        {
+            card = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.04), white, 0.6);
+            input = PanelColors.Blend(surface, white, 0.8);
+            line = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.18), black, 0.12);
+            selected = PanelColors.Blend(surface, accent, 0.16);
+            text = PanelColors.Blend(new Rgb(0x1A, 0x1A, 0x1A), accent, 0.08);
+        }
+        else
+        {
+            card = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.10), white, 0.07);
+            input = PanelColors.Blend(surface, black, 0.25);
+            line = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.25), white, 0.12);
+            selected = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.22), white, 0.06);
+            text = PanelColors.Blend(white, accent, 0.06);
+        }
+        var toward = light ? black : white;
+        for (int i = 0; i < 20 && Math.Min(PanelColors.Contrast(text, surface), PanelColors.Contrast(text, card)) < 7; i++) text = PanelColors.Blend(text, toward, 0.2);
+        var secondary = PanelColors.Blend(text, surface, 0.32);
+        for (int i = 0; i < 20 && PanelColors.Contrast(secondary, surface) < 4.6; i++) secondary = PanelColors.Blend(secondary, text, 0.15);
+        return new DesignPalette(card.Hex, input.Hex, line.Hex, text.Hex, secondary.Hex, selected.Hex);
+    }
+
+    /// <summary>Farbton (0–1), Sättigung und Helligkeit (HSL).</summary>
+    private static (double H, double S, double L) ToHsl(Rgb c)
+    {
+        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+        double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b)), l = (max + min) / 2, d = max - min;
+        if (d < 1e-9) return (0, 0, l);
+        var s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        double h = max == r ? (g - b) / d + (g < b ? 6 : 0) : max == g ? (b - r) / d + 2 : (r - g) / d + 4;
+        return (h / 6, s, l);
+    }
+
+    private static Rgb FromHsl(double h, double s, double l)
+    {
+        static double Hue(double p, double q, double t)
+        {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            return t < 1.0 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2.0 / 3 ? p + (q - p) * (2.0 / 3 - t) * 6 : p;
+        }
+        double r, g, b;
+        if (s < 1e-9) r = g = b = l;
+        else
+        {
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            var p = 2 * l - q;
+            r = Hue(p, q, h + 1.0 / 3);
+            g = Hue(p, q, h);
+            b = Hue(p, q, h - 1.0 / 3);
+        }
+        static byte B(double v) => (byte)Math.Round(Math.Clamp(v, 0, 1) * 255);
+        return new Rgb(B(r), B(g), B(b));
     }
 
     /// <summary>Schreibt ein Design als Datei für den Marktplatz bzw. zum Weitergeben (ohne Kennung des Rechners).</summary>

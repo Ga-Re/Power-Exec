@@ -113,6 +113,7 @@ public partial class PanelWindow : Window
         {
             Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
             _glass.HostContent(WireHostedContent);
+            if (_glass.HasContentHost) _slide.ContentHost = _glass; // am Nachbarmonitor: wachsendes Fenster statt Zuschnitt
             _appearance.ApplyFrost(); // Weichzeichner läuft erst mit dem Fenster-Handle: Schichten neu verteilen
         }
 
@@ -510,6 +511,11 @@ public partial class PanelWindow : Window
 
     /// <summary>Für den Selbsttest: steht das ausgefahrene Fenster genau an seiner Ziellage?</summary>
     internal bool IsSettledForTest => _slide.IsSettled;
+
+    /// <summary>Für den Selbsttest: Lage des Fensters, Arbeitsbereich seines Monitors, Zuschnitt an der Kante.</summary>
+    internal System.Drawing.Rectangle WindowRectForTest => _slide.WindowRect();
+    internal System.Drawing.Rectangle? WorkAreaForTest => _monitor?.WorkArea;
+    internal bool ClipsForTest => _slide.Clips;
 
     private void Animate(bool show)
     {

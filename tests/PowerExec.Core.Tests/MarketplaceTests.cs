@@ -90,6 +90,7 @@ public class MarketplaceTests
                 Assert.True(PanelColors.Contrast(r.Accent, r.Surface) >= 3.0, $"{design.Name}: Akzent");
             }
             Assert.True(Appearance.SplitColors(design.GroupColors).Count >= 3, $"{design.Name}: Gruppenfarben");
+            if (design.PanelColor.Length > 0) Assert.True(design.Pair != null, $"{design.Name}: helle und dunkle Variante");
         }
         Assert.All(files.Where(f => f.Type == MarketplaceItemType.Entry), f => Assert.False(string.IsNullOrWhiteSpace(details[f.Path].Description)));
         Assert.Contains(details, kv => kv.Key.StartsWith("Einträge/Matrix42/", StringComparison.Ordinal) && kv.Value.Variables.Any(v => v.Name == "Matrix42Url"));

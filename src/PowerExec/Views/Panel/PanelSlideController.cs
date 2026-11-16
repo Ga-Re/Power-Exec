@@ -17,8 +17,9 @@ namespace PowerExec.Desktop.Views;
 /// Windows zeichnet den Hintergrund, WPF den Inhalt – zwei getrennte Abläufe. Ändert sich beim Gleiten die Fenstergröße
 /// oder ein Fensterbereich, passt Windows den Hintergrund sofort an, WPF den Inhalt ein bis zwei Bilder später.
 /// Verschiebt man dagegen nur das Fenster, bewegt Windows Inhalt und Hintergrund in einem Stück – wie beim Ziehen eines
-/// Fensters. Liegt an der Kante ein Nachbarmonitor oder die Taskleiste, wird das Fenster auf dem Weg zugeschnitten
-/// (Fensterbereich) und ganz eingefahren für Windows ausgeblendet.</para>
+/// Fensters. Liegt an der Kante ein Nachbarmonitor oder die Taskleiste, verlässt das Fenster seinen Monitor nicht: es
+/// wächst von der Kante her, der Inhalt gleitet darin (<see cref="ApplyInside"/>); ganz eingefahren ist es für Windows
+/// ausgeblendet.</para>
 ///
 /// <para><b>Klarglas</b> (transparentes WPF-Fenster): das Fenster steht an seiner Ziellage, der Inhalt gleitet darin.</para>
 /// </summary>
@@ -48,6 +49,14 @@ internal sealed class PanelSlideController
     private Rectangle? _region;
     private bool _regionApplied;
     private bool _cloaked;
+    /// <summary>Gleitet gerade als wachsendes Fenster innerhalb des Monitors (siehe <see cref="ApplyInside"/>).</summary>
+    private bool _inside;
+
+    /// <summary>
+    /// Glas mit Inhalt im Kindfenster: dann gleitet das Panel an einer Kante mit Nachbarmonitor oder Taskleiste als
+    /// wachsendes Fenster innerhalb des Monitors, statt über die Kante geschoben und beschnitten zu werden.
+    /// </summary>
+    public PanelGlassHost? ContentHost { get; set; }
 
     /// <param name="window">Das Panelfenster.</param>
     /// <param name="hwnd">Sein Fenster-Handle.</param>
@@ -128,6 +137,12 @@ internal sealed class PanelSlideController
     {
         if (!_systemWindow || _hwnd == IntPtr.Zero || _target.Width <= 0) return;
         var r = PanelSlide.At(_target, _hidden, Reveal);
+        if (_clip && ContentHost is { HasContentHost: true } host)
+        {
+            ApplyInside(r, host);
+            return;
+        }
+        LeaveInside();
         var visible = _clip ? PanelSlide.Visible(r, _workArea) : new Rectangle(0, 0, r.Width, r.Height);
         bool full = visible.Size == r.Size;
         // Fensterbereich, solange zugeschnitten wird (Taskleiste oder Nachbarmonitor an der Kante) – und dauerhaft,
@@ -155,6 +170,46 @@ internal sealed class PanelSlideController
 
     /// <summary>Behält das ausgefahrene Fenster einen Fensterbereich, damit kein Schatten auf einen anderen Monitor fällt?</summary>
     public bool GuardsShadow => _guardShadow;
+
+    /// <summary>
+    /// Gleiten an einer Kante mit Nachbarmonitor oder Taskleiste: das Fenster ist nur der sichtbare Teil des Panels und
+    /// wächst bzw. schrumpft von der Kante her; der Inhalt (Kindfenster) behält seine volle Größe und wird darin
+    /// verschoben. So liegt das Fenster nie auf dem Nachbarmonitor – weder Weichzeichner noch Schatten können dort
+    /// sichtbar werden, und Windows meldet keinen Wechsel der Skalierung.
+    /// </summary>
+    private void ApplyInside(Rectangle panelAt, PanelGlassHost host)
+    {
+        var inside = PanelSlide.Inside(panelAt, _workArea);
+        if (inside.IsEmpty)
+        {
+            SetCloaked(true); // ganz eingefahren: nichts zu zeigen
+            return;
+        }
+        _inside = true;
+        host.FollowParent = false;
+        int ox = panelAt.X - inside.X, oy = panelAt.Y - inside.Y;
+        PanelWindowNative.SetOffsetRoundedRegion(_hwnd, ox, oy, panelAt.Width, panelAt.Height, _cornerRadius);
+        _regionApplied = false; // der Fensterbereich gehört jetzt dem wachsenden Fenster
+        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, inside.X, inside.Y, inside.Width, inside.Height,
+            NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOCOPYBITS | NativeMethods.SWP_NOSENDCHANGING);
+        _appliedSize = inside.Size;
+        host.PlaceContent(ox, oy, panelAt.Width, panelAt.Height);
+        SetCloaked(false);
+    }
+
+    /// <summary>Vom wachsenden Fenster zurück zum normalen: der Inhalt folgt wieder der Fenstergröße.</summary>
+    private void LeaveInside()
+    {
+        if (!_inside) return;
+        _inside = false;
+        _regionApplied = false;
+        _appliedSize = System.Drawing.Size.Empty;
+        if (ContentHost is { } host)
+        {
+            host.FollowParent = true;
+            host.Resize(_target.Width, _target.Height);
+        }
+    }
 
     private void SetCloaked(bool cloaked)
     {
@@ -276,6 +331,7 @@ internal sealed class PanelSlideController
         if (_systemWindow)
         {
             SetNow(1);
+            LeaveInside(); // ganz ausgefahren: das Fenster ist so groß wie das Panel, der Inhalt folgt wieder
             var settled = PanelSlide.IsSettled(WindowRect(), _target, tolerance: 0);
             if (!settled)
             {

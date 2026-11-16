@@ -56,7 +56,46 @@ public partial class CustomEntryForm : UserControl
         InsertAt(Vm.IsTextSnippet ? TextCodeBox : PsCodeBox, text);
     }
 
-    private void InsertPlaceholder_Click(object sender, RoutedEventArgs e) => InsertAt(UrlBox, "{{Name}}");
+    /// <summary>
+    /// Knopf {{…}}: Menü mit Abfragen beim Start, eingebauten und eigenen Variablen samt Beschreibung; ein Klick fügt
+    /// an der Cursorposition ein. Bei einer Abfrage ist danach der Name markiert, damit man ihn gleich überschreibt.
+    /// </summary>
+    private void InsertPlaceholder_Click(object sender, RoutedEventArgs e)
+    {
+        if (Vm == null || sender is not FrameworkElement button) return;
+        var menu = new ContextMenu { PlacementTarget = button, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, MaxHeight = 480 };
+        string? section = null;
+        foreach (var choice in Vm.VariableChoices)
+        {
+            if (choice.Section != section)
+            {
+                if (section != null) menu.Items.Add(new Separator());
+                section = choice.Section;
+                menu.Items.Add(new MenuItem { Header = choice.Section, IsEnabled = false, FontWeight = FontWeights.SemiBold });
+            }
+            var token = new TextBlock { Text = choice.Token, FontWeight = FontWeights.SemiBold };
+            token.SetResourceReference(TextBlock.FontFamilyProperty, "MonoFont");
+            var description = new TextBlock { Text = choice.Description, TextWrapping = TextWrapping.Wrap, MaxWidth = 360 };
+            description.SetResourceReference(TextBlock.FontSizeProperty, "Font.Caption");
+            description.SetResourceReference(TextBlock.ForegroundProperty, "Text.Secondary");
+            var item = new MenuItem { Header = new StackPanel { Children = { token, description }, Margin = new Thickness(0, 2, 0, 2) } };
+            System.Windows.Automation.AutomationProperties.SetName(item, choice.Token + " – " + choice.Description);
+            var text = choice.Token;
+            item.Click += (_, _) =>
+            {
+                var start = UrlBox.SelectionStart;
+                InsertAt(UrlBox, text);
+                if (!text.StartsWith("{{$", StringComparison.Ordinal))
+                {
+                    // Abfrage: den Namen (ohne Vorgabe) markieren
+                    var nameLength = text.IndexOf(':') is > 0 and var colon ? colon - 2 : text.Length - 4;
+                    UrlBox.Select(start + 2, nameLength);
+                }
+            };
+            menu.Items.Add(item);
+        }
+        menu.IsOpen = true;
+    }
 
     /// <summary>Zeilennummern mit dem Code mitscrollen.</summary>
     private void CodeBox_ScrollChanged(object sender, ScrollChangedEventArgs e) => LineScroll.ScrollToVerticalOffset(e.VerticalOffset);

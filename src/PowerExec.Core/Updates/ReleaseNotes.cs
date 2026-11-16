@@ -8,6 +8,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 35, 0), L.T("Designs in light and dark, glass stays on its monitor, variable picker"), new[]
+        {
+            L.T("All marketplace designs now have a light and a dark variant; the second variant is derived from the first instead of plain white"),
+            L.T("After downloading a design Power-Exec offers to apply it right away; the preview question is gone for designs"),
+            L.T("Glass panel with several monitors: while sliding, the panel stays on its own monitor and no longer shows on the neighboring one"),
+            L.T("The {{…}} button in the entry editor shows all variables and launch questions with a description")
+        }),
         new ReleaseNote(new Version(0, 34, 0), L.T("Design editor: palette, light and dark, fonts, group colors"), new[]
         {
             L.T("New under Appearance: Edit design – colors for surface, cards, text and lines with a live preview and a contrast check"),

@@ -13,14 +13,26 @@
   "AccentColor": "#FF2BD6",
   "Corners": "Square",
   "Palette": {
-    "Card": "#391E40",
+    "Card": "#391E3F",
     "Input": "#0E0817",
-    "Line": "#632F62",
+    "Line": "#622E62",
     "Text": "#FFF2FD",
     "TextSecondary": "#B3A8B6",
-    "Selected": "#512052"
+    "Selected": "#511F52"
   },
   "GroupColors": "#EE63D3, #EE7E63, #D3EE63, #63EE7E, #63D3EE, #7E63EE",
   "GroupColorsForTags": true,
-  "FontFamily": "Bahnschrift"
+  "FontFamily": "Bahnschrift",
+  "Pair": {
+    "PanelColor": "#F3F1F6",
+    "AccentColor": "#FF2BD6",
+    "Palette": {
+      "Card": "#FAF6FB",
+      "Input": "#FDFCFD",
+      "Line": "#D8B4D3",
+      "Text": "#2C1B29",
+      "TextSecondary": "#6C5F6B",
+      "Selected": "#F5D1F1"
+    }
+  }
 }

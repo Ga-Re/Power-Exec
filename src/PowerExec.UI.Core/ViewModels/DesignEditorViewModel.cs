@@ -67,7 +67,7 @@ public sealed class DesignEditorViewModel : ObservableObject
         _monoFontFamily = start.MonoFontFamily ?? string.Empty;
         _groupColorsForTags = start.GroupColorsForTags;
         _drafts[_primaryDark] = Draft.From(start.PanelColor, start.AccentColor, start.Palette);
-        _drafts[!_primaryDark] = start.Pair is { } pair ? Draft.From(pair.PanelColor, pair.AccentColor, pair.Palette) : new Draft { Accent = start.AccentColor };
+        _drafts[!_primaryDark] = start.Pair is { } pair ? Draft.From(pair.PanelColor, pair.AccentColor, pair.Palette) : CounterpartOf(_primaryDark);
 
         Slots = new[]
         {
@@ -126,13 +126,8 @@ public sealed class DesignEditorViewModel : ObservableObject
         set
         {
             if (_editDark == value) return;
-            if (!_hasPair)
-            {
-                // Ein einzelnes Design wechselt die Seite: seine Farben ziehen mit
-                _drafts[value] = _drafts[_editDark];
-                _drafts[_editDark] = new Draft { Accent = _drafts[value].Accent };
-                _primaryDark = value;
-            }
+            // Ohne Paar wird das Design zur anderen Seite: dort steht das passende Gegenstück (zurück bleibt das Original)
+            if (!_hasPair) _primaryDark = value;
             _editDark = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(EditLight));
@@ -145,7 +140,28 @@ public sealed class DesignEditorViewModel : ObservableObject
     public bool HasPair
     {
         get => _hasPair;
-        set { if (Set(ref _hasPair, value)) Refresh(); }
+        set
+        {
+            if (!Set(ref _hasPair, value)) return;
+            // Die andere Variante beginnt als Gegenstück der bearbeiteten, nicht als weiße Fläche
+            if (value && _drafts[!_editDark].Surface.Length == 0 && _drafts[_editDark].Surface.Length > 0) _drafts[!_editDark] = CounterpartOf(_editDark);
+            Refresh();
+        }
+    }
+
+    /// <summary>Die andere Variante neu aus der bearbeiteten ableiten (Farbton und Akzent bleiben, Helligkeit umgekehrt).</summary>
+    public ICommand RegenerateOtherCommand => _regenerateOther ??= new RelayCommand(() =>
+    {
+        _drafts[!_editDark] = CounterpartOf(_editDark);
+        Refresh();
+    });
+    private ICommand? _regenerateOther;
+
+    private Draft CounterpartOf(bool dark)
+    {
+        var d = _drafts[dark];
+        var v = Appearance.Counterpart(new DesignColors(d.Surface, d.Accent, d.Palette), dark);
+        return Draft.From(v.PanelColor, v.AccentColor, v.Palette);
     }
 
     public bool UseWindowsAccent

@@ -96,6 +96,25 @@ internal sealed class FakeEntryHost : ISettingsWindowHost
 public class CustomEntryViewModelTests
 {
     [Fact]
+    public void VariableButtonOffersQueriesBuiltinsAndOwnVariablesWithDescriptions()
+    {
+        var host = new FakeEntryHost();
+        host.Settings.Variables.Add(new UserVariable { Name = "Matrix42Url", Description = "Adresse des ESM" });
+        host.Settings.Variables.Add(new UserVariable { Name = "Kunde" });
+        var vm = new CustomEntryViewModel(new CustomEntry { Kind = CustomEntryKind.Url }, host);
+
+        var choices = vm.VariableChoices;
+        Assert.Contains(choices, c => c.Token == "{{Name}}");
+        Assert.Contains(choices, c => c.Token == "{{$Date}}" && c.Description.Length > 0);
+        Assert.Contains(choices, c => c.Token == "{{$Matrix42Url}}" && c.Description == "Adresse des ESM");
+        Assert.Contains(choices, c => c.Token == "{{$Kunde}}" && c.Description.Length > 0); // ohne Beschreibung: Art der Variable
+        Assert.All(choices, c => Assert.False(string.IsNullOrWhiteSpace(c.Description)));
+        // Reihenfolge der Bereiche: Abfragen, eingebaute, eigene
+        Assert.Equal(3, choices.Select(c => c.Section).Distinct().Count());
+        Assert.Equal("{{$Kunde}}", choices[^1].Token);
+    }
+
+    [Fact]
     public void UrlNeedsTargetToBeValid()
     {
         var vm = new CustomEntryViewModel(new CustomEntry { Kind = CustomEntryKind.Url }, new FakeEntryHost());

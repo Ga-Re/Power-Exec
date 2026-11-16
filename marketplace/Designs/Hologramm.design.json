@@ -13,13 +13,25 @@
   "AccentColor": "#A78BFA",
   "Corners": "Rounded",
   "Palette": {
-    "Card": "#37395A",
+    "Card": "#373959",
     "Input": "#14172C",
     "Line": "#54527C",
     "Text": "#FAF8FF",
     "TextSecondary": "#B2B3C0",
-    "Selected": "#45436E"
+    "Selected": "#45436D"
   },
   "GroupColors": "#8663EE, #EE63CB, #EE8663, #CBEE63, #63EE86, #63CBEE",
-  "GroupColorsForTags": true
+  "GroupColorsForTags": true,
+  "Pair": {
+    "PanelColor": "#F1F2F6",
+    "AccentColor": "#A78BFA",
+    "Palette": {
+      "Card": "#F8F8FB",
+      "Input": "#FCFCFD",
+      "Line": "#C9C4D9",
+      "Text": "#25232C",
+      "TextSecondary": "#66656D",
+      "Selected": "#E5E2F7"
+    }
+  }
 }

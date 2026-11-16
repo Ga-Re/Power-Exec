@@ -59,6 +59,23 @@ internal static partial class PanelWindowNative
         catch (DllNotFoundException) { }
     }
 
+    /// <summary>
+    /// Fensterbereich für das wachsende Fenster: das abgerundete Panel (<paramref name="width"/>×<paramref name="height"/>)
+    /// liegt um (<paramref name="offsetX"/>, <paramref name="offsetY"/>) versetzt im Fenster; was über das Fenster hinausragt,
+    /// schneidet Windows ab. Mit Fensterbereich zeichnet Windows keinen Schatten – auch nicht auf den Nachbarmonitor.
+    /// </summary>
+    public static void SetOffsetRoundedRegion(IntPtr hwnd, int offsetX, int offsetY, int width, int height, int radius)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        try
+        {
+            var rgn = CreateRoundRectRgn(offsetX, offsetY, offsetX + width + 1, offsetY + height + 1, radius * 2, radius * 2);
+            if (rgn != IntPtr.Zero) SetWindowRgn(hwnd, rgn, false); // Windows übernimmt rgn; ohne synchrones Neuzeichnen
+        }
+        catch (EntryPointNotFoundException) { } // siehe SetClippedRoundedRegion
+        catch (DllNotFoundException) { }
+    }
+
     /// <summary>Fensterbereich wieder auf das ganze Fenster setzen.</summary>
     public static void ClearRegion(IntPtr hwnd)
     {

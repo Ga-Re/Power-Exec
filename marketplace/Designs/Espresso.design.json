@@ -14,11 +14,23 @@
   "Palette": {
     "Card": "#3F3931",
     "Input": "#161412",
-    "Line": "#62584A",
+    "Line": "#62594A",
     "Text": "#FDFBF7",
-    "TextSecondary": "#B5B3B0",
-    "Selected": "#52483B"
+    "TextSecondary": "#B6B3B0",
+    "Selected": "#52493B"
   },
   "GroupColors": "#D8B679, #9AD879, #79D8B6, #799AD8, #B679D8, #D8799A",
-  "GroupColorsForTags": true
+  "GroupColorsForTags": true,
+  "Pair": {
+    "PanelColor": "#F4F3F3",
+    "AccentColor": "#D9B87C",
+    "Palette": {
+      "Card": "#FAF9F8",
+      "Input": "#FDFDFD",
+      "Line": "#D2CCC3",
+      "Text": "#292722",
+      "TextSecondary": "#6A6865",
+      "Selected": "#F0EAE0"
+    }
+  }
 }
