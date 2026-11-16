@@ -3,8 +3,15 @@ using System.Text.RegularExpressions;
 
 namespace PowerExec.Core.Config;
 
-/// <summary>Ein Platzhalter wie <c>{{Ticket}}</c> oder <c>{{Rechner:SRV-01}}</c> (mit Vorgabewert).</summary>
-public sealed record Placeholder(string Name, string Default);
+/// <summary>
+/// Ein Platzhalter wie <c>{{Ticket}}</c>, <c>{{Rechner:SRV-01}}</c> (mit Vorgabewert) oder <c>{{Server:A;B;C}}</c>
+/// (Auswahl; der erste Wert ist die Vorgabe, freie Eingabe bleibt möglich).
+/// </summary>
+public sealed record Placeholder(string Name, string Default)
+{
+    /// <summary>Werte der Auswahlliste (leer = freie Eingabe).</summary>
+    public IReadOnlyList<string> Choices { get; init; } = Array.Empty<string>();
+}
 
 /// <summary>
 /// Platzhalter in eigenen Einträgen: <c>{{Name}}</c> bzw. <c>{{Name:Vorgabe}}</c>. Doppelte geschweifte Klammern,
@@ -25,10 +32,20 @@ public static class Placeholders
                 var name = m.Groups[1].Value.Trim();
                 if (IsBuiltin(name)) continue; // {{$Date}} usw. werden nicht abgefragt
                 if (name.Length == 0 || result.Any(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) continue;
-                result.Add(new Placeholder(name, m.Groups[2].Success ? m.Groups[2].Value : string.Empty));
+                var preset = m.Groups[2].Success ? m.Groups[2].Value : string.Empty;
+                var choices = SplitChoices(preset);
+                result.Add(new Placeholder(name, choices.Count > 0 ? choices[0] : preset) { Choices = choices });
             }
         }
         return result;
+    }
+
+    /// <summary>Auswahlwerte aus „A;B;C“ (mindestens zwei, sonst keine Auswahl).</summary>
+    public static IReadOnlyList<string> SplitChoices(string preset)
+    {
+        if (!preset.Contains(';')) return Array.Empty<string>();
+        var list = preset.Split(';').Select(c => c.Trim()).Where(c => c.Length > 0).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+        return list.Count >= 2 ? list : Array.Empty<string>();
     }
 
     /// <summary>Eingebaute Variablen ohne Abfrage: {{$Date}}, {{$Time}}, {{$User}}, {{$Computer}}, {{$Clipboard}}.</summary>
@@ -88,8 +105,9 @@ public static class Placeholders
                 if (powerShell) variable = Variables.EscapeForPowerShell(variable);
                 return urlEncode && query >= 0 && m.Index > query ? Uri.EscapeDataString(variable) : variable;
             }
+            var preset = m.Groups[2].Success ? m.Groups[2].Value : string.Empty;
             var value = values.FirstOrDefault(kv => kv.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value
-                        ?? (m.Groups[2].Success ? m.Groups[2].Value : string.Empty);
+                        ?? (SplitChoices(preset) is { Count: > 0 } choices ? choices[0] : preset);
             return urlEncode ? Uri.EscapeDataString(value) : value;
         });
     }

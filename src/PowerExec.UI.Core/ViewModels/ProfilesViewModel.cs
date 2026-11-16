@@ -23,6 +23,18 @@ public sealed class ProfileParamViewModel : ObservableObject
         _mode = setting.Mode;
         _value = setting.Value;
         GroupKey = groupKey + ":" + p.Name;
+        Inherit = new InheritToggle(owner, ProfileInheritance.ParamPrefix + p.Name);
+    }
+
+    /// <summary>Geerbt vom Standard oder eigen.</summary>
+    public InheritToggle Inherit { get; }
+
+    /// <summary>Wert vom Standard übernehmen (geerbt), ohne Änderungsmeldung an das Profil.</summary>
+    internal void CopyFrom(ParameterSetting s)
+    {
+        _mode = s.Mode;
+        _value = s.Value;
+        foreach (var n in new[] { nameof(Mode), nameof(Value), nameof(BoolValue), nameof(IsValueEnabled), nameof(Note), nameof(NoteIsWarning) }) OnPropertyChanged(n);
     }
 
     public ScriptParameter Parameter { get; }
@@ -94,6 +106,14 @@ public sealed class ProfileEditViewModel : ObservableObject
     private DialogMode _dialog;
     private string _arguments;
     private bool _confirm;
+    private string? _targetText;
+    private string? _code;
+    /// <summary>Eigene Werte (Schlüssel aus <see cref="ProfileInheritance"/>); im Standardprofil ohne Bedeutung.</summary>
+    private readonly HashSet<string> _own = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Stand des Standards beim Anpassen je eigenem Wert.</summary>
+    private readonly Dictionary<string, string> _ownBase = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Gespeicherte Variablen beim Öffnen (bis die Zeilen aufgebaut sind).</summary>
+    private Dictionary<string, ProfileVariable> _variables;
     private static int _counter;
 
     public ProfileEditViewModel(ProfilesViewModel owner, LaunchProfile p)
@@ -111,6 +131,22 @@ public sealed class ProfileEditViewModel : ObservableObject
         _dialog = p.Dialog;
         _arguments = p.Arguments;
         _confirm = p.ConfirmBeforeRun;
+        _targetText = p.TargetText;
+        _code = p.Code;
+        _variables = p.Variables.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.OrdinalIgnoreCase);
+        if (p.Own != null) foreach (var k in p.Own) _own.Add(k);
+        if (p.OwnBase != null) foreach (var kv in p.OwnBase) _ownBase[kv.Key] = kv.Value;
+        TargetInherit = new InheritToggle(this, ProfileInheritance.Target);
+        RunAsInherit = new InheritToggle(this, ProfileInheritance.RunAs);
+        WindowInherit = new InheritToggle(this, ProfileInheritance.Window);
+        ArgumentsInherit = new InheritToggle(this, ProfileInheritance.Arguments);
+        TestCommand = new RelayCommand(() => _owner.Test(this));
+        EditCodeCommand = new RelayCommand(StartEditCode, () => CanEditFile && !IsEditingCode);
+        SaveCodeCommand = new RelayCommand(SaveCode, () => IsEditingCode);
+        CancelEditCodeCommand = new RelayCommand(() => { IsEditingCode = false; LoadCode(); }, () => IsEditingCode);
+        AddVariableCommand = new RelayCommand(AddVariable);
+        AdoptStandardCommand = new RelayCommand(AdoptStandard);
+        DismissStandardChangeCommand = new RelayCommand(DismissStandardChange);
         _key = "p" + Interlocked.Increment(ref _counter);
         foreach (var param in owner.Item.Parameters)
             Parameters.Add(new ProfileParamViewModel(this, param, ProfileResolver.SettingFor(p, param), _key));
@@ -166,6 +202,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     {
         _isDefault = value;
         OnPropertyChanged(nameof(IsDefault));
+        RefreshInheritance();
     }
 
     public bool RunAsAdmin
@@ -250,10 +287,16 @@ public sealed class ProfileEditViewModel : ObservableObject
     internal void OnChanged()
     {
         _owner.OnProfileChanged(this);
-        OnPropertyChanged(nameof(Summary));
-        OnPropertyChanged(nameof(Detail));
-        OnPropertyChanged(nameof(DialogHint));
-        OnPropertyChanged(nameof(Preview));
+        RaiseDerived();
+        if (_owner.Entry?.Current.Kind == CustomEntryKind.Snippet) LoadCode();
+    }
+
+    private void RaiseDerived()
+    {
+        foreach (var n in new[] { nameof(Summary), nameof(Detail), nameof(DialogHint), nameof(Preview), nameof(OwnCount), nameof(HasOwnValues), nameof(InheritText),
+                     nameof(HeaderHint), nameof(HasStandardChanged), nameof(StandardChangedText), nameof(ShowTargetOverride), nameof(ShowEntryForm), nameof(TargetText), nameof(CodeText),
+                     nameof(UsesCode), nameof(UsesTarget), nameof(IsDefaultProfile) })
+            OnPropertyChanged(n);
     }
 
     public LaunchProfile ToProfile()
@@ -276,7 +319,333 @@ public sealed class ProfileEditViewModel : ObservableObject
         };
         foreach (var param in Parameters.Where(x => !x.IsSecure))
             p.Parameters[param.Name] = param.ToSetting();
+        foreach (var v in Variables.Where(v => v.IsDefined)) p.Variables[v.Name] = v.ToVariable();
+        if (!_isDefault)
+        {
+            // Nur eigene Werte zählen; ein geerbtes Ziel kommt vom Eintrag selbst
+            if (Owns(ProfileInheritance.Target)) { p.TargetText = _targetText; p.Code = _code; }
+            p.Own = _own.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
+            p.OwnBase = _own.Where(_ownBase.ContainsKey).ToDictionary(k => k, k => _ownBase[k], StringComparer.OrdinalIgnoreCase);
+        }
         return p;
+    }
+
+    // ---- Vererbung vom Standardprofil -------------------------------------------------------
+
+    public InheritToggle TargetInherit { get; }
+    public InheritToggle RunAsInherit { get; }
+    public InheritToggle WindowInherit { get; }
+    public InheritToggle ArgumentsInherit { get; }
+
+    /// <summary>Legt dieses Profil den Wert selbst fest? Das Standardprofil legt alles fest.</summary>
+    internal bool Owns(string key) => _isDefault || _own.Contains(key);
+
+    /// <summary>Wert eigen machen (✎) bzw. wieder vom Standard übernehmen (↺).</summary>
+    internal void SetOwn(string key, bool own)
+    {
+        if (_isDefault) return;
+        var standard = _owner.DefaultProfile;
+        if (own)
+        {
+            _own.Add(key);
+            if (standard != null) _ownBase[key] = ProfileInheritance.Snapshot(standard.ToProfile(), key);
+            // Ziel bzw. Code beginnen mit dem des Eintrags
+            if (key == ProfileInheritance.Target && _owner.Entry != null)
+            {
+                _targetText ??= _owner.Entry.Current.Target;
+                _code ??= _owner.Entry.Current.Code;
+            }
+        }
+        else
+        {
+            _own.Remove(key);
+            _ownBase.Remove(key);
+            if (key == ProfileInheritance.Target) { _targetText = null; _code = null; }
+            if (standard != null) SyncFrom(standard);
+        }
+        RefreshInheritance();
+        OnChanged();
+    }
+
+    /// <summary>Anzahl eigener Werte (Profilliste).</summary>
+    public int OwnCount => _isDefault ? 0 : _own.Count;
+    public bool HasOwnValues => OwnCount > 0;
+    public string InheritText => _isDefault
+        ? L.T("Basis for all profiles")
+        : _own.Count == 0 ? L.T("takes everything from ★ Standard") : _own.Count == 1 ? L.T("1 own value") : L.F("{0} own values", _own.Count);
+    public string HeaderHint => _isDefault
+        ? L.T("Changes here also apply to all other profiles, unless they set the value themselves.")
+        : L.T("inherits from ★ Standard · grey = taken over, ✎ = own");
+
+    /// <summary>Alle geerbten Werte vom Standard übernehmen (ohne Änderungsmeldung an den Standard).</summary>
+    internal void SyncFrom(ProfileEditViewModel standard)
+    {
+        if (_isDefault || ReferenceEquals(standard, this)) return;
+        var d = standard.ToProfile();
+        if (!Owns(ProfileInheritance.RunAs))
+        {
+            _runAsAdmin = d.RunAsAdmin;
+            _runAsOther = d.RunAsOtherUser && !d.RunAsAdmin;
+            _target = d.Target;
+            _machines = string.Join(", ", d.Machines);
+            _engine = d.Engine;
+        }
+        if (!Owns(ProfileInheritance.Window))
+        {
+            _dialog = d.Dialog;
+            _noExit = d.NoExit;
+            _noProfile = d.NoProfile;
+            _confirm = d.ConfirmBeforeRun;
+            if (d.Options != null && Options != null) Options.ApplyOptions(d.Options);
+        }
+        if (!Owns(ProfileInheritance.Arguments)) _arguments = d.Arguments;
+        if (!Owns(ProfileInheritance.Target)) { _targetText = null; _code = null; }
+        foreach (var row in Parameters.Where(r => !r.IsSecure && !Owns(r.Inherit.Key)))
+            row.CopyFrom(d.Parameters.TryGetValue(row.Name, out var st) ? st : ProfileResolver.SettingFor(new LaunchProfile(), row.Parameter));
+        foreach (var row in Variables.Where(r => !Owns(r.Inherit.Key)))
+            row.CopyFrom(d.Variables.TryGetValue(row.Name, out var v) ? v : null);
+        foreach (var n in new[] { nameof(RunAsAdmin), nameof(RunMode), nameof(Target), nameof(IsFixedTarget), nameof(Machines), nameof(Engine), nameof(Dialog),
+                     nameof(NoExit), nameof(NoProfile), nameof(ConfirmBeforeRun), nameof(Arguments), nameof(TargetText), nameof(CodeText) })
+            OnPropertyChanged(n);
+        RaiseDerived();
+    }
+
+    /// <summary>Standard ist ein anderes Profil geworden: eigene Werte = Unterschiede zum neuen Standard.</summary>
+    internal void RebaseOn(ProfileEditViewModel standard)
+    {
+        _own.Clear();
+        _ownBase.Clear();
+        if (_isDefault) return;
+        var d = standard.ToProfile();
+        var mine = ToProfile();
+        mine.TargetText = _targetText;
+        mine.Code = _code;
+        foreach (var k in ProfileInheritance.Differences(d, mine))
+        {
+            _own.Add(k);
+            _ownBase[k] = ProfileInheritance.Snapshot(d, k);
+        }
+    }
+
+    internal void RefreshInheritance()
+    {
+        foreach (var t in new[] { TargetInherit, RunAsInherit, WindowInherit, ArgumentsInherit }) t.Refresh();
+        foreach (var r in Parameters) r.Inherit.Refresh();
+        foreach (var r in Variables) r.Refresh();
+        RaiseDerived();
+    }
+
+    // ---- Hinweis: Standard geändert, nachdem ein Wert hier angepasst wurde ---------------------
+
+    private IReadOnlyList<string> ChangedInStandard => _isDefault || _owner.DefaultProfile is not { } std
+        ? Array.Empty<string>()
+        : ProfileInheritance.ChangedInStandard(std.ToProfile(), ToProfile());
+
+    public bool HasStandardChanged => ChangedInStandard.Count > 0;
+
+    public string StandardChangedText
+    {
+        get
+        {
+            var keys = ChangedInStandard;
+            if (keys.Count == 0) return string.Empty;
+            return L.F("★ Standard was changed after this profile set its own value: {0}", string.Join(", ", keys.Select(KeyLabel)));
+        }
+    }
+
+    private string KeyLabel(string key) =>
+        key.StartsWith(ProfileInheritance.ParamPrefix, StringComparison.OrdinalIgnoreCase) ? "-" + key[ProfileInheritance.ParamPrefix.Length..]
+        : key.StartsWith(ProfileInheritance.VarPrefix, StringComparison.OrdinalIgnoreCase) ? "{{" + key[ProfileInheritance.VarPrefix.Length..] + "}}"
+        : key switch
+        {
+            ProfileInheritance.Target => L.T("Target / code"),
+            ProfileInheritance.RunAs => L.T("Run as / where"),
+            ProfileInheritance.Window => L.T("Window and behavior"),
+            _ => L.T("Arguments")
+        };
+
+    public ICommand AdoptStandardCommand { get; }
+    public ICommand DismissStandardChangeCommand { get; }
+
+    /// <summary>Die betroffenen Werte wieder vom Standard übernehmen.</summary>
+    private void AdoptStandard()
+    {
+        foreach (var k in ChangedInStandard.ToList()) { _own.Remove(k); _ownBase.Remove(k); if (k == ProfileInheritance.Target) { _targetText = null; _code = null; } }
+        if (_owner.DefaultProfile is { } std) SyncFrom(std);
+        RefreshInheritance();
+        OnChanged();
+    }
+
+    /// <summary>Eigene Werte behalten, Hinweis ausblenden (neuer Stand des Standards gilt als gesehen).</summary>
+    private void DismissStandardChange()
+    {
+        if (_owner.DefaultProfile is not { } std) return;
+        var d = std.ToProfile();
+        foreach (var k in ChangedInStandard.ToList()) _ownBase[k] = ProfileInheritance.Snapshot(d, k);
+        RaiseDerived();
+    }
+
+    // ---- Ziel bzw. Code eines eigenen Eintrags ----------------------------------------------------
+
+    /// <summary>Ziel dieses Profils (geerbt: das des Eintrags).</summary>
+    public string TargetText
+    {
+        get => _targetText ?? _owner.Entry?.Current.Target ?? string.Empty;
+        set { if (Owns(ProfileInheritance.Target) && !_isDefault && _targetText != value) { _targetText = value ?? string.Empty; OnPropertyChanged(); OnChanged(); } }
+    }
+
+    /// <summary>Code dieses Profils (Snippets; geerbt: der des Eintrags).</summary>
+    public string CodeText
+    {
+        get => _code ?? _owner.Entry?.Current.Code ?? string.Empty;
+        set { if (Owns(ProfileInheritance.Target) && !_isDefault && _code != value) { _code = value ?? string.Empty; OnPropertyChanged(); OnChanged(); } }
+    }
+
+    /// <summary>Anderes Profil als der Standard: Ziel bzw. Code hier überschreiben (statt das Formular des Eintrags zu zeigen).</summary>
+    public bool ShowTargetOverride => !_isDefault && _owner.Entry != null;
+    /// <summary>Snippets: der Code wird überschrieben; sonst das Ziel (Adresse, Pfad, Befehl).</summary>
+    public bool UsesCode => _owner.Entry?.Current.Kind is CustomEntryKind.Snippet;
+    public bool UsesTarget => !UsesCode;
+    public bool IsDefaultProfile => _isDefault;
+    public bool ShowEntryForm => _isDefault && _owner.Entry != null;
+
+    // ---- Variablen ---------------------------------------------------------------------------------
+
+    public ObservableCollection<ProfileVariableRowViewModel> Variables { get; } = new();
+    public bool HasVariables => Variables.Count > 0;
+    public ICommand AddVariableCommand { get; }
+
+    /// <summary>
+    /// Zeilen aus dem Text des Eintrags (Abfragen und {{$Variablen}}), den Variablen des Standards und den eigenen dieses
+    /// Profils. Werte bereits angezeigter Zeilen bleiben erhalten.
+    /// </summary>
+    internal void BuildVariables()
+    {
+        var keep = Variables.ToDictionary(v => v.Name, v => v.ToVariable(), StringComparer.OrdinalIgnoreCase);
+        foreach (var r in Variables.Where(r => r.IsDefined)) _variables[r.Name] = r.ToVariable();
+        var defined = keep.Count > 0 ? Variables.Where(r => r.IsDefined).ToDictionary(r => r.Name, r => r.ToVariable(), StringComparer.OrdinalIgnoreCase) : _variables;
+        var fromText = _owner.VariableNamesInText(this);
+        var standard = _owner.DefaultProfile is { } std && !ReferenceEquals(std, this) ? std.ToProfile().Variables : new Dictionary<string, ProfileVariable>();
+        var names = fromText.Concat(defined.Keys).Concat(standard.Keys).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        Variables.Clear();
+        foreach (var name in names)
+        {
+            var inText = fromText.Contains(name, StringComparer.OrdinalIgnoreCase);
+            var profileOnly = name.StartsWith('$') && !_owner.IsGlobalVariable(name) && !Core.Config.Variables.IsBuiltin(name);
+            defined.TryGetValue(name, out var def);
+            Variables.Add(new ProfileVariableRowViewModel(this, name, def, inText, profileOnly));
+        }
+        OnPropertyChanged(nameof(HasVariables));
+    }
+
+    private void AddVariable()
+    {
+        var name = _owner.App.Dialogs.Ask(L.T("New variable"), L.T("Name of the variable for this entry (used as {{$Name}}):"), string.Empty, L.T("Add"),
+            n => Core.Config.Variables.Normalize(n) is { Length: > 0 } x && System.Text.RegularExpressions.Regex.IsMatch(x, @"^[\p{L}_][\p{L}\p{N}_]*$")
+                ? Variables.Any(v => v.Name.Equals("$" + x, StringComparison.OrdinalIgnoreCase)) ? L.T("This variable already exists here.") : null
+                : L.T("Only letters, digits and _ – no spaces, not starting with a digit."));
+        if (name == null) return;
+        var key = "$" + Core.Config.Variables.Normalize(name);
+        Variables.Add(new ProfileVariableRowViewModel(this, key, new ProfileVariable(), false, !_owner.IsGlobalVariable(key)));
+        if (!_isDefault) SetOwn(ProfileInheritance.VarPrefix + key, true);
+        OnPropertyChanged(nameof(HasVariables));
+        OnChanged();
+    }
+
+    internal void RemoveVariable(ProfileVariableRowViewModel row)
+    {
+        Variables.Remove(row);
+        _variables.Remove(row.Name);
+        OnPropertyChanged(nameof(HasVariables));
+        OnChanged();
+    }
+
+    /// <summary>Globaler Wert einer {{$Variable}} (Anzeige; geheime verdeckt).</summary>
+    internal string GlobalValue(string name) => _owner.App.VariablePreview(name);
+
+    // ---- Vorschau: Aufruf und Code ----------------------------------------------------------------
+
+    public ICommand TestCommand { get; }
+
+    private IReadOnlyList<Core.Metadata.CodeSegment> _codeSegments = Array.Empty<Core.Metadata.CodeSegment>();
+    /// <summary>Script bzw. Code mit Syntaxfarben (schreibgeschützt).</summary>
+    public IReadOnlyList<Core.Metadata.CodeSegment> CodeSegments { get => _codeSegments; private set => Set(ref _codeSegments, value); }
+    public bool HasCode => _codeSegments.Count > 0;
+    private string _codeStatus = string.Empty;
+    public string CodeStatus { get => _codeStatus; private set => Set(ref _codeStatus, value); }
+
+    /// <summary>Datei-Scripte lassen sich in der Vorschau bearbeiten (gespeichert wird in die Datei, mit Sicherung).</summary>
+    public bool CanEditFile => _owner.IsScannedFile && _owner.Item.Type is ItemType.PowerShell or ItemType.Batch && File.Exists(_owner.Item.FullPath);
+    public ICommand EditCodeCommand { get; }
+    public ICommand SaveCodeCommand { get; }
+    public ICommand CancelEditCodeCommand { get; }
+
+    private bool _isEditingCode;
+    public bool IsEditingCode
+    {
+        get => _isEditingCode;
+        private set { if (Set(ref _isEditingCode, value)) { OnPropertyChanged(nameof(IsReadingCode)); CommandRequery.Invalidate(); } }
+    }
+    public bool IsReadingCode => !_isEditingCode;
+
+    private string _editableCode = string.Empty;
+    public string EditableCode
+    {
+        get => _editableCode;
+        set { if (Set(ref _editableCode, value ?? string.Empty)) CodeStatus = L.T("● changed, not saved"); }
+    }
+
+    public string EditWarning => L.F("Changes are saved to {0} – they apply to all profiles and to everyone who uses the file. A backup is created first.", _owner.Item.FullPath);
+
+    /// <summary>Code für die Vorschau laden: Datei-Script bzw. Code des Snippets (eigener oder der des Eintrags).</summary>
+    internal void LoadCode()
+    {
+        string? text = null;
+        bool ps = _owner.Item.Type == ItemType.PowerShell;
+        bool batch = _owner.Item.Type == ItemType.Batch;
+        if (_owner.Entry is { } e)
+        {
+            if (e.Current.Kind is CustomEntryKind.Snippet)
+            {
+                text = CodeText;
+                ps = e.Current.Language == SnippetLanguage.PowerShell;
+                batch = false;
+            }
+        }
+        else if ((ps || batch) && Core.Metadata.CodePreview.ReadHead(_owner.Item.FullPath, 2000) is { } head)
+            text = head.Text;
+        CodeSegments = string.IsNullOrEmpty(text) ? Array.Empty<Core.Metadata.CodeSegment>()
+            : ps ? Core.Metadata.CodePreview.TokenizePowerShell(text)
+            : batch ? Core.Metadata.CodePreview.TokenizeBatch(text)
+            : new[] { new Core.Metadata.CodeSegment(text, Core.Metadata.CodeTokenKind.Text) };
+        var lines = string.IsNullOrEmpty(text) ? 0 : text.Split('\n').Length;
+        CodeStatus = lines == 0 ? string.Empty : L.F("read-only · {0} lines", lines);
+        OnPropertyChanged(nameof(HasCode));
+        OnPropertyChanged(nameof(CanEditFile));
+    }
+
+    private void StartEditCode()
+    {
+        try { EditableCode = File.ReadAllText(_owner.Item.FullPath); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { CodeStatus = L.F("The file couldn't be read: {0}", ex.Message); return; }
+        CodeStatus = L.T("editing");
+        IsEditingCode = true;
+    }
+
+    private void SaveCode()
+    {
+        try
+        {
+            var backup = Core.Config.ScriptFiles.SaveWithBackup(_owner.Item.FullPath, _editableCode);
+            IsEditingCode = false;
+            LoadCode();
+            _owner.OnFileEdited(_editableCode);
+            CodeStatus = L.F("saved · backup: {0}", Path.GetFileName(backup));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            CodeStatus = L.F("The file couldn't be written: {0}", ex.Message);
+        }
     }
 }
 
@@ -332,10 +701,18 @@ public sealed class ProfilesViewModel : ObservableObject
         var profiles = entry != null && entry.Profiles.Count > 0
             ? entry.Profiles.Select(p => p.Clone()).ToList()
             : new List<LaunchProfile> { ProfileResolver.CreateImplicit(target, item) };
+        if (!profiles.Any(p => p.IsDefault)) profiles[0].IsDefault = true;
+        var legacy = profiles.Where(p => !p.IsDefault && p.Own == null).ToHashSet();
         foreach (var p in profiles) Profiles.Add(new ProfileEditViewModel(this, p));
-        if (!Profiles.Any(p => p.IsDefault)) Profiles[0].SetDefaultSilently(true);
+        // Umzug ins Vererbungsmodell: Werte, die dem Standard gleichen, gelten als geerbt, abweichende als eigen. Verglichen
+        // wird erst hier, mit den Werten, wie das Fenster sie zeigt (z. B. Vorgaben aller Script-Parameter) – sonst
+        // erschienen gleiche Werte als verschieden.
+        var standardVm = Profiles[profiles.FindIndex(p => p.IsDefault)];
+        for (var i = 0; i < profiles.Count; i++)
+            if (legacy.Contains(profiles[i])) Profiles[i].RebaseOn(standardVm);
         _selected = Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
         _selected.IsSelected = true;
+        foreach (var p in Profiles) { p.BuildVariables(); p.LoadCode(); p.RefreshInheritance(); }
 
         AddCommand = new RelayCommand(Add);
         DuplicateCommand = new RelayCommand(Duplicate, () => Selected != null);
@@ -365,7 +742,7 @@ public sealed class ProfilesViewModel : ObservableObject
     /// <summary>Element mit den Startoptionen eines Profils (für die Befehlsvorschau).</summary>
     internal LaunchItem ItemFor(LaunchProfile p)
     {
-        if (Entry == null || p.Options == null) return Item;
+        if (Entry == null || (p.Options == null && p.TargetText == null && p.Code == null && p.Variables.Count == 0)) return Item;
         var item = Entry.Current.WithProfile(p).ToLaunchItem();
         if (Entry.IsPsSnippet) { item.LaunchTarget = Entry.Current.SnippetPath; try { Core.Metadata.ScriptInfoReader.FillFromText(item, Entry.Current.Code); } catch { /* unvollständiger Code beim Tippen: Parameter bleiben leer */ } }
         return item;
@@ -394,6 +771,19 @@ public sealed class ProfilesViewModel : ObservableObject
         }
     }
     public bool ShowForm => !_showKindPicker;
+
+    private string _page = "profiles";
+    /// <summary>Reiter des Formulars: „general“ (Schlagworte, Notiz, Verhalten) oder „profiles“ (Ziel, Variablen, Start).</summary>
+    public string Page
+    {
+        get => _page;
+        set { if (Set(ref _page, value == "general" ? "general" : "profiles")) { OnPropertyChanged(nameof(IsGeneralPage)); OnPropertyChanged(nameof(IsProfilesPage)); } }
+    }
+    public bool IsGeneralPage { get => _page == "general"; set { if (value) Page = "general"; } }
+    public bool IsProfilesPage { get => _page == "profiles"; set { if (value) Page = "profiles"; } }
+    public string ProfilesTabText => L.F("Profiles · {0}", Profiles.Count);
+    public ICommand ShowProfilesPageCommand => _showProfilesPage ??= new RelayCommand(() => Page = "profiles");
+    private ICommand? _showProfilesPage;
     public IReadOnlyList<KindTile> Tiles => CustomEntryViewModel.Tiles;
     public ICommand PickKindCommand { get; }
     public ICommand ChangeKindCommand { get; }
@@ -499,6 +889,13 @@ public sealed class ProfilesViewModel : ObservableObject
     public bool ShowProgramArgs => !Item.IsPowerShell && EntryKind is null or CustomEntryKind.Command or CustomEntryKind.Tool or CustomEntryKind.File;
     /// <summary>Ordner kennen nur „normal“ und „anderer Benutzer“.</summary>
     public bool ShowAdminMode => EntryKind != CustomEntryKind.Folder;
+
+    /// <summary>Abschnitt „Ausführen als / wo“ im Profil.</summary>
+    public bool ShowRunAsSection => ShowRunAs || ShowPsOptions;
+    /// <summary>Abschnitt „Parameter“ im Profil (PowerShell mit Parametern).</summary>
+    public bool ShowParametersSection => ShowPsOptions && HasParameters;
+    /// <summary>„Konsole offen lassen“ bei Programmen, die eine Konsole haben.</summary>
+    public bool ShowKeepOpen => ShowProgramArgs && SupportsNoExit;
     /// <summary>„Weitere Startprofile“ – nur wo Varianten sinnvoll sind.</summary>
     public bool ShowMoreProfiles => true;
 
@@ -537,8 +934,9 @@ public sealed class ProfilesViewModel : ObservableObject
             _lastParams = sig;
             foreach (var p in Profiles) p.RefreshParameters();
             OnPropertyChanged(nameof(HasParameters));
+            OnPropertyChanged(nameof(ShowParametersSection));
         }
-        foreach (var p in Profiles) { p.Options?.SyncBaseFrom(Entry.Current); p.OnChanged(); }
+        foreach (var p in Profiles) { p.Options?.SyncBaseFrom(Entry.Current); p.BuildVariables(); p.LoadCode(); p.OnChanged(); }
         OnPropertyChanged(nameof(HeaderNameHint));
         OnPropertyChanged(nameof(HeaderName));
         OnPropertyChanged(nameof(Title));
@@ -547,6 +945,9 @@ public sealed class ProfilesViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowPsOptions));
         OnPropertyChanged(nameof(ShowProgramArgs));
         OnPropertyChanged(nameof(ShowRunAs));
+        OnPropertyChanged(nameof(ShowRunAsSection));
+        OnPropertyChanged(nameof(ShowParametersSection));
+        OnPropertyChanged(nameof(ShowKeepOpen));
     }
 
     private bool _inProfileChange;
@@ -554,7 +955,14 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         if (_inProfileChange) return;
         _inProfileChange = true;
-        try { OnPropertyChanged(nameof(MoreProfilesText)); OnPropertyChanged(nameof(PreviewText)); }
+        try
+        {
+            // Änderung am Standard: geerbte Werte der anderen Profile nachziehen
+            if (p.IsDefault) foreach (var other in Profiles.Where(x => !ReferenceEquals(x, p))) other.SyncFrom(p);
+            OnPropertyChanged(nameof(MoreProfilesText));
+            OnPropertyChanged(nameof(ProfilesTabText));
+            OnPropertyChanged(nameof(PreviewText));
+        }
         finally { _inProfileChange = false; }
     }
     private readonly string? _originalKey;
@@ -581,7 +989,7 @@ public sealed class ProfilesViewModel : ObservableObject
     };
 
     /// <summary>Vorhandene Schlagworte (global) für Vorschläge.</summary>
-    public IReadOnlyList<string> AllTagsList => Core.Config.Tags.All(_target);
+    public IReadOnlyList<string> AllTagsList => Core.Config.Tags.Suggested(_target);
 
     private string _error = string.Empty;
     public string Error { get => _error; private set => Set(ref _error, value); }
@@ -645,15 +1053,62 @@ public sealed class ProfilesViewModel : ObservableObject
     internal void MakeDefault(ProfileEditViewModel p)
     {
         foreach (var x in Profiles) x.SetDefaultSilently(ReferenceEquals(x, p));
+        // Neue Grundlage: eigene Werte der anderen sind jetzt ihre Unterschiede zum neuen Standard
+        foreach (var x in Profiles) x.RebaseOn(p);
+        foreach (var x in Profiles) { x.BuildVariables(); x.RefreshInheritance(); }
         OnPropertyChanged(nameof(DefaultProfile));
+    }
+
+    /// <summary>Profil zur Probe starten (ohne Verlauf).</summary>
+    internal void Test(ProfileEditViewModel p)
+    {
+        var profile = p.ToProfile();
+        if (DefaultProfile is { } std && !ReferenceEquals(std, p)) profile = ProfileInheritance.Effective(std.ToProfile(), profile);
+        if (Entry != null) _app.TestRun(Entry.Current, profile);
+        else _app.TestRunItem(Item, profile);
+    }
+
+    /// <summary>Namen der Abfragen und {{$Variablen}} im Ziel bzw. Code (eigene Werte des Profils eingeschlossen).</summary>
+    internal IReadOnlyList<string> VariableNamesInText(ProfileEditViewModel p)
+    {
+        if (Entry == null) return Item.Parameters.Count == 0 ? Array.Empty<string>() : Placeholders.VariableNames(string.Join(" ", p.Parameters.Select(x => x.Value)), p.Arguments)
+            .Where(n => !Core.Config.Variables.IsBuiltin(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var e = Entry.Current;
+        var texts = new[] { p.TargetText, e.Arguments, p.CodeText, e.User, e.RemoteCommand, e.WorkingDirectory };
+        return Placeholders.Find(texts).Select(x => x.Name)
+            .Concat(Placeholders.VariableNames(texts).Where(n => !Core.Config.Variables.IsBuiltin(n)))
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    /// <summary>Gibt es die {{$Variable}} global (unter Einstellungen › Variablen)?</summary>
+    internal bool IsGlobalVariable(string name) => _app.UserVariables.Any(v => v.Name.Equals(Core.Config.Variables.Normalize(name), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Datei-Script in der Vorschau bearbeitet: Parameter neu lesen.</summary>
+    internal void OnFileEdited(string text)
+    {
+        if (Entry != null || !Item.IsPowerShell) return;
+        try { Core.Metadata.ScriptInfoReader.FillFromText(Item, text); } catch { /* unvollständiges Script: Parameter bleiben */ }
+        foreach (var p in Profiles) { p.RefreshParameters(); p.LoadCode(); }
+        OnPropertyChanged(nameof(HasParameters));
+        OnPropertyChanged(nameof(FileParametersText));
     }
 
     private void Add()
     {
-        var p = new ProfileEditViewModel(this, ProfileResolver.CreateNew(_target, Item, L.F("Profile {0}", Profiles.Count + 1)));
+        // Neues Profil übernimmt alles vom Standard und legt zunächst nichts selbst fest
+        var start = (DefaultProfile ?? Profiles[0]).ToProfile();
+        start.Name = L.F("Profile {0}", Profiles.Count + 1);
+        start.IsDefault = false;
+        start.Own = new List<string>();
+        start.OwnBase = new Dictionary<string, string>();
+        var p = new ProfileEditViewModel(this, start);
+        p.BuildVariables();
+        p.LoadCode();
+        p.RefreshInheritance();
         Profiles.Add(p);
         Selected = p;
         OnPropertyChanged(nameof(MoreProfilesText));
+        OnPropertyChanged(nameof(ProfilesTabText));
     }
 
     private void Duplicate()
@@ -661,11 +1116,16 @@ public sealed class ProfilesViewModel : ObservableObject
         if (Selected == null) return;
         var copy = Selected.ToProfile();
         copy.Name += L.T(" (copy)");
+        if (copy.IsDefault) { copy.Own = new List<string>(); copy.OwnBase = new Dictionary<string, string>(); } // Kopie des Standards erbt alles
         copy.IsDefault = false;
         var p = new ProfileEditViewModel(this, copy);
+        p.BuildVariables();
+        p.LoadCode();
+        p.RefreshInheritance();
         Profiles.Add(p);
         Selected = p;
         OnPropertyChanged(nameof(MoreProfilesText));
+        OnPropertyChanged(nameof(ProfilesTabText));
     }
 
     private void Delete()
@@ -677,6 +1137,7 @@ public sealed class ProfilesViewModel : ObservableObject
         if (wasDefault) MakeDefault(Profiles[0]);
         Selected = Profiles[Math.Min(idx, Profiles.Count - 1)];
         OnPropertyChanged(nameof(MoreProfilesText));
+        OnPropertyChanged(nameof(ProfilesTabText));
     }
 
     private void Save()
@@ -719,6 +1180,7 @@ public sealed class ProfilesViewModel : ObservableObject
             _target.CategoryOrder = GroupManager.All(_target).Append(entry.Category).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
         _target.Entries.RemoveAll(e => string.Equals(e.Path, key, StringComparison.OrdinalIgnoreCase));
         _target.Entries.Add(entry);
+        Core.Config.Tags.Remember(_target, entry.Tags);
         SavedKey = key;
         if (_saveImmediately) _app.OnProfilesSaved();
         Saved?.Invoke();

@@ -17,6 +17,9 @@ public interface ICustomEntryHost
 
     /// <summary>Eigene Variablen ({{$Name}}) – für Einfügen, Vorschläge und die Warnung bei unbekannten Variablen.</summary>
     IReadOnlyList<UserVariable> UserVariables => Array.Empty<UserVariable>();
+
+    /// <summary>Anzeigewert einer {{$Variable}} (geheime verdeckt); leer, wenn unbekannt.</summary>
+    string VariablePreview(string name) => string.Empty;
 }
 
 /// <summary>Was der Profil-Dialog (<see cref="ProfilesViewModel"/>) von der App braucht.</summary>
@@ -24,6 +27,9 @@ public interface IProfilesHost : ICustomEntryHost
 {
     /// <summary>Eigenen Eintrag mit diesem Profil zur Probe starten (ohne Verlauf).</summary>
     void TestRun(CustomEntry entry, LaunchProfile profile);
+
+    /// <summary>Datei-Eintrag mit diesem Profil zur Probe starten (ohne Verlauf).</summary>
+    void TestRunItem(Core.Models.LaunchItem item, LaunchProfile profile) { }
 
     /// <summary>Nach dem Speichern: Panels neu aufbauen.</summary>
     void OnProfilesSaved();

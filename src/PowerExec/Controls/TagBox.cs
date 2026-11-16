@@ -69,6 +69,7 @@ public sealed class TagBox : Control
             _input.TextChanged -= Input_TextChanged;
             _input.LostKeyboardFocus -= Input_LostKeyboardFocus;
             _input.GotKeyboardFocus -= Input_GotKeyboardFocus;
+            _input.PreviewMouseUp -= Input_PreviewMouseUp;
         }
         if (_list != null)
         {
@@ -87,6 +88,7 @@ public sealed class TagBox : Control
             _input.TextChanged += Input_TextChanged;
             _input.LostKeyboardFocus += Input_LostKeyboardFocus;
             _input.GotKeyboardFocus += Input_GotKeyboardFocus;
+            _input.PreviewMouseUp += Input_PreviewMouseUp;
         }
         if (_list != null)
         {
@@ -102,6 +104,7 @@ public sealed class TagBox : Control
         base.OnMouseLeftButtonDown(e);
         if (e.Handled || _input == null) return;
         _input.Focus();
+        ShowSuggestionsSoon();
         e.Handled = true;
     }
 
@@ -119,7 +122,19 @@ public sealed class TagBox : Control
         ClosePopup();
     }
 
-    private void Input_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ShowSuggestions();
+    private void Input_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => ShowSuggestionsSoon();
+
+    /// <summary>Klick ins Feld (auch erneut): Vorschläge zeigen.</summary>
+    private void Input_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_popup is { IsOpen: false }) ShowSuggestionsSoon();
+    }
+
+    /// <summary>
+    /// Vorschläge erst nach dem Klick öffnen: ein Popup, das sich schließt, sobald außerhalb geklickt wird, ginge
+    /// sonst mit demselben Klick, der das Feld fokussiert, gleich wieder zu.
+    /// </summary>
+    private void ShowSuggestionsSoon() => Dispatcher.BeginInvoke(ShowSuggestions, System.Windows.Threading.DispatcherPriority.Input);
 
     private void List_MouseUp(object sender, MouseButtonEventArgs e) => PickSuggestion();
 
@@ -195,7 +210,8 @@ public sealed class TagBox : Control
         var matches = Suggestions.Cast<object>().Select(o => o?.ToString() ?? string.Empty)
             .Where(s => s.Length > 0 && (text.Length == 0 || s.Contains(text, StringComparison.CurrentCultureIgnoreCase)) && !_tags.Contains(s, StringComparer.CurrentCultureIgnoreCase))
             .Distinct(StringComparer.CurrentCultureIgnoreCase)
-            .OrderBy(s => text.Length > 0 && s.StartsWith(text, StringComparison.CurrentCultureIgnoreCase) ? 0 : 1).ThenBy(s => s, StringComparer.CurrentCultureIgnoreCase)
+            // Ohne Eingabe: Reihenfolge der Vorschläge (zuletzt verwendete zuerst); beim Tippen: Anfang passt zuerst
+            .OrderBy(s => text.Length > 0 && !s.StartsWith(text, StringComparison.CurrentCultureIgnoreCase) ? 1 : 0)
             .Take(text.Length == 0 ? 30 : 12).ToList();
         _list.ItemsSource = matches;
         _popup.IsOpen = matches.Count > 0;
