@@ -298,4 +298,22 @@ public class MarketplaceViewModelTests
         Assert.True(vm.Page.Cards[1].IsPreviewOpen);
         vm.Tab = "Entry";
     }
+
+    [Fact]
+    public async Task DesignDownloadSkipsPreviewAndOffersToApply()
+    {
+        var host = Host();
+        host.Settings.Panels.Add(new PanelConfig());
+        AppSettings? applied = null;
+        var vm = new MarketplaceWindowViewModel(host, s => applied = s);
+        await vm.Page.LoadAsync(force: false);
+        vm.Tab = "Design";
+        await vm.Page.InstallAsync(vm.Page.AllItems.ToList());
+
+        var confirms = host.FakeDialogs.Messages.Where(m => m.Kind == "confirm").ToList();
+        var single = Assert.Single(confirms);                   // keine Vorschau-Rückfrage, nur: „jetzt anwenden?“
+        Assert.Contains("Ozean", single.Message, StringComparison.Ordinal);
+        Assert.Equal("#0B2233", applied!.Panels[0].PanelColor);   // angewendet
+        Assert.Equal("Ozean", Appearance.Current(applied)?.Name);
+    }
 }

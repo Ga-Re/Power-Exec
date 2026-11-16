@@ -2,6 +2,13 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.35.0 – Designs in hell und dunkel, Glas bleibt auf seinem Monitor, Variablen-Auswahl
+
+- Alle Marktplatz-Designs haben jetzt eine helle und eine dunkle Variante; die zweite Variante wird aus der ersten abgeleitet statt einfach weiß zu sein
+- Nach dem Herunterladen eines Designs bietet Power-Exec an, es gleich anzuwenden; die Vorschau-Rückfrage entfällt bei Designs
+- Glas-Panel mit mehreren Monitoren: beim Gleiten bleibt das Panel auf seinem Monitor und erscheint nicht mehr auf dem Nachbarmonitor
+- Der Knopf {{…}} im Eintrags-Editor zeigt alle Variablen und Abfragen beim Start mit Beschreibung
+
 ## 0.34.0 – Design-Editor: Palette, hell und dunkel, Schrift, Gruppenfarben
 
 - Neu unter Darstellung: Design bearbeiten – Farben für Fläche, Karten, Text und Linien mit Live-Vorschau und Kontrastprüfung

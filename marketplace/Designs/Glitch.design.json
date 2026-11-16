@@ -13,7 +13,7 @@
   "AccentColor": "#FF3B5C",
   "Corners": "Square",
   "Palette": {
-    "Card": "#3C2A32",
+    "Card": "#3C2A31",
     "Input": "#101015",
     "Line": "#653A45",
     "Text": "#FFF3F5",
@@ -22,5 +22,17 @@
   },
   "GroupColors": "#EE637A, #EED663, #7AEE63, #63EED6, #637AEE, #D663EE",
   "GroupColorsForTags": true,
-  "MonoFontFamily": "Cascadia Code"
+  "MonoFontFamily": "Cascadia Code",
+  "Pair": {
+    "PanelColor": "#F3F3F4",
+    "AccentColor": "#FF3B5C",
+    "Palette": {
+      "Card": "#FAF7F8",
+      "Input": "#FDFDFD",
+      "Line": "#D8B9BF",
+      "Text": "#2C1D1F",
+      "TextSecondary": "#6C6163",
+      "Selected": "#F5D6DC"
+    }
+  }
 }

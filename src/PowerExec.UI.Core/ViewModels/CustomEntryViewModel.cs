@@ -294,6 +294,25 @@ public sealed class CustomEntryViewModel : ObservableObject
     public IReadOnlyList<string> Builtins =>
         Placeholders.BuiltinNames.Select(n => "{{" + n + "}}").Concat(_app.UserVariables.Select(v => "{{$" + v.Name + "}}")).ToList();
 
+    /// <summary>
+    /// Auswahl hinter dem Knopf {{…}}: Abfragen beim Start, eingebaute und eigene Variablen – jeweils mit Beschreibung.
+    /// </summary>
+    public IReadOnlyList<VariableChoice> VariableChoices
+    {
+        get
+        {
+            var list = new List<VariableChoice>
+            {
+                new(L.T("Asked at launch"), "{{Name}}", L.T("Asks for a value every time the entry starts – choose any name, e.g. {{Ticket}}")),
+                new(L.T("Asked at launch"), "{{Name:Default}}", L.T("Like above, with a suggested value – e.g. {{Server:srv-01}}"))
+            };
+            list.AddRange(Variables.Builtins.Select(b => new VariableChoice(L.T("Built-in variables"), "{{$" + b.Name + "}}", b.Description)));
+            list.AddRange(_app.UserVariables.Select(v => new VariableChoice(L.T("Your variables"), "{{$" + v.Name + "}}",
+                v.Description.Length > 0 ? v.Description : Variables.Label(v.Kind))));
+            return list;
+        }
+    }
+
     /// <summary>{{$Variablen}}, die es nicht gibt – Hinweis im Editor (der Start bricht sonst ab).</summary>
     public string? VariableWarning
     {
@@ -611,3 +630,6 @@ public sealed class CustomEntryViewModel : ObservableObject
     /// <summary>Fehlermeldung oder null, wenn der Eintrag gespeichert werden kann.</summary>
     public string? Validate() => FirstError;
 }
+
+/// <summary>Eine Variable bzw. Abfrage zum Einfügen: Bereich, Text im Feld und Beschreibung.</summary>
+public sealed record VariableChoice(string Section, string Token, string Description);

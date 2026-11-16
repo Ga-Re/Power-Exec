@@ -15,12 +15,24 @@
   "Palette": {
     "Card": "#343322",
     "Input": "#0A0A0E",
-    "Line": "#5F5C2D",
+    "Line": "#5F5B2D",
     "Text": "#FFFEF0",
-    "TextSecondary": "#B1B1A9",
-    "Selected": "#4D4A1F"
+    "TextSecondary": "#B2B1A9",
+    "Selected": "#4D4A1E"
   },
   "GroupColors": "#EEE663, #6BEE63, #63EEE6, #636BEE, #E663EE, #EE636B",
   "GroupColorsForTags": true,
-  "FontFamily": "Bahnschrift"
+  "FontFamily": "Bahnschrift",
+  "Pair": {
+    "PanelColor": "#F3F3F5",
+    "AccentColor": "#FCEE0A",
+    "Palette": {
+      "Card": "#FAFAF7",
+      "Input": "#FDFDFD",
+      "Line": "#D8D5B3",
+      "Text": "#2C2B19",
+      "TextSecondary": "#6C6B5F",
+      "Selected": "#F4F2CF"
+    }
+  }
 }

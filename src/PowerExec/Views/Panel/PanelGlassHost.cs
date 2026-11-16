@@ -165,10 +165,23 @@ internal sealed class PanelGlassHost : IDisposable
         return ((client.Right - client.Left, client.Bottom - client.Top), content);
     }
 
-    /// <summary>Kindfenster immer so groß wie der Fensterinhalt.</summary>
+    /// <summary>
+    /// Folgt das Kindfenster der Größe des Fensters? Beim Gleiten am Nachbarmonitor wächst das Fenster von der Kante her;
+    /// der Inhalt behält dann seine volle Größe und wird mit <see cref="PlaceContent"/> darin verschoben.
+    /// </summary>
+    public bool FollowParent { get; set; } = true;
+
+    /// <summary>Kindfenster an diese Lage (relativ zum Fenster, auch negativ) in voller Panelgröße setzen.</summary>
+    public void PlaceContent(int x, int y, int width, int height)
+    {
+        if (_contentHost is not { IsDisposed: false } host || host.Handle == IntPtr.Zero || width <= 0 || height <= 0) return;
+        NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, x, y, width, height, NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
+    }
+
+    /// <summary>Kindfenster immer so groß wie der Fensterinhalt (außer beim Gleiten am Nachbarmonitor).</summary>
     private IntPtr ParentHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WM_SIZE && _contentHost is { IsDisposed: false })
+        if (msg == NativeMethods.WM_SIZE && FollowParent && _contentHost is { IsDisposed: false })
         {
             var w = (int)((long)lParam & 0xFFFF);
             var h = (int)(((long)lParam >> 16) & 0xFFFF);

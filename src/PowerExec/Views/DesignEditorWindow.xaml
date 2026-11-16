@@ -16,6 +16,9 @@
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                 <CheckBox Content="{l:T 'Light and dark variant'}" IsChecked="{Binding HasPair}" Margin="0,0,16,0" VerticalAlignment="Center"
                           ToolTip="{l:T 'The design switches with Windows between its light and its dark variant'}"/>
+                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Derive other variant again'}" Command="{Binding RegenerateOtherCommand}" Margin="0,0,16,0"
+                           VerticalAlignment="Center" Visibility="{Binding HasPair, Converter={StaticResource Vis}}"
+                           ToolTip="{l:T 'Same hue and accent with the brightness reversed – overwrites the other variant'}"/>
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Light'}" IsChecked="{Binding EditLight}"/>
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Dark'}" IsChecked="{Binding EditDark}"/>
             </StackPanel>

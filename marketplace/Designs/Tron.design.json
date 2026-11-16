@@ -18,10 +18,22 @@
     "Line": "#225D68",
     "Text": "#F0FDFF",
     "TextSecondary": "#A5B2B6",
-    "Selected": "#134C57"
+    "Selected": "#134B57"
   },
   "GroupColors": "#63E0EE, #7163EE, #EE63E0, #EE7163, #E0EE63, #63EE71",
   "GroupColorsForTags": true,
   "FontFamily": "Bahnschrift",
-  "MonoFontFamily": "Cascadia Code"
+  "MonoFontFamily": "Cascadia Code",
+  "Pair": {
+    "PanelColor": "#F1F4F6",
+    "AccentColor": "#00E5FF",
+    "Palette": {
+      "Card": "#F5FAFB",
+      "Input": "#FCFDFD",
+      "Line": "#AED4DA",
+      "Text": "#182A2C",
+      "TextSecondary": "#5D6B6D",
+      "Selected": "#CAF2F7"
+    }
+  }
 }

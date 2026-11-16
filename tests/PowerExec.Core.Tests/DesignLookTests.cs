@@ -120,4 +120,30 @@ public class DesignLookTests
         after.Look.FontFamily = "Bahnschrift";
         Assert.True(SettingsChange.Between(before, after).Appearance);
     }
+
+    [Theory]
+    [InlineData("#2D1B2E", "#FF8A65", true)]
+    [InlineData("#0B2233", "#00B7C3", true)]
+    [InlineData("#F2EBDD", "#8A5A2B", false)]
+    [InlineData("#E3F2EA", "#1B8A5A", false)]
+    public void CounterpartKeepsHueAndAccentAndStaysReadable(string panel, string accent, bool dark)
+    {
+        var palette = Appearance.PaletteFor(Rgb(panel), Rgb(accent));
+        var other = Appearance.Counterpart(new DesignColors(panel, accent, palette), dark);
+        Assert.Equal(accent, other.AccentColor);
+        Assert.Equal(dark, PanelColors.IsLight(Rgb(other.PanelColor)));            // Helligkeit umgekehrt
+        Assert.NotEqual("#FFFFFF", other.PanelColor);                                // nicht einfach weiß
+        foreach (var (colors, isDark) in new[] { (new DesignColors(panel, accent, palette), dark), (new DesignColors(other.PanelColor, accent, other.Palette), !dark) })
+        {
+            var r = Appearance.Resolve(colors, isDark);
+            Assert.True(PanelColors.Contrast(r.Text, r.Surface) >= 7);
+            Assert.True(PanelColors.Contrast(r.Text, r.Card) >= 7);
+            Assert.True(PanelColors.Contrast(r.TextSecondary, r.Surface) >= 4.5);
+            Assert.True(PanelColors.Contrast(r.Accent, r.Surface) >= 3);
+        }
+        // Ohne eigene Fläche folgt auch das Gegenstück dem Design
+        Assert.Equal(string.Empty, Appearance.Counterpart(new DesignColors("", accent, null), dark).PanelColor);
+    }
+
+    private static Rgb Rgb(string hex) => PanelColors.TryParse(hex, out var c) ? c : throw new ArgumentException(hex);
 }

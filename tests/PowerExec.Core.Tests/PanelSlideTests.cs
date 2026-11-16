@@ -114,4 +114,30 @@ public class PanelSlideTests
         var far = new Rectangle(1920 + PanelSlide.ShadowReach + 1, 0, 1920, 1080);
         Assert.False(PanelSlide.ShadowReachesOtherMonitor(docked, new[] { home, far }));
     }
+
+    [Fact]
+    public void InsideNeverLeavesTheWorkArea()
+    {
+        var work = new Rectangle(0, 0, 1920, 1040);
+        var panel = new Rectangle(1920 - 420, 0, 420, 1040);
+        var hidden = PanelSlide.Hidden(panel, work, ScreenEdge.Right);
+        for (var f = 0.0; f <= 1.0; f += 0.05)
+        {
+            var at = PanelSlide.At(panel, hidden, f);
+            var inside = PanelSlide.Inside(at, work);
+            if (inside.IsEmpty) continue;
+            Assert.True(work.Contains(inside), $"bei {f:0.00} ragt das Fenster hinaus: {inside}");
+            Assert.Equal(at.Right > work.Right ? work.Right : at.Right, inside.Right);
+        }
+        Assert.True(PanelSlide.Inside(hidden, work).IsEmpty);
+        Assert.Equal(panel, PanelSlide.Inside(panel, work));
+
+        // Linke Kante: der Inhalt liegt versetzt (negativ) im wachsenden Fenster
+        var left = new Rectangle(0, 0, 420, 1040);
+        var at2 = PanelSlide.At(left, PanelSlide.Hidden(left, work, ScreenEdge.Left), 0.5);
+        var in2 = PanelSlide.Inside(at2, work);
+        Assert.Equal(0, in2.X);
+        Assert.Equal(210, in2.Width);
+        Assert.Equal(-210, at2.X - in2.X);
+    }
 }
