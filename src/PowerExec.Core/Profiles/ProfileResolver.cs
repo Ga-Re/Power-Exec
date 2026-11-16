@@ -18,7 +18,7 @@ public static class ProfileResolver
     public static IReadOnlyList<LaunchProfile> GetProfiles(AppSettings settings, LaunchItem item)
     {
         var entry = settings.FindEntry(item.FullPath);
-        if (entry != null && entry.Profiles.Count > 0) return entry.Profiles;
+        if (entry != null && entry.Profiles.Count > 0) return ProfileInheritance.Resolve(entry.Profiles); // geerbte Werte vom Standard
         return new[] { CreateImplicit(settings, item) };
     }
 

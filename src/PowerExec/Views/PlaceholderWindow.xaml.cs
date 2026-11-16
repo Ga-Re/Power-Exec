@@ -40,12 +40,19 @@ public partial class PlaceholderWindow : Window
         return w;
     }
 
+    /// <summary>
+    /// Eingabefeld zu einem Platzhalter: bei einer Auswahl ({{Server:A;B;C}}) stehen deren Werte in der Liste, der erste ist
+    /// vorausgewählt; dahinter die zuletzt verwendeten Werte. Freie Eingabe bleibt immer möglich.
+    /// </summary>
+    internal static Field FieldFor(Placeholder p, IReadOnlyList<string> history) => p.Choices.Count > 0
+        ? new Field { Name = p.Name, History = p.Choices.Concat(history).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList(), Value = p.Default }
+        : new Field { Name = p.Name, History = history, Value = history.FirstOrDefault() ?? p.Default };
+
     public static Dictionary<string, string>? Ask(string title, IReadOnlyList<Placeholder> placeholders, Func<string, IReadOnlyList<string>> history)
     {
         var fields = placeholders.Select(p =>
         {
-            var h = history(p.Name);
-            return new Field { Name = p.Name, History = h, Value = h.FirstOrDefault() ?? p.Default };
+            return FieldFor(p, history(p.Name));
         }).ToList();
         var w = new PlaceholderWindow(title, fields);
         return w.ShowDialog() == true ? fields.ToDictionary(f => f.Name, f => f.Value.Trim(), StringComparer.CurrentCultureIgnoreCase) : null;
@@ -60,8 +67,7 @@ public partial class PlaceholderWindow : Window
     {
         var fields = placeholders.Select(p =>
         {
-            var h = history(p.Name);
-            return new Field { Name = p.Name, History = h, Value = h.FirstOrDefault() ?? p.Default };
+            return FieldFor(p, history(p.Name));
         }).ToList();
         var w = new PlaceholderWindow(title, fields);
         w.ShowProfiles(profiles, selected);

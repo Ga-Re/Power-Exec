@@ -160,10 +160,11 @@ public partial class AppController
         CommitUserChange();
     }
 
-    /// <summary>Eigener Eintrag mit den Startoptionen des Profils (Browser und Browserprofil, RDP-Anzeige, SSH-Optionen …).</summary>
+    /// <summary>Eigener Eintrag mit Startoptionen, Ziel, Code und Variablen des Profils (Browser, RDP-Anzeige, SSH-Optionen …).</summary>
     private LaunchItem WithProfileOptions(LaunchItem item, LaunchProfile profile)
     {
-        if (profile.Options == null || item.Source == null || item.PlaceholdersResolved) return item;
+        if (item.Source == null || item.PlaceholdersResolved) return item;
+        if (profile.Options == null && profile.TargetText == null && profile.Code == null && profile.Variables.Count == 0) return item;
         var result = DescribeCustom(item.Source.WithProfile(profile));
         return result;
     }

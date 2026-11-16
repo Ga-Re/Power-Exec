@@ -14,6 +14,34 @@ public sealed class ParameterSetting
     public ParameterSetting Clone() => new() { Mode = Mode, Value = Value };
 }
 
+/// <summary>Art einer Profil-Variable bzw. Abfrage.</summary>
+public enum ProfileVariableKind
+{
+    /// <summary>Beim Start fragen (mit Vorgabe, falls gesetzt).</summary>
+    Ask,
+    /// <summary>Beim Start eine Auswahlliste zeigen (freie Eingabe bleibt möglich).</summary>
+    Choice,
+    /// <summary>Fester Wert, nicht fragen.</summary>
+    Fixed
+}
+
+/// <summary>Wert einer Variable bzw. Abfrage in einem Profil.</summary>
+public sealed class ProfileVariable
+{
+    public ProfileVariableKind Kind { get; set; } = ProfileVariableKind.Fixed;
+    /// <summary>Fester Wert bzw. Vorgabe beim Fragen.</summary>
+    public string Value { get; set; } = string.Empty;
+    /// <summary>Werte der Auswahlliste (Art <see cref="ProfileVariableKind.Choice"/>).</summary>
+    public List<string> Choices { get; set; } = new();
+    public string Description { get; set; } = string.Empty;
+
+    public ProfileVariable Clone() => new() { Kind = Kind, Value = Value, Choices = Choices.ToList(), Description = Description };
+
+    /// <summary>Vergleichswert (Vererbung, „hat sich geändert?“).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string Signature => $"{Kind}|{Value}|{string.Join(";", Choices)}|{Description}";
+}
+
 /// <summary>Eine gespeicherte Startkonfiguration eines Eintrags.</summary>
 public sealed class LaunchProfile
 {
@@ -41,6 +69,27 @@ public sealed class LaunchProfile
     /// <summary>Startoptionen eigener Einträge (Browser, RDP-Anzeige …); null = die des Eintrags.</summary>
     public EntryOptions? Options { get; set; }
 
+    /// <summary>Eigenes Ziel (Adresse, Pfad, Befehl) für dieses Profil; null = das des Eintrags.</summary>
+    public string? TargetText { get; set; }
+
+    /// <summary>Eigener Code (Snippets) für dieses Profil; null = der des Eintrags.</summary>
+    public string? Code { get; set; }
+
+    /// <summary>
+    /// Variablen dieses Profils: <c>$Name</c> überschreibt eine globale Variable bzw. ist eine eigene Profil-Variable,
+    /// <c>Name</c> belegt eine Abfrage {{Name}} vor (Vorgabe, Auswahl oder fester Wert).
+    /// </summary>
+    public Dictionary<string, ProfileVariable> Variables { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Welche Werte dieses Profil selbst festlegt (Schlüssel aus <see cref="Profiles.ProfileInheritance"/>); alles andere
+    /// übernimmt es beim Start vom Standardprofil. null = altes Profil ohne Vererbung (alle Werte eigen).
+    /// </summary>
+    public List<string>? Own { get; set; }
+
+    /// <summary>Stand des Standardprofils, als ein Wert eigen wurde – zeigt an, ob der Standard sich seitdem geändert hat.</summary>
+    public Dictionary<string, string>? OwnBase { get; set; }
+
     /// <summary>true = automatisch erzeugtes Profil ohne gespeicherte Konfiguration.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsImplicit { get; set; }
@@ -61,6 +110,11 @@ public sealed class LaunchProfile
         Arguments = Arguments,
         ConfirmBeforeRun = ConfirmBeforeRun,
         Options = Options?.Clone(),
+        TargetText = TargetText,
+        Code = Code,
+        Variables = Variables.ToDictionary(kv => kv.Key, kv => kv.Value.Clone(), StringComparer.OrdinalIgnoreCase),
+        Own = Own?.ToList(),
+        OwnBase = OwnBase?.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase),
         IsImplicit = IsImplicit
     };
 }

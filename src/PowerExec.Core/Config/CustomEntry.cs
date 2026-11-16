@@ -136,12 +136,13 @@ public sealed class CustomEntry
         return c;
     }
 
-    /// <summary>Kopie mit den Startoptionen eines Profils (null = unverändert).</summary>
+    /// <summary>Kopie mit Startoptionen, Ziel, Code und Variablen eines Profils (null = unverändert).</summary>
     public CustomEntry WithProfile(LaunchProfile? profile)
     {
         var c = Clone();
-        profile?.Options?.ApplyTo(c);
-        return c;
+        if (profile == null) return c;
+        profile.Options?.ApplyTo(c);
+        return Profiles.ProfileVariables.ApplyTo(c, profile); // eigenes Ziel bzw. eigener Code, Variablen des Profils
     }
 
     /// <summary>Kopie mit neuer Kennung (Duplizieren).</summary>
