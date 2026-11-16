@@ -1422,19 +1422,16 @@ public sealed partial class SelfTestController : AppController
                 var combos = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible && !c.IsEditable).ToList();
                 if (combos.Any(c => c.Template?.FindName("PART_EditableTextBox", c) is FrameworkElement { IsVisible: true }))
                     Fail("Auswahllisten zeigen ein Eingabefeld (Fluent-Stil auf einem Vorlagenteil festgehalten)");
-                // Darstellung: Panelfarbe und Hintergrund als Ausklappbereiche mit den Reglern darunter
+                // Darstellung: nur noch Auswahl des Designs – Farben und Hintergrund stellt man im Designer ein
                 settingsVm.Section = "look";
-                settingsVm.Panel.ColorMode = "manual";
-                settingsVm.Panel.BackdropExpanded = true;
                 await Settle();
-                if (!settingsVm.Panel.ColorsExpanded) Fail("Panelfarbe: „Manuell“ klappt die Farben nicht auf");
                 var sliders = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.Slider>().Where(x => x.IsVisible)
                     .Select(x => System.Windows.Automation.AutomationProperties.GetName(x)).ToList();
                 foreach (var name in new[] { "Deckkraft", "Milchglas" })
-                    if (!sliders.Contains(name)) Fail($"Hintergrund: Regler „{name}“ fehlt im Ausklappbereich");
-                if (settingsWindow.Content is FrameworkElement lookRoot) Screenshot(lookRoot, "settings-darstellung-ausgeklappt");
-                settingsVm.Panel.ColorMode = "design";
-                settingsVm.Panel.BackdropExpanded = false;
+                    if (sliders.Contains(name)) Fail($"Darstellung: Regler „{name}“ steht noch in den Einstellungen statt im Designer");
+                if (settingsVm.OtherDesigns.Count < 3) Fail($"Darstellung: {settingsVm.OtherDesigns.Count} mitgelieferte Designs statt mindestens 3");
+                if (!VisualDescendants(settingsWindow).OfType<Controls.DesignPreview>().Any(x => x.IsVisible)) Fail("Darstellung: keine Vorschau des aktiven Designs");
+                if (settingsWindow.Content is FrameworkElement lookRoot) Screenshot(lookRoot, "settings-darstellung-designs");
                 settingsVm.Section = "general";
                 await Settle();
                 static IEnumerable<DependencyObject> Tree(DependencyObject d)
