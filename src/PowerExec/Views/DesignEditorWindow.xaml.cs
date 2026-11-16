@@ -20,6 +20,7 @@ public partial class DesignEditorWindow : Window
         FluentTheme.Attach(this);
         WindowHelper.ApplyTitleBar(this);
         QuietScrollBar.Attach(FormScroll);
+        QuietScrollBar.Attach(PreviewScroll);
         vm.Owner = this;
         vm.CloseRequested = Close;
         // Installierte Schriften; die Felder nehmen auch einen frei eingegebenen Namen

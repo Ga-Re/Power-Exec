@@ -6,13 +6,19 @@
         xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
         xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
         Title="{l:T 'Power-Exec – Edit design'}" Style="{StaticResource AppWindow}"
-        Width="1160" Height="780" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner">
+        Width="1160" Height="760" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <infra:HexBrushConverter x:Key="HexBrush"/>
     </Window.Resources>
-    <DockPanel>
+    <!-- Feste Zeilen: Kopf und Fuß in ihrer Höhe, dazwischen der Rest – auch wenn die Vorschau höher ist als das Fenster -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
         <!-- Kopf: Name, Ausgangsdesign, Variante -->
-        <DockPanel DockPanel.Dock="Top" Margin="28,20,28,12">
+        <DockPanel Grid.Row="0" Margin="28,20,28,12" VerticalAlignment="Top">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                 <CheckBox Content="{l:T 'Light and dark variant'}" IsChecked="{Binding HasPair}" Margin="0,0,16,0" VerticalAlignment="Center"
                           ToolTip="{l:T 'The design switches with Windows between its light and its dark variant'}"/>
@@ -29,7 +35,7 @@
         </DockPanel>
 
         <!-- Fuß -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="28,12">
+        <Border Grid.Row="2" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="28,12">
             <DockPanel>
                 <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Content="{l:T 'Export as file …'}" Command="{Binding ExportCommand}"/>
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Save'}" Command="{Binding SaveCommand}" IsDefault="True" MinWidth="96"/>
@@ -39,7 +45,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Margin="28,0,28,16">
+        <Grid Grid.Row="1" Margin="28,0,28,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="560"/>
                 <ColumnDefinition Width="20"/>
@@ -169,7 +175,8 @@
             </ScrollViewer>
 
             <!-- Vorschau: Panel der bearbeiteten Variante, daneben klein die andere -->
-            <Border Grid.Column="2" CornerRadius="{DynamicResource Radius.Card}" Background="#6F8FB3" Padding="16,24">
+            <Border Grid.Column="2" CornerRadius="{DynamicResource Radius.Card}" Background="#6F8FB3" ClipToBounds="True">
+                <ScrollViewer x:Name="PreviewScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16,24">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top">
                     <Border x:Name="PreviewPanel" Width="300" CornerRadius="{DynamicResource Radius.Tile}" Padding="12" Background="{Binding SurfaceHex, Converter={StaticResource HexBrush}}"
                             BorderBrush="{Binding LineHex, Converter={StaticResource HexBrush}}" BorderThickness="1" TextElement.Foreground="{Binding TextHex, Converter={StaticResource HexBrush}}">
@@ -237,7 +244,8 @@
                         <TextBlock Text="{Binding OtherLabel}" Foreground="White" FontWeight="SemiBold" FontSize="{StaticResource Font.Caption}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
-    </DockPanel>
+    </Grid>
 </Window>
