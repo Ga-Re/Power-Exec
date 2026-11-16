@@ -575,24 +575,28 @@ public sealed partial class SelfTestController : AppController
                 CreateHosts();
             }
 
-            Step("Glas an der Kante zur Taskleiste: das Fenster bleibt in seinem Monitor");
+            Step("Glas an der Kante zur Taskleiste: das Fenster steht fest, der Inhalt gleitet");
             if (PanelBackdrops.Effective(PanelBackdrop.Glass, Environment.OSVersion.Version.Build, ThemeService.IsHighContrast, ThemeService.TransparencyEffects()) == PanelBackdrop.Glass)
             {
                 var cfg = Settings.Panels[0];
                 var (edgeBefore, backdropBefore) = (cfg.Edge, cfg.Backdrop);
-                cfg.Edge = ScreenEdge.Bottom; // Taskleiste unten: Zuschnitt nötig, also wachsendes Fenster
+                cfg.Edge = ScreenEdge.Bottom; // Taskleiste unten: Zuschnitt nötig, also Gleiten an Ort und Stelle
                 cfg.Backdrop = PanelBackdrop.Glass;
                 CreateHosts();
                 var host = WpfHost(0);
                 var monitor = ScreenService.TriggerMonitors(host.Config)[0];
                 var outside = new List<string>();
-                int frames = 0;
+                var moved = new List<string>();
+                int frames = 0, inPlace = 0;
                 EventHandler onFrame = (_, _) =>
                 {
                     if (!host.Window.IsVisible || host.Window.IsCloaked || host.Window.WorkAreaForTest is not { } wa) return;
                     frames++;
                     var r = host.Window.WindowRectForTest;
                     if (!wa.Contains(r) && outside.Count < 5) outside.Add($"{r} außerhalb von {wa}");
+                    if (!host.Window.SlidesInPlaceForTest) return;
+                    inPlace++;
+                    if (r != host.Window.TargetForTest && moved.Count < 5) moved.Add($"{r} statt {host.Window.TargetForTest}");
                 };
                 System.Windows.Media.CompositionTarget.Rendering += onFrame;
                 host.Window.ShowPanel(monitor, viaHotkey: false);
@@ -608,8 +612,10 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 await Task.Delay(500);
                 System.Windows.Media.CompositionTarget.Rendering -= onFrame;
-                Step($"Glas unten: Zuschnitt {(clips ? "ja (wachsendes Fenster)" : "nein (Taskleiste nicht unten)")}, {frames} Bilder geprüft");
+                Step($"Glas unten: Zuschnitt {(clips ? "ja (an Ort und Stelle)" : "nein (Taskleiste nicht unten)")}, {frames} Bilder geprüft, davon {inPlace} an Ort und Stelle");
                 if (clips && outside.Count > 0) Fail("Glas unten: Fenster ragt beim Gleiten aus dem Arbeitsbereich – " + string.Join("; ", outside));
+                if (moved.Count > 0) Fail("Glas unten: Fenster bewegt sich beim Gleiten an Ort und Stelle – " + string.Join("; ", moved));
+                if (clips && host.Window.GlassActive && inPlace == 0) Fail("Glas unten: Zuschnitt nötig, aber das Panel glitt nicht an Ort und Stelle");
                 (cfg.Edge, cfg.Backdrop) = (edgeBefore, backdropBefore);
                 CreateHosts();
                 await Settle();

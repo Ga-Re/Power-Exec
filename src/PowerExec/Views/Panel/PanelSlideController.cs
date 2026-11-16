@@ -18,7 +18,8 @@ namespace PowerExec.Desktop.Views;
 /// oder ein Fensterbereich, passt Windows den Hintergrund sofort an, WPF den Inhalt ein bis zwei Bilder später.
 /// Verschiebt man dagegen nur das Fenster, bewegt Windows Inhalt und Hintergrund in einem Stück – wie beim Ziehen eines
 /// Fensters. Liegt an der Kante ein Nachbarmonitor oder die Taskleiste, verlässt das Fenster seinen Monitor nicht: es
-/// wächst von der Kante her, der Inhalt gleitet darin (<see cref="ApplyInside"/>); ganz eingefahren ist es für Windows
+/// steht fest an seiner Ziellage, der Inhalt gleitet darin wie bei Klarglas, und der Weichzeichner wird unter ihm
+/// freigelegt (<see cref="ApplyInPlace"/>) – pro Bild keine Änderung am Fenster; ganz eingefahren ist es für Windows
 /// ausgeblendet.</para>
 ///
 /// <para><b>Klarglas</b> (transparentes WPF-Fenster): das Fenster steht an seiner Ziellage, der Inhalt gleitet darin.</para>
@@ -49,12 +50,12 @@ internal sealed class PanelSlideController
     private Rectangle? _region;
     private bool _regionApplied;
     private bool _cloaked;
-    /// <summary>Gleitet gerade als wachsendes Fenster innerhalb des Monitors (siehe <see cref="ApplyInside"/>).</summary>
-    private bool _inside;
+    /// <summary>Gleitet gerade an Ort und Stelle (siehe <see cref="ApplyInPlace"/>).</summary>
+    private bool _inPlace;
 
     /// <summary>
-    /// Glas mit Inhalt im Kindfenster: dann gleitet das Panel an einer Kante mit Nachbarmonitor oder Taskleiste als
-    /// wachsendes Fenster innerhalb des Monitors, statt über die Kante geschoben und beschnitten zu werden.
+    /// Glas mit Inhalt im Kindfenster: dann gleitet das Panel an einer Kante mit Nachbarmonitor oder Taskleiste an Ort
+    /// und Stelle (Fenster fest, Inhalt und Weichzeichner gleiten), statt über die Kante geschoben und beschnitten zu werden.
     /// </summary>
     public PanelGlassHost? ContentHost { get; set; }
 
@@ -136,13 +137,13 @@ internal sealed class PanelSlideController
     private void Apply()
     {
         if (!_systemWindow || _hwnd == IntPtr.Zero || _target.Width <= 0) return;
-        var r = PanelSlide.At(_target, _hidden, Reveal);
         if (_clip && ContentHost is { HasContentHost: true } host)
         {
-            ApplyInside(r, host);
+            ApplyInPlace(host);
             return;
         }
-        LeaveInside();
+        LeaveInPlace();
+        var r = PanelSlide.At(_target, _hidden, Reveal);
         var visible = _clip ? PanelSlide.Visible(r, _workArea) : new Rectangle(0, 0, r.Width, r.Height);
         bool full = visible.Size == r.Size;
         // Fensterbereich, solange zugeschnitten wird (Taskleiste oder Nachbarmonitor an der Kante) – und dauerhaft,
@@ -172,44 +173,45 @@ internal sealed class PanelSlideController
     public bool GuardsShadow => _guardShadow;
 
     /// <summary>
-    /// Gleiten an einer Kante mit Nachbarmonitor oder Taskleiste: das Fenster ist nur der sichtbare Teil des Panels und
-    /// wächst bzw. schrumpft von der Kante her; der Inhalt (Kindfenster) behält seine volle Größe und wird darin
-    /// verschoben. So liegt das Fenster nie auf dem Nachbarmonitor – weder Weichzeichner noch Schatten können dort
-    /// sichtbar werden, und Windows meldet keinen Wechsel der Skalierung.
+    /// Gleiten an einer Kante mit Nachbarmonitor oder Taskleiste: das Fenster steht fest an seiner Ziellage (abgerundeter
+    /// Fensterbereich, also kein Schatten), der Inhalt gleitet darin per WPF-Verschiebung wie bei Klarglas, und der
+    /// Weichzeichner wird genau unter dem Inhalt freigelegt (Zuschnitt in der Composition). Pro Bild ändert sich nichts am
+    /// Fenster – weder Lage noch Größe noch Fensterbereich –, und es liegt nie auf dem Nachbarmonitor.
     /// </summary>
-    private void ApplyInside(Rectangle panelAt, PanelGlassHost host)
+    private void ApplyInPlace(PanelGlassHost host)
     {
-        var inside = PanelSlide.Inside(panelAt, _workArea);
-        if (inside.IsEmpty)
+        _inPlace = true;
+        var size = _target.Size;
+        // Erst beschneiden, dann (falls nötig) an die Ziellage – auch beim ersten Bild ragt nichts über die Kante
+        SetRegion(new Rectangle(0, 0, size.Width, size.Height), size);
+        if (WindowRect() != _target)
         {
-            SetCloaked(true); // ganz eingefahren: nichts zu zeigen
-            return;
+            NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, _target.X, _target.Y, size.Width, size.Height,
+                NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOSENDCHANGING);
+            _appliedSize = size;
         }
-        _inside = true;
-        host.FollowParent = false;
-        int ox = panelAt.X - inside.X, oy = panelAt.Y - inside.Y;
-        PanelWindowNative.SetOffsetRoundedRegion(_hwnd, ox, oy, panelAt.Width, panelAt.Height, _cornerRadius);
-        _regionApplied = false; // der Fensterbereich gehört jetzt dem wachsenden Fenster
-        NativeMethods.SetWindowPos(_hwnd, IntPtr.Zero, inside.X, inside.Y, inside.Width, inside.Height,
-            NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOCOPYBITS | NativeMethods.SWP_NOSENDCHANGING);
-        _appliedSize = inside.Size;
-        host.PlaceContent(ox, oy, panelAt.Width, panelAt.Height);
-        SetCloaked(false);
+        var (ox, oy) = PanelSlide.Offset(_target, _hidden, Reveal);
+        var dpi = VisualTreeHelper.GetDpi(_content);
+        _contentSlide.X = ox / dpi.DpiScaleX;
+        _contentSlide.Y = oy / dpi.DpiScaleY;
+        host.ClipGlass((float)ox, (float)oy, (float)(ox + size.Width), (float)(oy + size.Height), _cornerRadius);
+        SetCloaked(Reveal <= 0); // ganz eingefahren: nichts zu zeigen, auch kein Rand
     }
 
-    /// <summary>Vom wachsenden Fenster zurück zum normalen: der Inhalt folgt wieder der Fenstergröße.</summary>
-    private void LeaveInside()
+    /// <summary>Gleiten an Ort und Stelle beenden: Inhalt an seinen Platz, Weichzeichner wieder im ganzen Fenster.</summary>
+    private void LeaveInPlace()
     {
-        if (!_inside) return;
-        _inside = false;
+        if (!_inPlace) return;
+        _inPlace = false;
         _regionApplied = false;
         _appliedSize = System.Drawing.Size.Empty;
-        if (ContentHost is { } host)
-        {
-            host.FollowParent = true;
-            host.Resize(_target.Width, _target.Height);
-        }
+        _contentSlide.X = 0;
+        _contentSlide.Y = 0;
+        ContentHost?.UnclipGlass();
     }
+
+    /// <summary>Für den Selbsttest: gleitet das Panel gerade an Ort und Stelle (Fenster fest, Inhalt gleitet)?</summary>
+    public bool SlidesInPlace => _inPlace;
 
     private void SetCloaked(bool cloaked)
     {
@@ -252,6 +254,7 @@ internal sealed class PanelSlideController
     private void AnimateWindow(bool show, TimeSpan duration, Action completed)
     {
         ResetContent();
+        if (_inPlace) Apply(); // Inhalt sofort wieder an seinen Versatz – sonst stünde er für ein Bild an der Ziellage
         if (duration == TimeSpan.Zero)
         {
             SetNow(show ? 1 : 0);
@@ -331,7 +334,7 @@ internal sealed class PanelSlideController
         if (_systemWindow)
         {
             SetNow(1);
-            LeaveInside(); // ganz ausgefahren: das Fenster ist so groß wie das Panel, der Inhalt folgt wieder
+            LeaveInPlace(); // ganz ausgefahren: Inhalt an seinem Platz, Weichzeichner im ganzen Fenster
             var settled = PanelSlide.IsSettled(WindowRect(), _target, tolerance: 0);
             if (!settled)
             {

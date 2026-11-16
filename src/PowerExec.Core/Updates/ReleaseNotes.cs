@@ -8,6 +8,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 36, 1), L.T("Glass slides smoothly next to another monitor or the taskbar"), new[]
+        {
+            L.T("At an edge with a neighbouring monitor or the taskbar, the glass panel no longer resizes its window while sliding: the window stays in place, the content glides in like with clear glass and the blur is revealed underneath"),
+            L.T("The panel still never shows on the neighbouring monitor")
+        }),
         new ReleaseNote(new Version(0, 36, 0), L.T("New entry editor: tabs, profiles that inherit from ★ Standard, variables per profile"), new[]
         {
             L.T("The entry window has two tabs: General (tags, note, behavior in the panel) and Profiles with collapsible sections"),

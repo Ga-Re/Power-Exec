@@ -2,6 +2,11 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.36.1 – Glas gleitet flüssig neben einem anderen Monitor oder der Taskleiste
+
+- An einer Kante mit Nachbarmonitor oder Taskleiste ändert das Glas-Panel beim Gleiten nicht mehr seine Fenstergröße: das Fenster steht fest, der Inhalt gleitet wie bei Klarglas herein und der Weichzeichner wird darunter freigelegt
+- Das Panel erscheint weiterhin nie auf dem Nachbarmonitor
+
 ## 0.36.0 – Neuer Eintrags-Editor: Reiter, Profile erben von ★ Standard, Variablen je Profil
 
 - Das Eintrags-Fenster hat zwei Reiter: Allgemein (Schlagworte, Notiz, Verhalten im Panel) und Profile mit einklappbaren Abschnitten

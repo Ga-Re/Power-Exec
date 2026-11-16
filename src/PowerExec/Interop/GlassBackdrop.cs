@@ -59,6 +59,9 @@ internal sealed partial class GlassBackdrop : IDisposable
     private readonly DesktopWindowTarget _target;
     private readonly SpriteVisual _visual;
     private (float Blur, float Saturation, Vector4 Luminosity, Vector4 Tint)? _applied;
+    /// <summary>Zuschnitt beim Gleiten (einmal angelegt, danach nur die Werte); null = noch keiner.</summary>
+    private RectangleClip? _clip;
+    private bool _clipped;
 
     /// <summary>Hängt den Effekt hinter den Inhalt des Fensters (isTopmost: false).</summary>
     public GlassBackdrop(IntPtr hwnd)
@@ -133,9 +136,39 @@ internal sealed partial class GlassBackdrop : IDisposable
         _applied = (blur, saturation, luminosity, tint);
     }
 
+    /// <summary>
+    /// Effekt auf ein abgerundetes Rechteck beschneiden (Pixel relativ zum Fenster). Nur Werte setzen – Windows übernimmt
+    /// sie mit dem nächsten Bild, ohne dass am Fenster etwas geändert wird.
+    /// </summary>
+    public void SetClip(float left, float top, float right, float bottom, float radius)
+    {
+        _clip ??= Compositor.CreateRectangleClip();
+        _clip.Left = left;
+        _clip.Top = top;
+        _clip.Right = right;
+        _clip.Bottom = bottom;
+        var corner = new Vector2(radius, radius);
+        _clip.TopLeftRadius = corner;
+        _clip.TopRightRadius = corner;
+        _clip.BottomLeftRadius = corner;
+        _clip.BottomRightRadius = corner;
+        if (_clipped) return;
+        _visual.Clip = _clip;
+        _clipped = true;
+    }
+
+    /// <summary>Zuschnitt aufheben: der Effekt füllt wieder das ganze Fenster.</summary>
+    public void ClearClip()
+    {
+        if (!_clipped) return;
+        _visual.Clip = null;
+        _clipped = false;
+    }
+
     public void Dispose()
     {
         _target.Root = null;
+        _clip?.Dispose();
         _visual.Brush?.Dispose();
         _visual.Dispose();
         _target.Dispose();
