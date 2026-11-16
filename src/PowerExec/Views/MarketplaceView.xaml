@@ -230,10 +230,10 @@
                                                         <DockPanel Margin="0,0,0,8">
                                                             <TextBlock DockPanel.Dock="Left" Text="{Binding Label}" Width="72" VerticalAlignment="Top" Margin="0,6,0,0" FontWeight="SemiBold"/>
                                                             <ItemsControl ItemsSource="{Binding Swatches}" Focusable="False">
-                                                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate>
-                                                                        <StackPanel Margin="0,0,6,0">
+                                                                        <StackPanel Margin="0,0,8,8">
                                                                             <Border Height="24" CornerRadius="{DynamicResource Radius.Control}" Background="{Binding Color, Converter={StaticResource ArgbBrush}}"
                                                                                     BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding Name}"/>
                                                                             <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>

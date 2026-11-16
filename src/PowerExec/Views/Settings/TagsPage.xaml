@@ -31,7 +31,7 @@
                                     </TextBlock>
                                 </ui:Button>
                                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <ComboBox Width="170" Margin="0,0,2,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding Color}" SelectedValuePath="Key" ToolTip="{l:T 'Tag color'}">
+                                    <ComboBox Width="196" Margin="0,0,2,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding Color}" SelectedValuePath="Key" ToolTip="{l:T 'Tag color'}">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
