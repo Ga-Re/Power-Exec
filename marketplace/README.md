@@ -27,7 +27,7 @@ Scripte und Designs.
 |---|---|---|
 | `*.pxentry.json` | `{ "Entry": { … eigener Eintrag … }, "Variables": [ … ] }` | Eigene Einträge |
 | `*.ps1` | PowerShell-Script (`.SYNOPSIS` = Beschreibung) | Dokumente\Power-Exec\Marktplatz + Eigene Einträge |
-| `*.design.json` | Designvorlage (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor …; optional `Corners`: `Standard`, `Rounded` oder `Square`) | Designvorlagen |
+| `*.design.json` | Design (Name, Theme, PanelColor, Opacity, Frost, Backdrop, AccentColor, Palette, GroupColors …; optional `Corners`: `Standard`, `Rounded` oder `Square`, `GroupStyle`: `Accent` oder `Tinted`) | Darstellung › Meine Designs bzw. Marktplatz › Designs |
 
 - `Variables` nennt Variablen (`{{$Name}}`), die der Eintrag braucht – Power-Exec öffnet beim Herunterladen den
   Variablen-Dialog, falls es sie noch nicht gibt:
@@ -36,3 +36,25 @@ Scripte und Designs.
   (Name einer Umgebungsvariable), `PowerShell` (Befehl, dessen Ausgabe der Wert ist) oder `Workspace` (je Arbeitsbereich).
   `Example` ist der vorgeschlagene Wert bzw. Befehl.
 - Updates erkennt Power-Exec automatisch, sobald sich eine Datei im Repository ändert.
+
+## Designs
+
+Name, Beschreibung und Kategorie stehen auf Englisch (Grundwert); Übersetzungen kommen unter `Translations` dazu.
+Die Kategorie gruppiert die Designs im Marktplatz (Bereich „Designs“). `GroupColors` ist die Farbreihe für Gruppen
+und Schlagworte, `Pair` die zweite Variante (hell bzw. dunkel) mit eigener Palette und eigener Farbreihe:
+
+```json
+{
+  "Name": "Forest",
+  "Description": "Dark moss green with fresh green",
+  "Category": "Nature",
+  "Translations": { "de": { "Name": "Wald", "Description": "Dunkles Moosgrün mit frischem Grün", "Category": "Natur" } },
+  "Theme": "Dark",
+  "PanelColor": "#1B2A1F",
+  "AccentColor": "#8BC34A",
+  "GroupColors": "#9CCB6B, #5FB38A, #C49A6C",
+  "Pair": { "PanelColor": "#F2F5F3", "AccentColor": "#8BC34A", "GroupColors": "#487325, #2E7D5B, #8A5A2B" }
+}
+```
+
+Heruntergeladene Designs sind schreibgeschützt; wer eins anpasst, legt im Designer eine eigene Kopie an.

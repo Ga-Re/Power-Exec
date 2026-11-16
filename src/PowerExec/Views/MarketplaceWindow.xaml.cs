@@ -19,7 +19,13 @@ public partial class MarketplaceWindow : Window
         FluentTheme.Attach(this);
         QuietScrollBar.Attach(PageScroll);
         QuietScrollBar.Attach(NavScroll);
-        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MarketplaceWindowViewModel.Tab)) SyncTabs(); };
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MarketplaceWindowViewModel.Tabs)) _tabs.Clear(); // neue Navigation: die alten Reiter sind weg
+            if (e.PropertyName == nameof(MarketplaceWindowViewModel.Tab)) SyncTabs();
+        };
+        // Ausprobiertes Design ohne „Übernehmen“: beim Schließen zurücknehmen
+        Closing += (_, _) => vm.Closing();
     }
 
     /// <summary>Für den Selbsttest: das ViewModel des Fensters.</summary>

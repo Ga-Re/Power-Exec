@@ -32,7 +32,7 @@ public class MarketplaceViewModelTests
         host.Downloads[DefaultRaw + "Links/Learn.pxentry.json"] = Entry("Learn", "https://learn.microsoft.com");
         host.Downloads[DefaultRaw + "Matrix42/Ticket.pxentry.json"] = Entry("Ticket", "{{$Matrix42Url}}/ticket/{{Nr}}", "Matrix42Url");
         host.Downloads[DefaultRaw + "Scripte/System/Get-Disk.ps1"] = "<#\n.SYNOPSIS\n    Zeigt freien Platz.\n#>\nGet-Volume";
-        host.Downloads[DefaultRaw + "Designs/Ozean.design.json"] = """{ "Name": "Ozean", "Theme": "Dark", "PanelColor": "#0B2233", "Opacity": 90 }""";
+        host.Downloads[DefaultRaw + "Designs/Ozean.design.json"] = """{ "Name": "Ozean", "Theme": "Dark", "PanelColor": "#0B2233", "Opacity": 90, "Category": "Nature", "Translations": { "de": { "Category": "Natur" } } }""";
         host.Downloads[TeamTree] = """{ "tree": [ { "path": "Team/Wiki.pxentry.json", "type": "blob", "sha": "w1" } ] }""";
         host.Downloads["https://raw.githubusercontent.com/firma/px-katalog/main/Team/Wiki.pxentry.json"] = Entry("Wiki", "https://wiki.firma.local");
         return host;
@@ -277,10 +277,11 @@ public class MarketplaceViewModelTests
         var vm = new MarketplaceWindowViewModel(host, _ => { });
         await vm.Page.LoadAsync(force: false);
 
-        // „Entdecken“ zeigt Einträge, Scripte und Designs zusammen als Karten
+        // „Entdecken“ zeigt Einträge und Scripte als Karten – Designs haben ihren eigenen Bereich
         Assert.Equal("All", vm.Tab);
+        Assert.False(vm.IsDesignArea);
         Assert.Equal(vm.Page.AllCount, vm.Page.Cards.Count);
-        Assert.Contains(vm.Page.Cards, c => c.File.Type == MarketplaceItemType.Design);
+        Assert.DoesNotContain(vm.Page.Cards, c => c.File.Type == MarketplaceItemType.Design);
         Assert.Equal(vm.Page.AllCount.ToString(System.Globalization.CultureInfo.CurrentCulture), vm.Tabs.First(t => t.Key == "All").CountText);
 
         // Kategorie filtert die Karten; erneuter Klick hebt den Filter auf
@@ -315,5 +316,50 @@ public class MarketplaceViewModelTests
         Assert.Contains("Ozean", single.Message, StringComparison.Ordinal);
         Assert.Equal("#0B2233", applied!.Panels[0].PanelColor);   // angewendet
         Assert.Equal("Ozean", Appearance.Current(applied)?.Name);
+    }
+
+    [Fact]
+    public async Task DesignAreaHasOwnNavigationCategoriesAndTryOut()
+    {
+        var host = Host();
+        host.Settings.Panels.Add(new PanelConfig());
+        Appearance.Apply(host.Settings, Appearance.Presets[0]);
+        var applied = new List<AppSettings>();
+        var vm = new MarketplaceWindowViewModel(host, s => applied.Add(s));
+        await vm.Page.LoadAsync(force: false);
+
+        vm.Tab = "designs";                                     // Verweis aus den Einstellungen
+        Assert.True(vm.IsDesignArea);
+        Assert.Equal("Design", vm.Tab);
+        Assert.Equal(new[] { "Design", "DesignInstalled", "Sources" }, vm.Tabs.Select(t => t.Key));
+        var card = Assert.Single(vm.Page.Cards);
+        Assert.Equal("Natur", card.CategoryName);               // Kategorie aus der Datei, übersetzt
+        Assert.Equal("Natur", Assert.Single(vm.Page.Categories).Name);
+        Assert.NotEmpty(card.DesignColorRows);
+
+        // Ausprobieren: angewendet, aber nicht installiert; „Zurück“ stellt das vorherige Aussehen wieder her
+        card.TryCommand.Execute(null);
+        Assert.True(vm.Page.IsTrying);
+        Assert.Equal("#0B2233", applied[^1].Panels[0].PanelColor);
+        Assert.False(card.IsInstalled);
+        vm.Page.RevertTryCommand.Execute(null);
+        Assert.False(vm.Page.IsTrying);
+        Assert.Equal("fluent", applied[^1].DesignKey);
+        Assert.Equal(string.Empty, applied[^1].Panels[0].PanelColor);
+
+        // Ausprobieren und Fenster schließen: ebenfalls zurück
+        card.TryCommand.Execute(null);
+        vm.Closing();
+        Assert.Equal("fluent", applied[^1].DesignKey);
+
+        // Herunterladen und anwenden: ohne Rückfrage, danach aktiv
+        await vm.Page.InstallAndApplyAsync(card);
+        Assert.True(card.IsInstalled);
+        Assert.Equal("#0B2233", applied[^1].Panels[0].PanelColor);
+        Assert.StartsWith("market:", applied[^1].DesignKey, StringComparison.Ordinal);
+        Assert.DoesNotContain(host.FakeDialogs.Messages, m => m.Kind == "confirm");
+
+        vm.IsItemArea = true;
+        Assert.Equal("All", vm.Tab);
     }
 }

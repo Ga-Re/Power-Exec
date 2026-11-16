@@ -1259,7 +1259,7 @@ public sealed partial class SelfTestController : AppController
                 // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
                 await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
                 await Settle();
-                if (marketVm.Tabs.Count != 6) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 6");
+                if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 5");
                 if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
                 if (marketVm.Page.Cards.Count == 0) Fail("Marktplatz: keine Karten in „Entdecken“");
                 else
@@ -1293,6 +1293,31 @@ public sealed partial class SelfTestController : AppController
                     if (marketVm.Tab != tab) Fail($"Marktplatz: Reiter „{tab}“ lässt sich nicht wählen");
                     if (marketWindow.Content is FrameworkElement marketRoot) Screenshot(marketRoot, "marktplatz-" + tab.ToLowerInvariant());
                 }
+
+                // Bereich Designs: eigene Navigation, Karten mit Mini-Panel, Details mit Farben, Ausprobieren und zurück
+                marketVm.IsDesignArea = true;
+                await Settle();
+                if (marketVm.Tab != "Design" || marketVm.Tabs.Count != 3) Fail($"Marktplatz: Bereich Designs mit „{marketVm.Tab}“ und {marketVm.Tabs.Count} Reitern");
+                if (marketVm.Page.Cards.Any(c => !c.IsDesignFile)) Fail("Marktplatz: Bereich Designs zeigt auch Einträge");
+                if (marketWindow.Content is FrameworkElement designRoot) Screenshot(designRoot, "marktplatz-designs");
+                if (marketVm.Page.Cards.FirstOrDefault(c => c.HasBothVariants) is { } designCard)
+                {
+                    designCard.ShowLightCommand.Execute(null);
+                    designCard.TogglePreviewCommand.Execute(null);
+                    await Settle();
+                    if (designCard.DesignColorRows.Count != 2) Fail($"Marktplatz: Design-Details mit {designCard.DesignColorRows.Count} statt 2 Varianten");
+                    if (marketWindow.Content is FrameworkElement detailRoot) Screenshot(detailRoot, "marktplatz-design-details");
+                    var keyBefore = marketVm.Page.Settings.DesignKey;
+                    designCard.TryCommand.Execute(null);
+                    await Settle();
+                    if (!marketVm.Page.IsTrying) Fail("Marktplatz: Ausprobieren zeigt keinen Hinweis");
+                    if (marketVm.Page.Settings.DesignKey == keyBefore) Fail("Marktplatz: Ausprobieren wendet das Design nicht an");
+                    if (marketWindow.Content is FrameworkElement tryRoot) Screenshot(tryRoot, "marktplatz-design-ausprobieren");
+                    marketVm.Page.RevertTryCommand.Execute(null);
+                    await Settle();
+                    if (marketVm.Page.Settings.DesignKey != keyBefore) Fail($"Marktplatz: nach „Zurück“ ist „{marketVm.Page.Settings.DesignKey}“ statt „{keyBefore}“ aktiv");
+                }
+                else if (marketVm.Page.Cards.Count > 0) Fail("Marktplatz: kein Design mit heller und dunkler Variante");
                 marketWindow.Close();
                 await Settle();
             }
@@ -1603,6 +1628,17 @@ public sealed partial class SelfTestController : AppController
                 designVm.EditLight = true;
                 await Settle();
                 if (designWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "design-editor-hell");
+                designVm.Section = "background";
+                designVm.Backdrop = PanelBackdrop.Glass;
+                await Settle();
+                if (designWindow.Content is FrameworkElement backgroundRoot) Screenshot(backgroundRoot, "design-editor-hintergrund");
+                designVm.Section = "general";
+                designVm.AddTranslationCommand.Execute(null);
+                await Settle();
+                if (designWindow.Content is FrameworkElement generalRoot) Screenshot(generalRoot, "design-editor-allgemein");
+                designVm.Section = "groups";
+                await Settle();
+                if (designWindow.Content is FrameworkElement groupsRoot) Screenshot(groupsRoot, "design-editor-gruppen");
                 designVm.SaveCommand.Execute(null);
                 await Settle();
                 if (designVm.Result is not { Pair: not null } saved) Fail("Design-Editor: Speichern liefert kein Design mit zwei Varianten");
@@ -1615,6 +1651,19 @@ public sealed partial class SelfTestController : AppController
                     if (probe.Look.FontFamily != "Bahnschrift" || probe.Look.GroupColors.Count != 3) Fail("Design: Schrift oder Gruppenfarben gehen beim Anwenden verloren");
                 }
                 if (designWindow.IsVisible) Fail("Design-Editor: Speichern schließt das Fenster nicht");
+
+                // Mitgeliefertes Design: schreibgeschützt, bis man eine eigene Kopie anlegt
+                var builtIn = new DesignEditorViewModel(Dialogs, Appearance.Presets[1], _ => null);
+                var builtInWindow = new DesignEditorWindow(builtIn);
+                builtInWindow.Show();
+                await Settle();
+                if (!builtIn.IsReadOnly) Fail("Design-Editor: mitgeliefertes Design ist nicht schreibgeschützt");
+                if (builtInWindow.Content is FrameworkElement readOnlyRoot) Screenshot(readOnlyRoot, "design-editor-schreibgeschuetzt");
+                builtIn.DuplicateCommand.Execute(null);
+                await Settle();
+                if (builtIn.IsReadOnly || !builtIn.Name.Contains("(eigen)", StringComparison.Ordinal)) Fail("Design-Editor: „Als eigenes Design bearbeiten“ legt keine Kopie an");
+                builtInWindow.Close();
+                await Settle();
             }
 
             Step("Eingaben mit Vorlage: Schlagworte und Rechner");

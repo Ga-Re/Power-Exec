@@ -249,7 +249,7 @@ public static class Marketplace
                     var d = ParseDesign(payload, file);
                     var text = L.F("{0}, panel color {1}, {2}, opacity {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("of the design"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
                                + (d.AccentColor.Length > 0 ? L.F(", accent {0}", d.AccentColor) : string.Empty);
-                    return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text) { Design = d };
+                    return new MarketplaceDetails(d.DisplayName, d.DisplayDescription, Array.Empty<MarketplaceVariable>(), text) { Design = d };
                 }
             default:
                 {

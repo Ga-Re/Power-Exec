@@ -30,23 +30,49 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
         UpdateCounts();
     }
 
+    private static readonly MarketplaceTab[] ItemTabs =
+    {
+        new("All", L.T("Discover")),
+        new("Entry", L.T("Entries")),
+        new("Script", L.T("Scripts")),
+        new("Installed", L.T("Installed")),
+        new("Sources", L.T("Sources"))
+    };
+
+    private static readonly MarketplaceTab[] DesignTabs =
+    {
+        new("Design", L.T("Discover")),
+        new("DesignInstalled", L.T("My designs")),
+        new("Sources", L.T("Sources"))
+    };
+
+    private bool _designArea;
+
+    /// <summary>Oben gewählter Bereich: Designs (true) oder Einträge und Scripte.</summary>
+    public bool IsDesignArea
+    {
+        get => _designArea;
+        set
+        {
+            if (_designArea == value) return;
+            _designArea = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsItemArea));
+            OnPropertyChanged(nameof(Tabs));
+            Tab = value ? "Design" : "All";
+        }
+    }
+    public bool IsItemArea { get => !_designArea; set => IsDesignArea = !value; }
+
     /// <summary>Listen und Befehle des Marktplatzes.</summary>
     public MarketplaceViewModel Page { get; private set; }
 
-    /// <summary>Bereiche in der Navigation (Schlüssel wie <see cref="MarketplaceViewModel.Tab"/>), mit Anzahl.</summary>
-    public IReadOnlyList<MarketplaceTab> Tabs { get; } = new[]
-    {
-        new MarketplaceTab("All", L.T("Discover")),
-        new MarketplaceTab("Entry", L.T("Entries")),
-        new MarketplaceTab("Script", L.T("Scripts")),
-        new MarketplaceTab("Design", L.T("Designs")),
-        new MarketplaceTab("Installed", L.T("Installed")),
-        new MarketplaceTab("Sources", L.T("Sources"))
-    };
+    /// <summary>Navigation des gewählten Bereichs (Schlüssel wie <see cref="MarketplaceViewModel.Tab"/>), mit Anzahl.</summary>
+    public IReadOnlyList<MarketplaceTab> Tabs => _designArea ? DesignTabs : ItemTabs;
 
     private void UpdateCounts()
     {
-        foreach (var t in Tabs)
+        foreach (var t in ItemTabs.Concat(DesignTabs))
             t.CountText = t.Key switch
             {
                 "All" => Page.AllCount.ToString(CultureInfo.CurrentCulture),
@@ -54,15 +80,34 @@ public sealed class MarketplaceWindowViewModel : ObservableObject
                 "Script" => Page.ScriptCount.ToString(CultureInfo.CurrentCulture),
                 "Design" => Page.DesignCount.ToString(CultureInfo.CurrentCulture),
                 "Installed" => Page.InstalledCount.ToString(CultureInfo.CurrentCulture),
+                "DesignInstalled" => Page.DesignInstalledCount.ToString(CultureInfo.CurrentCulture),
                 _ => string.Empty
             };
     }
 
+    /// <summary>Gewählter Bereich der Navigation; „designs“ (Verweis aus den Einstellungen) öffnet die Designs.</summary>
     public string Tab
     {
         get => Page.Tab;
-        set { Page.Tab = value; OnPropertyChanged(); }
+        set
+        {
+            var key = value.Equals("designs", StringComparison.OrdinalIgnoreCase) ? "Design" : value;
+            if (key is "Design" or "DesignInstalled" && !_designArea) { _designArea = true; RaiseArea(); }
+            else if (key is "All" or "Entry" or "Script" or "Installed" && _designArea) { _designArea = false; RaiseArea(); }
+            Page.Tab = key;
+            OnPropertyChanged();
+        }
     }
+
+    private void RaiseArea()
+    {
+        OnPropertyChanged(nameof(IsDesignArea));
+        OnPropertyChanged(nameof(IsItemArea));
+        OnPropertyChanged(nameof(Tabs));
+    }
+
+    /// <summary>Fenster schließt: ein ausprobiertes, nicht übernommenes Design wird zurückgenommen.</summary>
+    public void Closing() => Page.EndTry();
 
     /// <summary>Dateilisten laden, falls noch nicht geschehen (beim Öffnen des Fensters).</summary>
     public Task EnsureLoadedAsync() => Page.EnsureLoadedAsync();
