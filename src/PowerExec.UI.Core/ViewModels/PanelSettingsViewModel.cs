@@ -396,7 +396,7 @@ public sealed class PanelSettingsViewModel : ObservableObject
         _customColor = _c.PanelColor;
         _manualMode = _c.PanelColor.Length > 0;
         foreach (var name in new[] { nameof(PanelColor), nameof(CustomColor), nameof(PanelOpacity), nameof(Frost), nameof(GlassBlur), nameof(GlassSaturation),
-                     nameof(PreviewText), nameof(ColorMode), nameof(ShowManualColors) })
+                     nameof(PreviewText), nameof(ColorMode), nameof(ShowManualColors), nameof(GroupStyle) })
             OnPropertyChanged(name);
         AccentColor = _c.AccentColor;
         RaiseBackdrop();

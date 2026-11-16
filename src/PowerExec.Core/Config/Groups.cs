@@ -197,25 +197,35 @@ public static class GroupManager
         s.GroupColors.FirstOrDefault(kv => kv.Key.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
 
     /// <summary>
-    /// Wirksame Farbe: eigene oder die der nächsten übergeordneten Gruppe; sonst die Farbe aus der Reihe des Designs,
-    /// die der Gruppe der obersten Ebene nach ihrer Reihenfolge zufällt (leer, wenn das Design keine Reihe hat).
+    /// Wirksame Farbe: eigene Angabe (feste Farbe, Farbe Nr. N des Designs oder „keine“) oder die der nächsten
+    /// übergeordneten Gruppe; sonst – „vom Design (automatisch)“ – die Farbe aus der Reihe des Designs, die der Gruppe der
+    /// obersten Ebene nach ihrer Reihenfolge zufällt (leer, wenn das Design keine Reihe hat).
     /// </summary>
     public static string ColorOf(AppSettings s, string groupPath)
     {
         var path = Normalize(groupPath);
         for (string? p = path; p != null && p.Length > 0; p = ParentOf(p))
-            if (OwnColorOf(s, p) is { Length: > 0 } c) return c;
-        if (s.Look.GroupColors.Count == 0 || path.Length == 0) return string.Empty;
-        var top = path.Split('/')[0];
+            if (Appearance.ResolveColorRef(s, OwnColorOf(s, p)) is { } c) return c;
+        return path.Length == 0 ? string.Empty : Appearance.SeriesColor(s, AutoIndex(s, path));
+    }
+
+    /// <summary>Farbe, die „automatisch“ ergäbe: Untergruppen die der übergeordneten Gruppe, sonst die aus der Reihe des Designs.</summary>
+    public static string AutoColorOf(AppSettings s, string groupPath) =>
+        ParentOf(Normalize(groupPath)) is { Length: > 0 } parent ? ColorOf(s, parent) : Appearance.SeriesColor(s, AutoIndex(s, groupPath));
+
+    /// <summary>Stelle in der Farbreihe, die einer Gruppe „automatisch“ zufällt: Reihenfolge der obersten Ebene.</summary>
+    public static int AutoIndex(AppSettings s, string groupPath)
+    {
+        var top = Normalize(groupPath).Split('/')[0];
         var index = s.CategoryOrder.Select(c => c.Split('/')[0]).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
             .FindIndex(c => c.Equals(top, StringComparison.OrdinalIgnoreCase));
-        return Appearance.SeriesColor(s, index >= 0 ? index : Appearance.SeriesIndex(top));
+        return index >= 0 ? index : Appearance.SeriesIndex(top);
     }
 
     public static void SetColor(AppSettings s, string groupPath, string? color)
     {
         foreach (var k in s.GroupColors.Keys.Where(k => k.Equals(groupPath, StringComparison.OrdinalIgnoreCase)).ToList()) s.GroupColors.Remove(k);
-        if (PanelColors.TryParse(color, out var c)) s.GroupColors[Normalize(groupPath)] = c.Hex;
+        if (Appearance.NormalizeColorRef(color) is { Length: > 0 } c) s.GroupColors[Normalize(groupPath)] = c;
     }
 
     /// <summary>Darstellung der Gruppe: null = wie das Panel, sonst Liste oder Raster.</summary>

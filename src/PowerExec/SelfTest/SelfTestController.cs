@@ -1002,10 +1002,11 @@ public sealed partial class SelfTestController : AppController
                 host.Window.HidePanel();
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
-                if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                var fixedRow = colors?.FirstOrDefault(c => c.IsRow && c.Name == "Feste Farbe");
+                if (fixedRow?.Swatches == null || fixedRow.Swatches.Select(c => c.SwatchColor?.ToString()).Distinct().Count() < 2) Fail("Farbmenü: feste Farben ohne eigene Vorschau");
                 if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
-                var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
-                if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
+                if (colors != null && !colors.Any(c => c.Name == "Keine Farbe")) Fail("Farbmenü: „Keine Farbe“ fehlt");
+                if (colors != null && colors.FirstOrDefault() is not { Name: "Vom Design (automatisch)" or "Wie übergeordnete Gruppe" }) Fail("Farbmenü: „Vom Design (automatisch)“ steht nicht oben");
                 await ShowAndClose(ColorPickerWindow.ForTest());
                 var railGroup = vm.Groups.FirstOrDefault(g => g.GroupPath != null);
                 if (railGroup != null)
@@ -1093,13 +1094,13 @@ public sealed partial class SelfTestController : AppController
             {
                 var sectionBefore = settingsVm.Section;
                 settingsVm.Section = "look";
-                settingsVm.Corners = CornerStyle.Rounded;
+                settingsVm.ApplyDesign(Appearance.Presets[0] with { Key = "custom:selftest-rund", Corners = CornerStyle.Rounded });
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 12 }) Fail("Ecken: „Rund“ setzt den Karten-Radius nicht auf 12");
                 if (settingsWindow.Content is FrameworkElement cornersRoot) Screenshot(cornersRoot, "settings-ecken-rund");
                 settingsVm = settingsWindow.CurrentViewModel;
-                settingsVm.Corners = CornerStyle.Standard;
+                settingsVm.ApplyDesign(Appearance.Presets[0] with { Corners = CornerStyle.Standard });
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 6 }) Fail("Ecken: „Standard“ stellt den Karten-Radius nicht wieder her");

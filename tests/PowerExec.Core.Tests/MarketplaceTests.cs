@@ -186,4 +186,38 @@ public class MarketplaceTests
         Assert.Equal(2, Marketplace.Sources(s).Count);
         Assert.Equal("firma/katalog", Marketplace.NameFromUrl(Source));
     }
+
+    [Fact]
+    public void RenamedDesignsStayInstalledAndActive()
+    {
+        var oldPath = "marketplace/Designs/Wald.design.json";
+        var oldKey = "market:" + Marketplace.StableId(oldPath);
+        var s = new AppSettings { DesignKey = oldKey };
+        s.CustomDesigns.Add(new DesignPreset(oldKey, "Wald", "", ThemeMode.Dark, "#1B2A1F", 95, 0, false));
+        s.MarketplaceInstalls.Add(new MarketplaceInstall { Source = Source, ItemId = oldPath, Version = "abc", DesignKey = oldKey });
+
+        Marketplace.MigrateRenamedDesigns(s);
+
+        var install = Assert.Single(s.MarketplaceInstalls);
+        Assert.Equal("marketplace/Designs/Forest.design.json", install.ItemId);
+        var newKey = "market:" + Marketplace.StableId(install.ItemId);
+        Assert.Equal(newKey, install.DesignKey);
+        Assert.Equal(newKey, s.DesignKey);
+        Assert.Equal(newKey, Assert.Single(s.CustomDesigns).Key);
+        Assert.Equal(string.Empty, install.Version); // neuer Stand kommt als Update
+
+        // Alle Designs des Marktplatzes sind gültig, englisch benannt und für Deutsch übersetzt
+        var folder = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "marketplace", "Designs");
+        var files = Directory.GetFiles(folder, "*.design.json");
+        Assert.True(files.Length >= 20);
+        foreach (var file in files)
+        {
+            var d = Marketplace.ParseDesign(File.ReadAllText(file), new MarketplaceFile("Designs/" + Path.GetFileName(file), "v", MarketplaceItemType.Design));
+            Assert.False(Marketplace.RenamedDesigns.ContainsKey(Path.GetFileName(file).Replace(".design.json", "", StringComparison.Ordinal)));
+            Assert.False(string.IsNullOrEmpty(d.Category), file);
+            Assert.True(d.Translations?.ContainsKey("de") == true, file);
+            Assert.NotNull(d.Pair?.GroupColors);
+            Assert.True(Appearance.SplitColors(d.GroupColors).Count >= 6, file);
+        }
+    }
 }

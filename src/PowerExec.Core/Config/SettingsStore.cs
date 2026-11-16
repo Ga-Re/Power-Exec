@@ -98,6 +98,11 @@ public sealed class SettingsStore
             FixedGroups.MigrateToggles(s);
             s.DataVersion = 14;
         }
+        if (s.DataVersion < 15)
+        {
+            Appearance.MigrateToActiveDesign(s);
+            s.DataVersion = 15;
+        }
         SmartGroups.EnsureFolderGroups(s);
         s.MachineGroups.RemoveAll(g => string.IsNullOrWhiteSpace(g.Name));
         s.Entries.RemoveAll(e => string.IsNullOrWhiteSpace(e.Path));

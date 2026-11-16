@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Cyberpunk Neon",
-  "Description": "Tiefviolett mit grellem Neon-Magenta",
+  "Description": "Deep violet with glaring neon magenta",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Cyberpunk Neon",
+      "Description": "Tiefviolett mit grellem Neon-Magenta",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#120A1F",
   "Opacity": 92,
@@ -20,7 +28,7 @@
     "TextSecondary": "#B3A8B6",
     "Selected": "#511F52"
   },
-  "GroupColors": "#EE63D3, #EE7E63, #D3EE63, #63EE7E, #63D3EE, #7E63EE",
+  "GroupColors": "#FF4FE0, #2EF2FF, #E8FF3A, #9B6BFF, #FF7A2E, #43FF8E",
   "GroupColorsForTags": true,
   "FontFamily": "Bahnschrift",
   "Pair": {
@@ -33,6 +41,7 @@
       "Text": "#2C1B29",
       "TextSecondary": "#6C5F6B",
       "Selected": "#F5D1F1"
-    }
+    },
+    "GroupColors": "#B0129A, #007681, #657000, #5B2FC4, #B84A00, #0D7F41"
   }
 }

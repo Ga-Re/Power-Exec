@@ -13,11 +13,42 @@ public sealed record AccentColors(Rgb Accent, Rgb Hover, Rgb Pressed, Rgb OnAcce
 public sealed record DesignPreset(string Key, string Name, string Description, ThemeMode Theme, string PanelColor, int Opacity, int Frost,
     bool WindowsAccent, PanelBackdrop Backdrop = PanelBackdrop.Clear, int GlassBlur = 50, int GlassSaturation = 100, string AccentColor = "",
     bool IsCustom = false, CornerStyle? Corners = null, DesignPalette? Palette = null, DesignVariant? Pair = null,
-    string? FontFamily = null, string? MonoFontFamily = null, string? GroupColors = null, bool GroupColorsForTags = false)
+    string? FontFamily = null, string? MonoFontFamily = null, string? GroupColors = null, bool GroupColorsForTags = false,
+    GroupCardStyle? GroupStyle = null, string? Category = null, Dictionary<string, DesignText>? Translations = null, string? BasedOn = null)
 {
     /// <summary>Ist die Hauptvariante dunkel? (<see cref="ThemeMode.System"/> zählt als dunkel.)</summary>
     public bool PrimaryIsDark => Theme != ThemeMode.Light;
+
+    /// <summary>Aus dem Marktplatz geladen (schreibgeschützt; Änderungen nur in einer eigenen Kopie).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsDownloaded => Key.StartsWith("market:", StringComparison.Ordinal);
+
+    /// <summary>Selbst angelegt oder als eigene Kopie bearbeitet – nur diese lassen sich ändern.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsOwn => Key.StartsWith("custom:", StringComparison.Ordinal);
+
+    /// <summary>Gibt es eine helle und eine dunkle Variante (eigenes Paar oder Fläche „wie Windows“)?</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasBothVariants => Pair != null || Theme == ThemeMode.System;
+
+    /// <summary>Name in der Sprache der Oberfläche (Übersetzung aus der Datei, sonst der Grundwert).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayName => Localized(t => t.Name, Name);
+
+    /// <summary>Beschreibung in der Sprache der Oberfläche.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayDescription => Localized(t => t.Description, Description);
+
+    /// <summary>Kategorie in der Sprache der Oberfläche (leer = keine).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string DisplayCategory => Localized(t => t.Category, Category ?? string.Empty);
+
+    private string Localized(Func<DesignText, string?> pick, string fallback) =>
+        Translations != null && Translations.TryGetValue(L.Language, out var t) && pick(t) is { Length: > 0 } v ? v : fallback;
 }
+
+/// <summary>Übersetzung von Name, Beschreibung und Kategorie eines Designs (leere Felder zeigen den englischen Grundwert).</summary>
+public sealed record DesignText(string Name = "", string Description = "", string Category = "");
 
 /// <summary>
 /// Farben eines Designs über Panelfarbe und Akzent hinaus (je „#RRGGBB“). Leere Werte werden aus der Panelfarbe abgeleitet –
@@ -33,7 +64,7 @@ public sealed record DesignPalette(string Card = "", string Input = "", string L
 /// Zweite Variante eines Designs für das jeweils andere Windows-Design (hell bzw. dunkel). Ein Design mit Paar wechselt
 /// mit Windows mit.
 /// </summary>
-public sealed record DesignVariant(string PanelColor = "", string AccentColor = "", DesignPalette? Palette = null);
+public sealed record DesignVariant(string PanelColor = "", string AccentColor = "", DesignPalette? Palette = null, string? GroupColors = null);
 
 /// <summary>
 /// Der Teil des aktiven Designs, der für die ganze App gilt und nicht am einzelnen Panel hängt: Palette, zweite Variante,
@@ -51,6 +82,8 @@ public sealed class DesignLook
     public string MonoFontFamily { get; set; } = string.Empty;
     /// <summary>Farbreihe für Gruppen ohne eigene Farbe (der Reihe nach, „#RRGGBB“).</summary>
     public List<string> GroupColors { get; set; } = new();
+    /// <summary>Farbreihe der zweiten Variante (<see cref="Pair"/>); leer = dieselbe wie <see cref="GroupColors"/>.</summary>
+    public List<string> PairGroupColors { get; set; } = new();
     /// <summary>Die Farbreihe auch für Schlagworte ohne eigene Farbe verwenden.</summary>
     public bool GroupColorsForTags { get; set; }
 
@@ -62,11 +95,12 @@ public sealed class DesignLook
         FontFamily = FontFamily,
         MonoFontFamily = MonoFontFamily,
         GroupColors = GroupColors.ToList(),
+        PairGroupColors = PairGroupColors.ToList(),
         GroupColorsForTags = GroupColorsForTags
     };
 
     /// <summary>Kennung zum Vergleichen zweier Stände (Markierung des aktiven Designs, „hat sich das Aussehen geändert?“).</summary>
-    public string Key => string.Join("|", Palette, Pair, PairIsDark, FontFamily, MonoFontFamily, string.Join(",", GroupColors), GroupColorsForTags);
+    public string Key => string.Join("|", Palette, Pair, PairIsDark, FontFamily, MonoFontFamily, string.Join(",", GroupColors), string.Join(",", PairGroupColors), GroupColorsForTags);
 }
 
 /// <summary>Ausgerechnete Farben einer Variante (gesetzt oder abgeleitet).</summary>
@@ -141,13 +175,43 @@ public static class Appearance
     /// <summary>Vorlage auf Einstellungen und Panels anwenden.</summary>
     public static void Apply(AppSettings s, DesignPreset p)
     {
-        s.Theme = p.Theme;
+        s.DesignKey = p.Key;
+        s.Theme = ThemeFor(s, p);
         s.UseWindowsAccent = p.WindowsAccent;
         if (p.Corners is { } corners) s.Corners = corners; // Designs ohne Angabe lassen die Ecken, wie sie sind
         s.Look = LookOf(p);
-        if (p.Pair != null) s.Theme = ThemeMode.System; // Design mit zwei Varianten wechselt mit Windows mit
         foreach (var panel in s.Panels) Apply(panel, p);
     }
+
+    /// <summary>
+    /// Hell oder dunkel: hat das Design beide Varianten, gilt die Wahl unter Darstellung (<see cref="AppSettings.Variant"/>),
+    /// sonst die einzige Variante des Designs.
+    /// </summary>
+    public static ThemeMode ThemeFor(AppSettings s, DesignPreset p) => p.HasBothVariants ? s.Variant : p.Theme;
+
+    /// <summary>
+    /// Umstieg auf „ein aktives Design“ (Version 0.37): Gestaltung stellt man nur noch im Designer ein. Die gewählte
+    /// Variante bleibt; passt der bisherige Stand zu keinem Design, wird er als eigenes Design „My settings“ übernommen –
+    /// so geht nichts verloren. Auch Designs aus dem Marktplatz mit altem Dateinamen werden umgeschrieben.
+    /// </summary>
+    public static void MigrateToActiveDesign(AppSettings s)
+    {
+        s.Variant = s.Theme;
+        Marketplace.MigrateRenamedDesigns(s);
+        if (s.DesignKey.Length > 0 && Active(s) != null) return;
+        if (Current(s) is { } match)
+        {
+            s.DesignKey = match.Key;
+            return;
+        }
+        if (s.Panels.Count == 0) return;
+        var own = Capture(s, s.Panels[0], L.T("My settings"));
+        s.CustomDesigns.Add(own);
+        s.DesignKey = own.Key;
+    }
+
+    /// <summary>Das aktive Design (null = unbekannt, etwa gelöscht).</summary>
+    public static DesignPreset? Active(AppSettings s) => All(s).FirstOrDefault(d => d.Key == s.DesignKey);
 
     /// <summary>Der app-weite Teil eines Designs (Palette, zweite Variante, Schrift, Gruppenfarben).</summary>
     public static DesignLook LookOf(DesignPreset p) => new()
@@ -158,6 +222,7 @@ public static class Appearance
         FontFamily = (p.FontFamily ?? string.Empty).Trim(),
         MonoFontFamily = (p.MonoFontFamily ?? string.Empty).Trim(),
         GroupColors = SplitColors(p.GroupColors),
+        PairGroupColors = SplitColors(p.Pair?.GroupColors),
         GroupColorsForTags = p.GroupColorsForTags
     };
 
@@ -178,14 +243,14 @@ public static class Appearance
         new(Hex(p.Card), Hex(p.Input), Hex(p.Line), Hex(p.Text), Hex(p.TextSecondary), Hex(p.Selected));
 
     private static DesignVariant Normalize(DesignVariant v) =>
-        new(Hex(v.PanelColor), Hex(v.AccentColor), v.Palette is { IsEmpty: false } p ? Normalize(p) : null);
+        new(Hex(v.PanelColor), Hex(v.AccentColor), v.Palette is { IsEmpty: false } p ? Normalize(p) : null, JoinColors(SplitColors(v.GroupColors)));
 
     /// <summary>
     /// Farben des Panels für das laufende Windows-Design: bei einem Design mit zwei Varianten die passende, sonst die
     /// Werte des Panels mit der Palette des Designs.
     /// </summary>
     public static DesignColors Effective(AppSettings s, PanelConfig panel, bool dark) =>
-        s.Look.Pair is { } pair && s.Theme == ThemeMode.System && s.Look.PairIsDark == dark
+        s.Look.Pair is { } pair && s.Look.PairIsDark == dark
             ? new DesignColors(pair.PanelColor, pair.AccentColor, pair.Palette)
             : new DesignColors(panel.PanelColor, panel.AccentColor, s.Look.Palette);
 
@@ -295,8 +360,61 @@ public static class Appearance
     /// Farbe aus der Reihe der Gruppenfarben für die Gruppe an Stelle <paramref name="index"/> (umlaufend); leer, wenn das
     /// Design keine Reihe hat.
     /// </summary>
-    public static string SeriesColor(AppSettings s, int index) =>
-        s.Look.GroupColors.Count == 0 ? string.Empty : s.Look.GroupColors[(index % s.Look.GroupColors.Count + s.Look.GroupColors.Count) % s.Look.GroupColors.Count];
+    public static string SeriesColor(AppSettings s, int index)
+    {
+        var colors = GroupPalette(s, IsDarkNow);
+        return colors.Count == 0 ? string.Empty : colors[(index % colors.Count + colors.Count) % colors.Count];
+    }
+
+    /// <summary>
+    /// Farbreihe für Gruppen in der Variante <paramref name="dark"/>: die der zweiten Variante, wenn das Design dafür eine
+    /// eigene hat, sonst die der Hauptvariante.
+    /// </summary>
+    public static IReadOnlyList<string> GroupPalette(AppSettings s, bool dark) =>
+        s.Look.Pair != null && s.Look.PairIsDark == dark && s.Look.PairGroupColors.Count > 0 ? s.Look.PairGroupColors : s.Look.GroupColors;
+
+    /// <summary>
+    /// Läuft die Oberfläche gerade dunkel? Setzt das Design beim Anwenden (Windows kann jederzeit umschalten); bestimmt,
+    /// welche Farbreihe der Gruppen gilt.
+    /// </summary>
+    public static bool IsDarkNow { get; set; } = true;
+
+    // ---- Farbangaben für Gruppen und Schlagworte -------------------------------------------
+
+    /// <summary>Gespeicherte Farbe „keine Farbe“ (auch nicht vom Design).</summary>
+    public const string NoColor = "none";
+    private const string DesignColorPrefix = "design:";
+
+    /// <summary>Gespeicherte Farbe „Farbe Nr. <paramref name="index"/> der Reihe des Designs“ (0-basiert).</summary>
+    public static string DesignColor(int index) => DesignColorPrefix + index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Stelle in der Reihe des Designs, wenn <paramref name="value"/> darauf verweist; sonst null.</summary>
+    public static int? DesignColorIndex(string? value) =>
+        value != null && value.StartsWith(DesignColorPrefix, StringComparison.OrdinalIgnoreCase)
+        && int.TryParse(value.AsSpan(DesignColorPrefix.Length), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var i)
+            ? i : null;
+
+    /// <summary>
+    /// Gespeicherte Farbe vereinheitlichen: „#RRGGBB“, „design:N“, „none“ – sonst leer (= automatisch bzw. wie die übergeordnete Gruppe).
+    /// </summary>
+    public static string NormalizeColorRef(string? value)
+    {
+        if (string.Equals(value, NoColor, StringComparison.OrdinalIgnoreCase)) return NoColor;
+        if (DesignColorIndex(value) is { } i) return DesignColor(Math.Clamp(i, 0, MaxGroupColors - 1));
+        return PanelColors.TryParse(value, out var c) ? c.Hex : string.Empty;
+    }
+
+    /// <summary>
+    /// Farbe zu einer gespeicherten Angabe: feste Farbe, Farbe aus der Reihe des Designs oder keine (leer). Null bei leerer
+    /// Angabe – dann entscheidet der Aufrufer (übergeordnete Gruppe, automatisch).
+    /// </summary>
+    public static string? ResolveColorRef(AppSettings s, string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return null;
+        if (string.Equals(value, NoColor, StringComparison.OrdinalIgnoreCase)) return string.Empty;
+        if (DesignColorIndex(value) is { } i) return SeriesColor(s, i);
+        return PanelColors.TryParse(value, out var c) ? c.Hex : null;
+    }
 
     /// <summary>Gleich bleibende Stelle in der Farbreihe für einen Namen (Schlagworte haben keine Reihenfolge).</summary>
     public static int SeriesIndex(string name) => name.Aggregate(0, (sum, c) => (sum * 31 + char.ToLowerInvariant(c)) & 0x7FFFFFFF);
@@ -304,6 +422,7 @@ public static class Appearance
     /// <summary>Vorlage auf ein Panel anwenden (Farbe, Deckkraft, Hintergrund, Milchglas, Weichzeichner, Akzent).</summary>
     public static void Apply(PanelConfig panel, DesignPreset p)
     {
+        if (p.GroupStyle is { } style) panel.GroupStyle = style;
         panel.PanelColor = p.PanelColor;
         panel.PanelOpacity = Math.Clamp(p.Opacity, 20, 100);
         panel.Acrylic = false;
@@ -323,7 +442,10 @@ public static class Appearance
         panel.Frost, s.UseWindowsAccent, panel.EffectiveBackdropSetting, panel.GlassBlur, panel.GlassSaturation, panel.AccentColor, IsCustom: true,
         Palette: s.Look.Palette, Pair: s.Look.Pair, FontFamily: s.Look.FontFamily.Length > 0 ? s.Look.FontFamily : null,
         MonoFontFamily: s.Look.MonoFontFamily.Length > 0 ? s.Look.MonoFontFamily : null,
-        GroupColors: JoinColors(s.Look.GroupColors), GroupColorsForTags: s.Look.GroupColorsForTags);
+        GroupColors: JoinColors(s.Look.GroupColors), GroupColorsForTags: s.Look.GroupColorsForTags, Corners: s.Corners, GroupStyle: panel.GroupStyle)
+    {
+        Pair = s.Look.Pair is { } pair ? pair with { GroupColors = JoinColors(s.Look.PairGroupColors) } : null
+    };
 
     private static string DescribeCustom(PanelConfig p) =>
         L.F("Custom design · {0}", PanelBackdrops.Label(p.EffectiveBackdropSetting).Split(' ')[0]) + (p.EffectiveBackdropSetting == PanelBackdrop.Solid ? "" : $", {p.PanelOpacity} %");

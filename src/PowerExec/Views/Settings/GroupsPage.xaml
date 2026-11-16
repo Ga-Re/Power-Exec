@@ -73,8 +73,8 @@
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Ellipse Width="12" Height="12" Margin="0,0,8,0" Stroke="{DynamicResource Border.Control}" StrokeThickness="1"
-                                                                         Fill="{Binding Key, Converter={StaticResource HexBrush}}"/>
-                                                                <TextBlock Text="{Binding Value}"/>
+                                                                         Fill="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}"/>
+                                                                <TextBlock Text="{Binding Name}"/>
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ComboBox.ItemTemplate>

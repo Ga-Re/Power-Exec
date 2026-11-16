@@ -6,7 +6,7 @@ namespace PowerExec.UI.Core.Tests;
 public class DesignEditorViewModelTests
 {
     private static DesignPreset Start(bool custom = false) =>
-        new(custom ? "custom:abc12345" : "oled", "OLED", "", ThemeMode.Dark, "#000000", 100, 0, false, PanelBackdrop.Solid, AccentColor: "#3B82F6", IsCustom: custom);
+        new(custom ? "custom:abc12345" : string.Empty, "OLED", "", ThemeMode.Dark, "#000000", 100, 0, false, PanelBackdrop.Solid, AccentColor: "#3B82F6", IsCustom: custom);
 
     [Fact]
     public void SlotsShowDerivedColorsUntilTheyAreSet()
@@ -41,7 +41,7 @@ public class DesignEditorViewModelTests
     [Fact]
     public void OtherVariantStartsAsMatchingCounterpartNotWhite()
     {
-        var abendrot = new DesignPreset("x", "Abendrot", "", ThemeMode.Dark, "#2D1B2E", 90, 15, false, AccentColor: "#FF8A65");
+        var abendrot = new DesignPreset(string.Empty, "Abendrot", "", ThemeMode.Dark, "#2D1B2E", 90, 15, false, AccentColor: "#FF8A65");
         var vm = new DesignEditorViewModel(new FakeDialogs { ColorAnswer = "#F5F5F5" }, abendrot, _ => null);
 
         // Ohne Paar: „Hell“ zeigt das helle Gegenstück (gleicher Farbton, gleicher Akzent) – nicht dieselben Farben
@@ -89,7 +89,7 @@ public class DesignEditorViewModelTests
         vm.SaveCommand.Execute(null);
         Assert.True(closed);
         Assert.StartsWith("custom:", vm.Result!.Key, StringComparison.Ordinal);
-        Assert.NotEqual("oled", vm.Result.Key);                        // mitgeliefertes Design bleibt unangetastet
+        Assert.NotEqual(string.Empty, vm.Result.Key);                  // neues Design: eigene Kennung
         Assert.True(vm.Result.IsCustom);
         Assert.Equal("Bahnschrift", vm.Result.FontFamily);
         Assert.Equal(8, Appearance.SplitColors(vm.Result.GroupColors).Count);

@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Graphit",
-  "Description": "Dunkel und deckend, klassische Akzentfarbe",
+  "Name": "Graphite",
+  "Description": "Dark and opaque with the classic accent color",
+  "Category": "Minimal",
+  "Translations": {
+    "de": {
+      "Name": "Graphit",
+      "Description": "Dunkel und deckend, klassische Akzentfarbe",
+      "Category": "Schlicht"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#1C1C1C",
   "Opacity": 100,
@@ -19,7 +27,7 @@
     "TextSecondary": "#ADADAD",
     "Selected": "#2A2A2A"
   },
-  "GroupColors": "#63B1EE, #9F63EE, #EE63B1, #EE9F63, #B1EE63, #63EE9F",
+  "GroupColors": "#7AB8F5, #A99BF0, #E89AB4, #E8B07A, #9CCB7E, #7FCFC8",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F2F2F2",
@@ -31,6 +39,7 @@
       "Text": "#181F25",
       "TextSecondary": "#5E6366",
       "Selected": "#B2CADD"
-    }
+    },
+    "GroupColors": "#1F6FC2, #5B4BB5, #B03A65, #935818, #397328, #1F7A73"
   }
 }

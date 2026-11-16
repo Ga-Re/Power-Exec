@@ -70,15 +70,25 @@ public static class Tags
     public static string OwnColorOf(AppSettings s, string tag) =>
         s.TagColors.FirstOrDefault(kv => kv.Key.Equals(tag, StringComparison.OrdinalIgnoreCase)).Value ?? string.Empty;
 
-    /// <summary>Wirksame Farbe: die eigene, sonst – wenn das Design es vorsieht – eine aus seiner Farbreihe (je Name gleich bleibend).</summary>
+    /// <summary>
+    /// Wirksame Farbe: die eigene Angabe (feste Farbe, Farbe Nr. N des Designs oder „keine“), sonst – „vom Design
+    /// (automatisch)“, wenn das Design es vorsieht – eine aus seiner Farbreihe (je Name gleich bleibend).
+    /// </summary>
     public static string ColorOf(AppSettings s, string tag) =>
-        OwnColorOf(s, tag) is { Length: > 0 } own ? own
-        : s.Look.GroupColorsForTags ? Appearance.SeriesColor(s, Appearance.SeriesIndex(tag)) : string.Empty;
+        Appearance.ResolveColorRef(s, OwnColorOf(s, tag)) is { } own ? own
+        : s.Look.GroupColorsForTags ? Appearance.SeriesColor(s, AutoIndex(tag)) : string.Empty;
+
+    /// <summary>Farbe, die „automatisch“ ergäbe (nur wenn das Design seine Reihe auch für Schlagworte vorsieht).</summary>
+    public static string AutoColorOf(AppSettings s, string tag) =>
+        s.Look.GroupColorsForTags ? Appearance.SeriesColor(s, AutoIndex(tag)) : string.Empty;
+
+    /// <summary>Stelle in der Farbreihe, die einem Schlagwort „automatisch“ zufällt.</summary>
+    public static int AutoIndex(string tag) => Appearance.SeriesIndex(tag);
 
     public static void SetColor(AppSettings s, string tag, string? color)
     {
         foreach (var k in s.TagColors.Keys.Where(k => k.Equals(tag, StringComparison.OrdinalIgnoreCase)).ToList()) s.TagColors.Remove(k);
-        if (PanelColors.TryParse(color, out var c)) s.TagColors[tag] = c.Hex;
+        if (Appearance.NormalizeColorRef(color) is { Length: > 0 } c) s.TagColors[tag] = c;
     }
 
     public static void Set(AppSettings s, string path, IEnumerable<string> tags)

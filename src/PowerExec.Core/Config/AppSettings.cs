@@ -112,6 +112,15 @@ public sealed class AppSettings
     public AnimationMode Animation { get; set; } = AnimationMode.Smooth;
     public ThemeMode Theme { get; set; } = ThemeMode.System;
 
+    /// <summary>
+    /// Gewünschte Variante bei Designs mit heller und dunkler Variante: wie Windows, immer hell, immer dunkel. Daraus
+    /// (und aus dem Design) ergibt sich <see cref="Theme"/>.
+    /// </summary>
+    public ThemeMode Variant { get; set; } = ThemeMode.System;
+
+    /// <summary>Kennung des aktiven Designs (mitgeliefert, aus dem Marktplatz oder eigenes).</summary>
+    public string DesignKey { get; set; } = string.Empty;
+
     /// <summary>Akzentfarbe von Windows übernehmen (statt der festen Akzentfarbe des Designs).</summary>
     public bool UseWindowsAccent { get; set; }
 

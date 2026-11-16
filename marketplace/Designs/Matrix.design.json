@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Matrix",
-  "Description": "Terminal-Schwarz mit Phosphorgrün",
+  "Description": "Terminal black with phosphor green",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Matrix",
+      "Description": "Terminal-Schwarz mit Phosphorgrün",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#020A04",
   "Opacity": 97,
@@ -20,7 +28,7 @@
     "TextSecondary": "#A4B1A7",
     "Selected": "#114B1F"
   },
-  "GroupColors": "#63EE86, #63CAEE, #8663EE, #EE63CA, #EE8663, #CAEE63",
+  "GroupColors": "#3DFF6E, #B6FF5C, #34E0B4, #7CC7FF, #E6F57A, #9AF0C0",
   "GroupColorsForTags": true,
   "MonoFontFamily": "Cascadia Code",
   "Pair": {
@@ -33,6 +41,7 @@
       "Text": "#182C1D",
       "TextSecondary": "#5D6D61",
       "Selected": "#CAF7D6"
-    }
+    },
+    "GroupColors": "#0A7F2A, #427500, #0B7F64, #1E6AA8, #707500, #2E7D52"
   }
 }

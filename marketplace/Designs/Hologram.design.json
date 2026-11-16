@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Hologramm",
-  "Description": "Kühles Glas mit irisierendem Violett",
+  "Name": "Hologram",
+  "Description": "Cool glass with iridescent violet",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Hologramm",
+      "Description": "Kühles Glas mit irisierendem Violett",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#1A1F3A",
   "Opacity": 70,
@@ -20,7 +28,7 @@
     "TextSecondary": "#B2B3C0",
     "Selected": "#45436D"
   },
-  "GroupColors": "#8663EE, #EE63CB, #EE8663, #CBEE63, #63EE86, #63CBEE",
+  "GroupColors": "#A78BFA, #7DE3F4, #F49AD6, #9BF0C4, #F7C98B, #8EA6FF",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F1F2F6",
@@ -32,6 +40,7 @@
       "Text": "#25232C",
       "TextSecondary": "#66656D",
       "Selected": "#E5E2F7"
-    }
+    },
+    "GroupColors": "#6A4BD4, #0D7588, #B0397F, #18764E, #9A6312, #3F5BC9"
   }
 }

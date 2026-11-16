@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Minze",
-  "Description": "Hell und frisch mit Mintgrün",
+  "Name": "Mint",
+  "Description": "Light and fresh with mint green",
+  "Category": "Nature",
+  "Translations": {
+    "de": {
+      "Name": "Minze",
+      "Description": "Hell und frisch mit Mintgrün",
+      "Category": "Natur"
+    }
+  },
   "Theme": "Light",
   "PanelColor": "#F4FBF8",
   "Opacity": 100,
@@ -19,7 +27,7 @@
     "TextSecondary": "#616966",
     "Selected": "#D4ECE4"
   },
-  "GroupColors": "#30A680, #3056A6, #8030A6, #A63056, #A68030, #56A630",
+  "GroupColors": "#247A5F, #3572B2, #8A5CC2, #B25070, #95671A, #3D792D",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#112C21",
@@ -31,6 +39,7 @@
       "Text": "#F2F9F7",
       "TextSecondary": "#AAB7B3",
       "Selected": "#255041"
-    }
+    },
+    "GroupColors": "#6FD8B4, #7FB4F0, #BE9AF0, #F09AB8, #F0C46E, #95D67A"
   }
 }

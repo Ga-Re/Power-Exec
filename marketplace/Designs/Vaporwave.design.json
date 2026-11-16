@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Vaporwave",
-  "Description": "Pastell-Rosa mit Türkis-Akzent",
+  "Description": "Pastel pink with a turquoise accent",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Vaporwave",
+      "Description": "Pastell-Rosa mit Türkis-Akzent",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Light",
   "PanelColor": "#F6D6F0",
   "Opacity": 90,
@@ -20,7 +28,7 @@
     "TextSecondary": "#605E66",
     "Selected": "#D0D1E4"
   },
-  "GroupColors": "#15C1B4, #1523C1, #B415C1, #C11523, #C1B415, #23C115",
+  "GroupColors": "#086F68, #A43679, #6249B9, #275EA4, #835012, #2D6C2D",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#2C1127",
@@ -32,6 +40,7 @@
       "Text": "#F0FBFA",
       "TextSecondary": "#B1B0B6",
       "Selected": "#32414E"
-    }
+    },
+    "GroupColors": "#4FE0D4, #FF8AD0, #B9A0FF, #8AB8FF, #FFC07A, #9BE38A"
   }
 }

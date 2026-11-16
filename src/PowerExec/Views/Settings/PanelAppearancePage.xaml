@@ -1,4 +1,4 @@
-<!-- Einstellungen › Panel › Darstellung: Designs, Farben, Hintergrund, Größe. -->
+<!-- Einstellungen › Panel › Darstellung: Design wählen (gestaltet wird im Designer), Größe, Ansicht, Hover-Zone. -->
 <UserControl x:Class="PowerExec.Desktop.Views.Settings.PanelAppearancePage"
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -48,54 +48,53 @@
             </Setter>
         </Style>
 
-        <!-- Farbkachel wie in den Windows-Einstellungen: Quadrat, ausgewählt mit Rahmen und Häkchen -->
-        <DataTemplate x:Key="ColorTile">
-            <Button Command="{Binding SelectCommand}" ToolTip="{Binding ToolTip}" Margin="0,0,8,8" Cursor="Hand"
-                    AutomationProperties.Name="{Binding ToolTip}" FocusVisualStyle="{StaticResource FocusVisual}">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Grid Width="46" Height="46">
-                            <Border x:Name="Swatch" CornerRadius="{DynamicResource Radius.Control}" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
-                                    BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"/>
-                            <Border x:Name="Ring" CornerRadius="{DynamicResource Radius.Control}" BorderThickness="2" BorderBrush="{DynamicResource Text.Primary}" Visibility="Collapsed"/>
-                            <Border x:Name="Check" Width="18" Height="18" CornerRadius="{DynamicResource Radius.Control.CornerMark}" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Background="{DynamicResource Text.Primary}" Visibility="Collapsed">
-                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Bg.Window}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="Ring" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Swatch" Property="Opacity" Value="0.85"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
-        </DataTemplate>
     </UserControl.Resources>
     <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=look}">
         <TextBlock Text="{l:T 'Appearance'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'Everything about the look: design, entries, panel and hover zone.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
 
-        <TextBlock Text="{l:T 'General'}" Style="{StaticResource SettingsSection}"/>
-        <!-- Designvorlagen: ein Klick setzt Design, Panelfarbe, Hintergrund, Deckkraft, Milchglas und Akzent; eingeklappt nur die aktuelle -->
-        <c:SettingsExpander Icon="&#xE771;" Header="{l:T 'Design templates'}" Description="{Binding CurrentPresetText}"
-                            IsExpanded="{Binding PresetsExpanded, Mode=TwoWay}">
-            <c:SettingsExpander.HeaderContent>
-                <c:DesignPreview Width="132" Height="70" Design="{Binding CurrentDesign}" ToolTip="{Binding CurrentPresetText}"/>
-            </c:SettingsExpander.HeaderContent>
-            <StackPanel Margin="0,12,0,4">
-                <TextBlock Text="{l:T 'Sets design, panel color, background, opacity, frosted glass and accent color at once – adjustable individually afterwards.'}"
-                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12"/>
-                <ItemsControl ItemsSource="{Binding DesignPresets}" Focusable="False">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
+        <TextBlock Text="{l:T 'Design'}" Style="{StaticResource SettingsSection}"/>
+        <!-- Design: aktives Design, Auswahl, Variante. Farben, Hintergrund, Ecken, Gruppenstil und Schrift stellt man im Designer ein -->
+        <Border Style="{StaticResource Card}" Padding="16" Margin="0,0,0,4">
+            <StackPanel>
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{l:T 'Variant'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox Width="160" ItemsSource="{Binding Themes}" SelectedValue="{Binding Variant}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                  IsEnabled="{Binding CanChooseVariant}" ToolTip="{Binding VariantHint}" AutomationProperties.Name="{l:T 'Variant'}"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="{l:T 'Design'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}"/>
+                        <TextBlock Text="{l:T 'Colors, background, corners, group style and font come from the design – for the panel and all windows.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DockPanel>
+                <Border Margin="0,8,0,0" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1"
+                        Visibility="{Binding IsHighContrast, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{l:T 'Windows contrast theme is active: panel color, opacity, frosted glass and accent color are ignored so everything stays readable.'}" TextWrapping="Wrap" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Info.Text}"/>
+                </Border>
+                <!-- Aktives Design -->
+                <Border Margin="0,12,0,0" Padding="12" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}" BorderBrush="{DynamicResource Accent}" BorderThickness="2">
+                    <DockPanel>
+                        <c:DesignPreview DockPanel.Dock="Left" Width="150" Height="84" Design="{Binding ActiveDesign}" Margin="0,0,16,0"/>
+                        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding EditDesignCommand}" Content="{Binding EditDesignText}" HorizontalAlignment="Stretch" Margin="0,0,0,6"
+                                       ToolTip="{l:T 'Opens the designer: colors for light and dark, background, corners, fonts and group palette'}"/>
+                            <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding DuplicateDesignCommand}" Content="{l:T 'Edit as your own design'}" HorizontalAlignment="Stretch"
+                                       Visibility="{Binding ActiveIsReadOnly, Converter={StaticResource Vis}}"/>
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                            <TextBlock Text="{Binding ActiveDesignName}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding ActiveDesignText}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <!-- Meine Designs -->
+                <TextBlock Text="{l:T 'My designs'}" Style="{StaticResource RowTitle}" Margin="0,16,0,8"/>
+                <WrapPanel>
+                    <ItemsControl ItemsSource="{Binding OwnDesigns}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <!-- Feste Kachelgröße; das Löschen-Kreuz liegt innerhalb der Kachel oben rechts -->
@@ -109,7 +108,11 @@
                                             <StackPanel>
                                                 <c:DesignPreview Height="84" Design="{Binding Preset}"/>
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
-                                                <TextBlock Text="{Binding BackdropText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
+                                                               VerticalAlignment="Center" Visibility="{Binding IsReadOnly, Converter={StaticResource Vis}}" ToolTip="{l:T 'Read-only'}"/>
+                                                    <TextBlock Text="{Binding BackdropText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
                                                 <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
                                             </StackPanel>
                                         </Border>
@@ -129,37 +132,79 @@
                             </Button>
                             <!-- Eigene Designs: löschen -->
                             <Button Style="{StaticResource DeleteDesignButton}" Margin="0,12,12,0" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Command="{Binding DeleteCommand}" ToolTip="{l:T 'Delete custom design'}" AutomationProperties.Name="{l:T 'Delete custom design'}"
-                                    Visibility="{Binding IsCustom, Converter={StaticResource Vis}}"/>
+                                    Command="{Binding DeleteCommand}" ToolTip="{Binding DeleteText}" AutomationProperties.Name="{Binding DeleteText}"
+                                    Visibility="{Binding CanDelete, Converter={StaticResource Vis}}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Width="168" Height="176" Margin="0,0,8,8" Command="{Binding NewDesignCommand}"
+                               ToolTip="{l:T 'Start an empty design in the designer'}" AutomationProperties.Name="{l:T 'New design'}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{l:T 'New design'}" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </ui:Button>
+                </WrapPanel>
+                <!-- Mitgeliefert und heruntergeladen: schreibgeschützt -->
+                <TextBlock Text="{l:T 'Downloaded and built-in'}" Style="{StaticResource RowTitle}" Margin="0,8,0,8"/>
+                <ItemsControl ItemsSource="{Binding OtherDesigns}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <!-- Feste Kachelgröße; das Löschen-Kreuz liegt innerhalb der Kachel oben rechts -->
+                            <Grid Width="168" Height="176" Margin="0,0,8,8">
+                            <Button Command="{Binding ApplyCommand}" Padding="0" Cursor="Hand" ToolTip="{Binding Description}"
+                                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                                    AutomationProperties.Name="{Binding Name}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Card" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
+                                            <StackPanel>
+                                                <c:DesignPreview Height="84" Design="{Binding Preset}"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
+                                                <DockPanel>
+                                                    <TextBlock DockPanel.Dock="Right" Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
+                                                               VerticalAlignment="Center" Visibility="{Binding IsReadOnly, Converter={StaticResource Vis}}" ToolTip="{l:T 'Read-only'}"/>
+                                                    <TextBlock Text="{Binding BackdropText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
+                                                <TextBlock Text="{Binding Description}" FontSize="{StaticResource Font.Caption}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}" Height="30" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Border.Control}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- Eigene Designs: löschen -->
+                            <Button Style="{StaticResource DeleteDesignButton}" Margin="0,12,12,0" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Command="{Binding DeleteCommand}" ToolTip="{Binding DeleteText}" AutomationProperties.Name="{Binding DeleteText}"
+                                    Visibility="{Binding CanDelete, Converter={StaticResource Vis}}"/>
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <WrapPanel Margin="0,4,0,0">
-                    <ui:Button Style="{StaticResource Btn.Accent}" Margin="0,0,8,0" Command="{Binding EditDesignCommand}"
-                               ToolTip="{l:T 'Colors for light and dark, fonts and group colors with a live preview; saved as your own design'}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE790;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="{l:T 'Edit design …'}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </ui:Button>
-                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding SaveDesignCommand}"
-                               ToolTip="{l:T 'Save the panel\'s color, background, opacity, frosted glass and accent as your own template'}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="{l:T 'Save current design …'}" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </ui:Button>
-                </WrapPanel>
-                <TextBlock Text="{Binding LookText}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                <ui:Button Style="{StaticResource Btn.Subtle}" Command="{Binding MoreDesignsCommand}" HorizontalAlignment="Left" Margin="0,4,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{l:T 'More designs in the marketplace'}" VerticalAlignment="Center"/>
+                        <TextBlock Text="&#xE72A;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </ui:Button>
             </StackPanel>
-        </c:SettingsExpander>
-        <c:SettingsCard Icon="&#xE790;" Header="{l:T 'Design'}" Description="{l:T 'Light or dark for all windows. If a Windows contrast theme is active, Power-Exec uses its colors automatically.'}">
-                <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Themes}" SelectedValue="{Binding Theme}"/>
-        </c:SettingsCard>
-        <c:SettingsCard Icon="&#xF16B;" Header="{l:T 'Corners'}" Description="{l:T 'How strongly buttons, cards, the panel and floating windows are rounded.'}">
-                <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding CornerStyles}" SelectedValue="{Binding Corners}"/>
-        </c:SettingsCard>
+        </Border>
+
+        <TextBlock Text="{l:T 'General'}" Style="{StaticResource SettingsSection}"/>
         <c:SettingsCard Icon="&#xE8D3;" Header="{l:T 'Font and item size'}" Description="{l:T 'Enlarges text and controls in the panel and all windows (in addition to Windows scaling).'}">
                 <StackPanel Orientation="Horizontal">
                     <Slider Width="180" Minimum="80" Maximum="150" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding UiScalePercent}" VerticalAlignment="Center"
@@ -167,10 +212,6 @@
                     <TextBlock Text="{Binding UiScalePercent, StringFormat={}{0} %}" Width="70" TextAlignment="Right" VerticalAlignment="Center"/>
                 </StackPanel>
         </c:SettingsCard>
-        <Border Margin="0,0,0,4" Padding="12,8" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1"
-                Visibility="{Binding IsHighContrast, Converter={StaticResource Vis}}">
-            <TextBlock Text="{l:T 'Windows contrast theme is active: panel color, opacity, frosted glass and accent color are ignored so everything stays readable.'}" TextWrapping="Wrap" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Status.Info.Text}"/>
-        </Border>
         <c:SettingsCard Icon="&#xE916;" Header="{l:T 'Animation'}" Description="{l:T 'How the panel slides out and in.'}">
                 <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding Animations}" SelectedValue="{Binding Animation}"/>
         </c:SettingsCard>
@@ -186,121 +227,6 @@
         </c:SettingsCard>
 
         <TextBlock Text="{l:T 'Panel'}" Style="{StaticResource SettingsSection}"/>
-        <!-- Panelfarbe wie die Akzentfarbe in den Windows-Einstellungen: Auswahl und Chevron rechts, darunter die Farbkacheln -->
-        <c:SettingsExpander Icon="&#xE790;" Header="{l:T 'Panel color'}" Description="{l:T 'Panel background. With light colors the text automatically turns dark.'}"
-                            IsExpanded="{Binding ColorsExpanded, Mode=TwoWay}">
-            <c:SettingsExpander.HeaderContent>
-                <StackPanel Orientation="Horizontal">
-                    <Border Width="40" Height="32" CornerRadius="{DynamicResource Radius.Control}" Margin="0,0,12,0" VerticalAlignment="Center"
-                            Background="{Binding PreviewColor, Converter={StaticResource ArgbBrush}, ConverterParameter=Bg.Panel}"
-                            BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" ToolTip="{Binding PreviewText}"/>
-                    <ComboBox Width="170" ItemsSource="{Binding ColorModeList}" SelectedValue="{Binding ColorMode}"
-                              DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Panel color'}"/>
-                </StackPanel>
-            </c:SettingsExpander.HeaderContent>
-            <StackPanel>
-                <DockPanel Style="{StaticResource SubSetting}">
-                    <ui:ToggleSwitch DockPanel.Dock="Right" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Use Windows accent color'}"
-                                     IsChecked="{Binding DataContext.UseWindowsAccent, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Use Windows accent color'}"/>
-                        <TextBlock Text="{l:T 'On: hover zone, selection and buttons in the Windows accent color (Personalization › Colors). Off: in the chosen panel color – lightened or darkened to match.'}"
-                                   Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </DockPanel>
-                <DockPanel Style="{StaticResource SubSetting}"
-                           Visibility="{Binding DataContext.UseWindowsAccent, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}, ConverterParameter=invert}">
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="28" Height="28" CornerRadius="{DynamicResource Radius.Control}" Margin="0,0,8,0" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"
-                                Background="{Binding AccentPreview, Converter={StaticResource ArgbBrush}, ConverterParameter=Accent}"/>
-                        <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Choose color'}" Command="{Binding PickAccentCommand}"/>
-                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'From panel color'}" Command="{Binding ResetAccentCommand}" Margin="8,0,0,0"
-                                   Visibility="{Binding HasAccentColor, Converter={StaticResource Vis}}"/>
-                    </StackPanel>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Custom accent color'}"/>
-                        <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}">
-                            <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding AccentText, Mode=OneWay}"/>
-                        </TextBlock>
-                    </StackPanel>
-                </DockPanel>
-                <TextBlock Text="{l:T 'The panel uses the surface of the light or dark design. For your own color, choose “Manual” above.'}"
-                           Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,12"
-                           Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
-                <StackPanel Margin="0,8,0,4" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
-                    <StackPanel Visibility="{Binding HasRecentColors, Converter={StaticResource Vis}}">
-                        <TextBlock Text="{l:T 'Recently used colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
-                        <ItemsControl ItemsSource="{Binding RecentColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,12">
-                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                        </ItemsControl>
-                    </StackPanel>
-                    <TextBlock Text="{l:T 'Panel colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
-                    <ItemsControl ItemsSource="{Binding PanelColorChoices}" ItemTemplate="{StaticResource ColorTile}" Focusable="False" Margin="0,0,0,12">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                    <TextBlock Text="{l:T 'Windows colors'}" Style="{StaticResource RowTitle}" Margin="0,0,0,8"/>
-                    <ItemsControl ItemsSource="{Binding WindowsColors}" ItemTemplate="{StaticResource ColorTile}" Focusable="False">
-                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="500" HorizontalAlignment="Left"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                </StackPanel>
-                <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowManualColors, Converter={StaticResource Vis}}">
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Show colors'}" Command="{Binding PickColorCommand}"
-                               VerticalAlignment="Center" ToolTip="{l:T 'Pick your own color in the color picker'}"/>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{l:T 'Custom colors'}"/>
-                        <TextBlock Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}">
-                            <Run Text="{l:T 'Current:'}"/> <Run Text="{Binding CustomColor, Mode=OneWay}" FontFamily="{DynamicResource MonoFont}"/>
-                        </TextBlock>
-                    </StackPanel>
-                </DockPanel>
-            </StackPanel>
-        </c:SettingsExpander>
-        <!-- Hintergrund: Auswahl und Chevron rechts, darunter die Regler der gewählten Variante -->
-        <c:SettingsExpander Icon="&#xE81E;" Header="{l:T 'Background'}" Description="{Binding BackdropDescription}"
-                            IsExpanded="{Binding BackdropExpanded, Mode=TwoWay}">
-            <c:SettingsExpander.HeaderContent>
-                <ComboBox Width="230" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}"
-                          DisplayMemberPath="Value" SelectedValuePath="Key" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Background'}"/>
-            </c:SettingsExpander.HeaderContent>
-            <StackPanel>
-                <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding GlassBlur}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
-                    <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
-                            Value="{Binding GlassBlur}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Blur strength'}"/>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Blur strength'}"/>
-                        <TextBlock Text="{l:T 'How strongly the desktop behind the panel is blurred.'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </DockPanel>
-                <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
-                    <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True"
-                            Value="{Binding GlassSaturation}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Saturation'}"/>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Saturation'}"/>
-                        <TextBlock Text="{l:T 'Color intensity of the desktop behind the glass (100 % = unchanged).'}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </DockPanel>
-                <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding Frost, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
-                    <Slider DockPanel.Dock="Right" Width="180" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
-                            Value="{Binding Frost}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Frosted glass'}"/>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Frosted glass'}"/>
-                        <TextBlock Text="{Binding FrostDescription}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </DockPanel>
-                <DockPanel Style="{StaticResource SubSetting}" Visibility="{Binding ShowOpacity, Converter={StaticResource Vis}}">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding PanelOpacity, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
-                    <Slider DockPanel.Dock="Right" Width="180" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
-                            Value="{Binding PanelOpacity}" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Opacity'}"/>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Opacity'}"/>
-                        <TextBlock Text="{Binding OpacityDescription}" Style="{StaticResource Caption}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </DockPanel>
-            </StackPanel>
-        </c:SettingsExpander>
         <c:SettingsExpander Icon="&#xE8A0;" Header="{l:T 'Mini dock at the edge'}"
                             Description="{l:T 'Narrow bar with the favorites on the chosen edge – one click starts, “⋯” opens the full panel. Replaces the hover zone.'}"
                             IsExpanded="{Binding DockExpanded, Mode=TwoWay}">
@@ -320,10 +246,6 @@
                 </DockPanel>
             </StackPanel>
         </c:SettingsExpander>
-        <c:SettingsCard Icon="&#xE8A1;" Header="{l:T 'Group style'}"
-                        Description="{l:T 'Accent stripe: calm, semi-transparent cards – the group color only as a stripe, in the icon and in the title. Colored cards: the whole group is tinted in its color.'}">
-            <ComboBox Style="{StaticResource RowCombo}" ItemsSource="{Binding GroupStyles}" SelectedValue="{Binding GroupStyle}" AutomationProperties.Name="{l:T 'Group style'}"/>
-        </c:SettingsCard>
         <c:SettingsCard Icon="&#xE8FD;" Header="{l:T 'Jump bar'}" Description="{l:T 'With two or more groups, one dot per group on the right of the panel – click jumps there, clicking again collapses it.'}">
             <ui:ToggleSwitch IsChecked="{Binding ShowJumpRail}" AutomationProperties.Name="{l:T 'Jump bar'}" />
         </c:SettingsCard>

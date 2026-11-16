@@ -128,8 +128,9 @@ public class PanelViewModelTests
         Assert.Null(g.AccentColor);
         Assert.Equal(ArgbColor.Transparent, g.CardBackgroundColor);
         Assert.Contains(g.ColorChoices, c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal));
-        Assert.DoesNotContain(g.ColorChoices, c => c.Name == "Farbe entfernen");
-        Assert.True(g.ColorChoices.Where(c => !c.IsAction).All(c => c.SwatchColor != null));
+        Assert.Contains(g.ColorChoices, c => c.Name == "Keine Farbe");
+        Assert.True(g.ColorChoices.First().IsCurrent);                     // ohne eigene Farbe: „Vom Design (automatisch)“
+        Assert.True(g.ColorChoices.Where(c => c.IsRow).SelectMany(c => c.Swatches!).All(c => c.SwatchColor != null));
     }
 
     [Fact]
@@ -146,7 +147,7 @@ public class PanelViewModelTests
         var accent = Assert.IsType<ArgbColor>(g.AccentColor);
         Assert.Equal(255, accent.A);
         Assert.NotEqual(new ArgbColor(255, 0xFF, 0xEB, 0x3B), accent); // auf Weiß abgedunkelt
-        Assert.Contains(g.ColorChoices, c => c.Name == "Farbe entfernen");
+        Assert.Contains(g.ColorChoices, c => c.Name.StartsWith("Eigene Farbe #FFEB3B", StringComparison.Ordinal) && c.IsCurrent);
     }
 
     [Fact]

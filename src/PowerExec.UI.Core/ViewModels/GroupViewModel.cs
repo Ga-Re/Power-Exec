@@ -188,17 +188,39 @@ public sealed class GroupViewModel : ObservableObject
     public ArgbColor CardBackgroundColor => ColorOf(0x24) ?? ArgbColor.Transparent;
     public ArgbColor CardBorderColor => ColorOf(0x73, readable: true) ?? ArgbColor.Transparent;
 
-    /// <summary>Untermenü „Farbe“: Vorgaben, dazu „Eigene Farbe …“ und – wenn gesetzt – „Farbe entfernen“.</summary>
+    /// <summary>
+    /// Untermenü „Farbe“: „vom Design (automatisch)“ bzw. bei Untergruppen „wie die übergeordnete Gruppe“, eine Reihe mit
+    /// den Farben des Designs (gespeichert wird die Stelle – die Farbe wechselt mit dem Design), eine Reihe fester
+    /// Akzentfarben, „Eigene Farbe …“ und „Keine Farbe“.
+    /// </summary>
     public IReadOnlyList<GroupColorChoice> ColorChoices
     {
         get
         {
+            var s = _app.Settings;
+            var path = GroupPath ?? string.Empty;
             var own = OwnColorHex;
-            var list = PanelColors.AccentPresets
-                .Select(p => new GroupColorChoice(p.Name, p.Hex, own.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand))
-                .ToList();
-            list.Add(new GroupColorChoice(L.T("Custom color …"), string.Empty, false, CustomColorCommand) { Glyph = "\uE790", IsFirstAction = true });
-            if (own.Length > 0) list.Add(new GroupColorChoice(L.T("Remove color"), string.Empty, false, SetColorCommand) { Glyph = "\uE894" });
+            var subgroup = GroupManager.ParentOf(path) != null;
+            var list = new List<GroupColorChoice>
+            {
+                new(PowerExec.UI.ViewModels.ColorChoices.AutoName(subgroup), string.Empty, own.Length == 0, SetColorCommand) { Swatch = GroupManager.AutoColorOf(s, path) }
+            };
+            var palette = Appearance.GroupPalette(s, Appearance.IsDarkNow);
+            if (palette.Count > 0)
+                list.Add(new GroupColorChoice(Appearance.Active(s) is { } d ? L.F("From the design “{0}”", d.DisplayName) : L.T("From the design"), string.Empty, false, null)
+                {
+                    Swatches = palette.Select((hex, i) => new GroupColorChoice(PowerExec.UI.ViewModels.ColorChoices.DesignColorName(i), Appearance.DesignColor(i),
+                        own.Equals(Appearance.DesignColor(i), StringComparison.OrdinalIgnoreCase), SetColorCommand)
+                    { Swatch = hex }).ToList()
+                });
+            list.Add(new GroupColorChoice(L.T("Fixed color"), string.Empty, false, null)
+            {
+                Swatches = PanelColors.AccentPresets.Select(p => new GroupColorChoice(p.Name, p.Hex, own.Equals(p.Hex, StringComparison.OrdinalIgnoreCase), SetColorCommand)).ToList()
+            });
+            var custom = PanelColors.TryParse(own, out var c) && !PanelColors.AccentPresets.Any(p => p.Hex.Equals(c.Hex, StringComparison.OrdinalIgnoreCase));
+            list.Add(new GroupColorChoice(custom ? L.F("Custom color {0} …", c.Hex) : L.T("Custom color …"), string.Empty, custom, CustomColorCommand)
+            { Glyph = "\uE790", IsFirstAction = true });
+            list.Add(new GroupColorChoice(L.T("No color"), Appearance.NoColor, own == Appearance.NoColor, SetColorCommand) { Glyph = "\uE894" });
             return list;
         }
     }
@@ -310,10 +332,17 @@ public sealed class GroupViewModel : ObservableObject
 }
 
 /// <summary>Eintrag im Menü „Farbe“ einer Gruppe.</summary>
-public sealed record GroupColorChoice(string Name, string Hex, bool IsCurrent, ICommand Command)
+public sealed record GroupColorChoice(string Name, string Hex, bool IsCurrent, ICommand? Command)
 {
-    /// <summary>Farbpunkt; bei Aktionen („Eigene Farbe …“, „Farbe entfernen“) keiner.</summary>
-    public ArgbColor? SwatchColor { get; } = ArgbColor.FromHex(Hex);
+    /// <summary>Angezeigte Farbe, wenn der gespeicherte Wert keine ist („design:2“, automatisch).</summary>
+    public string? Swatch { get; init; }
+
+    /// <summary>Farbpunkt; bei Aktionen („Eigene Farbe …“, „Keine Farbe“) keiner.</summary>
+    public ArgbColor? SwatchColor => ArgbColor.FromHex(Swatch ?? Hex);
+
+    /// <summary>Zeile mit Farbfeldern (Farben des Designs, feste Farben) statt eines einzelnen Eintrags.</summary>
+    public IReadOnlyList<GroupColorChoice>? Swatches { get; init; }
+    public bool IsRow => Swatches != null;
 
     /// <summary>Symbol einer Aktion statt Farbpunkt.</summary>
     public string Glyph { get; init; } = string.Empty;

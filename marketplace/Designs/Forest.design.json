@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Wald",
-  "Description": "Dunkles Moosgrün mit frischem Grün",
+  "Name": "Forest",
+  "Description": "Dark moss green with fresh green",
+  "Category": "Nature",
+  "Translations": {
+    "de": {
+      "Name": "Wald",
+      "Description": "Dunkles Moosgrün mit frischem Grün",
+      "Category": "Natur"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#1B2A1F",
   "Opacity": 95,
@@ -19,7 +27,7 @@
     "TextSecondary": "#B1B8B0",
     "Selected": "#405735"
   },
-  "GroupColors": "#ACD47D, #7DD4A5, #7DACD4, #A57DD4, #D47DAC, #D4A57D",
+  "GroupColors": "#9CCB6B, #5FB38A, #C49A6C, #D7CF7A, #4FA597, #C97B8E",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F2F5F3",
@@ -31,6 +39,7 @@
       "Text": "#23281E",
       "TextSecondary": "#656A62",
       "Selected": "#E2EDD8"
-    }
+    },
+    "GroupColors": "#487325, #2E7D5B, #8A5A2B, #7D7118, #2B6F66, #9A4058"
   }
 }

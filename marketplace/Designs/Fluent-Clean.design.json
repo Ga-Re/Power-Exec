@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Fluent Clean",
-  "Description": "Dezentes Anthrazit wie Explorer und Einstellungen",
+  "Description": "Subtle charcoal like Explorer and Settings",
+  "Category": "Minimal",
+  "Translations": {
+    "de": {
+      "Name": "Fluent Clean",
+      "Description": "Dezentes Anthrazit wie Explorer und Einstellungen",
+      "Category": "Schlicht"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#202020",
   "Opacity": 85,
@@ -19,7 +27,7 @@
     "TextSecondary": "#AFAFAF",
     "Selected": "#2D2D2D"
   },
-  "GroupColors": "#63B1EE, #9F63EE, #EE63B1, #EE9F63, #B1EE63, #63EE9F",
+  "GroupColors": "#60CDFF, #B4A0FF, #FF99A4, #FFB86C, #6CCB5F, #4CC2C4",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F2F2F2",
@@ -31,6 +39,7 @@
       "Text": "#181F25",
       "TextSecondary": "#5E6366",
       "Selected": "#B2CADD"
-    }
+    },
+    "GroupColors": "#005FB8, #6B4FBB, #C42B1C, #9D5D00, #107C10, #00727C"
   }
 }
