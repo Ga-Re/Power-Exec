@@ -169,7 +169,7 @@
                     <ui:CardExpander.Header>
                         <DockPanel>
                             <ContentControl DockPanel.Dock="Right" Content="{Binding TargetInherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                            <TextBlock Text="{Binding DataContext.Entry.KindLabel, RelativeSource={RelativeSource AncestorType=Window}}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{l:T 'Target / code'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                     </ui:CardExpander.Header>
                     <StackPanel Margin="0,8,0,4">

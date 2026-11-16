@@ -1521,6 +1521,8 @@ public sealed partial class SelfTestController : AppController
                 await Settle();
                 // Vererbung: Werte kommen vom Standard; ✎ macht sie eigen, ↺ setzt zurück
                 var standardEdit = profilesVm.Profiles.First(p => p.IsDefault);
+                // Frisch übernommenes Profil: kein Hinweis „Standard geändert“, solange niemand den Standard geändert hat
+                if (other.HasStandardChanged) Fail("Vererbung: Hinweis „Standard geändert“ ohne Änderung – " + other.StandardChangedText);
                 if (!other.RunAsInherit.IsOwn)
                 {
                     standardEdit.Dialog = standardEdit.Dialog == DialogMode.Always ? DialogMode.Never : DialogMode.Always;
@@ -1538,8 +1540,15 @@ public sealed partial class SelfTestController : AppController
                 if (!standardEdit.HasCode) Fail("Vorschau: Script-Inhalt fehlt");
                 if (!standardEdit.CanEditFile) Fail("Vorschau: Script-Datei lässt sich nicht bearbeiten");
                 foreach (var expander in VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().ToList()) expander.IsExpanded = false;
-                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } preview) preview.IsExpanded = true;
+                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } preview)
+                {
+                    preview.IsExpanded = true;
+                    await Settle();
+                    preview.BringIntoView();
+                }
                 await Settle();
+                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } shown)
+                    Dispatcher.CurrentDispatcher.Invoke(shown.BringIntoView, DispatcherPriority.Background);
                 if (editor.Content is FrameworkElement previewRoot) Screenshot(previewRoot, "eintrag-vorschau");
                 standardEdit.EditCodeCommand.Execute(null);
                 await Settle();

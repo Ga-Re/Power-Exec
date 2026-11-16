@@ -702,14 +702,14 @@ public sealed class ProfilesViewModel : ObservableObject
             ? entry.Profiles.Select(p => p.Clone()).ToList()
             : new List<LaunchProfile> { ProfileResolver.CreateImplicit(target, item) };
         if (!profiles.Any(p => p.IsDefault)) profiles[0].IsDefault = true;
-        // Umzug ins Vererbungsmodell: Werte, die dem Standard gleichen, gelten als geerbt, abweichende als eigen
-        var standardProfile = profiles.First(p => p.IsDefault);
-        foreach (var p in profiles.Where(p => !p.IsDefault && p.Own == null))
-        {
-            p.Own = ProfileInheritance.Differences(standardProfile, p);
-            p.OwnBase = p.Own.ToDictionary(k => k, k => ProfileInheritance.Snapshot(standardProfile, k), StringComparer.OrdinalIgnoreCase);
-        }
+        var legacy = profiles.Where(p => !p.IsDefault && p.Own == null).ToHashSet();
         foreach (var p in profiles) Profiles.Add(new ProfileEditViewModel(this, p));
+        // Umzug ins Vererbungsmodell: Werte, die dem Standard gleichen, gelten als geerbt, abweichende als eigen. Verglichen
+        // wird erst hier, mit den Werten, wie das Fenster sie zeigt (z. B. Vorgaben aller Script-Parameter) – sonst
+        // erschienen gleiche Werte als verschieden.
+        var standardVm = Profiles[profiles.FindIndex(p => p.IsDefault)];
+        for (var i = 0; i < profiles.Count; i++)
+            if (legacy.Contains(profiles[i])) Profiles[i].RebaseOn(standardVm);
         _selected = Profiles.FirstOrDefault(p => p.IsDefault) ?? Profiles[0];
         _selected.IsSelected = true;
         foreach (var p in Profiles) { p.BuildVariables(); p.LoadCode(); p.RefreshInheritance(); }

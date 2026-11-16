@@ -210,4 +210,26 @@ public class ProfileInheritanceViewModelTests
         Assert.True(admin.WindowInherit.IsInherited);                      // gleicher Wert → geerbt
         Assert.Equal(1, admin.OwnCount);
     }
+
+    [Fact]
+    public void LegacyScriptProfileWithParametersShowsNoFalseStandardChange()
+    {
+        var host = new FakeEntryHost();
+        var item = new LaunchItem { FullPath = @"C:\Scripts\Reset.ps1", Type = ItemType.PowerShell, RootFolder = @"C:\Scripts", DisplayName = "Reset.ps1" };
+        PowerExec.Core.Metadata.ScriptInfoReader.FillFromText(item, "param([Parameter(Mandatory)][string]$User, [string]$Mode = 'Reset', [switch]$Force)\nWrite-Host $User");
+        host.Settings.Entries.Add(new EntryConfig
+        {
+            Path = item.FullPath,
+            Profiles =
+            {
+                new LaunchProfile { Name = "Standard", IsDefault = true },              // ohne Parametereinstellungen gespeichert
+                new LaunchProfile { Name = "Set", Parameters = { ["Mode"] = new ParameterSetting { Mode = ParameterMode.Fixed, Value = "Unlock" } } }
+            }
+        });
+        var vm = new ProfilesViewModel(host, item, host.Settings, saveImmediately: false);
+        var set = vm.Profiles.Single(p => p.Name == "Set");
+        Assert.False(set.HasStandardChanged, set.StandardChangedText);
+        Assert.True(set.Parameters.Single(p => p.Name == "Mode").Inherit.IsOwn);
+        Assert.False(set.Parameters.Single(p => p.Name == "User").Inherit.IsOwn);  // gleiche Vorgabe → geerbt
+    }
 }
