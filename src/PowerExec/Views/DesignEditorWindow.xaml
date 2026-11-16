@@ -28,10 +28,13 @@
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Light'}" IsChecked="{Binding EditLight}"/>
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Dark'}" IsChecked="{Binding EditDark}"/>
             </StackPanel>
-            <TextBlock DockPanel.Dock="Left" Text="{l:T 'Edit design'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
-            <TextBox DockPanel.Dock="Left" Width="260" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'Name of the design'}"
+            <!-- Titel mit Ausgangsdesign darunter; der Hinweis bricht nie um (sonst wird der Kopf bei wenig Breite sehr hoch) -->
+            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Text="{l:T 'Edit design'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding StartText}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="240"/>
+            </StackPanel>
+            <TextBox Width="240" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'Name of the design'}"
                      AutomationProperties.Name="{l:T 'Name of the design'}" VerticalAlignment="Center"/>
-            <TextBlock Text="{Binding StartText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis"/>
         </DockPanel>
 
         <!-- Fuß -->
