@@ -51,13 +51,14 @@ public static class PanelSlide
     }
 
     /// <summary>
-    /// Fensterlage beim Gleiten innerhalb des Monitors: der Teil des Panels, der im Arbeitsbereich liegt. Das Fenster
-    /// wächst so von der Kante her und verlässt seinen Monitor nie – auch nicht für ein einzelnes Bild. Leer = nichts sichtbar.
+    /// Versatz des Panels gegenüber seiner Ziellage bei <paramref name="progress"/> (0 = eingefahren, 1 = ganz
+    /// ausgefahren), ungerundet. Für das Gleiten an Ort und Stelle: das Fenster steht an der Ziellage, der Inhalt wird um
+    /// diesen Versatz verschoben – was über das Fenster hinausragt, ist nicht zu sehen.
     /// </summary>
-    public static Rectangle Inside(Rectangle panelAt, Rectangle workArea)
+    public static (double X, double Y) Offset(Rectangle panel, Rectangle hidden, double progress)
     {
-        var r = Rectangle.Intersect(panelAt, workArea);
-        return r.Width <= 0 || r.Height <= 0 ? Rectangle.Empty : r;
+        var rest = 1 - Math.Clamp(progress, 0, 1);
+        return ((hidden.X - panel.X) * rest, (hidden.Y - panel.Y) * rest);
     }
 
     /// <summary>So weit reichen Schatten und Rand, die Windows um ein Fenster zeichnet (Pixel, großzügig bemessen).</summary>

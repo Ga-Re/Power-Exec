@@ -166,22 +166,27 @@ internal sealed class PanelGlassHost : IDisposable
     }
 
     /// <summary>
-    /// Folgt das Kindfenster der Größe des Fensters? Beim Gleiten am Nachbarmonitor wächst das Fenster von der Kante her;
-    /// der Inhalt behält dann seine volle Größe und wird mit <see cref="PlaceContent"/> darin verschoben.
+    /// Weichzeichner nur in diesem abgerundeten Bereich zeigen (Pixel relativ zum Fenster, darf über das Fenster
+    /// hinausreichen). Beim Gleiten an einer Kante mit Nachbarmonitor oder Taskleiste steht das Fenster fest, der Inhalt
+    /// gleitet darin – und der Weichzeichner wird genau unter dem Inhalt freigelegt.
     /// </summary>
-    public bool FollowParent { get; set; } = true;
-
-    /// <summary>Kindfenster an diese Lage (relativ zum Fenster, auch negativ) in voller Panelgröße setzen.</summary>
-    public void PlaceContent(int x, int y, int width, int height)
+    public void ClipGlass(float left, float top, float right, float bottom, float radius)
     {
-        if (_contentHost is not { IsDisposed: false } host || host.Handle == IntPtr.Zero || width <= 0 || height <= 0) return;
-        NativeMethods.SetWindowPos(host.Handle, IntPtr.Zero, x, y, width, height, NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
+        if (_glass is not GlassBackdrop glass || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        glass.SetClip(left, top, right, bottom, radius);
     }
 
-    /// <summary>Kindfenster immer so groß wie der Fensterinhalt (außer beim Gleiten am Nachbarmonitor).</summary>
+    /// <summary>Weichzeichner wieder im ganzen Fenster (Panel steht).</summary>
+    public void UnclipGlass()
+    {
+        if (_glass is not GlassBackdrop glass || !OperatingSystem.IsWindowsVersionAtLeast(10, 0, PanelBackdrops.GlassBuild)) return;
+        glass.ClearClip();
+    }
+
+    /// <summary>Kindfenster immer so groß wie der Fensterinhalt.</summary>
     private IntPtr ParentHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == NativeMethods.WM_SIZE && FollowParent && _contentHost is { IsDisposed: false })
+        if (msg == NativeMethods.WM_SIZE && _contentHost is { IsDisposed: false })
         {
             var w = (int)((long)lParam & 0xFFFF);
             var h = (int)(((long)lParam >> 16) & 0xFFFF);

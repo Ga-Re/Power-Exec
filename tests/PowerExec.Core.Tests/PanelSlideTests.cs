@@ -116,28 +116,25 @@ public class PanelSlideTests
     }
 
     [Fact]
-    public void InsideNeverLeavesTheWorkArea()
+    public void OffsetMovesContentFromHiddenToTarget()
     {
         var work = new Rectangle(0, 0, 1920, 1040);
         var panel = new Rectangle(1920 - 420, 0, 420, 1040);
         var hidden = PanelSlide.Hidden(panel, work, ScreenEdge.Right);
-        for (var f = 0.0; f <= 1.0; f += 0.05)
-        {
-            var at = PanelSlide.At(panel, hidden, f);
-            var inside = PanelSlide.Inside(at, work);
-            if (inside.IsEmpty) continue;
-            Assert.True(work.Contains(inside), $"bei {f:0.00} ragt das Fenster hinaus: {inside}");
-            Assert.Equal(at.Right > work.Right ? work.Right : at.Right, inside.Right);
-        }
-        Assert.True(PanelSlide.Inside(hidden, work).IsEmpty);
-        Assert.Equal(panel, PanelSlide.Inside(panel, work));
+        Assert.Equal((420.0, 0.0), PanelSlide.Offset(panel, hidden, 0));
+        Assert.Equal((0.0, 0.0), PanelSlide.Offset(panel, hidden, 1));
+        Assert.Equal((210.0, 0.0), PanelSlide.Offset(panel, hidden, 0.5));
+        // außerhalb von 0–1 begrenzt
+        Assert.Equal((420.0, 0.0), PanelSlide.Offset(panel, hidden, -0.2));
 
-        // Linke Kante: der Inhalt liegt versetzt (negativ) im wachsenden Fenster
-        var left = new Rectangle(0, 0, 420, 1040);
-        var at2 = PanelSlide.At(left, PanelSlide.Hidden(left, work, ScreenEdge.Left), 0.5);
-        var in2 = PanelSlide.Inside(at2, work);
-        Assert.Equal(0, in2.X);
-        Assert.Equal(210, in2.Width);
-        Assert.Equal(-210, at2.X - in2.X);
+        // Unten mit Abstand zum Rand: der Weg reicht bis hinter den Arbeitsbereich
+        var bottom = new Rectangle(100, 1040 - 300 - 8, 800, 300);
+        var (x, y) = PanelSlide.Offset(bottom, PanelSlide.Hidden(bottom, work, ScreenEdge.Bottom), 0);
+        Assert.Equal(0, x);
+        Assert.Equal(308, y);
+
+        // Ungerundet, damit der Inhalt gleichmäßig gleitet
+        var left = new Rectangle(0, 0, 421, 1040);
+        Assert.Equal(-210.5, PanelSlide.Offset(left, PanelSlide.Hidden(left, work, ScreenEdge.Left), 0.5).X);
     }
 }
