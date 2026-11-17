@@ -479,20 +479,35 @@ public sealed class CategoryItemViewModel : ObservableObject
     public IDialogs? Dialogs { get; init; }
     public object? DialogOwner { get; init; }
 
-    public static IReadOnlyList<KeyValuePair<string, string>> ColorList => ColorChoices.WithNone;
-
-    /// <summary>Palette plus eine eigene Farbe, falls gesetzt.</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Colors => ColorChoices.Including(ColorOwn);
+    /// <summary>Vom Design (automatisch bzw. wie die übergeordnete Gruppe), Farben des Designs, Akzentfarben, eigene, keine.</summary>
+    /// <remarks>
+    /// Dieselbe Liste, solange sie den Wert enthält: eine neue Liste setzt die Auswahl zurück, das schriebe den Wert
+    /// zurück und baute wieder eine neue Liste – ohne Ende.
+    /// </remarks>
+    public IReadOnlyList<ColorOption> Colors
+    {
+        get
+        {
+            if (Settings == null) return Array.Empty<ColorOption>();
+            var own = ColorOwn;
+            if (_colors == null || !_colors.Any(o => o.Key.Equals(own, StringComparison.OrdinalIgnoreCase)))
+                _colors = ColorChoices.For(Settings, own, GroupManager.AutoColorOf(Settings, Name), GroupManager.ParentOf(Name) != null);
+            return _colors;
+        }
+    }
+    private IReadOnlyList<ColorOption>? _colors;
 
     public string ColorOwn
     {
         get => Settings != null ? GroupManager.OwnColorOf(Settings, Name) : string.Empty;
         set
         {
-            if (Settings == null) return;
+            // null: die Auswahlliste wurde neu gefüllt und hat ihre Auswahl verloren – keine Eingabe
+            if (Settings == null || value == null || value.Equals(ColorOwn, StringComparison.OrdinalIgnoreCase)) return;
+            var before = Colors;
             GroupManager.SetColor(Settings, Name, value);
             OnPropertyChanged();
-            OnPropertyChanged(nameof(Colors));
+            if (!ReferenceEquals(before, Colors)) OnPropertyChanged(nameof(Colors));
             OnPropertyChanged(nameof(SwatchColor));
         }
     }
@@ -502,7 +517,7 @@ public sealed class CategoryItemViewModel : ObservableObject
 
     public ICommand CustomColorCommand => new RelayCommand(() =>
     {
-        var t = Dialogs?.PickColor(L.F("Color for “{0}”", Display), ColorOwn, DialogOwner);
+        var t = Dialogs?.PickColor(L.F("Color for “{0}”", Display), Settings != null ? ColorChoices.PickerStart(Settings, ColorOwn) : string.Empty, DialogOwner);
         if (t != null) ColorOwn = t;
     });
 
@@ -584,8 +599,6 @@ public sealed class SettingsViewModel : ObservableObject
 
         if (_s.Panels.Count == 0) _s.Panels.Add(new PanelConfig());
         Panel = new PanelSettingsViewModel(app, _s.Panels[0], _monitors, _s.RecentColors);
-        // Vorschau des aktuellen Designs folgt jeder Änderung an Farbe, Deckkraft, Hintergrund …
-        Panel.PropertyChanged += (_, _) => { OnPropertyChanged(nameof(CurrentPresetText)); OnPropertyChanged(nameof(CurrentDesign)); };
         EntryList = new CustomEntryListViewModel(app, _s, () => Categories.Select(c => c.Name).ToList());
         TagList = new TagsViewModel(app, _s, () => EntryList.ApplyTo(_s), () => EntryList.ReloadTags());
         foreach (var g in _s.MachineGroups) MachineGroups.Add(new MachineGroupViewModel(app, g, RemoveGroup));
@@ -747,7 +760,18 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<AnimationMode, string>(AnimationMode.Off, L.T("Off"))
     };
 
-    public ThemeMode Theme { get => _s.Theme; set { _s.Theme = value; OnPropertyChanged(); RaisePresets(); } }
+    /// <summary>Variante bei Designs mit heller und dunkler Variante: wie Windows, hell, dunkel.</summary>
+    public ThemeMode Variant
+    {
+        get => _s.Variant;
+        set
+        {
+            _s.Variant = value;
+            if (ActiveDesign.HasBothVariants) _s.Theme = value;
+            OnPropertyChanged();
+            RaisePresets();
+        }
+    }
     public IReadOnlyList<KeyValuePair<ThemeMode, string>> Themes { get; } = new[]
     {
         new KeyValuePair<ThemeMode, string>(ThemeMode.System, L.T("Like Windows")),
@@ -755,128 +779,97 @@ public sealed class SettingsViewModel : ObservableObject
         new KeyValuePair<ThemeMode, string>(ThemeMode.Light, L.T("Light"))
     };
 
-    // ---- Darstellung: Akzent, Größe, Vorlagen ---------------------------------------
+    /// <summary>Nur Designs mit beiden Varianten lassen die Wahl hell/dunkel zu.</summary>
+    public bool CanChooseVariant => ActiveDesign.HasBothVariants;
+    public string VariantHint => CanChooseVariant
+        ? L.T("Which variant of the design to use")
+        : ActiveDesign.PrimaryIsDark ? L.T("This design only has a dark variant") : L.T("This design only has a light variant");
 
-    public bool UseWindowsAccent { get => _s.UseWindowsAccent; set { _s.UseWindowsAccent = value; OnPropertyChanged(); RaisePresets(); } }
-
+    // ---- Darstellung: Größe und Designs -----------------------------------------------
 
     public int UiScalePercent { get => _s.UiScalePercent; set { _s.UiScalePercent = Math.Clamp(value / 10 * 10, Appearance.MinScale, Appearance.MaxScale); OnPropertyChanged(); } }
 
-    /// <summary>Form der Ecken in allen Fenstern.</summary>
-    public CornerStyle Corners { get => _s.Corners; set { _s.Corners = value; OnPropertyChanged(); } }
-    public IReadOnlyList<KeyValuePair<CornerStyle, string>> CornerStyles { get; } = new[]
-    {
-        new KeyValuePair<CornerStyle, string>(CornerStyle.Standard, L.T("Standard (like Windows 11)")),
-        new KeyValuePair<CornerStyle, string>(CornerStyle.Rounded, L.T("Rounded")),
-        new KeyValuePair<CornerStyle, string>(CornerStyle.Square, L.T("Square"))
-    };
-
     public bool IsHighContrast => _app.Theme.IsHighContrast;
 
-    /// <summary>Designvorlagen und eigene Designs: Design, Panelfarbe, Deckkraft, Hintergrund, Milchglas und Akzent mit einem Klick.</summary>
-    public IReadOnlyList<DesignPresetChoice> DesignPresets
+    /// <summary>Das aktive Design; unbekannt (etwa gelöscht): der aktuelle Stand als Design.</summary>
+    public DesignPreset ActiveDesign => Appearance.Active(_s) ?? Appearance.Capture(_s, Panel.ToConfig(), L.T("Current look")) with { Key = string.Empty };
+
+    public string ActiveDesignName => ActiveDesign.DisplayName;
+
+    /// <summary>Herkunft, Kategorie, Hintergrund und Varianten des aktiven Designs.</summary>
+    public string ActiveDesignText => DesignPresetChoice.Summary(ActiveDesign);
+
+    public bool ActiveIsReadOnly => !ActiveDesign.IsOwn;
+    public string EditDesignText => ActiveIsReadOnly ? L.T("View in designer …") : L.T("Edit in designer …");
+
+    /// <summary>Eigene Designs (bearbeitbar) – mit „Neues Design“.</summary>
+    public IReadOnlyList<DesignPresetChoice> OwnDesigns => Choices(Appearance.All(_s).Where(d => d.IsOwn));
+
+    /// <summary>Mitgelieferte und heruntergeladene Designs (schreibgeschützt).</summary>
+    public IReadOnlyList<DesignPresetChoice> OtherDesigns => Choices(Appearance.All(_s).Where(d => !d.IsOwn));
+
+    private IReadOnlyList<DesignPresetChoice> Choices(IEnumerable<DesignPreset> designs) =>
+        designs.Select(p => new DesignPresetChoice(p, p.Key == _s.DesignKey, new RelayCommand(() => ApplyDesign(p)),
+            p.IsCustom ? new RelayCommand(() => DeleteDesign(p)) : null)).ToList();
+
+    /// <summary>Design anwenden: Farben, Hintergrund, Ecken, Gruppenstil und Schrift – für das Panel und alle Fenster.</summary>
+    internal void ApplyDesign(DesignPreset p)
     {
-        get
-        {
-            var current = CurrentPreset?.Key;
-            return Appearance.All(_s).Select(p => new DesignPresetChoice(p, current == p.Key, new RelayCommand(() => ApplyPreset(p)),
-                p.IsCustom ? new RelayCommand(() => DeleteDesign(p)) : null)).ToList();
-        }
-    }
-
-    private DesignPreset? CurrentPreset
-    {
-        get
-        {
-            var probe = SettingsStore.Clone(_s);
-            probe.Panels = new List<PanelConfig> { Panel.ToConfig() };
-            return Appearance.Current(probe);
-        }
-    }
-
-    /// <summary>Kopfzeile der Designvorlagen: welche gerade aktiv ist.</summary>
-    public string CurrentPresetText => CurrentPreset is { } p ? L.T("Current: ") + p.Name : L.T("Current: custom settings");
-
-    /// <summary>Das aktuelle Aussehen als Design (Vorschau im Kopf der Designvorlagen, auch eingeklappt).</summary>
-    public DesignPreset CurrentDesign => Appearance.Capture(_s, Panel.ToConfig(), CurrentPreset?.Name ?? string.Empty);
-
-    private bool _presetsExpanded;
-    public bool PresetsExpanded { get => _presetsExpanded; set => Set(ref _presetsExpanded, value); }
-
-    private void ApplyPreset(DesignPreset p)
-    {
-        // App-weiter Teil des Designs: Palette, zweite Variante, Schrift, Gruppenfarben
+        _s.DesignKey = p.Key;
         _s.Look = Appearance.LookOf(p);
-        Theme = p.Pair != null ? ThemeMode.System : p.Theme; // Design mit zwei Varianten wechselt mit Windows mit
-        UseWindowsAccent = p.WindowsAccent;
-        if (p.Corners is { } corners) Corners = corners;
+        _s.Theme = Appearance.ThemeFor(_s, p);
+        _s.UseWindowsAccent = p.WindowsAccent;
+        if (p.Corners is { } corners) _s.Corners = corners;
         Panel.ApplyDesign(p);
+        OnPropertyChanged(nameof(Variant));
         RaisePresets();
     }
 
-    /// <summary>Aktuelles Aussehen unter einem Namen als eigenes Design speichern.</summary>
-    public ICommand SaveDesignCommand => _saveDesign ??= new RelayCommand(() =>
-    {
-        var name = _app.Dialogs.Ask(L.T("Save design"), L.T("Name for the current design (color, background, opacity, frosted glass, accent):"),
-            L.T("My design"), L.T("Save"), n => n.Trim().Length == 0 ? L.T("Please enter a name.")
-                : Appearance.All(_s).Any(d => d.IsCustom && d.Name.Equals(n.Trim(), StringComparison.OrdinalIgnoreCase)) ? L.T("A custom design with this name already exists.") : null);
-        if (name == null) return;
-        _s.CustomDesigns.Add(Appearance.Capture(_s, Panel.ToConfig(), name));
-        RaisePresets();
-    });
-    private ICommand? _saveDesign;
+    /// <summary>Designer für das aktive Design: eigene bearbeiten, andere ansehen (und als eigene Kopie bearbeiten).</summary>
+    public ICommand EditDesignCommand => _editDesign ??= new RelayCommand(() => OpenDesigner(ActiveDesign, duplicate: false));
+    /// <summary>Aktives (schreibgeschütztes) Design gleich als eigene Kopie im Designer öffnen.</summary>
+    public ICommand DuplicateDesignCommand => _duplicateDesign ??= new RelayCommand(() => OpenDesigner(ActiveDesign, duplicate: true));
+    /// <summary>Neues Design, ausgehend vom aktiven Aussehen.</summary>
+    public ICommand NewDesignCommand => _newDesign ??= new RelayCommand(() =>
+        OpenDesigner(ActiveDesign with { Key = string.Empty, Name = L.T("My design"), Category = null, Translations = null, BasedOn = null }, duplicate: false));
+    /// <summary>Marktplatz im Bereich „Designs“.</summary>
+    public ICommand MoreDesignsCommand => _moreDesigns ??= new RelayCommand(() => _app.ShowMarketplace("designs"));
+    private ICommand? _editDesign, _duplicateDesign, _newDesign, _moreDesigns;
 
-    /// <summary>
-    /// Design-Editor für das aktuelle Aussehen: Farben, helle und dunkle Variante, Schrift, Gruppenfarben. Ein eigenes
-    /// Design wird dabei ersetzt, alles andere wird als neues eigenes Design gespeichert und angewendet.
-    /// </summary>
-    public ICommand EditDesignCommand => _editDesign ??= new RelayCommand(() =>
+    private void OpenDesigner(DesignPreset start, bool duplicate)
     {
-        var current = CurrentPreset;
-        var start = current ?? CurrentDesign;
         var vm = new DesignEditorViewModel(_app.Dialogs, start, name =>
-            Appearance.All(_s).Any(d => d.IsCustom && d.Key != start.Key && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            Appearance.All(_s).Any(d => d.IsOwn && d.Key != start.Key && d.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
                 ? L.T("A custom design with this name already exists.") : null);
+        if (duplicate) vm.DuplicateCommand.Execute(null);
         _app.ShowDesignEditor(vm, _app.SettingsDialogOwner);
         if (vm.Result is not { } saved) return;
-        _s.CustomDesigns.RemoveAll(d => d.Key == saved.Key);
-        _s.CustomDesigns.Add(saved);
-        ApplyPreset(saved);
-    });
-    private ICommand? _editDesign;
-
-    /// <summary>Was das aktive Design über Farbe und Hintergrund hinaus festlegt (Zeile unter den Designvorlagen).</summary>
-    public string LookText
-    {
-        get
+        if (saved.IsOwn)
         {
-            var look = _s.Look;
-            var parts = new[]
-            {
-                look.Pair != null ? L.T("light and dark variant") : string.Empty,
-                look.Palette != null ? L.T("own palette") : string.Empty,
-                look.FontFamily.Length > 0 ? L.F("font {0}", look.FontFamily) : string.Empty,
-                look.GroupColors.Count > 0 ? L.F("{0} group colors", look.GroupColors.Count) : string.Empty
-            }.Where(t => t.Length > 0).ToList();
-            return parts.Count == 0 ? L.T("Palette, fonts, group colors and a light/dark pair are set in the design editor.") : L.T("This design also sets: ") + string.Join(", ", parts);
+            _s.CustomDesigns.RemoveAll(d => d.Key == saved.Key);
+            _s.CustomDesigns.Add(saved);
         }
+        ApplyDesign(saved);
     }
 
     private void DeleteDesign(DesignPreset p)
     {
-        if (!_app.Dialogs.Confirm(L.F("Delete the custom design “{0}”?", p.Name), L.T("Delete design"), destructive: true, owner: _app.SettingsDialogOwner)) return;
+        var question = p.IsDownloaded ? L.F("Remove the downloaded design “{0}”? You can download it again in the marketplace.", p.DisplayName)
+            : L.F("Delete the custom design “{0}”?", p.DisplayName);
+        if (!_app.Dialogs.Confirm(question, L.T("Delete design"), destructive: true, owner: _app.SettingsDialogOwner)) return;
         _s.CustomDesigns.RemoveAll(d => d.Key == p.Key);
         // Aus dem Marktplatz installiert? Dann gilt es dort wieder als nicht installiert
         _s.MarketplaceInstalls.RemoveAll(i => i.DesignKey == p.Key);
+        // Das aktive Design gelöscht: zurück zum Standard
+        if (_s.DesignKey == p.Key) ApplyDesign(Appearance.Presets[0]);
         RaisePresets();
     }
 
     private void RaisePresets()
     {
-        OnPropertyChanged(nameof(DesignPresets));
-        OnPropertyChanged(nameof(CurrentPresetText));
-        OnPropertyChanged(nameof(CurrentDesign));
-        OnPropertyChanged(nameof(LookText));
+        foreach (var name in new[] { nameof(OwnDesigns), nameof(OtherDesigns), nameof(ActiveDesign), nameof(ActiveDesignName), nameof(ActiveDesignText),
+                     nameof(ActiveIsReadOnly), nameof(EditDesignText), nameof(CanChooseVariant), nameof(VariantHint) })
+            OnPropertyChanged(name);
     }
 
     public ICommand ShowWelcomeCommand { get; }
@@ -1728,28 +1721,36 @@ public sealed class SettingsViewModel : ObservableObject
     }
 }
 
-/// <summary>Kachel einer Designvorlage in den Einstellungen.</summary>
+/// <summary>Kachel eines Designs in den Einstellungen.</summary>
 public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICommand ApplyCommand, ICommand? DeleteCommand = null)
 {
     public bool IsCustom => Preset.IsCustom;
+    /// <summary>Mitgeliefert oder heruntergeladen: im Designer nur ansehen, ändern als eigene Kopie.</summary>
+    public bool IsReadOnly => !Preset.IsOwn;
+    public bool CanDelete => DeleteCommand != null;
+    public string DeleteText => Preset.IsDownloaded ? L.T("Remove downloaded design") : L.T("Delete custom design");
     /// <summary>Akzent der Vorschau: eigene Akzentfarbe der Vorlage, sonst die aktuelle Akzentfarbe.</summary>
     public ArgbColor? AccentSwatch => ArgbColor.FromHex(Preset.AccentColor, 255);
     /// <summary>Kurzinfo zum Hintergrund (Glas, Vollton …) für die Kachel.</summary>
-    public string BackdropText => Preset.Backdrop switch
+    public string BackdropText => BackdropOf(Preset);
+    public string Name => Preset.DisplayName;
+    public string Description => Preset.DisplayDescription;
+
+    public static string BackdropOf(DesignPreset p) => p.Backdrop switch
     {
         PanelBackdrop.Glass => L.T("Glass"),
         PanelBackdrop.Solid => L.T("Solid"),
-        _ => Preset.Opacity < 100 ? L.F("Transparent {0} %", Preset.Opacity) : L.T("Opaque")
+        _ => p.Opacity < 100 ? L.F("Transparent {0} %", p.Opacity) : L.T("Opaque")
     };
-    public string Name => Preset.Name;
-    public string Description => Preset.Description;
-    /// <summary>Vorschau: Panelfarbe bzw. Grundfarbe des Designs.</summary>
-    public ArgbColor SwatchColor { get; } = PanelColors.TryParse(Preset.PanelColor, out var c)
-        ? ArgbColor.From(c)
-        : Preset.Theme == ThemeMode.Light ? new ArgbColor(255, 0xF3, 0xF3, 0xF3) : new ArgbColor(255, 0x2B, 0x2B, 0x2B);
-    /// <summary>Schriftfarbe auf der Vorschau (schwarz auf hell, weiß auf dunkel).</summary>
-    public ArgbColor InkColor { get; } = PanelColors.TryParse(Preset.PanelColor, out var c) && PanelColors.IsLight(c) || Preset.Theme == ThemeMode.Light && Preset.PanelColor.Length == 0
-        ? new ArgbColor(255, 0, 0, 0) : new ArgbColor(255, 255, 255, 255);
+
+    /// <summary>Herkunft · Kategorie · Hintergrund · Varianten (Zeile unter dem Namen).</summary>
+    public static string Summary(DesignPreset p) => string.Join(" · ", new[]
+    {
+        p.IsDownloaded ? L.T("Downloaded") : p.IsOwn ? L.T("Custom design") : p.Key.Length == 0 ? L.T("Current look") : L.T("Built in"),
+        p.DisplayCategory,
+        BackdropOf(p),
+        p.HasBothVariants ? L.T("light and dark") : p.PrimaryIsDark ? L.T("dark only") : L.T("light only")
+    }.Where(t => t.Length > 0));
 }
 
 /// <summary>Ein abonnierter Team-Katalog in den Einstellungen.</summary>

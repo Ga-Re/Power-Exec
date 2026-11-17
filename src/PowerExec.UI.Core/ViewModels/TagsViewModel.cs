@@ -24,7 +24,7 @@ public sealed class TagRowViewModel : ObservableObject
         ToggleCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         CustomColorCommand = new RelayCommand(() =>
         {
-            var hex = _owner.App.Dialogs.PickColor(L.F("Color for #{0}", Tag), _color, _owner.App.SettingsDialogOwner);
+            var hex = _owner.App.Dialogs.PickColor(L.F("Color for #{0}", Tag), ColorChoices.PickerStart(_owner.Settings, _color), _owner.App.SettingsDialogOwner);
             if (hex != null) Color = hex;
         });
     }
@@ -43,18 +43,29 @@ public sealed class TagRowViewModel : ObservableObject
         get => _color;
         set
         {
-            if (!Set(ref _color, value ?? string.Empty)) return;
+            // null: die Auswahlliste wurde neu gefüllt und hat ihre Auswahl verloren – keine Eingabe
+            if (value == null) return;
+            var before = Colors;
+            if (!Set(ref _color, value)) return;
             _owner.SetColor(this, _color);
-            OnPropertyChanged(nameof(Colors));
+            if (!ReferenceEquals(before, Colors)) OnPropertyChanged(nameof(Colors));
             OnPropertyChanged(nameof(ChipColor));
         }
     }
-    /// <summary>Palette plus die eigene Farbe, falls gesetzt (sonst bliebe die Auswahl leer).</summary>
-    public IReadOnlyList<KeyValuePair<string, string>> Colors => ColorChoices.Including(_color);
+    /// <summary>Vom Design (automatisch), Farben des Designs, Akzentfarben, eigene, keine – dieselbe Liste, solange sie den Wert enthält.</summary>
+    public IReadOnlyList<ColorOption> Colors
+    {
+        get
+        {
+            if (_colors == null || !_colors.Any(o => o.Key.Equals(_color, StringComparison.OrdinalIgnoreCase)))
+                _colors = ColorChoices.For(_owner.Settings, _color, Tags.AutoColorOf(_owner.Settings, Tag));
+            return _colors;
+        }
+    }
+    private IReadOnlyList<ColorOption>? _colors;
 
-    /// <summary>Hintergrund des Chips: getönt in der Farbe, sonst Standard.</summary>
-    /// <summary>Getönter Chip; null = Chip-Farbe des Designs.</summary>
-    public ArgbColor? ChipColor => ArgbColor.FromHex(_color, 0x55);
+    /// <summary>Getönter Chip in der wirksamen Farbe; null = Chip-Farbe des Designs.</summary>
+    public ArgbColor? ChipColor => ArgbColor.FromHex(Tags.ColorOf(_owner.Settings, Tag), 0x55);
 
     public ICommand RenameCommand { get; }
     public ICommand DeleteCommand { get; }
@@ -67,6 +78,8 @@ public sealed class TagsViewModel : ObservableObject
     private readonly ISettingsHost _app;
     internal ISettingsHost App => _app;
     private readonly AppSettings _s;
+    /// <summary>Arbeitskopie der Einstellungen (Farbreihe des Designs, Farben der Schlagworte).</summary>
+    internal AppSettings Settings => _s;
     private readonly Action _beforeChange;
     private readonly Action _afterChange;
     private string _query = string.Empty;

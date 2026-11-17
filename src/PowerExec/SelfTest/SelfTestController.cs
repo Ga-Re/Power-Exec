@@ -1002,10 +1002,11 @@ public sealed partial class SelfTestController : AppController
                 host.Window.HidePanel();
                 await Settle();
                 var colors = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null)?.ColorChoices;
-                if (colors == null || colors.Where(c => c.SwatchColor != null).Select(c => c.SwatchColor!.Value.ToString()).Distinct().Count() < 2) Fail("Farbmenü: Farben ohne eigene Vorschau");
+                var fixedRow = colors?.FirstOrDefault(c => c.IsRow && c.Name == "Feste Farbe");
+                if (fixedRow?.Swatches == null || fixedRow.Swatches.Select(c => c.SwatchColor?.ToString()).Distinct().Count() < 2) Fail("Farbmenü: feste Farben ohne eigene Vorschau");
                 if (colors != null && !colors.Any(c => c.Name.StartsWith("Eigene Farbe", StringComparison.Ordinal))) Fail("Farbmenü: „Eigene Farbe …“ fehlt im Untermenü");
-                var uncolored = vm.AllGroups.FirstOrDefault(g => g.GroupPath != null && g.OwnColorHex.Length == 0);
-                if (uncolored != null && uncolored.ColorChoices.Any(c => c.Name == "Farbe entfernen")) Fail("Farbmenü: „Farbe entfernen“ ohne eigene Farbe");
+                if (colors != null && !colors.Any(c => c.Name == "Keine Farbe")) Fail("Farbmenü: „Keine Farbe“ fehlt");
+                if (colors != null && colors.FirstOrDefault() is not { Name: "Vom Design (automatisch)" or "Wie übergeordnete Gruppe" }) Fail("Farbmenü: „Vom Design (automatisch)“ steht nicht oben");
                 await ShowAndClose(ColorPickerWindow.ForTest());
                 var railGroup = vm.Groups.FirstOrDefault(g => g.GroupPath != null);
                 if (railGroup != null)
@@ -1093,13 +1094,13 @@ public sealed partial class SelfTestController : AppController
             {
                 var sectionBefore = settingsVm.Section;
                 settingsVm.Section = "look";
-                settingsVm.Corners = CornerStyle.Rounded;
+                settingsVm.ApplyDesign(Appearance.Presets[0] with { Key = "custom:selftest-rund", Corners = CornerStyle.Rounded });
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 12 }) Fail("Ecken: „Rund“ setzt den Karten-Radius nicht auf 12");
                 if (settingsWindow.Content is FrameworkElement cornersRoot) Screenshot(cornersRoot, "settings-ecken-rund");
                 settingsVm = settingsWindow.CurrentViewModel;
-                settingsVm.Corners = CornerStyle.Standard;
+                settingsVm.ApplyDesign(Appearance.Presets[0] with { Corners = CornerStyle.Standard });
                 settingsWindow.ApplyNowForTest();
                 await Settle();
                 if (Application.Current.TryFindResource("Radius.Card") is not CornerRadius { TopLeft: 6 }) Fail("Ecken: „Standard“ stellt den Karten-Radius nicht wieder her");
@@ -1258,7 +1259,7 @@ public sealed partial class SelfTestController : AppController
                 // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
                 await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
                 await Settle();
-                if (marketVm.Tabs.Count != 6) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 6");
+                if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 5");
                 if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
                 if (marketVm.Page.Cards.Count == 0) Fail("Marktplatz: keine Karten in „Entdecken“");
                 else
@@ -1292,6 +1293,31 @@ public sealed partial class SelfTestController : AppController
                     if (marketVm.Tab != tab) Fail($"Marktplatz: Reiter „{tab}“ lässt sich nicht wählen");
                     if (marketWindow.Content is FrameworkElement marketRoot) Screenshot(marketRoot, "marktplatz-" + tab.ToLowerInvariant());
                 }
+
+                // Bereich Designs: eigene Navigation, Karten mit Mini-Panel, Details mit Farben, Ausprobieren und zurück
+                marketVm.IsDesignArea = true;
+                await Settle();
+                if (marketVm.Tab != "Design" || marketVm.Tabs.Count != 3) Fail($"Marktplatz: Bereich Designs mit „{marketVm.Tab}“ und {marketVm.Tabs.Count} Reitern");
+                if (marketVm.Page.Cards.Any(c => !c.IsDesignFile)) Fail("Marktplatz: Bereich Designs zeigt auch Einträge");
+                if (marketWindow.Content is FrameworkElement designRoot) Screenshot(designRoot, "marktplatz-designs");
+                if (marketVm.Page.Cards.FirstOrDefault(c => c.HasBothVariants) is { } designCard)
+                {
+                    designCard.ShowLightCommand.Execute(null);
+                    designCard.TogglePreviewCommand.Execute(null);
+                    await Settle();
+                    if (designCard.DesignColorRows.Count != 2) Fail($"Marktplatz: Design-Details mit {designCard.DesignColorRows.Count} statt 2 Varianten");
+                    if (marketWindow.Content is FrameworkElement detailRoot) Screenshot(detailRoot, "marktplatz-design-details");
+                    var keyBefore = marketVm.Page.Settings.DesignKey;
+                    designCard.TryCommand.Execute(null);
+                    await Settle();
+                    if (!marketVm.Page.IsTrying) Fail("Marktplatz: Ausprobieren zeigt keinen Hinweis");
+                    if (marketVm.Page.Settings.DesignKey == keyBefore) Fail("Marktplatz: Ausprobieren wendet das Design nicht an");
+                    if (marketWindow.Content is FrameworkElement tryRoot) Screenshot(tryRoot, "marktplatz-design-ausprobieren");
+                    marketVm.Page.RevertTryCommand.Execute(null);
+                    await Settle();
+                    if (marketVm.Page.Settings.DesignKey != keyBefore) Fail($"Marktplatz: nach „Zurück“ ist „{marketVm.Page.Settings.DesignKey}“ statt „{keyBefore}“ aktiv");
+                }
+                else if (marketVm.Page.Cards.Count > 0) Fail("Marktplatz: kein Design mit heller und dunkler Variante");
                 marketWindow.Close();
                 await Settle();
             }
@@ -1396,19 +1422,16 @@ public sealed partial class SelfTestController : AppController
                 var combos = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.ComboBox>().Where(c => c.IsVisible && !c.IsEditable).ToList();
                 if (combos.Any(c => c.Template?.FindName("PART_EditableTextBox", c) is FrameworkElement { IsVisible: true }))
                     Fail("Auswahllisten zeigen ein Eingabefeld (Fluent-Stil auf einem Vorlagenteil festgehalten)");
-                // Darstellung: Panelfarbe und Hintergrund als Ausklappbereiche mit den Reglern darunter
+                // Darstellung: nur noch Auswahl des Designs – Farben und Hintergrund stellt man im Designer ein
                 settingsVm.Section = "look";
-                settingsVm.Panel.ColorMode = "manual";
-                settingsVm.Panel.BackdropExpanded = true;
                 await Settle();
-                if (!settingsVm.Panel.ColorsExpanded) Fail("Panelfarbe: „Manuell“ klappt die Farben nicht auf");
                 var sliders = VisualDescendants(settingsWindow).OfType<System.Windows.Controls.Slider>().Where(x => x.IsVisible)
                     .Select(x => System.Windows.Automation.AutomationProperties.GetName(x)).ToList();
                 foreach (var name in new[] { "Deckkraft", "Milchglas" })
-                    if (!sliders.Contains(name)) Fail($"Hintergrund: Regler „{name}“ fehlt im Ausklappbereich");
-                if (settingsWindow.Content is FrameworkElement lookRoot) Screenshot(lookRoot, "settings-darstellung-ausgeklappt");
-                settingsVm.Panel.ColorMode = "design";
-                settingsVm.Panel.BackdropExpanded = false;
+                    if (sliders.Contains(name)) Fail($"Darstellung: Regler „{name}“ steht noch in den Einstellungen statt im Designer");
+                if (settingsVm.OtherDesigns.Count < 3) Fail($"Darstellung: {settingsVm.OtherDesigns.Count} mitgelieferte Designs statt mindestens 3");
+                if (!VisualDescendants(settingsWindow).OfType<Controls.DesignPreview>().Any(x => x.IsVisible)) Fail("Darstellung: keine Vorschau des aktiven Designs");
+                if (settingsWindow.Content is FrameworkElement lookRoot) Screenshot(lookRoot, "settings-darstellung-designs");
                 settingsVm.Section = "general";
                 await Settle();
                 static IEnumerable<DependencyObject> Tree(DependencyObject d)
@@ -1602,6 +1625,17 @@ public sealed partial class SelfTestController : AppController
                 designVm.EditLight = true;
                 await Settle();
                 if (designWindow.Content is FrameworkElement lightRoot) Screenshot(lightRoot, "design-editor-hell");
+                designVm.Section = "background";
+                designVm.Backdrop = PanelBackdrop.Glass;
+                await Settle();
+                if (designWindow.Content is FrameworkElement backgroundRoot) Screenshot(backgroundRoot, "design-editor-hintergrund");
+                designVm.Section = "general";
+                designVm.AddTranslationCommand.Execute(null);
+                await Settle();
+                if (designWindow.Content is FrameworkElement generalRoot) Screenshot(generalRoot, "design-editor-allgemein");
+                designVm.Section = "groups";
+                await Settle();
+                if (designWindow.Content is FrameworkElement groupsRoot) Screenshot(groupsRoot, "design-editor-gruppen");
                 designVm.SaveCommand.Execute(null);
                 await Settle();
                 if (designVm.Result is not { Pair: not null } saved) Fail("Design-Editor: Speichern liefert kein Design mit zwei Varianten");
@@ -1614,6 +1648,19 @@ public sealed partial class SelfTestController : AppController
                     if (probe.Look.FontFamily != "Bahnschrift" || probe.Look.GroupColors.Count != 3) Fail("Design: Schrift oder Gruppenfarben gehen beim Anwenden verloren");
                 }
                 if (designWindow.IsVisible) Fail("Design-Editor: Speichern schließt das Fenster nicht");
+
+                // Mitgeliefertes Design: schreibgeschützt, bis man eine eigene Kopie anlegt
+                var builtIn = new DesignEditorViewModel(Dialogs, Appearance.Presets[1], _ => null);
+                var builtInWindow = new DesignEditorWindow(builtIn);
+                builtInWindow.Show();
+                await Settle();
+                if (!builtIn.IsReadOnly) Fail("Design-Editor: mitgeliefertes Design ist nicht schreibgeschützt");
+                if (builtInWindow.Content is FrameworkElement readOnlyRoot) Screenshot(readOnlyRoot, "design-editor-schreibgeschuetzt");
+                builtIn.DuplicateCommand.Execute(null);
+                await Settle();
+                if (builtIn.IsReadOnly || !builtIn.Name.Contains("(eigen)", StringComparison.Ordinal)) Fail("Design-Editor: „Als eigenes Design bearbeiten“ legt keine Kopie an");
+                builtInWindow.Close();
+                await Settle();
             }
 
             Step("Eingaben mit Vorlage: Schlagworte und Rechner");

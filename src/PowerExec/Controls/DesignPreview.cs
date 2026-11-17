@@ -26,6 +26,12 @@ public sealed class DesignPreview : Border
 
     public DesignPreset? Design { get => (DesignPreset?)GetValue(DesignProperty); set => SetValue(DesignProperty, value); }
 
+    /// <summary>Welche Variante gezeigt wird: dunkel (true), hell (false) oder – null – wie das Design bzw. Windows.</summary>
+    public static readonly DependencyProperty ShowDarkProperty = DependencyProperty.Register(nameof(ShowDark), typeof(bool?), typeof(DesignPreview),
+        new PropertyMetadata(null, (d, _) => ((DesignPreview)d).Rebuild()));
+
+    public bool? ShowDark { get => (bool?)GetValue(ShowDarkProperty); set => SetValue(ShowDarkProperty, value); }
+
     private readonly Grid _root = new() { ClipToBounds = true };
     private Border? _panel;
     private Image? _blurred;
@@ -87,12 +93,16 @@ public sealed class DesignPreview : Border
         if (Design is not { } d) return;
 
         var winDark = ThemeService.SystemUsesDarkTheme();
-        var dark = d.Theme switch { ThemeMode.Light => false, ThemeMode.Dark => true, _ => winDark };
-        var panel = PanelColors.TryParse(d.PanelColor, out var pc) ? pc.ToColor()
-            : dark ? Color.FromRgb(0x20, 0x20, 0x20) : Color.FromRgb(0xF3, 0xF3, 0xF3);
-        var light = (0.299 * panel.R + 0.587 * panel.G + 0.114 * panel.B) > 150;
-        var ink = light ? Color.FromRgb(0x1B, 0x1B, 0x1B) : Colors.White;
-        var accent = PanelColors.TryParse(d.AccentColor, out var ac) ? ac.ToColor()
+        var dark = ShowDark ?? d.Theme switch { ThemeMode.Light => false, ThemeMode.Dark => true, _ => winDark };
+        // Die gezeigte Variante: das Paar, wenn es die andere Helligkeit ist; ohne Paar folgt nur ein „wie Windows“-Design
+        var usePair = d.Pair != null && dark != d.PrimaryIsDark;
+        if (d.Pair == null && d.Theme != ThemeMode.System) dark = d.PrimaryIsDark;
+        var colors = usePair ? new DesignColors(d.Pair!.PanelColor, d.Pair.AccentColor, d.Pair.Palette) : new DesignColors(d.PanelColor, d.AccentColor, d.Palette);
+        var resolved = Appearance.Resolve(colors, dark);
+        var groups = Appearance.SplitColors(usePair && Appearance.SplitColors(d.Pair!.GroupColors).Count > 0 ? d.Pair.GroupColors : d.GroupColors);
+        var panel = resolved.Surface.ToColor();
+        var ink = resolved.Text.ToColor();
+        var accent = !d.WindowsAccent && colors.AccentColor.Length > 0 ? resolved.Accent.ToColor()
             : TryFindResource("Accent") is SolidColorBrush ab ? ab.Color : Color.FromRgb(0x00, 0x78, 0xD4);
         var opacity = d.Backdrop == PanelBackdrop.Solid ? 1.0 : Math.Clamp(d.Opacity / 100.0, 0.2, 1.0);
 
@@ -141,17 +151,39 @@ public sealed class DesignPreview : Border
         }
 
         // Panel rechts bündig
-        var sub = Mix(panel, ink, 0.16);
-        var line = Mix(panel, ink, 0.45);
+        var sub = resolved.Card.ToColor();
+        var input = resolved.Input.ToColor();
+        var line = resolved.Line.ToColor();
+        var selectedColor = resolved.Selected.ToColor();
+        var radius = CornerRadii.Of(d.Corners ?? CornerStyle.Standard).Card / 3;
         var content = new StackPanel { Margin = new Thickness(6, 5, 6, 0) };
-        content.Children.Add(new TextBlock { Text = "Power-Exec", FontSize = 7.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(ink) });
-        content.Children.Add(new Border { Height = 7, CornerRadius = new CornerRadius(3.5), Margin = new Thickness(0, 4, 0, 0), Background = new SolidColorBrush(sub) });
+        var title = new TextBlock { Text = "Power-Exec", FontSize = 7.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(ink) };
+        if (!string.IsNullOrEmpty(d.FontFamily)) title.FontFamily = new FontFamily(d.FontFamily + ", Segoe UI");
+        content.Children.Add(title);
+        content.Children.Add(new Border
+        {
+            Height = 7,
+            CornerRadius = new CornerRadius(3.5),
+            Margin = new Thickness(0, 4, 0, 0),
+            Background = new SolidColorBrush(input),
+            BorderBrush = new SolidColorBrush(line),
+            BorderThickness = new Thickness(0.5)
+        });
         var selected = new Grid { Height = 7, Margin = new Thickness(0, 4, 0, 0) };
-        selected.Children.Add(new Border { CornerRadius = new CornerRadius(2), Background = new SolidColorBrush(sub) });
+        selected.Children.Add(new Border { CornerRadius = new CornerRadius(radius), Background = new SolidColorBrush(selectedColor) });
         selected.Children.Add(new Border { Width = 2.5, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(1.5), Background = new SolidColorBrush(accent) });
         content.Children.Add(selected);
-        content.Children.Add(Line(line, double.NaN, new Thickness(0, 4, 12, 0), 0.9));
-        content.Children.Add(Line(line, double.NaN, new Thickness(0, 3, 24, 0), 0.55));
+        // Gruppen in den Farben der Reihe (ohne Reihe: Linien in Textfarbe)
+        for (int i = 0; i < 2; i++)
+        {
+            var row = new DockPanel { Margin = new Thickness(0, 4, i == 0 ? 10 : 20, 0) };
+            var stripe = groups.Count > 0 && PanelColors.TryParse(groups[i % groups.Count], out var g) ? g.ToColor() : Mix(panel, ink, 0.45);
+            var mark = new Border { Width = 2.5, Height = 5, CornerRadius = new CornerRadius(1), Background = new SolidColorBrush(stripe), Margin = new Thickness(0, 0, 3, 0) };
+            DockPanel.SetDock(mark, Dock.Left);
+            row.Children.Add(mark);
+            row.Children.Add(new Border { Height = 5, CornerRadius = new CornerRadius(radius), Background = new SolidColorBrush(d.GroupStyle == GroupCardStyle.Tinted ? Mix(panel, stripe, 0.3) : sub) });
+            content.Children.Add(row);
+        }
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
         buttons.Children.Add(new Border { Width = 20, Height = 7, CornerRadius = new CornerRadius(2), Background = new SolidColorBrush(accent) });
         buttons.Children.Add(new Border { Width = 15, Height = 7, CornerRadius = new CornerRadius(2), Margin = new Thickness(3, 0, 0, 0), Background = new SolidColorBrush(sub) });

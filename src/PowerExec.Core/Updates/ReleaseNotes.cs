@@ -8,6 +8,16 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 37, 0), L.T("Designs: designer for everything, own marketplace area, group colors from the design"), new[]
+        {
+            L.T("Settings › Appearance only chooses the design now; colors, background, corners, group style and fonts are set in the designer"),
+            L.T("Built-in and downloaded designs are read-only – “Edit as your own design” creates a copy, the original keeps getting updates"),
+            L.T("Group and tag colors: “From the design (automatic)”, a fixed position of the design palette that changes with the design, fixed colors or none"),
+            L.T("Every design has its own group palette for the light and the dark variant, chosen to match the design"),
+            L.T("Designs have English names with translations (Wald is now Forest/Wald) and a category"),
+            L.T("Marketplace: designs have their own area with Discover, categories and My designs; details show colors, palette, fonts, corners and background; try a design out before keeping it"),
+            L.T("Your previous look is kept: if it matches no design, it becomes your own design “My settings”")
+        }),
         new ReleaseNote(new Version(0, 36, 1), L.T("Glass slides smoothly next to another monitor or the taskbar"), new[]
         {
             L.T("At an edge with a neighbouring monitor or the taskbar, the glass panel no longer resizes its window while sliding: the window stays in place, the content glides in like with clear glass and the blur is revealed underneath"),

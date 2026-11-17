@@ -116,17 +116,56 @@
                         <Setter Property="HeaderTemplate">
                             <Setter.Value>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
+                                    <Grid>
+                                    <StackPanel x:Name="Single" Orientation="Horizontal">
                                         <Ellipse x:Name="Dot" Width="14" Height="14" Fill="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}" Margin="0,0,10,0" VerticalAlignment="Center"
                                                  Stroke="{DynamicResource Border.Control}" StrokeThickness="1"/>
                                         <TextBlock x:Name="ActionIcon" Text="{Binding Glyph}" Style="{StaticResource Icon}" Width="14" Margin="0,0,10,0" FontSize="{StaticResource Icon.L}"
                                                    VerticalAlignment="Center" Visibility="Collapsed"/>
                                         <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                                     </StackPanel>
+                                    <!-- Zeile mit Farbfeldern: Farben des Designs bzw. feste Farben -->
+                                    <StackPanel x:Name="Row" Visibility="Collapsed" Margin="0,4,0,6">
+                                        <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" Margin="0,0,0,4"/>
+                                        <ItemsControl ItemsSource="{Binding Swatches}" Focusable="False">
+                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel MaxWidth="236"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Command="{Binding Command}" CommandParameter="{Binding Hex}" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}"
+                                                            infra:MenuSwatch.CloseMenuOnClick="True" Margin="0,0,6,6" Cursor="Hand">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="Ring" Width="26" Height="26" CornerRadius="7" BorderThickness="2" BorderBrush="Transparent" Padding="2">
+                                                                    <Border CornerRadius="5" Background="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}"
+                                                                            BorderBrush="{DynamicResource Border.Control}" BorderThickness="1"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                                        <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Text.Primary}"/>
+                                                                    </DataTrigger>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                                                        <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    </Grid>
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding IsAction}" Value="True">
                                             <Setter TargetName="Dot" Property="Visibility" Value="Collapsed"/>
                                             <Setter TargetName="ActionIcon" Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsRow}" Value="True">
+                                            <Setter TargetName="Single" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="Row" Property="Visibility" Value="Visible"/>
                                         </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
@@ -136,6 +175,11 @@
                             <!-- Trennlinie zwischen den Farben und den Aktionen „Eigene Farbe …“ / „Farbe entfernen“ -->
                             <DataTrigger Binding="{Binding IsFirstAction}" Value="True">
                                 <Setter Property="Tag" Value="Separator"/>
+                            </DataTrigger>
+                            <!-- Farbzeilen: der Eintrag selbst löst nichts aus und bleibt beim Klick daneben offen -->
+                            <DataTrigger Binding="{Binding IsRow}" Value="True">
+                                <Setter Property="StaysOpenOnClick" Value="True"/>
+                                <Setter Property="Focusable" Value="False"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

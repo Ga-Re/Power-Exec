@@ -41,7 +41,7 @@ public class SettingsMigrationTests
          "Panels":[{"Name":"A","Compact":true},{"Name":"B"}],
          "CustomEntries":[{"Id":"x","Kind":"Url","Target":"https://a","SingleClick":true}]}
         """);
-        Assert.Equal(14, s.DataVersion);
+        Assert.Equal(15, s.DataVersion);
         Assert.Equal(new[] { "AD", "AD 2", "Hidden" }, s.Folders.Select(f => f.Group));
         Assert.Contains("AD 2", GroupManager.All(s));
         Assert.Single(s.Panels);                                  // nur noch ein Panel

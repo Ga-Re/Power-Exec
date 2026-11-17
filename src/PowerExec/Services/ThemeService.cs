@@ -93,6 +93,7 @@ public static class ThemeService
             ThemeMode.Light => false,
             _ => SystemUsesDarkTheme()
         };
+        Appearance.IsDarkNow = IsDark; // Farbreihe der Gruppen: die der laufenden Variante
         var dict = new ResourceDictionary
         {
             Source = new Uri(IsDark ? "pack://application:,,,/Themes/Dark.xaml" : "pack://application:,,,/Themes/Light.xaml")

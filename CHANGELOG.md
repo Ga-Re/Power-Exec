@@ -2,6 +2,16 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.37.0 – Designs: Designer für alles, eigener Bereich im Marktplatz, Gruppenfarben vom Design
+
+- Einstellungen › Darstellung wählt jetzt nur noch das Design; Farben, Hintergrund, Ecken, Gruppenstil und Schrift stellt man im Designer ein
+- Mitgelieferte und heruntergeladene Designs sind schreibgeschützt – „Als eigenes Design bearbeiten“ legt eine Kopie an, das Original bekommt weiter Updates
+- Farben von Gruppen und Schlagworten: „Vom Design (automatisch)“, eine feste Stelle der Designpalette, die mit dem Design wechselt, feste Farben oder keine
+- Jedes Design hat eine eigene, passend gewählte Gruppenpalette für die helle und die dunkle Variante
+- Designs haben englische Namen mit Übersetzungen (aus Wald wird Forest/Wald) und eine Kategorie
+- Marktplatz: Designs haben einen eigenen Bereich mit Entdecken, Kategorien und Meine Designs; die Details zeigen Farben, Palette, Schrift, Ecken und Hintergrund; ein Design lässt sich vor dem Übernehmen ausprobieren
+- Das bisherige Aussehen bleibt erhalten: passt es zu keinem Design, wird es zum eigenen Design „Meine Einstellungen“
+
 ## 0.36.1 – Glas gleitet flüssig neben einem anderen Monitor oder der Taskleiste
 
 - An einer Kante mit Nachbarmonitor oder Taskleiste ändert das Glas-Panel beim Gleiten nicht mehr seine Fenstergröße: das Fenster steht fest, der Inhalt gleitet wie bei Klarglas herein und der Weichzeichner wird darunter freigelegt

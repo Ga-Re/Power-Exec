@@ -8,7 +8,7 @@
         Width="1100" Height="760" MinWidth="720" MinHeight="460" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="248"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <!-- Navigation: Bereiche mit Anzahl, darunter die Kategorien des gewählten Bereichs -->
@@ -16,6 +16,15 @@
             <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="12,20,12,12">
                     <TextBlock Text="{l:T 'Marketplace'}" Style="{StaticResource PageTitle}" Margin="12,0,0,12"/>
+                    <!-- Bereich: Einträge und Scripte oder Designs – jeweils mit eigener Navigation -->
+                    <Border CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource Bg.Input}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                            Margin="4,0,4,16" Padding="1">
+                        <UniformGrid Columns="2">
+                            <RadioButton x:Name="ItemArea" Style="{StaticResource Segment}" GroupName="MarketplaceArea" IsChecked="{Binding IsItemArea}"
+                                         Content="{l:T 'Entries'}" ToolTip="{l:T 'Entries and scripts'}" AutomationProperties.Name="{l:T 'Entries and scripts'}"/>
+                            <RadioButton x:Name="DesignArea" Style="{StaticResource Segment}" GroupName="MarketplaceArea" Content="{l:T 'Designs'}" IsChecked="{Binding IsDesignArea}"/>
+                        </UniformGrid>
+                    </Border>
                     <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>

@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Abendrot",
-  "Description": "Pflaume mit warmem Korall-Akzent",
+  "Name": "Sunset",
+  "Description": "Plum with a warm coral accent",
+  "Category": "Nature",
+  "Translations": {
+    "de": {
+      "Name": "Abendrot",
+      "Description": "Pflaume mit warmem Korall-Akzent",
+      "Category": "Natur"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#2D1B2E",
   "Opacity": 90,
@@ -19,7 +27,7 @@
     "TextSecondary": "#BCB1B6",
     "Selected": "#653F46"
   },
-  "GroupColors": "#EE8463, #CCEE63, #63EE84, #63CCEE, #8463EE, #EE63CC",
+  "GroupColors": "#FF8A65, #FFB870, #F2789F, #B98CE8, #F2CF6B, #7FA3E0",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F5F2F5",
@@ -31,6 +39,7 @@
       "Text": "#2C2320",
       "TextSecondary": "#6C6564",
       "Selected": "#F7E1DE"
-    }
+    },
+    "GroupColors": "#B44A2A, #9A5F16, #B23E68, #7A4FB5, #816611, #3D64A8"
   }
 }

@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Synthwave",
-  "Description": "Retro-Lila mit Sonnenuntergangs-Orange",
+  "Description": "Retro purple with sunset orange",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Synthwave",
+      "Description": "Retro-Lila mit Sonnenuntergangs-Orange",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#241034",
   "Opacity": 88,
@@ -20,7 +28,7 @@
     "TextSecondary": "#B9ACB5",
     "Selected": "#5E3139"
   },
-  "GroupColors": "#EE9863, #B9EE63, #63EE98, #63B9EE, #9863EE, #EE63B9",
+  "GroupColors": "#FF8A3D, #FF4FA3, #45E3FF, #B47CFF, #FFD447, #5CFFC8",
   "GroupColorsForTags": true,
   "FontFamily": "Bahnschrift",
   "Pair": {
@@ -33,6 +41,7 @@
       "Text": "#2C2119",
       "TextSecondary": "#6C6460",
       "Selected": "#F6DCD1"
-    }
+    },
+    "GroupColors": "#B5510A, #B81F6B, #00788F, #6A3FC9, #7F6500, #0C7558"
   }
 }

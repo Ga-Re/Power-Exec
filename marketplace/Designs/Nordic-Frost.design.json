@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Nordic Frost",
-  "Description": "Kühles Schiefergrau mit eisblauem Akzent und Eisglas",
+  "Description": "Cool slate gray with an ice-blue accent and frosted glass",
+  "Category": "Nature",
+  "Translations": {
+    "de": {
+      "Name": "Nordic Frost",
+      "Description": "Kühles Schiefergrau mit eisblauem Akzent und Eisglas",
+      "Category": "Natur"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#2E3440",
   "Opacity": 80,
@@ -19,7 +27,7 @@
     "TextSecondary": "#B7BBC0",
     "Selected": "#4D5D6A"
   },
-  "GroupColors": "#81BECF, #9381CF, #CF81BE, #CF9381, #BECF81, #81CF93",
+  "GroupColors": "#88C0D0, #81A1C1, #A3BE8C, #EBCB8B, #D4917B, #BA97B4",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F0F2F4",
@@ -31,6 +39,7 @@
       "Text": "#202324",
       "TextSecondary": "#636567",
       "Selected": "#CCD9DE"
-    }
+    },
+    "GroupColors": "#367081, #4C6A99, #547039, #7F621C, #A3512E, #7E5378"
   }
 }

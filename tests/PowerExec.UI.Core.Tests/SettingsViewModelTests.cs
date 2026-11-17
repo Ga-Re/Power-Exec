@@ -37,40 +37,69 @@ public class SettingsViewModelTests
     }
 
     [Fact]
-    public void DesignPresetsApplyGlassAndSaveOwnDesign()
+    public void DesignsAreChosenHereAndStyledInTheDesigner()
     {
-        var (host, vm) = Create(s => s.Panels.Add(new PanelConfig()));
-        Assert.False(vm.PresetsExpanded);
+        var (_, vm) = Create(s => s.Panels.Add(new PanelConfig()));
 
-        vm.DesignPresets.Single(p => p.Preset.Key == "glass").ApplyCommand.Execute(null);
+        vm.OtherDesigns.Single(p => p.Preset.Key == "glass").ApplyCommand.Execute(null);
         Assert.Equal(PanelBackdrop.Glass, vm.Panel.Backdrop);
         Assert.Equal(60, vm.Panel.GlassBlur);
         Assert.Equal(125, vm.Panel.GlassSaturation);
-        Assert.Equal("Aktuell: Glas", vm.CurrentPresetText);
-        Assert.True(vm.DesignPresets.Single(p => p.Preset.Key == "glass").IsCurrent);
+        Assert.Equal("Glas", vm.ActiveDesignName);
+        Assert.True(vm.OtherDesigns.Single(p => p.Preset.Key == "glass").IsCurrent);
+        Assert.True(vm.ActiveIsReadOnly);                       // mitgeliefert: nur ansehen, ändern als Kopie
+        Assert.All(vm.OtherDesigns, d => Assert.True(d.IsReadOnly));
+        Assert.Empty(vm.OwnDesigns);
 
-        vm.DesignPresets.Single(p => p.Preset.Key == "oled").ApplyCommand.Execute(null);
+        vm.OtherDesigns.Single(p => p.Preset.Key == "oled").ApplyCommand.Execute(null);
         Assert.Equal("#000000", vm.Panel.PanelColor);
-        Assert.True(vm.UseWindowsAccent);
-        Assert.Equal(3, vm.DesignPresets.Count(p => !p.IsCustom)); // weitere Designs im Marktplatz
+        Assert.False(vm.CanChooseVariant);                      // OLED gibt es nur dunkel
+        Assert.Equal(ThemeMode.Dark, vm.Build().Theme);
 
-        vm.Panel.PanelOpacity = 61; // OLED ist Vollton – Deckkraft ändern reicht nicht, also zusätzlich die Farbe
-        vm.Panel.PanelColor = "#2E3440";
-        Assert.Equal("Aktuell: eigene Einstellungen", vm.CurrentPresetText);
-        host.FakeDialogs.Answer = "Mein Nord";
-        vm.SaveDesignCommand.Execute(null);
-        var mine = vm.DesignPresets.Single(p => p.IsCustom);
-        Assert.Equal("Mein Nord", mine.Name);
-        Assert.True(mine.IsCurrent);
-        Assert.NotNull(mine.DeleteCommand);
-        Assert.Single(vm.Build().CustomDesigns);
+        // Variante: nur bei Designs mit beiden Varianten wirksam
+        vm.OtherDesigns.Single(p => p.Preset.Key == "fluent").ApplyCommand.Execute(null);
+        Assert.True(vm.CanChooseVariant);
+        vm.Variant = ThemeMode.Light;
+        var built = vm.Build();
+        Assert.Equal(ThemeMode.Light, built.Theme);
+        Assert.Equal("fluent", built.DesignKey);
 
-        // gleicher Name ein zweites Mal: abgelehnt
-        vm.SaveDesignCommand.Execute(null);
-        Assert.Single(vm.DesignPresets, p => p.IsCustom);
+        // Ein eigenes Design (etwa aus dem Designer) lässt sich löschen; war es aktiv, gilt wieder der Standard
+        var own = Appearance.Presets[1] with { Key = "custom:mine", Name = "Mein Glas", Corners = CornerStyle.Rounded };
+        vm.ApplyDesign(own);
+        Assert.Equal(CornerStyle.Rounded, vm.Build().Corners);
+    }
 
-        mine.DeleteCommand!.Execute(null);
-        Assert.DoesNotContain(vm.DesignPresets, p => p.IsCustom);
+    [Fact]
+    public void DesignerKeepsBuiltInDesignsReadOnlyUntilDuplicated()
+    {
+        var dialogs = new FakeDialogs();
+        var start = Appearance.Presets[1];
+        var editor = new DesignEditorViewModel(dialogs, start, _ => null);
+        Assert.True(editor.IsReadOnly);
+        Assert.False(editor.DeriveAllCommand.CanExecute(null));
+        editor.SaveCommand.Execute(null);
+        Assert.Same(start, editor.Result);                      // „Anwenden“: unverändert
+
+        editor = new DesignEditorViewModel(dialogs, start, _ => null);
+        editor.DuplicateCommand.Execute(null);
+        Assert.False(editor.IsReadOnly);
+        Assert.Equal("Glas (eigen)", editor.Name);
+        editor.Backdrop = PanelBackdrop.Solid;
+        editor.Corners = CornerStyle.Rounded;
+        editor.GroupStyle = GroupCardStyle.Tinted;
+        editor.Category = "Calm";
+        editor.AddTranslationCommand.Execute(null);
+        editor.Translations[0].Name = "Ruhig";
+        editor.SaveCommand.Execute(null);
+        var saved = editor.Result!;
+        Assert.True(saved.IsOwn);
+        Assert.Equal("glass", saved.BasedOn);
+        Assert.Equal(PanelBackdrop.Solid, saved.Backdrop);
+        Assert.Equal(CornerStyle.Rounded, saved.Corners);
+        Assert.Equal(GroupCardStyle.Tinted, saved.GroupStyle);
+        Assert.Equal("Calm", saved.Category);
+        Assert.Equal("Ruhig", saved.Translations![editor.Translations[0].Language].Name);
     }
 
     [Fact]
@@ -110,6 +139,32 @@ public class SettingsViewModelTests
         row.ConfigureCommand.Execute(null);
 
         Assert.Contains(host.Calls, c => c.StartsWith("ShowProfilesDialog ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void GroupColorListStaysStableSoTheComboBoxDoesNotLoop()
+    {
+        var (_, vm) = Create();
+        var group = vm.Categories.Single(c => c.Name == "Kunde A");
+        var raised = new List<string?>();
+        group.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        var list = group.Colors;
+        Assert.Same(list, group.Colors);                     // dieselbe Liste bei jedem Abruf
+        Assert.Equal(string.Empty, list[0].Key);             // „Vom Design (automatisch)“ oben
+        Assert.Equal(Appearance.NoColor, list[^1].Key);
+
+        group.ColorOwn = null!;                              // Auswahl verloren (Liste neu gefüllt): keine Eingabe
+        group.ColorOwn = string.Empty;                       // unverändert: nichts melden
+        Assert.Empty(raised);
+
+        group.ColorOwn = PanelColors.AccentPresets[0].Hex;   // Vorgabe: steht schon in der Liste
+        Assert.Same(list, group.Colors);
+        Assert.DoesNotContain(nameof(group.Colors), raised);
+
+        group.ColorOwn = "#123456";                          // eigene Farbe: neue Liste mit ihr
+        Assert.NotSame(list, group.Colors);
+        Assert.Contains(group.Colors, o => o.Key == "#123456");
     }
 
     [Fact]
@@ -253,15 +308,11 @@ public class SettingsViewModelTests
     }
 
     [Fact]
-    public void DesignPresetsHaveReadablePreview()
+    public void DesignTilesDescribeOriginAndVariants()
     {
         var (_, vm) = Create();
-
-        foreach (var p in vm.DesignPresets)
-        {
-            Assert.Equal(255, p.SwatchColor.A);
-            var ink = p.InkColor;
-            Assert.True(ink == new ArgbColor(255, 0, 0, 0) || ink == new ArgbColor(255, 255, 255, 255));
-        }
+        foreach (var d in vm.OtherDesigns)
+            Assert.False(string.IsNullOrWhiteSpace(DesignPresetChoice.Summary(d.Preset)));
+        Assert.Contains("nur dunkel", DesignPresetChoice.Summary(Appearance.Presets[2]));
     }
 }

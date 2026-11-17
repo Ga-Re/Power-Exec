@@ -38,10 +38,108 @@ public class DesignLookTests
         Assert.Equal("#FBF5F2", light.PanelColor);
         Assert.Equal("#C7472C", light.AccentColor);
         Assert.Equal("#FFFFFF", light.Palette!.Card);
+    }
 
-        // Fest auf dunkel gestellt: die helle Variante bleibt außen vor
-        s.Theme = ThemeMode.Dark;
-        Assert.Equal("#2D1B2E", Appearance.Effective(s, s.Panels[0], dark: false).PanelColor);
+    [Fact]
+    public void VariantChoiceAppliesOnlyToDesignsWithBothVariants()
+    {
+        var s = new AppSettings { Variant = ThemeMode.Light, Panels = { new PanelConfig() } };
+        Appearance.Apply(s, Rich());
+        Assert.Equal(ThemeMode.Light, s.Theme);                  // Paar: die gewählte Variante
+        Assert.Equal("custom:rich", s.DesignKey);
+
+        var onlyDark = new DesignPreset("custom:dark", "Dunkel", "", ThemeMode.Dark, "#101010", 100, 0, false);
+        Appearance.Apply(s, onlyDark);
+        Assert.Equal(ThemeMode.Dark, s.Theme);                   // nur eine Variante: die des Designs
+        Assert.False(onlyDark.HasBothVariants);
+        Assert.True(Appearance.Presets[0].HasBothVariants);     // „wie Windows“ ohne eigene Fläche
+    }
+
+    [Fact]
+    public void GroupPaletteFollowsTheRunningVariant()
+    {
+        var design = Rich() with { Pair = Rich().Pair! with { GroupColors = "#0A0A0A, #0B0B0B" } };
+        var s = new AppSettings { CategoryOrder = { "Admin", "Netzwerk" }, Panels = { new PanelConfig() } };
+        Appearance.Apply(s, design);
+        Assert.Equal(new[] { "#0A0A0A", "#0B0B0B" }, s.Look.PairGroupColors);
+        try
+        {
+            Appearance.IsDarkNow = true;
+            Assert.Equal("#FF8A70", GroupManager.ColorOf(s, "Admin"));
+            Appearance.IsDarkNow = false;                       // das Paar ist hell: dessen Reihe
+            Assert.Equal("#0A0A0A", GroupManager.ColorOf(s, "Admin"));
+            Assert.Equal("#0B0B0B", GroupManager.ColorOf(s, "Netzwerk"));
+        }
+        finally { Appearance.IsDarkNow = true; }
+    }
+
+    [Fact]
+    public void GroupColorReferencesPickPositionNoneOrFixedColor()
+    {
+        var s = new AppSettings { CategoryOrder = { "Admin", "Admin/AD", "Netzwerk" } };
+        s.Look.GroupColors = new List<string> { "#111111", "#222222", "#333333" };
+
+        GroupManager.SetColor(s, "Admin", Appearance.DesignColor(2));
+        Assert.Equal("design:2", GroupManager.OwnColorOf(s, "Admin"));
+        Assert.Equal("#333333", GroupManager.ColorOf(s, "Admin"));
+        Assert.Equal("#333333", GroupManager.ColorOf(s, "Admin/AD"));    // Untergruppe wie ihre Gruppe
+
+        s.Look.GroupColors = new List<string> { "#AAAAAA", "#BBBBBB", "#CCCCCC" }; // anderes Design: gleiche Stelle
+        Assert.Equal("#CCCCCC", GroupManager.ColorOf(s, "Admin"));
+
+        GroupManager.SetColor(s, "Netzwerk", Appearance.NoColor);
+        Assert.Equal(string.Empty, GroupManager.ColorOf(s, "Netzwerk")); // ausdrücklich keine Farbe
+
+        GroupManager.SetColor(s, "Netzwerk", "kaputt");
+        Assert.Equal(string.Empty, GroupManager.OwnColorOf(s, "Netzwerk")); // ungültig = automatisch
+        Assert.Equal("#BBBBBB", GroupManager.ColorOf(s, "Netzwerk"));
+
+        Tags.SetColor(s, "server", Appearance.DesignColor(0));
+        Assert.Equal("#AAAAAA", Tags.ColorOf(s, "server"));               // Schlagworte: dieselben Angaben
+        Tags.SetColor(s, "server", Appearance.NoColor);
+        s.Look.GroupColorsForTags = true;
+        Assert.Equal(string.Empty, Tags.ColorOf(s, "server"));
+    }
+
+    [Fact]
+    public void TranslationsShowInTheLanguageOfTheUserInterface()
+    {
+        var d = new DesignPreset("market:x", "Forest", "Dark moss green", ThemeMode.Dark, "#1B2A1F", 95, 0, false, Category: "Nature",
+            Translations: new Dictionary<string, DesignText> { ["de"] = new("Wald", "Dunkles Moosgrün", "Natur") });
+        var before = PowerExec.Core.Localization.L.Language;
+        try
+        {
+            PowerExec.Core.Localization.L.Use("de");
+            Assert.Equal("Wald", d.DisplayName);
+            Assert.Equal("Natur", d.DisplayCategory);
+            PowerExec.Core.Localization.L.Use("en");
+            Assert.Equal("Forest", d.DisplayName);
+            Assert.Equal("Dark moss green", d.DisplayDescription);
+            Assert.True(d.IsDownloaded);
+            Assert.False(d.IsOwn);
+        }
+        finally { PowerExec.Core.Localization.L.Use(before); }
+    }
+
+    [Fact]
+    public void MigrationKeepsTheLookAsAnActiveDesign()
+    {
+        // Eigene Einstellungen, die zu keinem Design passen: werden zu „My settings“
+        var s = new AppSettings { Theme = ThemeMode.Dark, Panels = { new PanelConfig { PanelColor = "#123456", PanelOpacity = 77 } } };
+        Appearance.MigrateToActiveDesign(s);
+        var active = Appearance.Active(s);
+        Assert.NotNull(active);
+        Assert.True(active!.IsOwn);
+        Assert.Equal("#123456", active.PanelColor);
+        Assert.Equal(ThemeMode.Dark, s.Variant);
+
+        // Passt der Stand zu einem Design, wird dieses das aktive
+        var fluent = new AppSettings { Panels = { new PanelConfig() } };
+        Appearance.Apply(fluent, Appearance.Presets[0]);
+        fluent.DesignKey = string.Empty;
+        Appearance.MigrateToActiveDesign(fluent);
+        Assert.Equal("fluent", fluent.DesignKey);
+        Assert.Empty(fluent.CustomDesigns);
     }
 
     [Fact]

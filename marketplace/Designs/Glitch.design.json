@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Glitch",
-  "Description": "Anthrazit mit Rot-Cyan-Störsignal",
+  "Description": "Charcoal with a red-cyan interference signal",
+  "Category": "Neon & Retro",
+  "Translations": {
+    "de": {
+      "Name": "Glitch",
+      "Description": "Anthrazit mit Rot-Cyan-Störsignal",
+      "Category": "Neon & Retro"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#16161C",
   "Opacity": 94,
@@ -20,7 +28,7 @@
     "TextSecondary": "#B4ACB0",
     "Selected": "#542C37"
   },
-  "GroupColors": "#EE637A, #EED663, #7AEE63, #63EED6, #637AEE, #D663EE",
+  "GroupColors": "#FF5470, #3EE6E6, #C3A6FF, #F5E14B, #5CFF9D, #5C8DFF",
   "GroupColorsForTags": true,
   "MonoFontFamily": "Cascadia Code",
   "Pair": {
@@ -33,6 +41,7 @@
       "Text": "#2C1D1F",
       "TextSecondary": "#6C6163",
       "Selected": "#F5D6DC"
-    }
+    },
+    "GroupColors": "#C21F3D, #00787F, #6A44C2, #756700, #0E7F44, #2A54C2"
   }
 }

@@ -248,7 +248,7 @@ public partial class AppController
     /// <summary>Eigene Gruppenfarbe als #RRGGBB.</summary>
     public void PickGroupColor(string groupPath)
     {
-        var current = GroupManager.OwnColorOf(Settings, groupPath);
+        var current = ColorChoices.PickerStart(Settings, GroupManager.OwnColorOf(Settings, groupPath));
         var text = WithDialog(() => Dialogs.PickColor(L.F("Color for “{0}”", GroupManager.LeafOf(groupPath)), current));
         if (text != null) SetGroupColor(groupPath, text);
     }

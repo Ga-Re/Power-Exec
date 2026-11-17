@@ -78,11 +78,25 @@ public sealed class MarketplaceViewModel : ObservableObject
         set { if (_category == (value ?? string.Empty)) return; _category = value ?? string.Empty; OnPropertyChanged(); Rebuild(); }
     }
 
-    public int AllCount => AllFiles().Count();
+    /// <summary>„Entdecken“ bei Einträgen und Scripten (Designs haben ihren eigenen Bereich).</summary>
+    public int AllCount => AllFiles().Count(f => f.File.Type != MarketplaceItemType.Design);
     public int EntryCount => Count(MarketplaceItemType.Entry);
     public int ScriptCount => Count(MarketplaceItemType.Script);
     public int DesignCount => Count(MarketplaceItemType.Design);
-    public int InstalledCount => AllFiles().Count(f => Marketplace.FindInstall(_s, f.Source, f.File.Path) != null);
+    public int InstalledCount => AllFiles().Count(f => f.File.Type != MarketplaceItemType.Design && Marketplace.FindInstall(_s, f.Source, f.File.Path) != null);
+    public int DesignInstalledCount => AllFiles().Count(f => f.File.Type == MarketplaceItemType.Design && Marketplace.FindInstall(_s, f.Source, f.File.Path) != null);
+
+    /// <summary>Bereich „Designs“ (Entdecken oder Meine Designs) statt Einträge und Scripte.</summary>
+    public bool IsDesignArea => _tab is "Design" or "DesignInstalled";
+
+    /// <summary>Passt die Datei zum Bereich?</summary>
+    private bool InTab(string source, MarketplaceFile f) => _tab switch
+    {
+        "All" => f.Type != MarketplaceItemType.Design,
+        "Installed" => f.Type != MarketplaceItemType.Design && Marketplace.FindInstall(_s, source, f.Path) != null,
+        "DesignInstalled" => f.Type == MarketplaceItemType.Design && Marketplace.FindInstall(_s, source, f.Path) != null,
+        _ => f.Type.ToString() == _tab
+    };
 
     /// <summary>Details einer Karte auf- bzw. zuklappen; es ist immer höchstens eine offen.</summary>
     internal void ToggleDetails(MarketplaceItemRow row)
@@ -120,6 +134,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             OnPropertyChanged(nameof(Category));
             OnPropertyChanged(nameof(IsSourcesPage));
             OnPropertyChanged(nameof(IsListPage));
+            OnPropertyChanged(nameof(IsDesignArea));
             Rebuild();
         }
     }
@@ -132,8 +147,10 @@ public sealed class MarketplaceViewModel : ObservableObject
         get
         {
             var items = _items;
-            var groups = items.Select(i => i.Source + "|" + (_tab == "Installed" ? i.File.Folder : i.File.GroupFolder)).Distinct().Count();
             var installed = items.Count(i => i.IsInstalled);
+            if (IsDesignArea)
+                return (items.Count == 1 ? L.T("1 design") : L.F("{0} designs", items.Count)) + (installed > 0 && _tab != "DesignInstalled" ? L.F(" · {0} installed", installed) : string.Empty);
+            var groups = items.Select(i => i.Source + "|" + (_tab == "Installed" ? i.File.Folder : i.File.GroupFolder)).Distinct().Count();
             return L.F("{0} files in {1} groups", items.Count, groups) + (installed > 0 && _tab != "Installed" ? L.F(" · {0} installed", installed) : string.Empty);
         }
     }
@@ -267,7 +284,7 @@ public sealed class MarketplaceViewModel : ObservableObject
         {
             if (!Trees.TryGetValue(Key(src.Url), out var tree)) continue;
             if (_tab == "Sources") continue;
-            var files = tree.Files.Where(f => _tab == "Installed" ? Marketplace.FindInstall(_s, src.Url, f.Path) != null : _tab == "All" || f.Type.ToString() == _tab).ToList();
+            var files = tree.Files.Where(f => InTab(src.Url, f)).ToList();
             var items = files.Select(f => new MarketplaceItemRow(this, src.Url, tree.Repo, f, Payloads.TryGetValue(PayloadKey(src.Url, f), out var p) ? p.Details : null))
                 .Where(i => terms.All(t => i.SearchText.Contains(t, StringComparison.CurrentCultureIgnoreCase))).ToList();
             foreach (var i in items.Where(i => i.CategoryName.Length > 0))
@@ -285,7 +302,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             {
                 var parent = root;
                 var path = string.Empty;
-                foreach (var part in (_tab == "Installed" ? item.File.Folder : item.File.GroupFolder).Split('/', StringSplitOptions.RemoveEmptyEntries))
+                foreach (var part in (_tab is "Installed" or "DesignInstalled" ? item.File.Folder : item.File.GroupFolder).Split('/', StringSplitOptions.RemoveEmptyEntries))
                 {
                     path = path.Length == 0 ? part : path + "/" + part;
                     parent = parent.Folder(Key(src.Url) + "|" + path, part);
@@ -301,7 +318,7 @@ public sealed class MarketplaceViewModel : ObservableObject
         foreach (var c in categories.OrderBy(c => c.Key, StringComparer.CurrentCultureIgnoreCase))
             Categories.Add(new MarketplaceCategory(this, c.Key, c.Value, c.Key.Equals(_category, StringComparison.OrdinalIgnoreCase)));
         foreach (var p in new[] { nameof(IsEmpty), nameof(EntryTabText), nameof(ScriptTabText), nameof(DesignTabText), nameof(InstalledTabText), nameof(SummaryText), nameof(HasRows),
-                     nameof(AllCount), nameof(EntryCount), nameof(ScriptCount), nameof(DesignCount), nameof(InstalledCount), nameof(HasCategories) }) OnPropertyChanged(p);
+                     nameof(AllCount), nameof(EntryCount), nameof(ScriptCount), nameof(DesignCount), nameof(InstalledCount), nameof(DesignInstalledCount), nameof(HasCategories) }) OnPropertyChanged(p);
         SelectionChanged();
     }
 
@@ -408,11 +425,92 @@ public sealed class MarketplaceViewModel : ObservableObject
 
     internal Task InstallOneAsync(MarketplaceItemRow row) => InstallAsync(new List<MarketplaceItemRow> { row });
 
+    /// <summary>Design herunterladen (falls nötig) und gleich anwenden – ohne Rückfrage.</summary>
+    internal async Task InstallAndApplyAsync(MarketplaceItemRow row)
+    {
+        if (row.IsInstalled && !row.HasUpdate)
+        {
+            if (InstalledDesign(row) is { } design) ApplyInstalled(design);
+            return;
+        }
+        await InstallAsync(new List<MarketplaceItemRow> { row }, applyDesign: true);
+    }
+
+    private DesignPreset? InstalledDesign(MarketplaceItemRow row) =>
+        Marketplace.FindInstall(_s, row.Source, row.File.Path) is { DesignKey.Length: > 0 } installed
+            ? _s.CustomDesigns.FirstOrDefault(d => d.Key == installed.DesignKey) : null;
+
+    private void ApplyInstalled(DesignPreset design)
+    {
+        _tryBefore = null; // ausprobiert und übernommen: kein Zurück mehr
+        RaiseTry();
+        Appearance.Apply(_s, design);
+        Snackbar.Show(L.F("“{0}” is now active.", design.DisplayName));
+        _changed();
+        Rebuild();
+    }
+
+    // ---- Ausprobieren ------------------------------------------------------------------
+
+    /// <summary>Stand vor dem Ausprobieren (null = es wird nichts ausprobiert).</summary>
+    private AppSettings? _tryBefore;
+    private MarketplaceItemRow? _tryRow;
+
+    public bool IsTrying => _tryBefore != null;
+    public string TryText => _tryRow == null ? string.Empty
+        : L.F("“{0}” is being tried out – the panel and all windows show the design. Without “Keep”, Power-Exec goes back to “{1}”.",
+            _tryRow.Name, _tryBefore is { } b && Appearance.Active(b) is { } d ? d.DisplayName : L.T("the previous look"));
+    public ICommand KeepTryCommand => _keepTry ??= new RelayCommand(async () => { if (_tryRow != null) await InstallAndApplyAsync(_tryRow); }, () => IsTrying && !_loading);
+    public ICommand RevertTryCommand => _revertTry ??= new RelayCommand(EndTry, () => IsTrying);
+    private ICommand? _keepTry, _revertTry;
+
+    /// <summary>Design vorübergehend anwenden, ohne es herunterzuladen – bis „Übernehmen“, „Zurück“ oder dem Schließen.</summary>
+    internal void TryDesign(MarketplaceItemRow row)
+    {
+        if (row.DesignPreset is not { } design) return;
+        _tryBefore ??= SettingsStore.Clone(_s);
+        _tryRow = row;
+        Appearance.Apply(_s, design);
+        _changed();
+        RaiseTry();
+    }
+
+    /// <summary>Ausprobieren beenden: zurück zum vorherigen Aussehen.</summary>
+    public void EndTry()
+    {
+        if (_tryBefore is not { } before) return;
+        _s.DesignKey = before.DesignKey;
+        _s.Theme = before.Theme;
+        _s.UseWindowsAccent = before.UseWindowsAccent;
+        _s.Corners = before.Corners;
+        _s.Look = before.Look.Clone();
+        for (int i = 0; i < _s.Panels.Count && i < before.Panels.Count; i++)
+        {
+            var (p, b) = (_s.Panels[i], before.Panels[i]);
+            (p.PanelColor, p.PanelOpacity, p.Backdrop, p.Frost, p.AccentColor, p.GlassBlur, p.GlassSaturation, p.GroupStyle) =
+                (b.PanelColor, b.PanelOpacity, b.Backdrop, b.Frost, b.AccentColor, b.GlassBlur, b.GlassSaturation, b.GroupStyle);
+        }
+        _tryBefore = null;
+        _tryRow = null;
+        _changed();
+        RaiseTry();
+    }
+
+    private void RaiseTry()
+    {
+        if (_tryBefore == null) _tryRow = null;
+        foreach (var p in new[] { nameof(IsTrying), nameof(TryText) }) OnPropertyChanged(p);
+        foreach (var i in _items) i.RaiseTrying();
+        CommandRequery.Invalidate();
+    }
+
+    internal bool IsTryingRow(MarketplaceItemRow row) => _tryRow != null && _tryRow.Id == row.Id;
+
     internal Task InstallFolderAsync(MarketplaceFolderRow folder) =>
         InstallAsync(folder.AllItems().Where(i => !i.IsInstalled || i.HasUpdate).ToList());
 
     /// <summary>Vertrauen, Vorschau, fehlende Variablen, Gruppe je Ordner – dann alles installieren.</summary>
-    internal async Task InstallAsync(IReadOnlyList<MarketplaceItemRow> rows)
+    internal async Task InstallAsync(IReadOnlyList<MarketplaceItemRow> rows, bool applyDesign = false)
     {
         if (rows.Count == 0 || !EnsureTrusted(rows.Select(r => r.Source))) return;
         IsLoading = true;
@@ -469,23 +567,21 @@ public sealed class MarketplaceViewModel : ObservableObject
                 }
             }
             Error = null;
-            // Genau ein Design geladen: gleich anwenden? (Mehrere: Auswahl unter Darstellung › Designvorlagen)
+            // Genau ein Design geladen: gleich anwenden („Installieren und anwenden“) bzw. fragen (Mehrere: Auswahl unter Darstellung)
             var newDesigns = loaded.Where(l => l.Row.File.Type == MarketplaceItemType.Design).ToList();
-            if (newDesigns.Count == 1 && Marketplace.FindInstall(_s, newDesigns[0].Row.Source, newDesigns[0].Row.File.Path) is { DesignKey.Length: > 0 } installed
-                && _s.CustomDesigns.FirstOrDefault(d => d.Key == installed.DesignKey) is { } design
-                && _app.Dialogs.Confirm(L.F("Apply “{0}” now?", design.Name), L.T("Design downloaded"), owner: _app.SettingsDialogOwner))
+            if (newDesigns.Count == 1 && InstalledDesign(newDesigns[0].Row) is { } design
+                && (applyDesign || _s.DesignKey == design.Key
+                    || _app.Dialogs.Confirm(L.F("Apply “{0}” now?", design.DisplayName), L.T("Design downloaded"), owner: _app.SettingsDialogOwner)))
             {
-                Appearance.Apply(_s, design);
                 foreach (var i in _items) i.SetChecked(false);
-                Snackbar.Show(L.F("“{0}” is now active.", design.Name));
-                _changed();
+                ApplyInstalled(design);
                 return;
             }
             Snackbar.Show(L.T("Downloaded: ") + string.Join(", ", new[]
             {
                 entries > 0 ? (entries == 1 ? L.T("1 entry") : L.F("{0} entries", entries)) : null,
                 scripts > 0 ? (scripts == 1 ? L.T("1 script") : L.F("{0} scripts", scripts)) : null,
-                designs > 0 ? (designs == 1 ? L.T("1 design (under design templates)") : L.F("{0} designs (under design templates)", designs)) : null
+                designs > 0 ? (designs == 1 ? L.T("1 design (under My designs)") : L.F("{0} designs (under My designs)", designs)) : null
             }.OfType<string>()) + (entries + scripts > 0 ? L.T(" – find them under Custom entries.") : "."));
             foreach (var i in _items) i.SetChecked(false);
             _changed();
@@ -644,8 +740,13 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public override bool IsFolder => false;
     public override string Name => _details?.Name ?? File.DefaultName;
     public string Description => _details?.Description ?? string.Empty;
-    /// <summary>Kategorie: oberster Ordner der Gruppe („Links“); leer, wenn die Datei in keiner Gruppe liegt.</summary>
-    public string CategoryName => File.GroupFolder.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+    /// <summary>
+    /// Kategorie: bei Designs die aus der Datei (übersetzt), sonst der oberste Ordner der Gruppe („Links“); leer, wenn es
+    /// keine gibt.
+    /// </summary>
+    public string CategoryName => IsDesignFile
+        ? _details?.Design?.DisplayCategory ?? string.Empty
+        : File.GroupFolder.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
     /// <summary>Fußzeile der Karte: Kategorie, bei mehreren Quellen mit Quelle.</summary>
     public string CategoryText => string.Join(" · ", new[] { CategoryName, _page.HasSeveralSources ? _page.SourceName(Source) : string.Empty }.Where(t => t.Length > 0));
     /// <summary>Erste Zeile der Vorschau – das, was der Eintrag ausführt (Kopf der Karte).</summary>
@@ -663,7 +764,7 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public string TypeText => File.Type switch { MarketplaceItemType.Script => L.T("Script"), MarketplaceItemType.Design => L.T("Design"), _ => L.T("Entry") };
     public string Glyph => File.Type switch { MarketplaceItemType.Script => "", MarketplaceItemType.Design => "", _ => "" };
     public string Needs => _details?.Variables.Count > 0 ? L.T("needs ") + string.Join(", ", _details.Variables.Select(v => "{{$" + Variables.Normalize(v.Name) + "}}")) : string.Empty;
-    internal string SearchText => $"{Name} {Description} {File.Path} {TypeText}";
+    internal string SearchText => $"{Name} {Description} {File.Path} {TypeText} {CategoryName}";
 
     public bool IsInstalled => Marketplace.FindInstall(_page.Settings, Source, File.Path) != null;
     public bool HasUpdate => Marketplace.HasUpdate(_page.Settings, Source, File);
@@ -688,7 +789,9 @@ public sealed class MarketplaceItemRow : MarketplaceRow
         _details = details;
         foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(PreviewLine), nameof(EntryKindText), nameof(VariablesText),
                      nameof(HasVariables), nameof(DesignPanelColor), nameof(DesignAccentColor), nameof(DesignTextColor), nameof(DesignSubtleColor),
-                     nameof(DesignBackdropText), nameof(HasDesign), nameof(DesignPreset) })
+                     nameof(DesignBackdropText), nameof(HasDesign), nameof(DesignPreset), nameof(CategoryName), nameof(CategoryText), nameof(HasBothVariants),
+                     nameof(ShowsDark), nameof(DesignColorRows), nameof(DesignGroupRows), nameof(DesignFontText), nameof(DesignFont), nameof(DesignMonoFont),
+                     nameof(DesignMonoText), nameof(DesignFormText), nameof(DesignBackgroundText), nameof(GroupSwatches) })
             OnPropertyChanged(p);
     }
 
@@ -732,6 +835,86 @@ public sealed class MarketplaceItemRow : MarketplaceRow
             return $"#{Mix(p.R):X2}{Mix(p.G):X2}{Mix(p.B):X2}";
         }
     }
+    // ---- Design: Karte mit heller/dunkler Variante, Details ---------------------------------
+
+    private bool? _showDark;
+    /// <summary>Gezeigte Variante auf der Karte: dunkel, hell oder – null – die Hauptvariante des Designs.</summary>
+    public bool? ShowDark { get => _showDark; private set { if (Set(ref _showDark, value)) { OnPropertyChanged(nameof(ShowsDark)); OnPropertyChanged(nameof(GroupSwatches)); } } }
+    /// <summary>Zeigt die Karte gerade die dunkle Variante?</summary>
+    public bool ShowsDark => _showDark ?? DesignPreset?.PrimaryIsDark ?? true;
+    public bool HasBothVariants => DesignPreset?.HasBothVariants == true;
+    public ICommand ShowDarkCommand => _showDarkCommand ??= new RelayCommand(() => ShowDark = true, () => HasBothVariants);
+    public ICommand ShowLightCommand => _showLightCommand ??= new RelayCommand(() => ShowDark = false, () => HasBothVariants);
+    private ICommand? _showDarkCommand, _showLightCommand;
+
+    /// <summary>Farbreihe der Gruppen in der gezeigten Variante (Farbstreifen unter dem Namen).</summary>
+    public IReadOnlyList<DesignSwatch> GroupSwatches => DesignPreset is { } d ? GroupColorsOf(d, ShowsDark).Select((h, i) => new DesignSwatch(ColorChoices.DesignColorName(i), h)).ToList() : Array.Empty<DesignSwatch>();
+
+    private static IReadOnlyList<string> GroupColorsOf(DesignPreset d, bool dark) =>
+        d.Pair != null && dark != d.PrimaryIsDark && Appearance.SplitColors(d.Pair.GroupColors) is { Count: > 0 } other ? other : Appearance.SplitColors(d.GroupColors);
+
+    private static IEnumerable<bool> Variants(DesignPreset d) => d.HasBothVariants ? new[] { true, false } : new[] { d.PrimaryIsDark };
+
+    private static ResolvedPalette ColorsOf(DesignPreset d, bool dark) =>
+        Appearance.Resolve(d.Pair != null && dark != d.PrimaryIsDark ? new DesignColors(d.Pair.PanelColor, d.Pair.AccentColor, d.Pair.Palette) : new DesignColors(d.PanelColor, d.AccentColor, d.Palette), dark);
+
+    private static string VariantLabel(bool dark) => dark ? L.T("☾ Dark") : L.T("☀ Light");
+
+    /// <summary>Flächenfarben je Variante (Details): Panel, Karte, Eingabe, Linie, Text, Auswahl, Akzent.</summary>
+    public IReadOnlyList<DesignSwatchRow> DesignColorRows => DesignPreset is { } d
+        ? Variants(d).Select(dark =>
+        {
+            var c = ColorsOf(d, dark);
+            return new DesignSwatchRow(VariantLabel(dark), c.Surface.Hex, new[]
+            {
+                new DesignSwatch(L.T("Panel"), c.Surface.Hex), new DesignSwatch(L.T("Card"), c.Card.Hex), new DesignSwatch(L.T("Input"), c.Input.Hex),
+                new DesignSwatch(L.T("Line"), c.Line.Hex), new DesignSwatch(L.T("Text"), c.Text.Hex), new DesignSwatch(L.T("Selection"), c.Selected.Hex),
+                new DesignSwatch(d.WindowsAccent ? L.T("Accent (Windows)") : L.T("Accent"), c.Accent.Hex)
+            });
+        }).ToList() : Array.Empty<DesignSwatchRow>();
+
+    /// <summary>Farbreihe der Gruppen je Variante, auf der Panelfläche dieser Variante.</summary>
+    public IReadOnlyList<DesignSwatchRow> DesignGroupRows => DesignPreset is { } d
+        ? Variants(d).Select(dark => new DesignSwatchRow(VariantLabel(dark), ColorsOf(d, dark).Surface.Hex,
+            GroupColorsOf(d, dark).Select((h, i) => new DesignSwatch(ColorChoices.DesignColorName(i), h)).ToList())).Where(r => r.Swatches.Count > 0).ToList()
+        : Array.Empty<DesignSwatchRow>();
+
+    /// <summary>Schrift für Text (leer = die der App) und ihr Name.</summary>
+    public string DesignFont => DesignPreset?.FontFamily is { Length: > 0 } f ? f : "Segoe UI Variable Text, Segoe UI";
+    public string DesignFontText => DesignPreset?.FontFamily is { Length: > 0 } f ? f : L.T("Segoe UI (font of the app)");
+    public string DesignMonoFont => DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f + ", Cascadia Mono, Consolas" : "Cascadia Mono, Consolas";
+    public string DesignMonoText => DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f : L.T("Cascadia Mono (font of the app)");
+
+    /// <summary>Ecken und Gruppenstil.</summary>
+    public string DesignFormText => DesignPreset is { } d ? string.Join(" · ", new[]
+    {
+        L.T("Corners") + ": " + (d.Corners switch { CornerStyle.Rounded => L.T("Rounded"), CornerStyle.Square => L.T("Square"), CornerStyle.Standard => L.T("Standard"), _ => L.T("unchanged") }),
+        L.T("Group style") + ": " + (d.GroupStyle switch { GroupCardStyle.Tinted => L.T("Colored cards"), GroupCardStyle.Accent => L.T("Accent stripe"), _ => L.T("unchanged") })
+    }) : string.Empty;
+
+    /// <summary>Hintergrund mit Deckkraft, Milchglas, Weichzeichner und Sättigung.</summary>
+    public string DesignBackgroundText => DesignPreset is { } d ? string.Join(" · ", new[]
+    {
+        PanelBackdrops.Label(d.Backdrop),
+        d.Backdrop == PanelBackdrop.Solid ? string.Empty : L.F("opacity {0} %", d.Opacity),
+        d.Backdrop != PanelBackdrop.Solid && d.Frost > 0 ? L.F("frosted glass {0} %", d.Frost) : string.Empty,
+        d.Backdrop == PanelBackdrop.Glass ? L.F("blur {0}", d.GlassBlur) : string.Empty,
+        d.Backdrop == PanelBackdrop.Glass ? L.F("saturation {0} %", d.GlassSaturation) : string.Empty
+    }.Where(t => t.Length > 0)) : string.Empty;
+
+    /// <summary>Design vorübergehend anwenden (bis „Übernehmen“ oder „Zurück“).</summary>
+    public ICommand TryCommand => _tryCommand ??= new RelayCommand(() => _page.TryDesign(this), () => HasDesign && !IsTrying);
+    /// <summary>Herunterladen (falls nötig) und anwenden.</summary>
+    public ICommand ApplyCommand => _applyCommand ??= new RelayCommand(async () => await _page.InstallAndApplyAsync(this), () => HasDesign);
+    private ICommand? _tryCommand, _applyCommand;
+    public string ApplyText => IsInstalled && !HasUpdate ? L.T("Apply") : L.T("Download and apply");
+    public bool IsTrying => _page.IsTryingRow(this);
+    internal void RaiseTrying()
+    {
+        OnPropertyChanged(nameof(IsTrying));
+        OnPropertyChanged(nameof(ApplyText));
+    }
+
     public string DesignBackdropText => _details?.Design is { } d
         ? string.Join(" · ", new[]
         {
@@ -743,8 +926,19 @@ public sealed class MarketplaceItemRow : MarketplaceRow
         }.Where(t => t.Length > 0)) : string.Empty;
 }
 
-/// <summary>Eine Quelle in der Liste „Quellen“.</summary>
-/// <summary>Eine Kategorie in der Navigation des Marktplatzes (Filter nach oberstem Ordner).</summary>
+/// <summary>Ein Farbfeld in den Details eines Designs.</summary>
+public sealed record DesignSwatch(string Name, string Hex)
+{
+    public ArgbColor? Color { get; } = ArgbColor.FromHex(Hex, 255);
+}
+
+/// <summary>Eine Zeile Farbfelder (Variante hell bzw. dunkel) auf der Panelfläche dieser Variante.</summary>
+public sealed record DesignSwatchRow(string Label, string SurfaceHex, IReadOnlyList<DesignSwatch> Swatches)
+{
+    public ArgbColor? Surface { get; } = ArgbColor.FromHex(SurfaceHex, 255);
+}
+
+/// <summary>Eine Kategorie in der Navigation des Marktplatzes (Filter nach oberstem Ordner bzw. Kategorie des Designs).</summary>
 public sealed class MarketplaceCategory
 {
     public MarketplaceCategory(MarketplaceViewModel page, string name, int count, bool isSelected)
@@ -762,6 +956,7 @@ public sealed class MarketplaceCategory
     public ICommand SelectCommand { get; }
 }
 
+/// <summary>Eine Quelle in der Liste „Quellen“.</summary>
 public sealed class MarketplaceSourceViewModel
 {
     public MarketplaceSourceViewModel(MarketplaceViewModel page, MarketplaceSource source, string name, int count, string? error)

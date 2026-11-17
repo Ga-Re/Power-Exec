@@ -5,59 +5,140 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
         xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
-        Title="{l:T 'Power-Exec – Edit design'}" Style="{StaticResource AppWindow}"
-        Width="1160" Height="760" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterOwner">
+        Title="{l:T 'Power-Exec – Designer'}" Style="{StaticResource AppWindow}"
+        Width="1280" Height="800" MinWidth="1000" MinHeight="580" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <infra:HexBrushConverter x:Key="HexBrush"/>
     </Window.Resources>
-    <!-- Feste Zeilen: Kopf und Fuß in ihrer Höhe, dazwischen der Rest – auch wenn die Vorschau höher ist als das Fenster -->
+    <!-- Feste Zeilen: Kopf, Hinweis und Fuß in ihrer Höhe, dazwischen der Rest -->
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <!-- Kopf: Name, Ausgangsdesign, Variante -->
+        <!-- Kopf: Name, Herkunft, bearbeitete Variante -->
         <DockPanel Grid.Row="0" Margin="28,20,28,12" VerticalAlignment="Top">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                <CheckBox Content="{l:T 'Light and dark variant'}" IsChecked="{Binding HasPair}" Margin="0,0,16,0" VerticalAlignment="Center"
-                          ToolTip="{l:T 'The design switches with Windows between its light and its dark variant'}"/>
-                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Derive other variant again'}" Command="{Binding RegenerateOtherCommand}" Margin="0,0,16,0"
-                           VerticalAlignment="Center" Visibility="{Binding HasPair, Converter={StaticResource Vis}}"
-                           ToolTip="{l:T 'Same hue and accent with the brightness reversed – overwrites the other variant'}"/>
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Light'}" IsChecked="{Binding EditLight}"/>
                 <RadioButton Style="{StaticResource TabHeader}" GroupName="DesignVariant" Content="{l:T 'Dark'}" IsChecked="{Binding EditDark}"/>
             </StackPanel>
-            <!-- Titel mit Ausgangsdesign darunter; der Hinweis bricht nie um (sonst wird der Kopf bei wenig Breite sehr hoch) -->
-            <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,16,0">
-                <TextBlock Text="{l:T 'Edit design'}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding StartText}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="240"/>
+            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock Text="{Binding Name}" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding StartText}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
             </StackPanel>
-            <TextBox Width="240" HorizontalAlignment="Left" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'Name of the design'}"
-                     AutomationProperties.Name="{l:T 'Name of the design'}" VerticalAlignment="Center"/>
         </DockPanel>
 
-        <!-- Fuß -->
-        <Border Grid.Row="2" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="28,12">
+        <!-- Schreibgeschützt: Hinweis mit „Als eigenes Design bearbeiten“ -->
+        <Border Grid.Row="1" Margin="28,0,28,12" Padding="14,10" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
+                Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
+                Visibility="{Binding IsReadOnly, Converter={StaticResource Vis}}">
             <DockPanel>
-                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Content="{l:T 'Export as file …'}" Command="{Binding ExportCommand}"/>
-                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Save'}" Command="{Binding SaveCommand}" IsDefault="True" MinWidth="96"/>
-                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" Margin="0,0,8,0" MinWidth="96"/>
-                <c:InfoBar DockPanel.Dock="Right" Severity="Error" Message="{Binding Error}" Margin="12,0" VerticalAlignment="Center"/>
-                <TextBlock Text="{l:T 'The preview follows every change; the panel takes it over with Save.'}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis"/>
+                <TextBlock DockPanel.Dock="Left" Text="&#xE72E;" Style="{StaticResource Icon}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <ui:Button x:Name="DuplicateButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Edit as your own design'}" Command="{Binding DuplicateCommand}" Margin="12,0,0,0"/>
+                <TextBlock Text="{Binding ReadOnlyText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="1" Margin="28,0,28,16">
+        <!-- Fuß -->
+        <Border Grid.Row="3" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="28,12">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Left" Style="{StaticResource Btn.Standard}" Content="{l:T 'Export as file …'}" Command="{Binding ExportCommand}"/>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{Binding SaveText}" Command="{Binding SaveCommand}" IsDefault="True" MinWidth="120"/>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" Margin="0,0,8,0" MinWidth="96"/>
+                <c:InfoBar DockPanel.Dock="Right" Severity="Error" Message="{Binding Error}" Margin="12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="{l:T 'The preview follows every change; the panel takes it over when you save.'}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="16,0" TextTrimming="CharacterEllipsis"/>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="28,0,28,16">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="560"/>
+                <ColumnDefinition Width="190"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="580"/>
                 <ColumnDefinition Width="20"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <ScrollViewer x:Name="FormScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <StackPanel>
+            <!-- Abschnitte -->
+            <StackPanel>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="DesignSection" Content="{l:T 'General'}" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=general}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="DesignSection" Content="{l:T 'Colors'}" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=colors}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="DesignSection" Content="{l:T 'Background and form'}" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=background}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="DesignSection" Content="{l:T 'Fonts'}" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=fonts}"/>
+                <RadioButton Style="{StaticResource NavItem}" GroupName="DesignSection" Content="{l:T 'Group palette'}" IsChecked="{Binding Section, Converter={StaticResource Eq}, ConverterParameter=groups}"/>
+            </StackPanel>
+            <ScrollViewer x:Name="FormScroll" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <!-- Schreibgeschützt: alles sichtbar, nichts änderbar -->
+                <StackPanel IsEnabled="{Binding IsEditable}">
+                    <!-- Allgemein: Name, Kategorie, Beschreibung, Übersetzungen, Varianten -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
+                        <Border Style="{StaticResource Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Name and description'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{l:T 'Name (base value)'}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <TextBox x:Name="NameBox" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Name of the design'}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="{l:T 'Category'}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" Tag="{l:T 'e.g. Nature'}" AutomationProperties.Name="{l:T 'Category'}"/>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock Text="{l:T 'Description'}" Style="{StaticResource Caption}" FontWeight="SemiBold" Margin="0,12,0,4"/>
+                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Description'}"/>
+                                <TextBlock Text="{l:T 'Name, category and description in English are the base values; translations below replace them in other languages.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="16" Margin="0,12,0,0">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T '+ Language'}" Command="{Binding AddTranslationCommand}"/>
+                                    <TextBlock Text="{l:T 'Translations'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <Grid Margin="0,0,0,4">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="0.8*"/><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{l:T 'Language'}" Style="{StaticResource Caption}"/>
+                                    <TextBlock Grid.Column="1" Text="{l:T 'Name'}" Style="{StaticResource Caption}" Margin="6,0,0,0"/>
+                                    <TextBlock Grid.Column="2" Text="{l:T 'Category'}" Style="{StaticResource Caption}" Margin="6,0,0,0"/>
+                                    <TextBlock Grid.Column="3" Text="{l:T 'Description'}" Style="{StaticResource Caption}" Margin="6,0,0,0"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding Translations}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="0.8*"/><ColumnDefinition Width="1.6*"/><ColumnDefinition Width="32"/></Grid.ColumnDefinitions>
+                                                <ComboBox IsEditable="True" Text="{Binding Language, UpdateSourceTrigger=LostFocus}" ItemsSource="{Binding DataContext.Languages, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          AutomationProperties.Name="{l:T 'Language'}"/>
+                                                <TextBox Grid.Column="1" Margin="6,0,0,0" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Name'}"/>
+                                                <TextBox Grid.Column="2" Margin="6,0,0,0" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Category'}"/>
+                                                <TextBox Grid.Column="3" Margin="6,0,0,0" Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Description'}"/>
+                                                <ui:Button Grid.Column="4" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Margin="4,0,0,0" Command="{Binding RemoveCommand}"
+                                                           ToolTip="{l:T 'Remove'}" AutomationProperties.Name="{l:T 'Remove'}">
+                                                    <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
+                                                </ui:Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="{l:T 'Empty fields show the English base value.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="16" Margin="0,12,0,0">
+                            <StackPanel>
+                                <CheckBox Content="{l:T 'Light and dark variant'}" IsChecked="{Binding HasPair}"
+                                          ToolTip="{l:T 'With both variants the design follows the choice under Appearance (like Windows, light, dark)'}"/>
+                                <TextBlock Text="{l:T 'With both variants the design follows the choice under Appearance (like Windows, light, dark). Switch the variant you edit at the top.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="28,2,0,0"/>
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Derive other variant again'}" Command="{Binding RegenerateOtherCommand}" Margin="28,8,0,0" HorizontalAlignment="Left"
+                                           Visibility="{Binding HasPair, Converter={StaticResource Vis}}" ToolTip="{l:T 'Same hue and accent with the brightness reversed – overwrites the other variant'}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
                     <!-- Farben -->
-                    <Border Style="{StaticResource Card}" Padding="16">
+                    <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=colors}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,12">
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Derive all from surface and accent'}" Command="{Binding DeriveAllCommand}"/>
@@ -110,8 +191,65 @@
                         </StackPanel>
                     </Border>
 
+                    <!-- Hintergrund und Form -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=background}">
+                        <Border Style="{StaticResource Card}" Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Background'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" Margin="0,0,0,12"/>
+                                <ComboBox Width="260" HorizontalAlignment="Left" ItemsSource="{Binding Backdrops}" SelectedValue="{Binding Backdrop}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                          AutomationProperties.Name="{l:T 'Background'}"/>
+                                <TextBlock Text="{Binding BackdropDescription}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,8"/>
+                                <DockPanel Margin="0,6,0,0" Visibility="{Binding ShowOpacity, Converter={StaticResource Vis}}">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Opacity, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                    <Slider DockPanel.Dock="Right" Width="220" Minimum="20" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding Opacity}" VerticalAlignment="Center"
+                                            AutomationProperties.Name="{l:T 'Opacity'}"/>
+                                    <TextBlock Text="{l:T 'Opacity'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DockPanel Margin="0,10,0,0" Visibility="{Binding ShowFrost, Converter={StaticResource Vis}}">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Frost, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                    <Slider DockPanel.Dock="Right" Width="220" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding Frost}" VerticalAlignment="Center"
+                                            AutomationProperties.Name="{l:T 'Frosted glass'}"/>
+                                    <TextBlock Text="{l:T 'Frosted glass'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DockPanel Margin="0,10,0,0" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding GlassBlur}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                    <Slider DockPanel.Dock="Right" Width="220" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding GlassBlur}" VerticalAlignment="Center"
+                                            AutomationProperties.Name="{l:T 'Blur strength'}"/>
+                                    <TextBlock Text="{l:T 'Blur strength'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DockPanel Margin="0,10,0,0" Visibility="{Binding ShowGlass, Converter={StaticResource Vis}}">
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding GlassSaturation, StringFormat={}{0} %}" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                                    <Slider DockPanel.Dock="Right" Width="220" Minimum="0" Maximum="200" TickFrequency="5" IsSnapToTickEnabled="True" Value="{Binding GlassSaturation}" VerticalAlignment="Center"
+                                            AutomationProperties.Name="{l:T 'Saturation'}"/>
+                                    <TextBlock Text="{l:T 'Saturation'}" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Padding="16" Margin="0,12,0,0">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Form'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" Margin="0,0,0,12"/>
+                                <DockPanel>
+                                    <ComboBox DockPanel.Dock="Right" Width="240" ItemsSource="{Binding CornerStyles}" SelectedValue="{Binding Corners}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                              AutomationProperties.Name="{l:T 'Corners'}"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock Text="{l:T 'Corners'}"/>
+                                        <TextBlock Text="{l:T 'How strongly buttons, cards, the panel and floating windows are rounded.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <DockPanel Margin="0,12,0,0">
+                                    <ComboBox DockPanel.Dock="Right" Width="240" ItemsSource="{Binding GroupStyles}" SelectedValue="{Binding GroupStyle}" DisplayMemberPath="Value" SelectedValuePath="Key"
+                                              AutomationProperties.Name="{l:T 'Group style'}"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock Text="{l:T 'Group style'}"/>
+                                        <TextBlock Text="{l:T 'Accent stripe: calm cards, the group color as a stripe. Colored cards: the whole group is tinted.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
                     <!-- Schrift -->
-                    <Border Style="{StaticResource Card}" Padding="16" Margin="0,12,0,0">
+                    <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=fonts}">
                         <StackPanel>
                             <TextBlock Text="{l:T 'Fonts'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" Margin="0,0,0,12"/>
                             <UniformGrid Columns="2">
@@ -124,18 +262,18 @@
                                     <ComboBox x:Name="MonoFontBox" IsEditable="True" Text="{Binding MonoFontFamily, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="{l:T 'Font for paths and code'}"/>
                                 </StackPanel>
                             </UniformGrid>
-                            <TextBlock Text="{l:T 'Empty = font of the app. The size is set under Appearance › Font and element size.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                            <TextBlock Text="{l:T 'Empty = font of the app. The size stays under Settings › Appearance (font and element size).'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Gruppenfarben -->
-                    <Border Style="{StaticResource Card}" Padding="16" Margin="0,12,0,0">
+                    <Border Style="{StaticResource Card}" Padding="16" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,8">
                                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Suggest a series'}" Command="{Binding SuggestGroupColorsCommand}"/>
-                                <TextBlock Text="{l:T 'Group colors'}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding GroupColorsTitle}" FontWeight="SemiBold" FontSize="{StaticResource Font.Subtitle}" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <TextBlock Text="{l:T 'Groups without a color of their own get these in order; a group\'s own color always wins.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                            <TextBlock Text="{l:T 'Groups set to “From the design” get these in order, or a fixed position from the color menu. Each variant has its own series – switch between light and dark at the top.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,8"/>
                             <WrapPanel>
                                 <ItemsControl ItemsSource="{Binding GroupColors}" Focusable="False">
                                     <ItemsControl.ItemsPanel>
@@ -165,23 +303,17 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Übernommen vom Ausgangsstand -->
-                    <Border Style="{StaticResource Card}" Padding="16,12" Margin="0,12,0,0">
-                        <StackPanel>
-                            <TextBlock Text="{l:T 'Background and corners'}" FontWeight="SemiBold"/>
-                            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0">
-                                <Run Text="{Binding CarriedText, Mode=OneWay}"/><Run Text=" – "/><Run Text="{l:T 'taken from the current look; change it under Appearance before opening the editor.'}"/>
-                            </TextBlock>
-                        </StackPanel>
-                    </Border>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Vorschau: Panel der bearbeiteten Variante, daneben klein die andere -->
-            <Border Grid.Column="2" CornerRadius="{DynamicResource Radius.Card}" Background="#6F8FB3" ClipToBounds="True">
+            <Border Grid.Column="4" CornerRadius="{DynamicResource Radius.Card}" ClipToBounds="True">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#7A9CC4" Offset="0"/><GradientStop Color="#C48FA8" Offset="0.55"/><GradientStop Color="#E3B27A" Offset="1"/></LinearGradientBrush>
+                </Border.Background>
                 <ScrollViewer x:Name="PreviewScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16,24">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <Border x:Name="PreviewPanel" Width="300" CornerRadius="{DynamicResource Radius.Tile}" Padding="12" Background="{Binding SurfaceHex, Converter={StaticResource HexBrush}}"
+                    <Border x:Name="PreviewPanel" Width="300" CornerRadius="{Binding PreviewPanelRadius}" Padding="12" Background="{Binding SurfacePreview, Converter={StaticResource ArgbBrush}}"
                             BorderBrush="{Binding LineHex, Converter={StaticResource HexBrush}}" BorderThickness="1" TextElement.Foreground="{Binding TextHex, Converter={StaticResource HexBrush}}">
                         <StackPanel>
                             <DockPanel>
@@ -194,10 +326,10 @@
                                 <TextBlock Text="{l:T 'Search …'}" Foreground="{Binding TextSecondaryHex, Converter={StaticResource HexBrush}}" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,4">
-                                <Ellipse Width="10" Height="10" Fill="{Binding Group1Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
+                                <Border Width="4" Height="14" CornerRadius="2" Background="{Binding Group1Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Favorites'}" FontWeight="SemiBold"/>
                             </StackPanel>
-                            <Border CornerRadius="{DynamicResource Radius.Card}" Padding="12,8" Background="{Binding SelectedHex, Converter={StaticResource HexBrush}}">
+                            <Border CornerRadius="{Binding PreviewCardRadius}" Padding="12,8" Background="{Binding SelectedHex, Converter={StaticResource HexBrush}}">
                                 <StackPanel>
                                     <TextBlock Text="Cleanup.cmd" FontWeight="SemiBold"/>
                                     <TextBlock Text="{l:T 'Cleans up'}" FontSize="{StaticResource Font.Caption}" Foreground="{Binding TextSecondaryHex, Converter={StaticResource HexBrush}}"/>
@@ -213,17 +345,17 @@
                                 </StackPanel>
                             </Border>
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,4">
-                                <Ellipse Width="10" Height="10" Fill="{Binding Group2Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
+                                <Border Width="4" Height="14" CornerRadius="2" Background="{Binding Group2Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
                                 <TextBlock Text="Admin" FontWeight="SemiBold"/>
                             </StackPanel>
-                            <Border CornerRadius="{DynamicResource Radius.Card}" Padding="12,8" Background="{Binding CardHex, Converter={StaticResource HexBrush}}">
+                            <Border CornerRadius="{Binding PreviewCardRadius}" Padding="12,8" Background="{Binding Group2Card, Converter={StaticResource ArgbBrush}}">
                                 <TextBlock Text="Reset-Password.ps1"/>
                             </Border>
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,4">
-                                <Ellipse Width="10" Height="10" Fill="{Binding Group3Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
+                                <Border Width="4" Height="14" CornerRadius="2" Background="{Binding Group3Hex, Converter={StaticResource HexBrush}}" Margin="0,0,8,0"/>
                                 <TextBlock Text="{l:T 'Network'}" FontWeight="SemiBold"/>
                             </StackPanel>
-                            <Border CornerRadius="{DynamicResource Radius.Card}" Padding="12,8" Background="{Binding CardHex, Converter={StaticResource HexBrush}}">
+                            <Border CornerRadius="{Binding PreviewCardRadius}" Padding="12,8" Background="{Binding Group3Card, Converter={StaticResource ArgbBrush}}">
                                 <TextBlock Text="Flush-Dns.ps1"/>
                             </Border>
                             <Border BorderBrush="{Binding LineHex, Converter={StaticResource HexBrush}}" BorderThickness="0,1,0,0" Margin="0,12,0,0" Padding="0,8,0,0">

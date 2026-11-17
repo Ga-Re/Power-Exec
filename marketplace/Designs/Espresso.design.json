@@ -1,7 +1,15 @@
 {
   "Key": "",
   "Name": "Espresso",
-  "Description": "Dunkles Kaffeebraun mit Champagner-Akzent",
+  "Description": "Dark coffee brown with a champagne accent",
+  "Category": "Nature",
+  "Translations": {
+    "de": {
+      "Name": "Espresso",
+      "Description": "Dunkles Kaffeebraun mit Champagner-Akzent",
+      "Category": "Natur"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#1E1A18",
   "Opacity": 95,
@@ -19,7 +27,7 @@
     "TextSecondary": "#B6B3B0",
     "Selected": "#52493B"
   },
-  "GroupColors": "#D8B679, #9AD879, #79D8B6, #799AD8, #B679D8, #D8799A",
+  "GroupColors": "#D9B87C, #C8875A, #E8D3A8, #C98F8F, #9DB38A, #8FA4BF",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F4F3F3",
@@ -31,6 +39,7 @@
       "Text": "#292722",
       "TextSecondary": "#6A6865",
       "Selected": "#F0EAE0"
-    }
+    },
+    "GroupColors": "#8A6A2E, #8E4F26, #7A6740, #8E4F4F, #556B45, #4A6280"
   }
 }

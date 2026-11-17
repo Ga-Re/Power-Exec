@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Mitternacht",
-  "Description": "Dunkelblau getönt",
+  "Name": "Midnight",
+  "Description": "Tinted dark blue",
+  "Category": "Minimal",
+  "Translations": {
+    "de": {
+      "Name": "Mitternacht",
+      "Description": "Dunkelblau getönt",
+      "Category": "Schlicht"
+    }
+  },
   "Theme": "Dark",
   "PanelColor": "#14213D",
   "Opacity": 95,
@@ -19,7 +27,7 @@
     "TextSecondary": "#AAAFB9",
     "Selected": "#222E49"
   },
-  "GroupColors": "#63B1EE, #9F63EE, #EE63B1, #EE9F63, #B1EE63, #63EE9F",
+  "GroupColors": "#7FB0FF, #9E8CFF, #F49AC1, #FFC27A, #7FD8A6, #6FD3E8",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#F1F3F6",
@@ -31,6 +39,7 @@
       "Text": "#1A1B1D",
       "TextSecondary": "#5F6062",
       "Selected": "#CED1D8"
-    }
+    },
+    "GroupColors": "#2459B8, #5643C2, #B0326E, #A0600A, #1E7F4C, #0E7084"
   }
 }

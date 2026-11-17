@@ -1,7 +1,15 @@
 {
   "Key": "",
-  "Name": "Papier",
-  "Description": "Hell und ruhig",
+  "Name": "Paper",
+  "Description": "Light and calm, like ink on paper",
+  "Category": "Minimal",
+  "Translations": {
+    "de": {
+      "Name": "Papier",
+      "Description": "Hell und ruhig",
+      "Category": "Schlicht"
+    }
+  },
   "Theme": "Light",
   "PanelColor": "#FAFAFA",
   "Opacity": 100,
@@ -19,7 +27,7 @@
     "TextSecondary": "#6E6E6E",
     "Selected": "#FAFAFA"
   },
-  "GroupColors": "#1576C1, #6015C1, #C11576, #C16015, #76C115, #15C160",
+  "GroupColors": "#2F5DA8, #A8432F, #4F7A3A, #8A6418, #6B4F9A, #2F7A7A",
   "GroupColorsForTags": true,
   "Pair": {
     "PanelColor": "#212121",
@@ -31,7 +39,8 @@
       "Text": "#F0F7FC",
       "TextSecondary": "#AEB2B6",
       "Selected": "#284053"
-    }
+    },
+    "GroupColors": "#8AB0F0, #F0937E, #A3CF8A, #E8C06E, #BDA3E8, #7ECFCF"
   },
   "FontFamily": "Georgia"
 }

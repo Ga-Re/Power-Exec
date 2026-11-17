@@ -249,7 +249,7 @@ public static class Marketplace
                     var d = ParseDesign(payload, file);
                     var text = L.F("{0}, panel color {1}, {2}, opacity {3} %", d.Theme, d.PanelColor.Length > 0 ? d.PanelColor : L.T("of the design"), PanelBackdrops.Label(d.Backdrop), d.Opacity)
                                + (d.AccentColor.Length > 0 ? L.F(", accent {0}", d.AccentColor) : string.Empty);
-                    return new MarketplaceDetails(d.Name, d.Description, Array.Empty<MarketplaceVariable>(), text) { Design = d };
+                    return new MarketplaceDetails(d.DisplayName, d.DisplayDescription, Array.Empty<MarketplaceVariable>(), text) { Design = d };
                 }
             default:
                 {
@@ -276,6 +276,44 @@ public static class Marketplace
     }
 
     // ---- Installieren, deinstallieren, Updates -----------------------------------------
+
+    /// <summary>Designs der mitgelieferten Quelle, die mit Version 0.37 englische Dateinamen bekamen (alt → neu).</summary>
+    public static readonly IReadOnlyDictionary<string, string> RenamedDesigns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Wald"] = "Forest",
+        ["Abendrot"] = "Sunset",
+        ["Graphit"] = "Graphite",
+        ["Hologramm"] = "Hologram",
+        ["Minze"] = "Mint",
+        ["Mitternacht"] = "Midnight",
+        ["Ozean"] = "Ocean",
+        ["Papier"] = "Paper"
+    };
+
+    /// <summary>
+    /// Installierte Designs mit altem Dateinamen auf den neuen umschreiben – Installation, Kennung des Designs und aktives
+    /// Design –, damit sie weiter als installiert gelten und Updates bekommen.
+    /// </summary>
+    public static void MigrateRenamedDesigns(AppSettings s)
+    {
+        foreach (var install in s.MarketplaceInstalls.Where(i => i.DesignKey.Length > 0))
+        {
+            var slash = install.ItemId.LastIndexOf('/');
+            var folder = slash >= 0 ? install.ItemId[..(slash + 1)] : string.Empty;
+            var file = install.ItemId[(slash + 1)..];
+            const string ext = ".design.json";
+            if (!folder.Contains("Designs/", StringComparison.OrdinalIgnoreCase) || !file.EndsWith(ext, StringComparison.OrdinalIgnoreCase)
+                || !RenamedDesigns.TryGetValue(file[..^ext.Length], out var renamed)) continue;
+            install.ItemId = folder + renamed + ext;
+            var oldKey = install.DesignKey;
+            var newKey = "market:" + StableId(install.ItemId);
+            install.DesignKey = newKey;
+            for (int i = 0; i < s.CustomDesigns.Count; i++)
+                if (s.CustomDesigns[i].Key == oldKey) s.CustomDesigns[i] = s.CustomDesigns[i] with { Key = newKey };
+            if (s.DesignKey == oldKey) s.DesignKey = newKey;
+            install.Version = string.Empty; // neuer Stand der Datei (Übersetzung, Farbreihen) kommt als Update
+        }
+    }
 
     public static MarketplaceInstall? FindInstall(AppSettings s, string source, string path) =>
         s.MarketplaceInstalls.FirstOrDefault(i => SameSource(i.Source, source) && i.ItemId.Equals(path, StringComparison.OrdinalIgnoreCase));

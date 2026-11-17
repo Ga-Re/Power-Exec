@@ -67,14 +67,14 @@
                                                         BorderThickness="1" Margin="0,0,8,0" Visibility="{Binding Folder.HasPending, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
                                                     <TextBlock Text="{Binding Folder.PendingCount, StringFormat={}{0} neu}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Status.Warning}" VerticalAlignment="Center"/>
                                                 </Border>
-                                                <ComboBox Width="150" Margin="0,0,4,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding ColorOwn}" SelectedValuePath="Key"
+                                                <ComboBox Width="196" Margin="0,0,4,0" ItemsSource="{Binding Colors}" SelectedValue="{Binding ColorOwn}" SelectedValuePath="Key"
                                                           ToolTip="{l:T 'Group color (subgroups inherit it)'}">
                                                     <ComboBox.ItemTemplate>
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Ellipse Width="12" Height="12" Margin="0,0,8,0" Stroke="{DynamicResource Border.Control}" StrokeThickness="1"
-                                                                         Fill="{Binding Key, Converter={StaticResource HexBrush}}"/>
-                                                                <TextBlock Text="{Binding Value}"/>
+                                                                         Fill="{Binding SwatchColor, Converter={StaticResource ArgbBrush}}"/>
+                                                                <TextBlock Text="{Binding Name}"/>
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ComboBox.ItemTemplate>
