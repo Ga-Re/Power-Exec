@@ -75,7 +75,14 @@ public sealed class MarketplaceViewModel : ObservableObject
     public string Category
     {
         get => _category;
-        set { if (_category == (value ?? string.Empty)) return; _category = value ?? string.Empty; OnPropertyChanged(); Rebuild(); }
+        set
+        {
+            CloseDetail(); // Kategorie in der Navigation gewählt: zurück zur Galerie
+            if (_category == (value ?? string.Empty)) return;
+            _category = value ?? string.Empty;
+            OnPropertyChanged();
+            Rebuild();
+        }
     }
 
     /// <summary>„Entdecken“ bei Einträgen und Scripten (Designs haben ihren eigenen Bereich).</summary>
@@ -98,13 +105,50 @@ public sealed class MarketplaceViewModel : ObservableObject
         _ => f.Type.ToString() == _tab
     };
 
-    /// <summary>Details einer Karte auf- bzw. zuklappen; es ist immer höchstens eine offen.</summary>
-    internal void ToggleDetails(MarketplaceItemRow row)
+    // ---- Detailseite --------------------------------------------------------------------
+
+    private MarketplaceItemRow? _openItem;
+
+    /// <summary>Auf der Detailseite geöffneter Eintrag; null = Galerie.</summary>
+    public MarketplaceItemRow? OpenItem => _openItem;
+    /// <summary>Statt der Galerie ist die Detailseite eines Eintrags zu sehen.</summary>
+    public bool IsDetailOpen => _openItem != null;
+
+    /// <summary>Zurück zur Galerie, z. B. „← Entdecken“ (Name des Bereichs, aus dem der Eintrag geöffnet wurde).</summary>
+    public string BackText => "← " + (_tab switch
     {
-        var open = !row.IsPreviewOpen;
-        foreach (var i in _items) if (!ReferenceEquals(i, row)) i.IsPreviewOpen = false;
-        row.IsPreviewOpen = open;
+        "Entry" => L.T("Entries"),
+        "Script" => L.T("Scripts"),
+        "Installed" => L.T("Installed"),
+        "DesignInstalled" => L.T("My designs"),
+        _ => L.T("Discover")
+    });
+
+    public ICommand BackCommand => _backCommand ??= new RelayCommand(CloseDetail, () => IsDetailOpen);
+    private ICommand? _backCommand;
+
+    /// <summary>Eintrag auf der Detailseite öffnen (Designs zeigen dort zuerst die Variante, in der die App gerade läuft).</summary>
+    internal void Open(MarketplaceItemRow row)
+    {
+        if (ReferenceEquals(_openItem, row)) return;
+        row.PrepareDetail(_app.Theme.IsDark);
+        SetOpen(row);
     }
+
+    /// <summary>Detailseite schließen: zurück zur Galerie.</summary>
+    public void CloseDetail() => SetOpen(null);
+
+    private void SetOpen(MarketplaceItemRow? row)
+    {
+        if (_openItem != null) _openItem.IsPreviewOpen = false;
+        var wasOpen = _openItem != null;
+        _openItem = row;
+        if (row != null) row.IsPreviewOpen = true;
+        OnPropertyChanged(nameof(OpenItem));
+        if (wasOpen != (row != null)) OnPropertyChanged(nameof(IsDetailOpen));
+        CommandRequery.Invalidate();
+    }
+
     public ObservableCollection<MarketplaceSourceViewModel> SourceList { get; } = new();
     public ICommand RefreshCommand { get; }
     public ICommand AddSourceCommand { get; }
@@ -128,9 +172,11 @@ public sealed class MarketplaceViewModel : ObservableObject
         set
         {
             if (_tab == value) return;
+            CloseDetail();
             _tab = value ?? "Entry";
             _category = string.Empty; // Kategorien gehören zum Bereich
             OnPropertyChanged();
+            OnPropertyChanged(nameof(BackText));
             OnPropertyChanged(nameof(Category));
             OnPropertyChanged(nameof(IsSourcesPage));
             OnPropertyChanged(nameof(IsListPage));
@@ -273,7 +319,7 @@ public sealed class MarketplaceViewModel : ObservableObject
     internal void Rebuild()
     {
         var checkedKeys = _items.Where(i => i.IsChecked).Select(i => i.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var openKey = _items.FirstOrDefault(i => i.IsPreviewOpen)?.Id;
+        var open = _openItem;
         _items.Clear();
         Rows.Clear();
         var categories = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -292,10 +338,7 @@ public sealed class MarketplaceViewModel : ObservableObject
             if (_category.Length > 0) items = items.Where(i => i.CategoryName.Equals(_category, StringComparison.OrdinalIgnoreCase)).ToList();
             if (items.Count == 0) continue;
             foreach (var i in items)
-            {
                 if (checkedKeys.Contains(i.Id)) i.SetChecked(true);
-                if (i.Id == openKey) i.IsPreviewOpen = true;
-            }
             _items.AddRange(items);
             var root = new MarketplaceFolderRow(this, Key(src.Url) + "|", SourceName(src.Url), 0, isSource: true);
             foreach (var item in items)
@@ -314,6 +357,16 @@ public sealed class MarketplaceViewModel : ObservableObject
         }
         Cards.Clear();
         foreach (var i in _items) Cards.Add(i);
+        // Offene Detailseite bleibt: mit der neuen Zeile (neuer Stand nach Installieren, Anwenden …), sonst mit der alten
+        if (open != null)
+        {
+            if (_items.FirstOrDefault(i => i.Id == open.Id) is { } fresh && !ReferenceEquals(fresh, open))
+            {
+                fresh.TakeDetailState(open);
+                SetOpen(fresh);
+            }
+            else open.RaiseState();
+        }
         Categories.Clear();
         foreach (var c in categories.OrderBy(c => c.Key, StringComparer.CurrentCultureIgnoreCase))
             Categories.Add(new MarketplaceCategory(this, c.Key, c.Value, c.Key.Equals(_category, StringComparison.OrdinalIgnoreCase)));
@@ -501,6 +554,7 @@ public sealed class MarketplaceViewModel : ObservableObject
         if (_tryBefore == null) _tryRow = null;
         foreach (var p in new[] { nameof(IsTrying), nameof(TryText) }) OnPropertyChanged(p);
         foreach (var i in _items) i.RaiseTrying();
+        if (_openItem != null && !_items.Contains(_openItem)) _openItem.RaiseTrying();
         CommandRequery.Invalidate();
     }
 
@@ -771,6 +825,8 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public string StateText => HasUpdate ? L.T("Update available") : IsInstalled ? L.T("✓ Installed") : string.Empty;
     public string InstallText => HasUpdate ? L.T("Update") : L.T("Download");
     public bool CanInstall => !IsInstalled || HasUpdate;
+    /// <summary>Detailseite: „Herunterladen“ bzw. „Aktualisieren“ (Designs haben „Installieren und anwenden“).</summary>
+    public bool ShowInstall => IsEntryOrScript && CanInstall;
 
     public ICommand InstallCommand { get; }
     public ICommand UninstallCommand { get; }
@@ -787,21 +843,38 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     internal void SetDetails(MarketplaceDetails details)
     {
         _details = details;
-        foreach (var p in new[] { nameof(Name), nameof(Description), nameof(Needs), nameof(PreviewText), nameof(PreviewLine), nameof(EntryKindText), nameof(VariablesText),
-                     nameof(HasVariables), nameof(DesignPanelColor), nameof(DesignAccentColor), nameof(DesignTextColor), nameof(DesignSubtleColor),
-                     nameof(DesignBackdropText), nameof(HasDesign), nameof(DesignPreset), nameof(CategoryName), nameof(CategoryText), nameof(HasBothVariants),
-                     nameof(ShowsDark), nameof(DesignColorRows), nameof(DesignGroupRows), nameof(DesignFontText), nameof(DesignFont), nameof(DesignMonoFont),
-                     nameof(DesignMonoText), nameof(DesignFormText), nameof(DesignBackgroundText), nameof(GroupSwatches) })
-            OnPropertyChanged(p);
+        _colorRows = null;
+        _groupRows = null;
+        RaiseState();
     }
 
-    // ---- Vorschau ----------------------------------------------------------------------
+    /// <summary>Alles neu lesen (Stand nach Installieren, Anwenden, Ausprobieren).</summary>
+    internal void RaiseState() => OnPropertyChanged(string.Empty);
+
+    // ---- Detailseite -------------------------------------------------------------------
 
     private bool _previewOpen;
-    /// <summary>Vorschau unter der Zeile aufgeklappt (Einträge und Scripte; Designs zeigen sie immer).</summary>
+    /// <summary>Auf der Detailseite geöffnet.</summary>
     public bool IsPreviewOpen { get => _previewOpen; set => Set(ref _previewOpen, value); }
-    public ICommand TogglePreviewCommand => _togglePreview ??= new RelayCommand(() => _page.ToggleDetails(this));
-    private ICommand? _togglePreview;
+    /// <summary>Detailseite öffnen (Klick auf die Karte).</summary>
+    public ICommand OpenCommand => _openCommand ??= new RelayCommand(() => _page.Open(this));
+    private ICommand? _openCommand;
+
+    /// <summary>Kopfzeile der Detailseite: „Beschreibung · Kategorie · von Quelle“.</summary>
+    public string MetaText => string.Join(" · ", new[] { Description, CategoryName, L.F("by {0}", _page.SourceName(Source)) }.Where(t => t.Length > 0));
+
+    /// <summary>Vor dem Öffnen: ohne eigene Wahl auf der Karte die Variante zeigen, in der die App gerade läuft.</summary>
+    internal void PrepareDetail(bool appIsDark)
+    {
+        if (!_variantChosen && HasBothVariants) ShowDark = appIsDark;
+    }
+
+    /// <summary>Nach dem Neuaufbau der Liste: gewählte Variante der bisher geöffneten Zeile übernehmen.</summary>
+    internal void TakeDetailState(MarketplaceItemRow previous)
+    {
+        _variantChosen = previous._variantChosen;
+        ShowDark = previous._showDark;
+    }
 
     public bool IsDesignFile => File.Type == MarketplaceItemType.Design;
     public bool IsEntryOrScript => File.Type != MarketplaceItemType.Design;
@@ -814,38 +887,51 @@ public sealed class MarketplaceItemRow : MarketplaceRow
     public string VariablesText => _details == null ? string.Empty : string.Join("\n", _details.Variables.Select(v =>
         "{{$" + Variables.Normalize(v.Name) + "}} · " + Variables.Label(v.Kind) + (v.Description.Length > 0 ? " – " + v.Description : string.Empty)));
 
-    // Design: Panelfläche, Akzent, Schrift – als #RRGGBB für die Mini-Vorschau
     public bool HasDesign => _details?.Design != null;
     /// <summary>Design für die gemeinsame Vorschau (wie unter Darstellung).</summary>
     public DesignPreset? DesignPreset => _details?.Design;
-    private bool DesignIsLight => _details?.Design is { } d &&
-        (d.PanelColor.Length > 0 ? ArgbColor.FromHex(d.PanelColor, 255) is { } c && (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) > 150 : d.Theme == ThemeMode.Light);
-    public string DesignPanelColor => _details?.Design is { } d
-        ? (d.PanelColor.Length > 0 ? d.PanelColor : d.Theme == ThemeMode.Light ? "#F3F3F3" : "#202020") : "#202020";
-    public string DesignAccentColor => _details?.Design is { AccentColor.Length: > 0 } d ? d.AccentColor : "#0078D4";
-    public string DesignTextColor => DesignIsLight ? "#1B1B1B" : "#FFFFFF";
-    /// <summary>Panelfarbe leicht zur Schriftfarbe gemischt (Zeilen und Knöpfe der Mini-Vorschau).</summary>
-    public string DesignSubtleColor
-    {
-        get
-        {
-            var p = ArgbColor.FromHex(DesignPanelColor) ?? new ArgbColor(255, 32, 32, 32);
-            var t = DesignIsLight ? 0 : 255;
-            byte Mix(byte c) => (byte)Math.Round(c + (t - c) * 0.16);
-            return $"#{Mix(p.R):X2}{Mix(p.G):X2}{Mix(p.B):X2}";
-        }
-    }
-    // ---- Design: Karte mit heller/dunkler Variante, Details ---------------------------------
+
+    // ---- Design: helle bzw. dunkle Variante (Karte und Detailseite) ------------------------
 
     private bool? _showDark;
-    /// <summary>Gezeigte Variante auf der Karte: dunkel, hell oder – null – die Hauptvariante des Designs.</summary>
-    public bool? ShowDark { get => _showDark; private set { if (Set(ref _showDark, value)) { OnPropertyChanged(nameof(ShowsDark)); OnPropertyChanged(nameof(GroupSwatches)); } } }
-    /// <summary>Zeigt die Karte gerade die dunkle Variante?</summary>
-    public bool ShowsDark => _showDark ?? DesignPreset?.PrimaryIsDark ?? true;
+    private bool _variantChosen;
+
+    /// <summary>Gezeigte Variante: dunkel, hell oder – null – die Hauptvariante des Designs.</summary>
+    public bool? ShowDark
+    {
+        get => _showDark;
+        private set
+        {
+            if (!Set(ref _showDark, value)) return;
+            foreach (var p in new[] { nameof(ShowsDark), nameof(IsPreviewDark), nameof(IsPreviewLight), nameof(GroupSwatches), nameof(PreviewSurface),
+                         nameof(PreviewAccent), nameof(PreviewLineColor), nameof(PreviewInk) })
+                OnPropertyChanged(p);
+            MarkActiveRows();
+        }
+    }
+
+    /// <summary>Zeigt die Vorschau gerade die dunkle Variante? Designs mit nur einer Variante zeigen immer diese.</summary>
+    public bool ShowsDark => HasBothVariants ? _showDark ?? DesignPreset?.PrimaryIsDark ?? true : DesignPreset?.PrimaryIsDark ?? true;
     public bool HasBothVariants => DesignPreset?.HasBothVariants == true;
-    public ICommand ShowDarkCommand => _showDarkCommand ??= new RelayCommand(() => ShowDark = true, () => HasBothVariants);
-    public ICommand ShowLightCommand => _showLightCommand ??= new RelayCommand(() => ShowDark = false, () => HasBothVariants);
+    public ICommand ShowDarkCommand => _showDarkCommand ??= new RelayCommand(() => ChooseVariant(true), () => HasBothVariants);
+    public ICommand ShowLightCommand => _showLightCommand ??= new RelayCommand(() => ChooseVariant(false), () => HasBothVariants);
     private ICommand? _showDarkCommand, _showLightCommand;
+
+    /// <summary>Umschalter „☾ Dunkel“ der Detailseite (nur Designs mit beiden Varianten).</summary>
+    public bool IsPreviewDark { get => ShowsDark; set { if (value) ChooseVariant(true); } }
+    /// <summary>Umschalter „☀ Hell“ der Detailseite.</summary>
+    public bool IsPreviewLight { get => !ShowsDark; set { if (value) ChooseVariant(false); } }
+
+    /// <summary>Hinweis am Umschalter, wenn das Design nur eine Variante hat.</summary>
+    public string VariantHint => HasBothVariants || DesignPreset is not { } d ? string.Empty
+        : d.PrimaryIsDark ? L.T("This design only has a dark variant") : L.T("This design only has a light variant");
+
+    private void ChooseVariant(bool dark)
+    {
+        if (!HasBothVariants) return;
+        _variantChosen = true;
+        ShowDark = dark;
+    }
 
     /// <summary>Farbreihe der Gruppen in der gezeigten Variante (Farbstreifen unter dem Namen).</summary>
     public IReadOnlyList<DesignSwatch> GroupSwatches => DesignPreset is { } d ? GroupColorsOf(d, ShowsDark).Select((h, i) => new DesignSwatch(ColorChoices.DesignColorName(i), h)).ToList() : Array.Empty<DesignSwatch>();
@@ -860,61 +946,144 @@ public sealed class MarketplaceItemRow : MarketplaceRow
 
     private static string VariantLabel(bool dark) => dark ? L.T("☾ Dark") : L.T("☀ Light");
 
-    /// <summary>Flächenfarben je Variante (Details): Panel, Karte, Eingabe, Linie, Text, Auswahl, Akzent.</summary>
-    public IReadOnlyList<DesignSwatchRow> DesignColorRows => DesignPreset is { } d
+    // ---- Design: Farben und Gruppenpalette je Variante -----------------------------------
+
+    private IReadOnlyList<DesignSwatchRow>? _colorRows, _groupRows;
+
+    /// <summary>Flächenfarben je Variante (erst dunkel, dann hell): Panel, Karte, Eingabe, Linie, Text, Auswahl, Akzent.</summary>
+    public IReadOnlyList<DesignSwatchRow> DesignColorRows => _colorRows ??= DesignPreset is { } d
         ? Variants(d).Select(dark =>
         {
             var c = ColorsOf(d, dark);
-            return new DesignSwatchRow(VariantLabel(dark), c.Surface.Hex, new[]
+            return new DesignSwatchRow(VariantLabel(dark), dark, c.Surface.Hex, new[]
             {
                 new DesignSwatch(L.T("Panel"), c.Surface.Hex), new DesignSwatch(L.T("Card"), c.Card.Hex), new DesignSwatch(L.T("Input"), c.Input.Hex),
                 new DesignSwatch(L.T("Line"), c.Line.Hex), new DesignSwatch(L.T("Text"), c.Text.Hex), new DesignSwatch(L.T("Selection"), c.Selected.Hex),
                 new DesignSwatch(d.WindowsAccent ? L.T("Accent (Windows)") : L.T("Accent"), c.Accent.Hex)
-            });
+            }, Array.Empty<DesignGroupPill>(), dark == ShowsDark, ChooseVariant);
         }).ToList() : Array.Empty<DesignSwatchRow>();
 
-    /// <summary>Farbreihe der Gruppen je Variante, auf der Panelfläche dieser Variante.</summary>
-    public IReadOnlyList<DesignSwatchRow> DesignGroupRows => DesignPreset is { } d
-        ? Variants(d).Select(dark => new DesignSwatchRow(VariantLabel(dark), ColorsOf(d, dark).Surface.Hex,
-            GroupColorsOf(d, dark).Select((h, i) => new DesignSwatch(ColorChoices.DesignColorName(i), h)).ToList())).Where(r => r.Swatches.Count > 0).ToList()
-        : Array.Empty<DesignSwatchRow>();
+    /// <summary>Beispielnamen der Gruppen in der Gruppenpalette (sechs, übersetzt).</summary>
+    public static IReadOnlyList<string> SampleGroupNames => L.T("Favorites|Admin|Tools|Network|Server|Links").Split('|');
 
-    /// <summary>Schrift für Text (leer = die der App) und ihr Name.</summary>
-    public string DesignFont => DesignPreset?.FontFamily is { Length: > 0 } f ? f : "Segoe UI Variable Text, Segoe UI";
-    public string DesignFontText => DesignPreset?.FontFamily is { Length: > 0 } f ? f : L.T("Segoe UI (font of the app)");
-    public string DesignMonoFont => DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f + ", Cascadia Mono, Consolas" : "Cascadia Mono, Consolas";
-    public string DesignMonoText => DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f : L.T("Cascadia Mono (font of the app)");
+    /// <summary>
+    /// Gruppenpalette je Variante: sechs Beispielgruppen auf der Panelfläche dieser Variante, der Reihe nach in den Farben
+    /// des Designs (wie Gruppen mit der Farbe „Vom Design“). Ohne Farbreihe bleiben sie neutral.
+    /// </summary>
+    public IReadOnlyList<DesignSwatchRow> DesignGroupRows => _groupRows ??= DesignPreset is { } d
+        ? Variants(d).Select(dark =>
+        {
+            var c = ColorsOf(d, dark);
+            var colors = GroupColorsOf(d, dark);
+            var pills = SampleGroupNames.Select((name, i) =>
+            {
+                var color = colors.Count > 0 && PanelColors.TryParse(colors[i % colors.Count], out var g) ? g : c.Text;
+                return new DesignGroupPill(name, color.Hex, PanelColors.Blend(c.Surface, color, colors.Count > 0 ? 0.14 : 0.06).Hex,
+                    (colors.Count > 0 ? PanelColors.Blend(c.Surface, color, 0.4) : c.Line).Hex);
+            }).ToList();
+            return new DesignSwatchRow(VariantLabel(dark), dark, c.Surface.Hex, Array.Empty<DesignSwatch>(), pills, dark == ShowsDark, ChooseVariant);
+        }).ToList() : Array.Empty<DesignSwatchRow>();
 
-    /// <summary>Ecken und Gruppenstil.</summary>
+    /// <summary>Hinweis neben „Gruppenpalette“: für wen die Farben gelten.</summary>
+    public string GroupPaletteHint => DesignPreset is not { } d ? string.Empty
+        : Appearance.SplitColors(d.GroupColors).Count == 0 ? L.T("no group colors – groups keep their own color")
+        : d.GroupColorsForTags ? L.T("also applies to tags · groups “From the design” get them in order")
+        : L.T("groups “From the design” get them in order");
+
+    private void MarkActiveRows()
+    {
+        foreach (var row in (_colorRows ?? Array.Empty<DesignSwatchRow>()).Concat(_groupRows ?? Array.Empty<DesignSwatchRow>()))
+            row.IsActive = row.IsDark == ShowsDark;
+    }
+
+    // ---- Design: Schrift ---------------------------------------------------------------
+
+    private const string AppFont = "Segoe UI Variable Text";
+    private const string AppFontFallback = "Segoe UI";
+    private const string AppMonoFont = "Cascadia Mono";
+    private const string AppMonoFallback = "Consolas";
+
+    /// <summary>Schrift für Text (mit Ersatz, falls sie fehlt) und ihr Name samt Prüfung, ob sie installiert ist.</summary>
+    public string DesignFont => DesignPreset?.FontFamily is { Length: > 0 } f ? f + ", " + AppFontFallback : AppFont + ", " + AppFontFallback;
+    public string DesignFontText => DesignPreset?.FontFamily is { Length: > 0 } f
+        ? FontState(f, AppFontFallback)
+        : L.T("Segoe UI (font of the app)");
+    public string DesignMonoFont => (DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f + ", " : string.Empty) + AppMonoFont + ", " + AppMonoFallback;
+    public string DesignMonoText => DesignPreset?.MonoFontFamily is { Length: > 0 } f
+        ? FontState(f, _page.App.Theme.IsFontInstalled(AppMonoFont) ? AppMonoFont : AppMonoFallback)
+        : FontState(AppMonoFont, AppMonoFallback, ofApp: true);
+    /// <summary>Fehlt die Schrift des Designs auf diesem PC?</summary>
+    public bool IsDesignFontMissing => DesignPreset?.FontFamily is { Length: > 0 } f && !_page.App.Theme.IsFontInstalled(f);
+    public bool IsDesignMonoFontMissing => !_page.App.Theme.IsFontInstalled(DesignPreset?.MonoFontFamily is { Length: > 0 } f ? f : AppMonoFont);
+
+    private string FontState(string font, string fallback, bool ofApp = false) =>
+        _page.App.Theme.IsFontInstalled(font) ? (ofApp ? L.F("{0} (font of the app)", font) : font)
+        : L.F("{0} · missing here, {1} is used", font, fallback);
+
+    /// <summary>Beispieltexte der Schrift-Vorschau.</summary>
+    public static string FontSample => L.T("Aa Restart server 0123");
+    public static string CodeSample => L.T("Get-Service | Where Status -eq 'Running'");
+
+    // ---- Design: Form und Hintergrund --------------------------------------------------
+
+    private CornerRadii Radii => CornerRadii.Of(DesignPreset?.Corners ?? CornerStyle.Standard);
+    /// <summary>Radius der Mini-Vorschau „Ecken“ (Karten des Designs).</summary>
+    public double PreviewCornerRadius => Radii.Card;
+
+    /// <summary>Ecken (Panel und Karten) und Gruppenstil.</summary>
     public string DesignFormText => DesignPreset is { } d ? string.Join(" · ", new[]
     {
-        L.T("Corners") + ": " + (d.Corners switch { CornerStyle.Rounded => L.T("Rounded"), CornerStyle.Square => L.T("Square"), CornerStyle.Standard => L.T("Standard"), _ => L.T("unchanged") }),
-        L.T("Group style") + ": " + (d.GroupStyle switch { GroupCardStyle.Tinted => L.T("Colored cards"), GroupCardStyle.Accent => L.T("Accent stripe"), _ => L.T("unchanged") })
-    }) : string.Empty;
+        d.Corners == null ? L.T("Corners as set in the app") : L.F("Corners {0} px · cards {1} px", Radii.Tile, Radii.Card),
+        d.GroupStyle switch { GroupCardStyle.Tinted => L.T("Colored cards"), GroupCardStyle.Accent => L.T("Accent stripe"), _ => string.Empty }
+    }.Where(t => t.Length > 0)) : string.Empty;
 
-    /// <summary>Hintergrund mit Deckkraft, Milchglas, Weichzeichner und Sättigung.</summary>
+    /// <summary>Hintergrund · Deckkraft · Milchglas (bei Glas mit Weichzeichner und Sättigung).</summary>
     public string DesignBackgroundText => DesignPreset is { } d ? string.Join(" · ", new[]
     {
         PanelBackdrops.Label(d.Backdrop),
-        d.Backdrop == PanelBackdrop.Solid ? string.Empty : L.F("opacity {0} %", d.Opacity),
-        d.Backdrop != PanelBackdrop.Solid && d.Frost > 0 ? L.F("frosted glass {0} %", d.Frost) : string.Empty,
+        d.Backdrop == PanelBackdrop.Solid ? string.Empty : L.F("opacity {0} %", d.Opacity), // Vollton heißt schon „deckend“
+        d.Backdrop == PanelBackdrop.Solid ? string.Empty : d.Frost > 0 ? L.F("frosted glass {0} %", d.Frost) : L.T("frosted glass off"),
         d.Backdrop == PanelBackdrop.Glass ? L.F("blur {0}", d.GlassBlur) : string.Empty,
         d.Backdrop == PanelBackdrop.Glass ? L.F("saturation {0} %", d.GlassSaturation) : string.Empty
     }.Where(t => t.Length > 0)) : string.Empty;
+
+    /// <summary>Deckkraft der Panelfläche in der Mini-Vorschau (0,2 … 1).</summary>
+    public double PreviewOpacity => DesignPreset is { } d && d.Backdrop != PanelBackdrop.Solid ? Math.Clamp(d.Opacity / 100.0, 0.2, 1.0) : 1.0;
+    /// <summary>Deckkraft der Milchglas-Tönung in der Mini-Vorschau (0 = aus).</summary>
+    public double PreviewFrost => DesignPreset is { } d && d.Backdrop != PanelBackdrop.Solid ? Math.Clamp(d.Frost / 100.0, 0, 1) * 0.6 : 0;
+
+    /// <summary>Übernimmt das Design die Akzentfarbe von Windows?</summary>
+    public bool UsesWindowsAccent => DesignPreset?.WindowsAccent == true;
+    public string AccentText => UsesWindowsAccent ? L.T("Windows accent color is used") : L.T("Own accent color (not the one from Windows)");
+
+    /// <summary>Farben der gezeigten Variante für die Mini-Vorschauen.</summary>
+    public ArgbColor? PreviewSurface => DesignPreset is { } d ? ArgbColor.From(ColorsOf(d, ShowsDark).Surface) : null;
+    public ArgbColor? PreviewAccent => DesignPreset is { } d ? ArgbColor.From(ColorsOf(d, ShowsDark).Accent) : null;
+    public ArgbColor? PreviewLineColor => DesignPreset is { } d ? ArgbColor.From(ColorsOf(d, ShowsDark).Line) : null;
+    /// <summary>Textfarbe der gezeigten Variante.</summary>
+    public ArgbColor? PreviewInk => DesignPreset is { } d ? ArgbColor.From(ColorsOf(d, ShowsDark).Text) : null;
+
+    // ---- Design: Aktionen --------------------------------------------------------------
 
     /// <summary>Design vorübergehend anwenden (bis „Übernehmen“ oder „Zurück“).</summary>
     public ICommand TryCommand => _tryCommand ??= new RelayCommand(() => _page.TryDesign(this), () => HasDesign && !IsTrying);
     /// <summary>Herunterladen (falls nötig) und anwenden.</summary>
     public ICommand ApplyCommand => _applyCommand ??= new RelayCommand(async () => await _page.InstallAndApplyAsync(this), () => HasDesign);
     private ICommand? _tryCommand, _applyCommand;
-    public string ApplyText => IsInstalled && !HasUpdate ? L.T("Apply") : L.T("Download and apply");
+    public string ApplyText => IsInstalled && !HasUpdate ? L.T("Apply design") : L.T("Install and apply");
     public bool IsTrying => _page.IsTryingRow(this);
+
+    /// <summary>Installiert und gerade aktiv (nicht nur ausprobiert): „✓ Aktiv“ statt „Anwenden“.</summary>
+    public bool IsActiveDesign => HasDesign && !IsTrying && !HasUpdate && Marketplace.FindInstall(_page.Settings, Source, File.Path) is { DesignKey.Length: > 0 } i
+                                  && i.DesignKey == _page.Settings.DesignKey;
+    public bool ShowApply => HasDesign && !IsActiveDesign;
+
     internal void RaiseTrying()
     {
-        OnPropertyChanged(nameof(IsTrying));
-        OnPropertyChanged(nameof(ApplyText));
+        foreach (var p in new[] { nameof(IsTrying), nameof(ApplyText), nameof(IsActiveDesign), nameof(ShowApply) }) OnPropertyChanged(p);
     }
 
+    /// <summary>Kurzinfo der Karte (Tooltip der Vorschau).</summary>
     public string DesignBackdropText => _details?.Design is { } d
         ? string.Join(" · ", new[]
         {
@@ -926,16 +1095,51 @@ public sealed class MarketplaceItemRow : MarketplaceRow
         }.Where(t => t.Length > 0)) : string.Empty;
 }
 
-/// <summary>Ein Farbfeld in den Details eines Designs.</summary>
+/// <summary>Ein Farbfeld in den Details eines Designs (Klick kopiert <see cref="Hex"/>).</summary>
 public sealed record DesignSwatch(string Name, string Hex)
 {
     public ArgbColor? Color { get; } = ArgbColor.FromHex(Hex, 255);
 }
 
-/// <summary>Eine Zeile Farbfelder (Variante hell bzw. dunkel) auf der Panelfläche dieser Variante.</summary>
-public sealed record DesignSwatchRow(string Label, string SurfaceHex, IReadOnlyList<DesignSwatch> Swatches)
+/// <summary>Beispielgruppe der Gruppenpalette: Name, Gruppenfarbe sowie Fläche und Rahmen auf dem Panel der Variante.</summary>
+public sealed record DesignGroupPill(string Name, string Hex, string BackgroundHex, string BorderHex)
 {
-    public ArgbColor? Surface { get; } = ArgbColor.FromHex(SurfaceHex, 255);
+    public ArgbColor? Color { get; } = ArgbColor.FromHex(Hex, 255);
+    public ArgbColor? Background { get; } = ArgbColor.FromHex(BackgroundHex, 255);
+    public ArgbColor? Border { get; } = ArgbColor.FromHex(BorderHex, 255);
+}
+
+/// <summary>
+/// Eine Zeile der Detailseite (Variante hell bzw. dunkel): Farbfelder oder Beispielgruppen auf der Panelfläche dieser
+/// Variante. Die Zeile der gezeigten Variante ist hervorgehoben; ein Klick auf die andere schaltet um.
+/// </summary>
+public sealed class DesignSwatchRow : ObservableObject
+{
+    private bool _active;
+
+    public DesignSwatchRow(string label, bool isDark, string surfaceHex, IReadOnlyList<DesignSwatch> swatches, IReadOnlyList<DesignGroupPill> pills, bool isActive,
+        Action<bool> choose)
+    {
+        Label = label;
+        IsDark = isDark;
+        SurfaceHex = surfaceHex;
+        Surface = ArgbColor.FromHex(surfaceHex, 255);
+        Swatches = swatches;
+        Pills = pills;
+        _active = isActive;
+        SelectCommand = new RelayCommand(() => choose(isDark));
+    }
+
+    public string Label { get; }
+    public bool IsDark { get; }
+    public string SurfaceHex { get; }
+    public ArgbColor? Surface { get; }
+    public IReadOnlyList<DesignSwatch> Swatches { get; }
+    public IReadOnlyList<DesignGroupPill> Pills { get; }
+    /// <summary>Gehört zur gerade gezeigten Variante (hervorgehoben).</summary>
+    public bool IsActive { get => _active; set => Set(ref _active, value); }
+    /// <summary>Diese Variante zeigen.</summary>
+    public ICommand SelectCommand { get; }
 }
 
 /// <summary>Eine Kategorie in der Navigation des Marktplatzes (Filter nach oberstem Ordner bzw. Kategorie des Designs).</summary>

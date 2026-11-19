@@ -27,6 +27,16 @@ public sealed class VisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>Zahl → gleichmäßiger Eckenradius (Radius, den ein ViewModel ausrechnet, z. B. aus einem Design).</summary>
+public sealed class CornerRadiusConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is double d ? new CornerRadius(Math.Max(0, d)) : new CornerRadius(0);
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>Vergleicht einen Enum-/Stringwert mit dem Parameter (für RadioButtons).</summary>
 public sealed class EqualsConverter : IValueConverter
 {

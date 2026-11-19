@@ -114,4 +114,15 @@ public sealed class WpfThemeInfo : IThemeInfo
     public bool IsHighContrast => ThemeService.IsHighContrast;
     public bool IsDark => ThemeService.IsDark;
     public bool TransparencyEffects => ThemeService.TransparencyEffects();
+
+    /// <summary>Namen der installierten Schriftfamilien (einmal gelesen).</summary>
+    private static readonly Lazy<HashSet<string>> InstalledFonts = new(() =>
+        System.Windows.Media.Fonts.SystemFontFamilies.Select(f => f.Source).ToHashSet(StringComparer.OrdinalIgnoreCase));
+
+    public bool IsFontInstalled(string family)
+    {
+        // „Name, Ersatz“: es zählt die erste Schrift
+        var first = family.Split(',')[0].Trim();
+        return first.Length == 0 || InstalledFonts.Value.Contains(first);
+    }
 }

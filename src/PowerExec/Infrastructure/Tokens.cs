@@ -49,6 +49,16 @@ public static class Tokens
     public static TimeSpan MotionNormal => Get("Motion.Normal", new Duration(TimeSpan.FromMilliseconds(250))).TimeSpan;
     /// <summary>Panel ein- und ausfahren.</summary>
     public static TimeSpan MotionSlow => Get("Motion.Slow", new Duration(TimeSpan.FromMilliseconds(320))).TimeSpan;
+    /// <summary>Seitenwechsel: die alte Seite blendet aus.</summary>
+    public static TimeSpan MotionPageOut => Get("Motion.PageOut", new Duration(TimeSpan.FromMilliseconds(160))).TimeSpan;
+    /// <summary>Seitenwechsel: die neue Seite blendet ein.</summary>
+    public static TimeSpan MotionPageIn => Get("Motion.PageIn", new Duration(TimeSpan.FromMilliseconds(220))).TimeSpan;
+    /// <summary>Seitenwechsel zurück (etwas schneller).</summary>
+    public static TimeSpan MotionPageBack => Get("Motion.PageBack", new Duration(TimeSpan.FromMilliseconds(180))).TimeSpan;
+    /// <summary>Versatz beim gestaffelten Einblenden der Karten einer Seite.</summary>
+    public static TimeSpan MotionStagger => Get("Motion.Stagger", new Duration(TimeSpan.FromMilliseconds(35))).TimeSpan;
+    /// <summary>Kacheln gleiten nach einem Umbruch an ihren neuen Platz.</summary>
+    public static TimeSpan MotionReflow => Get("Motion.Reflow", new Duration(TimeSpan.FromMilliseconds(180))).TimeSpan;
 
     /// <summary>Wert aus den App-Ressourcen; ohne laufende App (Tests, Designer) die Vorgabe.</summary>
     private static T Get<T>(string key, T fallback) =>

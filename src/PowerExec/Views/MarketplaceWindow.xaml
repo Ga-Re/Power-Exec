@@ -29,7 +29,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <RadioButton Style="{StaticResource NavItem}" GroupName="MarketplaceTabs" Tag="{Binding Key}" FontSize="{StaticResource Font.Body}"
-                                             Checked="Tab_Checked" Loaded="Tab_Loaded" AutomationProperties.Name="{Binding Title}">
+                                             Checked="Tab_Checked" Click="Tab_Click" Loaded="Tab_Loaded" AutomationProperties.Name="{Binding Title}">
                                     <DockPanel>
                                         <TextBlock DockPanel.Dock="Right" Text="{Binding CountText}" Foreground="{DynamicResource Text.Secondary}" FontWeight="Normal" Margin="8,0,4,0"/>
                                         <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
@@ -63,8 +63,26 @@
                 </StackPanel>
             </ScrollViewer>
         </Border>
-        <ScrollViewer Grid.Column="1" x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <v:MarketplaceView Margin="28,20,28,28" DataContext="{Binding Page}"/>
-        </ScrollViewer>
+        <!-- Rechts: Hinweis beim Ausprobieren, darunter Galerie bzw. Detailseite eines Eintrags (wechseln mit Bewegung) -->
+        <Grid Grid.Column="1" DataContext="{Binding Page}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <!-- Ausprobieren: bis zur Entscheidung -->
+            <Border Padding="14,10" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}" BorderThickness="1"
+                    Margin="28,16,28,0" Visibility="{Binding IsTrying, Converter={StaticResource Vis}}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="&#xE768;" Style="{StaticResource Icon}" VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{DynamicResource Status.Info.Text}"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Keep'}" Command="{Binding KeepTryCommand}" Margin="8,0,0,0"/>
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Go back'}" Command="{Binding RevertTryCommand}" Margin="12,0,0,0"/>
+                    <TextBlock Text="{Binding TryText}" TextWrapping="Wrap" VerticalAlignment="Center" Foreground="{DynamicResource Status.Info.Text}"/>
+                </DockPanel>
+            </Border>
+            <ScrollViewer Grid.Row="1" x:Name="PageScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <v:MarketplaceView Margin="28,20,28,28"/>
+            </ScrollViewer>
+            <v:MarketplaceDetailView Grid.Row="1" x:Name="Detail" Visibility="Collapsed"/>
+        </Grid>
     </Grid>
 </Window>

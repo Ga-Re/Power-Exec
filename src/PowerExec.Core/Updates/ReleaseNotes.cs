@@ -8,6 +8,14 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 38, 0), L.T("Marketplace: a detail page for every item, smooth transitions, tiles that wrap neatly"), new[]
+        {
+            L.T("A click on a card opens its own detail page; “← Discover”, the mouse back button or Alt+← lead back – with a smooth fade and slide"),
+            L.T("Design details in two columns: a large live preview with a light/dark switch on the left, all actions (try out, install and apply, uninstall) at the top right"),
+            L.T("Colors and group palette show both variants; the one in the preview is highlighted, a click on the other switches – clicking a color copies its hex value"),
+            L.T("Fonts with sample text and a check whether they are installed; corners, background and accent color with small previews"),
+            L.T("Cards, colors and group palette keep a sensible width and wrap neatly; when the window is resized they glide to their new place")
+        }),
         new ReleaseNote(new Version(0, 37, 0), L.T("Designs: designer for everything, own marketplace area, group colors from the design"), new[]
         {
             L.T("Settings › Appearance only chooses the design now; colors, background, corners, group style and fonts are set in the designer"),

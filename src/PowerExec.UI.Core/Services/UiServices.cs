@@ -130,6 +130,9 @@ public interface IThemeInfo
     /// <summary>Windows-Einstellung „Transparenzeffekte“ (aus: kein Glas-Weichzeichner).</summary>
     bool TransparencyEffects => true;
 
+    /// <summary>Ist die Schriftart <paramref name="family"/> auf diesem PC installiert? (Ohne Prüfung: ja.)</summary>
+    bool IsFontInstalled(string family) => true;
+
     /// <summary>Windows-Build (für Varianten, die erst ab Windows 11 laufen).</summary>
     int OsBuild => Environment.OSVersion.Version.Build;
 }

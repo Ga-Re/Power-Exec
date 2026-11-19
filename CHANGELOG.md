@@ -2,6 +2,14 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.38.0 – Marktplatz: eigene Detailseite je Eintrag, weiche Übergänge, sauber umbrechende Kacheln
+
+- Ein Klick auf eine Karte öffnet ihre eigene Detailseite; „← Entdecken“, die Zurück-Taste der Maus oder Alt+← führen zurück – mit weichem Ein- und Ausblenden
+- Design-Details in zwei Spalten: links eine große Live-Vorschau mit Umschalter hell/dunkel, oben rechts alle Aktionen (Ausprobieren, Installieren und anwenden, Deinstallieren)
+- Farben und Gruppenpalette zeigen beide Varianten; die der Vorschau ist hervorgehoben, ein Klick auf die andere schaltet um – ein Klick auf eine Farbe kopiert ihren Hexwert
+- Schriften mit Beispieltext und Prüfung, ob sie installiert sind; Ecken, Hintergrund und Akzentfarbe mit kleinen Vorschauen
+- Karten, Farben und Gruppenpalette behalten eine sinnvolle Breite und brechen sauber um; ändert sich die Fenstergröße, gleiten sie an ihren neuen Platz
+
 ## 0.37.0 – Designs: Designer für alles, eigener Bereich im Marktplatz, Gruppenfarben vom Design
 
 - Einstellungen › Darstellung wählt jetzt nur noch das Design; Farben, Hintergrund, Ecken, Gruppenstil und Schrift stellt man im Designer ein
