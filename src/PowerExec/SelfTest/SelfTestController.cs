@@ -1257,7 +1257,8 @@ public sealed partial class SelfTestController : AppController
                 var marketWindow = new MarketplaceWindow(marketVm);
                 marketWindow.Show();
                 // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
-                await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
+                try { await marketVm.EnsureLoadedAsync().WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (TimeoutException) { /* ohne Netz: mit dem weiter, was schon geladen ist */ }
                 await Settle();
                 if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 5");
                 if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
