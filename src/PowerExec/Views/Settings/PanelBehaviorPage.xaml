@@ -3,11 +3,12 @@
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
              xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
+    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
         <TextBlock Text="{l:T 'Behavior'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'When the panel slides out and in, and how you open it.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
         <TextBlock Text="{l:T 'Slide out and collapse'}" Style="{StaticResource SettingsSection}"/>

@@ -3,11 +3,12 @@
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
              xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
+    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=machines}">
         <TextBlock Text="{l:T 'Computer groups'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'Groups bundle computers. In the Run dialog you pick a group with one click; in launch profiles you enter it as @Name (e.g. @Webservers). Groups are resolved at launch – changes apply immediately to all profiles.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,16"/>
         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">

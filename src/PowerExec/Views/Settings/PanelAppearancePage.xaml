@@ -3,6 +3,7 @@
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
              xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
@@ -49,7 +50,7 @@
         </Style>
 
     </UserControl.Resources>
-    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=look}">
+    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=look}">
         <TextBlock Text="{l:T 'Appearance'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'Everything about the look: design, entries, panel and hover zone.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"/>
 

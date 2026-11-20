@@ -8,6 +8,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 39, 2), L.T("Smooth transitions in settings and marketplace"), new[]
+        {
+            L.T("Settings: cards fold open and closed smoothly, pages fade in when switching"),
+            L.T("Marketplace: switching between All, Entries and Designs fades in; the bars for trying a design and for a selection slide in"),
+            L.T("Messages fade in instead of popping up"),
+            L.T("Team catalogs moved from General to Groups")
+        }),
         new ReleaseNote(new Version(0, 39, 1), L.T("Smooth transitions in the entry window"), new[]
         {
             L.T("Presets fold open and closed smoothly, sections fade in when switching, hints and computer fields slide in instead of jumping"),

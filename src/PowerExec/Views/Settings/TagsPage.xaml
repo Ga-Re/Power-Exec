@@ -8,7 +8,7 @@
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=tags}">
+    <Grid infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=tags}">
     <StackPanel DataContext="{Binding TagList}">
         <TextBlock Text="{l:T 'Tags'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'All tags of your entries. In the panel, #tag in the search filters by tag. Renaming to an existing name merges both.'}"

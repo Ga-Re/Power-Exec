@@ -400,7 +400,7 @@
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
-    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}"
+    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=groups}"
                 Background="Transparent" AllowDrop="True" DragOver="Page_DragOver" Drop="Page_Drop">
         <DockPanel>
             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Command="{Binding NewGroupCommand}" VerticalAlignment="Center">
@@ -444,5 +444,52 @@
                     <TextBlock Text="{Binding ScanTimeoutSeconds, StringFormat={}{0} s}" Width="50" TextAlignment="Right" VerticalAlignment="Center"/>
                 </StackPanel>
         </c:SettingsCard>
+        <TextBlock Text="{l:T 'Team catalogs'}" Style="{StaticResource SettingsSection}"/>
+        <c:SettingsExpander Icon="&#xE716;" Header="{l:T 'Shared entries from the team'}" IsExpanded="True"
+                            Description="{l:T 'Put an exported group (right-click › Export) on a share and subscribe to it here. Power-Exec checks for changes at startup and every 30 minutes. Catalog entries are read-only; favorites and custom entries in the group stay local.'}">
+            <c:SettingsExpander.HeaderContent>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Check now'}" Command="{Binding CheckCatalogsCommand}" Foreground="{DynamicResource Accent}" Margin="0,0,8,0"
+                                Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}}" />
+                        <ui:Button Style="{StaticResource Btn.Accent}" Content="{l:T 'Subscribe …'}" Command="{Binding SubscribeCatalogCommand}" />
+                    </StackPanel>
+            </c:SettingsExpander.HeaderContent>
+            <StackPanel>
+                <TextBlock Text="{l:T 'No team catalog subscribed yet.'}" Style="{StaticResource Caption}" Margin="0,12,0,4"
+                           Visibility="{Binding HasCatalogs, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                <c:InfoBar Severity="Error" Message="{Binding CatalogError}" Margin="0,8,0,0"/>
+                <ItemsControl ItemsSource="{Binding CatalogRows}" Focusable="False" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="12,8" Margin="0,0,0,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Bg.CardAlt}">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Apply'}" Command="{Binding ApplyCommand}" Foreground="{DynamicResource Accent}"
+                                                Visibility="{Binding HasPending, Converter={StaticResource Vis}}" />
+                                        <CheckBox Content="{l:T 'apply automatically'}" IsChecked="{Binding AutoApply}" VerticalAlignment="Center" Margin="8,0" FontSize="{StaticResource Font.Body}"/>
+                                        <ui:Button Style="{StaticResource Btn.Icon}" Width="30" Height="30" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Unsubscribe (entries are removed)'}">
+                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                        </ui:Button>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold">
+                                            <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="{StaticResource Font.Caption}"/>
+                                            <Run Text="{Binding Name, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding Path}" FontSize="{StaticResource Font.Caption}" FontFamily="{DynamicResource MonoFont}" Foreground="{DynamicResource Text.Tertiary}" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="CatStatus" Text="{Binding Status}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding HasProblem}" Value="True">
+                                    <Setter TargetName="CatStatus" Property="Foreground" Value="{DynamicResource Status.Error}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </c:SettingsExpander>
     </StackPanel>
 </UserControl>

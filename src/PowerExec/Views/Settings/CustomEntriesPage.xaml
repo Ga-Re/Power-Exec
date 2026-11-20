@@ -3,11 +3,12 @@
              xmlns:l="clr-namespace:PowerExec.Desktop.Localization"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
              xmlns:c="clr-namespace:PowerExec.Desktop.Controls"
              xmlns:v="clr-namespace:PowerExec.Desktop.Views"
              xmlns:vm="clr-namespace:PowerExec.UI.ViewModels;assembly=PowerExec.UI.Core"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-    <Grid Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
+    <Grid infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=custom}">
     <StackPanel DataContext="{Binding EntryList}">
         <TextBlock Text="{l:T 'Custom entries'}" Style="{StaticResource PageTitle}"/>
         <TextBlock Text="{l:T 'Websites, folders, Remote Desktop, SSH, snippets, Windows tools, commands and individual files. ⚙ edits an entry; select several to move, export or delete them. Entries can be dragged straight into the panel to sort them into a group.'}"

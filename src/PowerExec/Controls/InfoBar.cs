@@ -19,7 +19,11 @@ public sealed class InfoBar : Control
 
     static InfoBar() => DefaultStyleKeyProperty.OverrideMetadata(typeof(InfoBar), new FrameworkPropertyMetadata(typeof(InfoBar)));
 
-    public InfoBar() => Update();
+    public InfoBar()
+    {
+        Update();
+        Infrastructure.NavigationMotion.SetAppear(this, true); // Meldungen blenden weich ein
+    }
 
     public string? Message { get => (string?)GetValue(MessageProperty); set => SetValue(MessageProperty, value); }
     public InfoBarSeverity Severity { get => (InfoBarSeverity)GetValue(SeverityProperty); set => SetValue(SeverityProperty, value); }
