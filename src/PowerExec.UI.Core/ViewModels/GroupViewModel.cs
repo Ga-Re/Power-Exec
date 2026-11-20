@@ -117,7 +117,8 @@ public sealed class GroupViewModel : ObservableObject
     public IEnumerable<GroupViewModel> SelfAndDescendants => new[] { this }.Concat(Children.SelectMany(c => c.SelfAndDescendants));
 
     public bool IsEmptyUserGroup => IsUserGroup && Items.Count == 0 && Children.Count == 0;
-    public bool ShowDropHint => IsEmptyUserGroup && IsExpanded;
+    /// <summary>Hinweis „Leer – Einträge hierher ziehen“; nicht bei einem Ordnerfehler (den zeigt die Gruppe schon).</summary>
+    public bool ShowDropHint => IsEmptyUserGroup && IsExpanded && !HasError;
     public bool IsUserGroupOrCustom => IsUserGroup || Kind == "custom";
     /// <summary>Gruppe mit hinterlegtem Ordner.</summary>
     public bool IsSmartGroup { get; }
@@ -184,9 +185,18 @@ public sealed class GroupViewModel : ObservableObject
 
     /// <summary>Symbol und Rahmen in voller Farbe – im hellen Design bei Bedarf abgedunkelt (mind. 3:1 Kontrast).</summary>
     public ArgbColor? AccentColor => ColorOf(255, readable: true);
-    /// <summary>Getönte Karte: Hintergrund dezent, Rand etwas kräftiger.</summary>
-    public ArgbColor CardBackgroundColor => ColorOf(0x24) ?? ArgbColor.Transparent;
-    public ArgbColor CardBorderColor => ColorOf(0x73, readable: true) ?? ArgbColor.Transparent;
+    /// <summary>
+    /// Getönte Karte: Hintergrund dezent, Rand etwas kräftiger. Untergruppen liegen schon in der Karte der übergeordneten
+    /// Gruppe: kein zweiter Rahmen; eine eigene Tönung nur mit eigener (anderer) Farbe – sonst Kasten in Kasten.
+    /// </summary>
+    public ArgbColor CardBackgroundColor => IsNested ? (HasOwnColorDifferentFromParent ? ColorOf(0x1A) : null) ?? ArgbColor.Transparent : ColorOf(0x24) ?? ArgbColor.Transparent;
+    public ArgbColor CardBorderColor => IsNested ? ArgbColor.Transparent : ColorOf(0x73, readable: true) ?? ArgbColor.Transparent;
+
+    /// <summary>Untergruppe (liegt in einer anderen Gruppe).</summary>
+    public bool IsNested => Depth > 0;
+    private bool HasOwnColorDifferentFromParent =>
+        OwnColorHex.Length > 0 && GroupPath != null && GroupManager.ParentOf(GroupPath) is { } parent
+        && !string.Equals(GroupManager.ColorOf(_app.Settings, parent), ColorHex, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Untermenü „Farbe“: „vom Design (automatisch)“ bzw. bei Untergruppen „wie die übergeordnete Gruppe“, eine Reihe mit

@@ -57,14 +57,27 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <WrapPanel Margin="6,8,0,0" TextElement.FontSize="{StaticResource Font.Caption}" TextElement.Foreground="{DynamicResource Text.Tertiary}">
-                <TextBlock Text="{l:T '↵ Run'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Ctrl+↵ Admin'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Ctrl+Shift+↵ Different user'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Ctrl+R Remote'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Tab Full panel'}" Margin="0,0,14,0"/>
-                <TextBlock Text="{l:T 'Esc Close'}"/>
-            </WrapPanel>
+            <!-- Tastenhinweise: die wichtigsten in einer Zeile, alle unter „Mehr …“ (sonst läuft die Zeile aus dem Fenster) -->
+            <DockPanel Margin="6,8,6,2" TextElement.FontSize="{StaticResource Font.Caption}" TextElement.Foreground="{DynamicResource Text.Tertiary}">
+                <TextBlock DockPanel.Dock="Right" Text="{l:T 'More …'}" Background="Transparent" Cursor="Help">
+                    <TextBlock.ToolTip>
+                        <StackPanel>
+                            <TextBlock Text="{l:T '↵ Run'}"/>
+                            <TextBlock Text="{l:T 'Ctrl+↵ Admin'}"/>
+                            <TextBlock Text="{l:T 'Ctrl+Shift+↵ Different user'}"/>
+                            <TextBlock Text="{l:T 'Ctrl+R Remote'}"/>
+                            <TextBlock Text="{l:T 'Tab Full panel'}"/>
+                            <TextBlock Text="{l:T 'Esc Close'}"/>
+                        </StackPanel>
+                    </TextBlock.ToolTip>
+                </TextBlock>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{l:T '↵ Run'}" Margin="0,0,14,0"/>
+                    <TextBlock Text="{l:T 'Ctrl+↵ Admin'}" Margin="0,0,14,0"/>
+                    <TextBlock Text="{l:T 'Tab Full panel'}" Margin="0,0,14,0"/>
+                    <TextBlock Text="{l:T 'Esc Close'}"/>
+                </StackPanel>
+            </DockPanel>
         </StackPanel>
     </Border>
 </Window>

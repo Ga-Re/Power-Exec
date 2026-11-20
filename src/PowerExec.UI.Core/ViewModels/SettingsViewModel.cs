@@ -1733,6 +1733,9 @@ public sealed record DesignPresetChoice(DesignPreset Preset, bool IsCurrent, ICo
     public ArgbColor? AccentSwatch => ArgbColor.FromHex(Preset.AccentColor, 255);
     /// <summary>Kurzinfo zum Hintergrund (Glas, Vollton …) für die Kachel.</summary>
     public string BackdropText => BackdropOf(Preset);
+    /// <summary>Gruppenfarben des Designs als Punktreihe auf der Kachel – unterscheidet sonst ähnliche Vorschauen.</summary>
+    public IReadOnlyList<ArgbColor> GroupSwatches => Appearance.SplitColors(Preset.GroupColors).Select(h => ArgbColor.FromHex(h, 255)).OfType<ArgbColor>().Take(6).ToList();
+    public bool HasGroupSwatches => GroupSwatches.Count > 0;
     public string Name => Preset.DisplayName;
     public string Description => Preset.DisplayDescription;
 

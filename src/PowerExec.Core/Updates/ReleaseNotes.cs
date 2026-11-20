@@ -8,6 +8,15 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 38, 2), L.T("Calmer panel, clearer selection and details"), new[]
+        {
+            L.T("Unreachable folders: a short note at the top (“1 folder unreachable”) that jumps to the group – the error itself only appears at the group"),
+            L.T("Empty groups show a single quiet line instead of a box with a long hint; subgroups no longer draw a second frame inside their group"),
+            L.T("The selected tile has an accent frame; “…” always stays in the first row of the actions, “As …” is now “User …”"),
+            L.T("Spotlight: hits are marked as one piece instead of letter by letter, the key hints fit in one line (all under “More …”)"),
+            L.T("Settings: “Discard changes” is only active when there is something to discard; design tiles show their group colors"),
+            L.T("Marketplace gallery is centered when the cards reach their maximum width; the jump rail no longer sits on the scroll bar")
+        }),
         new ReleaseNote(new Version(0, 38, 1), L.T("Light design variants carry their color, hover zone fades in as you approach"), new[]
         {
             L.T("Light variants are clearly tinted in the design's color instead of almost white; lines, selection and text pick up the accent color – neutral designs stay neutral"),

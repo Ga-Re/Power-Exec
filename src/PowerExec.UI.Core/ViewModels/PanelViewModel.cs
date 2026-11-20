@@ -189,7 +189,17 @@ public sealed class PanelViewModel : ObservableObject
 
     /// <summary>Laufende und installierte Version (z. B. „Version 0.20.0 · installiert“).</summary>
     public string VersionText => _app.VersionText;
+    /// <summary>Kurzer Hinweis oben („1 Ordner nicht erreichbar“); der Fehler selbst steht an der Gruppe.</summary>
     public string? FolderWarning { get => _folderWarning; private set => Set(ref _folderWarning, value); }
+    /// <summary>Pfade und Fehler der nicht erreichbaren Ordner (Tooltip des Hinweises).</summary>
+    public string? FolderWarningDetails { get => _folderWarningDetails; private set => Set(ref _folderWarningDetails, value); }
+    private string? _folderWarningDetails;
+    /// <summary>Klick auf den Hinweis: zur ersten Gruppe mit nicht erreichbarem Ordner springen.</summary>
+    public ICommand ShowFolderWarningCommand => _showFolderWarning ??= new RelayCommand(() =>
+    {
+        if (AllGroups.FirstOrDefault(g => g.HasError) is { } group) JumpTo(group);
+    });
+    private ICommand? _showFolderWarning;
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
     public string EmptyHint => L.T("No groups yet. Create a group – with a folder it shows its scripts and programs – or add custom entries.");
     public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
@@ -1091,13 +1101,14 @@ public sealed class PanelViewModel : ObservableObject
         else _selectedKey = null;
 
         var errors = repo.FolderStatuses.Where(s => s.Error != null).ToList();
-        FolderWarning = errors.Count == 0 ? null
-            : errors.Count == 1 ? $"{errors[0].Path}: {errors[0].Error}"
-            : L.F("{0} folders unreachable", errors.Count);
+        // Oben nur kurz – Pfad und Fehler stehen an der Gruppe selbst (und im Tooltip)
+        FolderWarning = errors.Count == 0 ? null : errors.Count == 1 ? L.T("1 folder unreachable") : L.F("{0} folders unreachable", errors.Count);
+        FolderWarningDetails = errors.Count == 0 ? null : string.Join("\n", errors.Select(e => $"{e.Path}: {e.Error}"));
 
         if (repo.IsScanning && repo.Items.Count == 0) Footer = L.T("Scanning folders …");
         else if (searching) Footer = L.F("{0} matches for “{1}”", pool.Count, _searchText.Trim());
-        else Footer = L.F("{0} entries · scanned {1:t}", visible.Count, repo.LastScan) + (HasWorkspaces ? $" · {settings.ActiveWorkspace}" : string.Empty);
+        // Der Arbeitsbereich steht schon oben in der Auswahl – hier nicht noch einmal
+        else Footer = L.F("{0} entries · scanned {1:t}", visible.Count, repo.LastScan);
 
         OnPropertyChanged(nameof(HasNoFolders));
         OnPropertyChanged(nameof(IsEmpty));
