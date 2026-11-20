@@ -65,6 +65,8 @@ public partial class MarketplaceWindow : Window
         _page = _vm.Page;
         _page.PropertyChanged += Page_PropertyChanged;
         ShowDetail(_page.IsDetailOpen, animate: false);
+        // Anderer Bereich (Alle, Einträge, Designs …): die Galerie blendet weich ein statt umzuspringen
+        if (IsLoaded && !_page.IsDetailOpen) NavigationMotion.Appear(PageScroll);
     }
 
     private void Page_PropertyChanged(object? sender, PropertyChangedEventArgs e)

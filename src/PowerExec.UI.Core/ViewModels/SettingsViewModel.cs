@@ -649,6 +649,7 @@ public sealed class SettingsViewModel : ObservableObject
         new("groups", L.T("Groups"), L.T("Rescan automatically"), L.T("file watcher rescan")),
         new("groups", L.T("Groups"), L.T("Timeout for unreachable folders"), "timeout offline"),
         new("groups", L.T("Groups"), L.T("Approve new files"), L.T("approval visible checkbox")),
+        new("groups", L.T("Groups"), L.T("Team catalogs"), L.T("team catalog share subscribe shared entries colleagues")),
         new("custom", L.T("Custom entries"), L.T("Manage custom entries"), L.T("website url folder rdp ssh snippet tool command file")),
         new("custom", L.T("Custom entries"), L.T("From templates"), L.T("catalog mmc control panel ms-settings")),
         new("custom", L.T("Custom entries"), L.T("Check reachability"), L.T("health dead links broken")),

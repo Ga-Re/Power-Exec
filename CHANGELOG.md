@@ -2,6 +2,13 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.39.2 – Sanfte Übergänge in Einstellungen und Marktplatz
+
+- Einstellungen: Karten klappen weich auf und zu, Seiten blenden beim Wechsel ein
+- Marktplatz: Der Wechsel zwischen Alle, Einträge und Designs blendet ein; die Leisten fürs Ausprobieren und für eine Auswahl gleiten herein
+- Meldungen blenden weich ein, statt aufzuspringen
+- Team-Kataloge stehen jetzt unter Gruppen statt unter Allgemein
+
 ## 0.39.1 – Sanfte Übergänge im Eintragsfenster
 
 - Presets klappen weich auf und zu, Abschnitte blenden beim Wechsel ein, Hinweise und Rechnerfelder gleiten herein statt zu springen

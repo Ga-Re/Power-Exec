@@ -312,19 +312,40 @@
                                 <ContentPresenter Grid.Column="2" Content="{TemplateBinding HeaderContent}" VerticalAlignment="Center"/>
                                 <ui:Button Grid.Column="3" Style="{StaticResource Btn.Icon}" Width="32" Height="32" Margin="8,0,0,0" Command="{Binding ToggleCommand, RelativeSource={RelativeSource TemplatedParent}}"
                                         ToolTip="{l:T 'More options'}">
-                                    <TextBlock x:Name="Chevron" Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                    <TextBlock Text="&#xE70D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" RenderTransformOrigin="0.5,0.5">
+                                        <TextBlock.RenderTransform><RotateTransform x:Name="ChevronTurn"/></TextBlock.RenderTransform>
+                                    </TextBlock>
                                 </ui:Button>
                             </Grid>
-                            <Border x:Name="Body" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Background="{DynamicResource Bg.CardAlt}"
-                                    CornerRadius="{DynamicResource Radius.Card.Bottom}" Padding="56,6,16,6" Visibility="Collapsed">
-                                <ContentPresenter/>
-                            </Border>
+                            <!-- Weich auf- und zuklappen (Höhe und Deckkraft), wie die Karten in den Windows-Einstellungen -->
+                            <c:CollapsePanel Animate="True" Fade="True" IsExpanded="{TemplateBinding IsExpanded}">
+                                <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Background="{DynamicResource Bg.CardAlt}"
+                                        CornerRadius="{DynamicResource Radius.Card.Bottom}" Padding="56,6,16,6">
+                                    <ContentPresenter/>
+                                </Border>
+                            </c:CollapsePanel>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsExpanded" Value="True">
-                            <Setter TargetName="Body" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="Chevron" Property="Text" Value="&#xE70E;"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ChevronTurn" Storyboard.TargetProperty="Angle" To="180" Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="ChevronTurn" Storyboard.TargetProperty="Angle" To="0" Duration="0:0:0.167">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="Icon" Value="">
                             <Setter TargetName="IconText" Property="Visibility" Value="Collapsed"/>

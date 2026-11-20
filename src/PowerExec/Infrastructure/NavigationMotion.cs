@@ -128,9 +128,10 @@ public static class NavigationMotion
         if (sender is FrameworkElement { IsVisible: true } element) Appear(element);
     }
 
-    private static void Appear(UIElement element)
+    /// <summary>Element sofort weich einblenden (leicht von unten), z. B. nachdem ein Bereich neu befüllt wurde.</summary>
+    public static void Appear(UIElement element)
     {
-        if (!Enabled) return;
+        if (!Enabled || !element.IsVisible) return;
         FadeIn(element, Tokens.MotionPageIn, TimeSpan.Zero, 0, StaggerShift);
     }
 
