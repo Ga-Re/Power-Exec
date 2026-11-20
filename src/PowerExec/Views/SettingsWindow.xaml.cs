@@ -32,6 +32,7 @@ public partial class SettingsWindow : Window
         _vm = vm;
         _app = app;
         _snapshot = SettingsStore.Clone(app.Settings);
+        _snapshotFingerprint = Fingerprint(_snapshot);
         InitializeComponent();
         Infrastructure.FluentTheme.Attach(this);
         InitNavigation();
@@ -152,7 +153,30 @@ public partial class SettingsWindow : Window
         };
         SaveIcon.SetResourceReference(TextBlock.ForegroundProperty, brush);
         SaveHint.ToolTip = state == SaveState.Saved ? L.F("Last saved at {0:T}", DateTime.Now) : null;
+        // „Änderungen verwerfen“ nur, wenn es etwas zu verwerfen gibt (Ausstehendes zählt als Änderung)
+        RevertButton.IsEnabled = state == SaveState.Pending || HasChangesSinceOpen();
     }
+
+    /// <summary>Weichen die Einstellungen vom Stand beim Öffnen ab? Laufzeitdaten (Favoriten, Verlauf …) zählen nicht – die behält „Verwerfen“.</summary>
+    private bool HasChangesSinceOpen()
+    {
+        var now = SettingsStore.Clone(_app.Settings);
+        KeepRuntimeState(now, _snapshot);
+        return Fingerprint(now) != _snapshotFingerprint;
+    }
+
+    /// <summary>Laufzeitstand, den „Änderungen verwerfen“ nicht zurücksetzt, von <paramref name="from"/> übernehmen.</summary>
+    private static void KeepRuntimeState(AppSettings target, AppSettings from)
+    {
+        target.Favorites = new List<string>(from.Favorites);
+        target.RecentRuns = from.RecentRuns.ToList();
+        target.RunStats = new Dictionary<string, RunStat>(from.RunStats);
+        target.Schedules = from.Schedules.Select(x => x.Clone()).ToList();
+        target.Catalogs = from.Catalogs.ToList();
+        target.Fingerprints = new Dictionary<string, string>(from.Fingerprints);
+    }
+
+    private readonly string _snapshotFingerprint;
 
     private static string Fingerprint(AppSettings s) => System.Text.Json.JsonSerializer.Serialize(s);
 
@@ -273,12 +297,7 @@ public partial class SettingsWindow : Window
         _reloading = true;
         var restored = SettingsStore.Clone(_snapshot);
         // Laufzeitstand (Favoriten, Verlauf …) behalten
-        restored.Favorites = new List<string>(_app.Settings.Favorites);
-        restored.RecentRuns = _app.Settings.RecentRuns.ToList();
-        restored.RunStats = new Dictionary<string, RunStat>(_app.Settings.RunStats);
-        restored.Schedules = _app.Settings.Schedules.Select(x => x.Clone()).ToList();
-        restored.Catalogs = _app.Settings.Catalogs.ToList();
-        restored.Fingerprints = new Dictionary<string, string>(_app.Settings.Fingerprints);
+        KeepRuntimeState(restored, _app.Settings);
         _app.ApplySettings(restored);
         _reloading = false;
         Reload();

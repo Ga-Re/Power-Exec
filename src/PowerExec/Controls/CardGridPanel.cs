@@ -26,6 +26,15 @@ public sealed class CardGridPanel : Panel
     public static readonly DependencyProperty BalancedProperty = DependencyProperty.Register(
         nameof(Balanced), typeof(bool), typeof(CardGridPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
+    public static readonly DependencyProperty CenterWhenCappedProperty = DependencyProperty.Register(
+        nameof(CenterWhenCapped), typeof(bool), typeof(CardGridPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsArrange));
+
+    /// <summary>
+    /// Greift die Höchstbreite, bleibt Platz übrig: das Raster mittig setzen statt den Rest rechts leer zu lassen
+    /// (Spalten bleiben auch in der letzten, unvollständigen Zeile in der Flucht).
+    /// </summary>
+    public bool CenterWhenCapped { get => (bool)GetValue(CenterWhenCappedProperty); set => SetValue(CenterWhenCappedProperty, value); }
+
     public static readonly DependencyProperty SpanProperty = DependencyProperty.RegisterAttached(
         "Span", typeof(bool), typeof(CardGridPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsParentMeasure));
 
@@ -129,13 +138,15 @@ public sealed class CardGridPanel : Panel
         // Nur ein Umbruch (andere Spaltenzahl) lässt die Karten gleiten – nicht jede kleine Breitenänderung beim Ziehen
         var glide = _arrangedColumns != 0 && _columns != _arrangedColumns && IsVisible && NavigationMotion.Enabled;
         var seen = new HashSet<UIElement>();
+        var gridWidth = _columns * _itemWidth + Gap * (_columns - 1);
+        var offset = CenterWhenCapped ? Math.Max(0, Math.Floor((finalSize.Width - gridWidth) / 2)) : 0;
         double y = 0;
         for (int r = 0; r < _rows.Count; r++)
         {
             var row = _rows[r];
             for (int i = row.Start; i < row.Start + row.Count && i < children.Count; i++)
             {
-                var x = row.Spans ? 0 : (i - row.Start) * (_itemWidth + Gap);
+                var x = row.Spans ? 0 : offset + (i - row.Start) * (_itemWidth + Gap);
                 var child = children[i];
                 child.Arrange(new Rect(x, y, row.Spans ? finalSize.Width : _itemWidth, _heights[r]));
                 var at = new Point(x, y);

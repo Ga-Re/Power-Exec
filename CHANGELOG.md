@@ -2,6 +2,15 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.38.2 – Ruhigeres Panel, klarere Auswahl und Details
+
+- Nicht erreichbare Ordner: oben ein kurzer Hinweis („1 Ordner nicht erreichbar“), der zur Gruppe springt – der Fehler selbst steht nur noch an der Gruppe
+- Leere Gruppen zeigen eine dezente Zeile statt eines Kastens mit langem Hinweis; Untergruppen zeichnen keinen zweiten Rahmen mehr in ihre Gruppe
+- Die ausgewählte Kachel hat einen Rahmen in Akzentfarbe; „…“ bleibt immer in der ersten Zeile der Aktionen, aus „Als …“ wird „Benutzer …“
+- Spotlight: Treffer sind am Stück markiert statt Buchstabe für Buchstabe, die Tastenhinweise passen in eine Zeile (alle unter „Mehr …“)
+- Einstellungen: „Änderungen verwerfen“ ist nur aktiv, wenn es etwas zu verwerfen gibt; Design-Kacheln zeigen ihre Gruppenfarben
+- Die Marktplatz-Galerie steht mittig, wenn die Karten ihre Höchstbreite erreichen; die Sprungleiste liegt nicht mehr auf der Scrollleiste
+
 ## 0.38.1 – Helle Design-Varianten tragen ihre Farbe, die Hover-Zone blendet beim Annähern stufenlos ein
 
 - Helle Varianten sind deutlich in der Farbe des Designs getönt statt fast weiß; Linien, Auswahl und Text greifen die Akzentfarbe auf – neutrale Designs bleiben neutral

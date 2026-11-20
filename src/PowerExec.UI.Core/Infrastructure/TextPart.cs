@@ -16,7 +16,9 @@ public sealed record TextPart(string Text, bool IsHit)
         {
             int start = Math.Clamp(r.Start, pos, text.Length), end = Math.Clamp(r.End, start, text.Length);
             if (start > pos) parts.Add(new TextPart(text[pos..start], false));
-            if (end > start) parts.Add(new TextPart(text[start..end], true));
+            // Aneinandergrenzende Treffer (unscharfe Suche liefert sie einzeln) zu einem Abschnitt – sonst zerfällt die Markierung in Kästchen
+            if (end > start && start == pos && parts.Count > 0 && parts[^1].IsHit) parts[^1] = new TextPart(parts[^1].Text + text[start..end], true);
+            else if (end > start) parts.Add(new TextPart(text[start..end], true));
             pos = end;
         }
         if (pos < text.Length) parts.Add(new TextPart(text[pos..], false));

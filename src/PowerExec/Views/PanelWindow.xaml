@@ -440,6 +440,12 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <!-- „…“ fest rechts in der ersten Zeile – die übrigen Knöpfe brechen daneben um, statt „…“ allein in eine Zeile zu schieben -->
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Right" VerticalAlignment="Top" Style="{StaticResource ActionButton}" Width="30" Padding="0" Margin="0,0,0,6"
+                                ToolTip="{l:T 'More actions'}" AutomationProperties.Name="{l:T 'More actions'}" ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
+                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                        </ui:Button>
                     <WrapPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,6,6">
                             <!-- Ein Profil: normaler Button -->
@@ -476,7 +482,7 @@
                                 Visibility="{Binding CanElevate, Converter={StaticResource Vis}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE77B;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,6,0"/>
-                                <TextBlock Text="{l:T 'As …'}"/>
+                                <TextBlock Text="{l:T 'User …'}"/>
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Style="{StaticResource ActionButton}" Command="{Binding RunRemoteCommand}" ToolTip="{l:T 'Run on one or more remote computers'}"
@@ -486,11 +492,8 @@
                                 <TextBlock Text="{l:T 'Remote'}"/>
                             </StackPanel>
                         </ui:Button>
-                        <ui:Button Style="{StaticResource ActionButton}" Width="30" Padding="0" ToolTip="{l:T 'More actions'}"
-                                ContextMenu="{StaticResource ItemMenu}" Click="MenuButton_Click">
-                            <TextBlock Text="&#xE712;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
-                        </ui:Button>
                     </WrapPanel>
+                    </DockPanel>
             </StackPanel>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding SignatureValid}" Value="True">
@@ -546,9 +549,10 @@
                     <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                     <Setter TargetName="Row" Property="BorderThickness" Value="2"/>
                 </DataTrigger>
+                <!-- Ausgewählt (Details unten): Rahmen in Akzentfarbe – eindeutig, aber schwächer als die Mehrfachauswahl (2 px, getönt) -->
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                     <Setter TargetName="Row" Property="Background" Value="{DynamicResource Bg.Selected}"/>
-                    <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Border.TileHover}"/>
+                    <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding DataContext.IsCompact, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
                     <Setter TargetName="TileGrid" Property="Height" Value="46"/>
@@ -869,11 +873,14 @@
                            DotBrush="{Binding DataContext.DragColor, RelativeSource={RelativeSource AncestorType=c:PanelRoot}, Converter={StaticResource ArgbBrush}}"
                            Animate="{Binding DataContext.AnimateDropGap, RelativeSource={RelativeSource AncestorType=c:PanelRoot}}"
                            DragOver="DropGap_DragOver" Drop="DropGap_Drop"/>
-                    <Border Margin="8,0,8,8" Padding="10,10" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="{DynamicResource Border.Default}"
-                            Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}">
-                        <TextBlock TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Tertiary}"
-                                   Text="{l:T 'Drag entries here – also files, folders or links from Explorer and the browser. Right-click: new entry.'}"/>
-                    </Border>
+                    <!-- Leere Gruppe: eine dezente Zeile; ausführlich im Tooltip -->
+                    <DockPanel Margin="14,0,8,8" Visibility="{Binding ShowDropHint, Converter={StaticResource Vis}}" Background="Transparent"
+                               ToolTip="{l:T 'Drag entries here – also files, folders or links from Explorer and the browser. Right-click: new entry.'}">
+                        <TextBlock DockPanel.Dock="Left" Text="&#xE896;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Tertiary}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{l:T 'Empty – drag entries here'}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}"
+                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </DockPanel>
                 </StackPanel>
                 </Border>
                 <c:DropGap IsOpen="{Binding GapAfter}" Label="{Binding DataContext.DragLabel, RelativeSource={RelativeSource AncestorType=c:PanelRoot}}"
@@ -1234,12 +1241,17 @@
             </ItemsControl>
             </StackPanel>
 
-            <!-- Warnung: Ordner nicht erreichbar -->
-            <Border Grid.Row="4" Margin="16,4,16,2" Padding="10,6" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
-                    BorderThickness="1" Visibility="{Binding FolderWarning, Converter={StaticResource Vis}}">
+            <!-- Warnung: Ordner nicht erreichbar – kurz; Pfad und Fehler stehen an der Gruppe, ein Klick springt dorthin -->
+            <Border Grid.Row="4" Margin="16,4,16,2" Padding="10,4" CornerRadius="{DynamicResource Radius.Card}" Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
+                    BorderThickness="1" Visibility="{Binding FolderWarning, Converter={StaticResource Vis}}" Cursor="Hand" ToolTip="{Binding FolderWarningDetails}"
+                    AutomationProperties.Name="{Binding FolderWarning}">
+                <Border.InputBindings>
+                    <MouseBinding Gesture="LeftClick" Command="{Binding ShowFolderWarningCommand}"/>
+                </Border.InputBindings>
                 <DockPanel>
                     <TextBlock Text="&#xE7BA;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0" Foreground="{DynamicResource Status.Warning}"/>
-                    <TextBlock Text="{Binding FolderWarning}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{l:T 'Show'}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                    <TextBlock Text="{Binding FolderWarning}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                 </DockPanel>
             </Border>
 
@@ -1396,8 +1408,19 @@
             </Button>
 
             <!-- Sprungleiste: ein Punkt je Gruppe (Gruppenfarbe), Klick springt hin -->
-            <ItemsControl Grid.Row="5" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,4,8" Panel.ZIndex="11" Focusable="False"
+            <ItemsControl Grid.Row="5" HorizontalAlignment="Right" VerticalAlignment="Center" Panel.ZIndex="11" Focusable="False"
                           ItemsSource="{Binding Groups}" Visibility="{Binding ShowJumpRail, Converter={StaticResource Vis}}">
+                <!-- Mit eingeblendeter Scrollleiste links daneben statt darauf -->
+                <ItemsControl.Style>
+                    <Style TargetType="ItemsControl">
+                        <Setter Property="Margin" Value="0,8,4,8"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ComputedVerticalScrollBarVisibility, ElementName=ListScroll}" Value="Visible">
+                                <Setter Property="Margin" Value="0,8,16,8"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ItemsControl.Style>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Button Width="16" Height="16" Padding="0" Cursor="Hand" ToolTip="{Binding RailToolTip}" Focusable="False"

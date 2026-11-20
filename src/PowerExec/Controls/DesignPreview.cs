@@ -44,6 +44,9 @@ public sealed class DesignPreview : Border
 
     public bool Detailed { get => (bool)GetValue(DetailedProperty); set => SetValue(DetailedProperty, value); }
 
+    /// <summary>Anteil des Panels an der Breite der kleinen Vorschau – groß genug, dass sich Designs unterscheiden lassen.</summary>
+    private const double PanelShare = 0.62;
+
     /// <summary>Abstand des Panels zum Rand der Bühne in der großen Vorschau.</summary>
     private const double StageInset = 16;
     private double _panelRadius;
@@ -427,7 +430,7 @@ public sealed class DesignPreview : Border
             UpdateBlurClip();
             return;
         }
-        if (_panel != null && ActualWidth > 0) _panel.Width = Math.Round(ActualWidth * 0.54);
+        if (_panel != null && ActualWidth > 0) _panel.Width = Math.Round(ActualWidth * PanelShare);
         // Hover-Zone: mittleres Drittel der Höhe
         if (_root.Children.Count > 0 && _root.Children[^1] is Border zone && ActualHeight > 0) zone.Height = Math.Round(ActualHeight * 0.4);
         UpdateBlurClip();
@@ -450,7 +453,7 @@ public sealed class DesignPreview : Border
                 _panelRadius, _panelRadius);
             return;
         }
-        var w = Math.Round(ActualWidth * 0.54);
+        var w = Math.Round(ActualWidth * PanelShare);
         _blurred.Clip = new RectangleGeometry(new Rect(ActualWidth - w, 4, w, Math.Max(0, ActualHeight - 15)), 4, 4);
     }
 }

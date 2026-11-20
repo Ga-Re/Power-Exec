@@ -174,8 +174,9 @@
         <Border Grid.Row="1" Grid.ColumnSpan="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
             <DockPanel>
                 <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Close'}" MinWidth="110" Height="34" Margin="8,0,0,0" IsCancel="True" Click="Close_Click" />
-                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Discard changes'}" Height="34" Click="Revert_Click"
-                        ToolTip="{l:T 'Restore the state from when settings were opened'}" />
+                <!-- Nur aktiv, wenn sich seit dem Öffnen etwas geändert hat -->
+                <ui:Button x:Name="RevertButton" DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Discard changes'}" Height="34" Click="Revert_Click"
+                        IsEnabled="False" ToolTip="{l:T 'Restore the state from when settings were opened'}" ToolTipService.ShowOnDisabled="True" />
                 <!-- Speicherstand: „Speichert …“ während der kurzen Wartezeit, danach „Alle Änderungen gespeichert“ -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ToolTip="{l:T 'Changes are applied and saved automatically – there\'s no need for a Save button.'}">
                     <TextBlock x:Name="SaveIcon" Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.L}" VerticalAlignment="Center" Margin="0,0,8,0"

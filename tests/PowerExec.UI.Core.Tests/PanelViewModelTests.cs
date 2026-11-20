@@ -252,4 +252,67 @@ public class PanelViewModelTests
         Assert.Equal("PDF", EntryBadge.For(CustomEntryKind.File, @"C:\a\b.pdf"));
         Assert.Equal("DAT", EntryBadge.For(CustomEntryKind.File, @"C:\a\ohne"));
     }
+
+    [Fact]
+    public void UnreachableFolderShowsShortWarningAndErrorOnlyAtTheGroup()
+    {
+        var host = HostWithScripts();
+        SmartGroups.Add(host.Settings, @"X:\Fehlt");
+        host.Items.FolderStatuses = new[]
+        {
+            new UI.Services.FolderStatus(@"X:\Fehlt", 0, Array.Empty<PowerExec.Core.Scanning.ExcludedFile>(), "Ordner nicht gefunden oder nicht erreichbar.")
+        };
+        var vm = host.CreatePanel();
+        vm.Rebuild();
+
+        // Oben nur kurz; Pfad und Fehler im Tooltip und an der Gruppe
+        Assert.Equal("1 Ordner nicht erreichbar", vm.FolderWarning);
+        Assert.Contains(@"X:\Fehlt", vm.FolderWarningDetails, StringComparison.Ordinal);
+        var missing = vm.AllGroups.Single(g => g.HasError);
+        Assert.False(missing.ShowDropHint);                     // kein „Leer – hierher ziehen“ unter dem Fehler
+
+        // Klick auf den Hinweis springt zur Gruppe
+        GroupViewModel? jumped = null;
+        vm.ScrollToGroupRequested += g => jumped = g;
+        vm.ShowFolderWarningCommand.Execute(null);
+        Assert.Same(missing, jumped);
+
+        // Arbeitsbereich steht oben in der Auswahl, nicht noch einmal in der Fußzeile
+        Assert.DoesNotContain(host.Settings.ActiveWorkspace, vm.Footer, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SubgroupDoesNotDrawASecondFrameInItsParent()
+    {
+        var host = new FakePanelHost();
+        var admin = GroupManager.Create(host.Settings, "Admin");
+        var ad = GroupManager.Create(host.Settings, "AD", admin);
+        GroupManager.SetColor(host.Settings, admin, "#2E7D32");
+        var vm = host.CreatePanel();
+        vm.Rebuild();
+        var parent = vm.AllGroups.Single(g => g.GroupPath == admin);
+        var child = vm.AllGroups.Single(g => g.GroupPath == ad);
+
+        Assert.NotEqual(ArgbColor.Transparent, parent.CardBorderColor);
+        Assert.NotEqual(ArgbColor.Transparent, parent.CardBackgroundColor);
+        Assert.True(child.IsNested);
+        Assert.Equal(ArgbColor.Transparent, child.CardBorderColor);     // kein Kasten im Kasten
+        Assert.Equal(ArgbColor.Transparent, child.CardBackgroundColor); // erbt die Farbe: keine zweite Tönung
+
+        // Eigene, andere Farbe: dezente eigene Tönung, aber weiterhin kein Rahmen
+        GroupManager.SetColor(host.Settings, ad, "#1565C0");
+        vm.Rebuild();
+        child = vm.AllGroups.Single(g => g.GroupPath == ad);
+        Assert.NotEqual(ArgbColor.Transparent, child.CardBackgroundColor);
+        Assert.Equal(ArgbColor.Transparent, child.CardBorderColor);
+    }
+
+    [Fact]
+    public void AdjacentSearchHitsAreMergedIntoOnePart()
+    {
+        var parts = TextPart.Split("Cleanup.cmd", new[] { "clnup" });
+        Assert.Equal("Cleanup.cmd", string.Concat(parts.Select(p => p.Text)));
+        Assert.Contains(parts, p => p.IsHit && p.Text.Length > 1);       // nicht Buchstabe für Buchstabe
+        for (int i = 1; i < parts.Count; i++) Assert.False(parts[i].IsHit && parts[i - 1].IsHit, "zwei Treffer-Abschnitte nebeneinander");
+    }
 }

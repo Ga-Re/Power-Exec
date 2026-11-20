@@ -106,7 +106,21 @@
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="Card" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                             <StackPanel>
-                                                <c:DesignPreview Height="84" Design="{Binding Preset}"/>
+                                                <Grid>
+                                                    <c:DesignPreview Height="84" Design="{Binding Preset}"/>
+                                                    <!-- Gruppenfarben des Designs: unterscheidet Designs, deren Vorschau sonst ähnlich aussieht -->
+                                                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,13" Padding="4,3" CornerRadius="{DynamicResource Radius.Control}"
+                                                            Background="#B0202020" Visibility="{Binding HasGroupSwatches, Converter={StaticResource Vis}}" IsHitTestVisible="False">
+                                                        <ItemsControl ItemsSource="{Binding GroupSwatches}" Focusable="False">
+                                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Ellipse Width="8" Height="8" Margin="1,0" Fill="{Binding Converter={StaticResource ArgbBrush}}"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Border>
+                                                </Grid>
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
                                                 <DockPanel>
                                                     <TextBlock DockPanel.Dock="Right" Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
@@ -163,7 +177,21 @@
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="Card" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="2" BorderBrush="{DynamicResource Border.Default}" Background="{DynamicResource Bg.CardAlt}" Padding="8">
                                             <StackPanel>
-                                                <c:DesignPreview Height="84" Design="{Binding Preset}"/>
+                                                <Grid>
+                                                    <c:DesignPreview Height="84" Design="{Binding Preset}"/>
+                                                    <!-- Gruppenfarben des Designs: unterscheidet Designs, deren Vorschau sonst ähnlich aussieht -->
+                                                    <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="5,0,0,13" Padding="4,3" CornerRadius="{DynamicResource Radius.Control}"
+                                                            Background="#B0202020" Visibility="{Binding HasGroupSwatches, Converter={StaticResource Vis}}" IsHitTestVisible="False">
+                                                        <ItemsControl ItemsSource="{Binding GroupSwatches}" Focusable="False">
+                                                            <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Ellipse Width="8" Height="8" Margin="1,0" Fill="{Binding Converter={StaticResource ArgbBrush}}"/>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </Border>
+                                                </Grid>
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
                                                 <DockPanel>
                                                     <TextBlock DockPanel.Dock="Right" Text="&#xE72E;" FontFamily="{StaticResource IconFont}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"

@@ -96,7 +96,7 @@
         <!-- Galerie: Karten mit Kopf (was der Eintrag ausführt), je 260 bis 340 breit; ein Klick öffnet die Detailseite -->
         <ItemsControl ItemsSource="{Binding Cards}" Focusable="False" Margin="0,4,0,0" Visibility="{Binding HasRows, Converter={StaticResource Vis}}">
             <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate><c:CardGridPanel MinItemWidth="260" MaxItemWidth="340" Gap="16"/></ItemsPanelTemplate>
+                <ItemsPanelTemplate><c:CardGridPanel MinItemWidth="260" MaxItemWidth="340" Gap="16" CenterWhenCapped="True"/></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:MarketplaceItemRow}">
