@@ -106,7 +106,8 @@ public sealed class AppSettings
     public int PanelHeightPercent { get; set; } = 100;
 
     public PanelAlignment PanelAlignment { get; set; } = PanelAlignment.HotZone;
-    public int HoverDelayMs { get; set; } = 250;
+    /// <summary>Verweilzeit an der Hover-Zone bis zum Ausfahren (ms). Neu 150 statt 250 – gespeicherte Werte bleiben.</summary>
+    public int HoverDelayMs { get; set; } = 150;
     public int CollapseDelayMs { get; set; } = 400;
     public int PanelWidth { get; set; } = 400;
     public AnimationMode Animation { get; set; } = AnimationMode.Smooth;

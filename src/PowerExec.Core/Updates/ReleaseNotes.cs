@@ -8,6 +8,13 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 38, 3), L.T("Snappier: smooth panel slide, faster search"), new[]
+        {
+            L.T("The panel slides as smoothly as Windows flyouts – also with clear glass and solid: the whole window glides instead of redrawing its content in every frame, and it stays drawn behind the edge when hidden"),
+            L.T("Slide with the decelerating curve of Windows and a bit faster (“Smooth”: 250 instead of 320 ms); new installations open the hover zone after 150 ms"),
+            L.T("Search shows its hits as one list, best first, with the group next to each hit – the groups stay as they are, so clearing the search is instant instead of taking seconds"),
+            L.T("Marketplace: quicker page transitions")
+        }),
         new ReleaseNote(new Version(0, 38, 2), L.T("Calmer panel, clearer selection and details"), new[]
         {
             L.T("Unreachable folders: a short note at the top (“1 folder unreachable”) that jumps to the group – the error itself only appears at the group"),

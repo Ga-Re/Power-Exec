@@ -2,6 +2,13 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.38.3 – Flotter: ruckelfreies Ausfahren, schnellere Suche
+
+- Das Panel gleitet so ruhig wie die Flyouts von Windows – auch mit Klarglas und Vollton: das ganze Fenster gleitet, statt seinen Inhalt in jedem Bild neu zu zeichnen, und eingefahren bleibt es gezeichnet hinter dem Rand stehen
+- Gleiten mit der abbremsenden Kurve von Windows und etwas schneller („Weich“: 250 statt 320 ms); neue Installationen fahren an der Hover-Zone nach 150 ms aus
+- Die Suche zeigt ihre Treffer als eine Liste, die besten oben, mit der Gruppe neben jedem Treffer – die Gruppen bleiben unverändert, Suche leeren geht sofort statt in Sekunden
+- Marktplatz: flottere Seitenwechsel
+
 ## 0.38.2 – Ruhigeres Panel, klarere Auswahl und Details
 
 - Nicht erreichbare Ordner: oben ein kurzer Hinweis („1 Ordner nicht erreichbar“), der zur Gruppe springt – der Fehler selbst steht nur noch an der Gruppe

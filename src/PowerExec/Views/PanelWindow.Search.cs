@@ -122,9 +122,29 @@ public partial class PanelWindow
         if (item == null) return;
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
         {
+            if (Vm.ShowsSearchResults)
+            {
+                // Trefferliste ist virtualisiert: Zeilen außerhalb des sichtbaren Bereichs gibt es noch nicht – über den Index holen
+                var index = ResultsList.Items.IndexOf(item);
+                if (index < 0) return;
+                if (ResultsList.ItemContainerGenerator.ContainerFromIndex(index) is FrameworkElement shown) { shown.BringIntoView(); return; }
+                if (FindVisual<VirtualizingStackPanel>(ResultsList) is { } panel) panel.BringIndexIntoViewPublic(index);
+                return;
+            }
             var element = FindContainer(ListScroll, item);
             element?.BringIntoView();
         });
+    }
+
+    private static T? FindVisual<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) return match;
+            if (FindVisual<T>(child) is { } found) return found;
+        }
+        return null;
     }
 
     private static FrameworkElement? FindContainer(DependencyObject parent, object item)
