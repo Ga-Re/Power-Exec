@@ -91,7 +91,7 @@ public sealed class ProfileParamViewModel : ObservableObject
     public ParameterSetting ToSetting() => new() { Mode = _mode, Value = _value };
 }
 
-public sealed class ProfileEditViewModel : ObservableObject
+public sealed partial class ProfileEditViewModel : ObservableObject
 {
     private readonly ProfilesViewModel _owner;
     private string _name;
@@ -295,8 +295,9 @@ public sealed class ProfileEditViewModel : ObservableObject
     {
         foreach (var n in new[] { nameof(Summary), nameof(Detail), nameof(DialogHint), nameof(Preview), nameof(OwnCount), nameof(HasOwnValues), nameof(InheritText),
                      nameof(HeaderHint), nameof(HasStandardChanged), nameof(StandardChangedText), nameof(ShowTargetOverride), nameof(ShowEntryForm), nameof(TargetText), nameof(CodeText),
-                     nameof(UsesCode), nameof(UsesTarget), nameof(IsDefaultProfile) })
+                     nameof(UsesCode), nameof(UsesTarget), nameof(IsDefaultProfile), nameof(PresetSummary) })
             OnPropertyChanged(n);
+        foreach (var r in OwnRows) r.Refresh();
     }
 
     public LaunchProfile ToProfile()
@@ -432,6 +433,7 @@ public sealed class ProfileEditViewModel : ObservableObject
         foreach (var t in new[] { TargetInherit, RunAsInherit, WindowInherit, ArgumentsInherit }) t.Refresh();
         foreach (var r in Parameters) r.Inherit.Refresh();
         foreach (var r in Variables) r.Refresh();
+        RebuildOwnRows();
         RaiseDerived();
     }
 
@@ -454,7 +456,7 @@ public sealed class ProfileEditViewModel : ObservableObject
     }
 
     private string KeyLabel(string key) =>
-        key.StartsWith(ProfileInheritance.ParamPrefix, StringComparison.OrdinalIgnoreCase) ? "-" + key[ProfileInheritance.ParamPrefix.Length..]
+        key.StartsWith(ProfileInheritance.ParamPrefix, StringComparison.OrdinalIgnoreCase) ? key[ProfileInheritance.ParamPrefix.Length..]
         : key.StartsWith(ProfileInheritance.VarPrefix, StringComparison.OrdinalIgnoreCase) ? "{{" + key[ProfileInheritance.VarPrefix.Length..] + "}}"
         : key switch
         {
@@ -550,14 +552,18 @@ public sealed class ProfileEditViewModel : ObservableObject
         if (!_isDefault) SetOwn(ProfileInheritance.VarPrefix + key, true);
         OnPropertyChanged(nameof(HasVariables));
         OnChanged();
+        _owner.RebuildSections();
     }
 
     internal void RemoveVariable(ProfileVariableRowViewModel row)
     {
         Variables.Remove(row);
         _variables.Remove(row.Name);
+        _own.Remove(ProfileInheritance.VarPrefix + row.Name);
         OnPropertyChanged(nameof(HasVariables));
+        RebuildOwnRows();
         OnChanged();
+        _owner.RebuildSections();
     }
 
     /// <summary>Globaler Wert einer {{$Variable}} (Anzeige; geheime verdeckt).</summary>
@@ -650,7 +656,7 @@ public sealed class ProfileEditViewModel : ObservableObject
 }
 
 /// <summary>Bearbeitet Anzeigename, Beschreibung und Startprofile eines Eintrags.</summary>
-public sealed class ProfilesViewModel : ObservableObject
+public sealed partial class ProfilesViewModel : ObservableObject
 {
     private readonly IProfilesHost _app;
     private readonly AppSettings _target;
@@ -732,6 +738,7 @@ public sealed class ProfilesViewModel : ObservableObject
             _lastParams = string.Empty;
             OnEntryChanged(); // Parameter eines PowerShell-Snippets, Vorschau
         }
+        RebuildPresets();
     }
 
     private LaunchItem _item;
@@ -772,18 +779,6 @@ public sealed class ProfilesViewModel : ObservableObject
     }
     public bool ShowForm => !_showKindPicker;
 
-    private string _page = "profiles";
-    /// <summary>Reiter des Formulars: „general“ (Schlagworte, Notiz, Verhalten) oder „profiles“ (Ziel, Variablen, Start).</summary>
-    public string Page
-    {
-        get => _page;
-        set { if (Set(ref _page, value == "general" ? "general" : "profiles")) { OnPropertyChanged(nameof(IsGeneralPage)); OnPropertyChanged(nameof(IsProfilesPage)); } }
-    }
-    public bool IsGeneralPage { get => _page == "general"; set { if (value) Page = "general"; } }
-    public bool IsProfilesPage { get => _page == "profiles"; set { if (value) Page = "profiles"; } }
-    public string ProfilesTabText => L.F("Profiles · {0}", Profiles.Count);
-    public ICommand ShowProfilesPageCommand => _showProfilesPage ??= new RelayCommand(() => Page = "profiles");
-    private ICommand? _showProfilesPage;
     public IReadOnlyList<KindTile> Tiles => CustomEntryViewModel.Tiles;
     public ICommand PickKindCommand { get; }
     public ICommand ChangeKindCommand { get; }
@@ -913,6 +908,7 @@ public sealed class ProfilesViewModel : ObservableObject
         foreach (var p in new[] { nameof(ShowStartSection), nameof(ShowPsOptions), nameof(ShowProgramArgs), nameof(ShowAdminMode), nameof(ShowMoreProfiles), nameof(ShowRunAs),
                      nameof(PathText), nameof(Title), nameof(WindowTitle), nameof(HeaderNameHint), nameof(SupportsNoExit), nameof(IsPowerShell), nameof(IsProgram), nameof(HasParameters) })
             OnPropertyChanged(p);
+        RebuildSections();
     }
 
     private static string ParamSignature(LaunchItem i) => string.Join("|", i.Parameters.Select(p => p.Name + ":" + p.TypeName + ":" + p.IsMandatory));
@@ -948,6 +944,7 @@ public sealed class ProfilesViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowRunAsSection));
         OnPropertyChanged(nameof(ShowParametersSection));
         OnPropertyChanged(nameof(ShowKeepOpen));
+        if (Sections.Count > 0) RebuildSections();
     }
 
     private bool _inProfileChange;
@@ -960,7 +957,6 @@ public sealed class ProfilesViewModel : ObservableObject
             // Änderung am Standard: geerbte Werte der anderen Profile nachziehen
             if (p.IsDefault) foreach (var other in Profiles.Where(x => !ReferenceEquals(x, p))) other.SyncFrom(p);
             OnPropertyChanged(nameof(MoreProfilesText));
-            OnPropertyChanged(nameof(ProfilesTabText));
             OnPropertyChanged(nameof(PreviewText));
         }
         finally { _inProfileChange = false; }
@@ -1057,6 +1053,7 @@ public sealed class ProfilesViewModel : ObservableObject
         foreach (var x in Profiles) x.RebaseOn(p);
         foreach (var x in Profiles) { x.BuildVariables(); x.RefreshInheritance(); }
         OnPropertyChanged(nameof(DefaultProfile));
+        RebuildPresets();
     }
 
     /// <summary>Profil zur Probe starten (ohne Verlauf).</summary>
@@ -1097,7 +1094,7 @@ public sealed class ProfilesViewModel : ObservableObject
     {
         // Neues Profil übernimmt alles vom Standard und legt zunächst nichts selbst fest
         var start = (DefaultProfile ?? Profiles[0]).ToProfile();
-        start.Name = L.F("Profile {0}", Profiles.Count + 1);
+        start.Name = L.F("Preset {0}", Profiles.Count);
         start.IsDefault = false;
         start.Own = new List<string>();
         start.OwnBase = new Dictionary<string, string>();
@@ -1108,7 +1105,7 @@ public sealed class ProfilesViewModel : ObservableObject
         Profiles.Add(p);
         Selected = p;
         OnPropertyChanged(nameof(MoreProfilesText));
-        OnPropertyChanged(nameof(ProfilesTabText));
+        RebuildPresets();
     }
 
     private void Duplicate()
@@ -1125,7 +1122,7 @@ public sealed class ProfilesViewModel : ObservableObject
         Profiles.Add(p);
         Selected = p;
         OnPropertyChanged(nameof(MoreProfilesText));
-        OnPropertyChanged(nameof(ProfilesTabText));
+        RebuildPresets();
     }
 
     private void Delete()
@@ -1137,7 +1134,7 @@ public sealed class ProfilesViewModel : ObservableObject
         if (wasDefault) MakeDefault(Profiles[0]);
         Selected = Profiles[Math.Min(idx, Profiles.Count - 1)];
         OnPropertyChanged(nameof(MoreProfilesText));
-        OnPropertyChanged(nameof(ProfilesTabText));
+        RebuildPresets();
     }
 
     private void Save()

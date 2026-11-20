@@ -2,6 +2,12 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.39.0 – Übersichtlicheres Eintragsfenster, Profile heißen jetzt Presets
+
+- Das Eintragsfenster hat links eine Navigation statt zwei Reitern – Allgemein, Parameter, Variablen, Start, Presets und Verhalten, jeweils nur, wo die Art sie braucht
+- Profile heißen jetzt Presets: Ein Preset zeigt nur, was von ★ Standard abweicht, mit dem Standardwert daneben – „+ Wert ändern …“ fügt eine Abweichung hinzu, × nimmt sie zurück
+- Einfache Einträge wie Webseiten und Ordner zeigen Presets erst nach „Preset anlegen“ – praktisch mit einer Variable wie {{$umgebung}} für Test und Produktion
+
 ## 0.38.3 – Flotter: ruckelfreies Ausfahren, schnellere Suche
 
 - Das Panel gleitet so ruhig wie die Flyouts von Windows – auch mit Klarglas und Vollton: das ganze Fenster gleitet, statt seinen Inhalt in jedem Bild neu zu zeichnen, und eingefahren bleibt es gezeichnet hinter dem Rand stehen
@@ -233,7 +239,7 @@ Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project 
 - Rechnergruppen dynamisch aus dem AD: Regeln wie „Betriebssystem enthält Server“, in Blöcken mit UND/ODER kombiniert; Aktualisierung beim Start und regelmäßig
 - Zuletzt ausgeführt, Favoriten und Eigene Einträge stehen mit Schloss in der Gruppenliste, lassen sich verschieben und je Arbeitsbereich ein- oder ausblenden
 - Laufende Scripte: Ende wird erkannt, auch wenn das Fenster offen bleibt; „Erneut starten“ nach dem Ende; „läuft“ direkt am Eintrag
-- Beim Start nach dem Profil fragen (global oder je Eintrag) – im selben Fenster wie die Werte für {{Platzhalter}}
+- Beim Start nach dem Preset fragen (global oder je Eintrag) – im selben Fenster wie die Werte für {{Platzhalter}}
 - Gruppen klappen weich auf und zu, Knöpfe im Gruppenkopf blenden ein, „Zuletzt ausgeführt“ zeigt die Zeit
 - Stärke des Weichzeichners einstellbar, Deckkraft wieder genau wie eingestellt; angeheftetes Panel überdeckt die Einstellungen nicht mehr
 - Ordner ins Panel ziehen: als Gruppe oder als Link; Schlagworte mit eigener Farbe und einzeln von Einträgen entfernbar

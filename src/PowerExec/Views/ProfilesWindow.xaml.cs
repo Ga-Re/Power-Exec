@@ -44,13 +44,13 @@ public partial class ProfilesWindow : Window
     private static (double W, double H) DefaultSize(string key) => key switch
     {
         "Auswahl" => (760, 600),
-        "Url" or "Folder" => (860, 760),
-        "Rdp" or "Ssh" => (880, 860),
-        "Snippet" => (1000, 920),
-        "TextSnippet" => (900, 820),
-        "Tool" => (900, 900),
-        "Script" => (1000, 880),
-        _ => (900, 820)
+        "Url" or "Folder" => (1000, 760),
+        "Rdp" or "Ssh" => (1040, 860),
+        "Snippet" => (1160, 920),
+        "TextSnippet" => (1060, 820),
+        "Tool" => (1060, 900),
+        "Script" => (1120, 820),
+        _ => (1060, 820)
     };
 
     private void ApplySize()
@@ -104,4 +104,14 @@ public partial class ProfilesWindow : Window
     internal ProfilesViewModel ViewModelForTest => _vm;
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>„+ Wert ändern …“: Menü der Werte, die das Preset noch vom Standard übernimmt.</summary>
+    private void AddPresetValue_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { ContextMenu: { } menu } button) return;
+        menu.DataContext = button.DataContext;
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
 }

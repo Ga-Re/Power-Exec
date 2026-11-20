@@ -17,15 +17,74 @@ public class ProfileInheritanceViewModelTests
         return (host, vm);
     }
 
-    [Fact]
-    public void OpensOnProfilesTabAndSwitchesToGeneral()
+    private static ProfilesViewModel Script(FakeEntryHost host)
     {
-        var (_, vm) = Ticket();
-        Assert.True(vm.IsProfilesPage);
-        vm.IsGeneralPage = true;
-        Assert.Equal("general", vm.Page);
-        vm.ShowProfilesPageCommand.Execute(null);
-        Assert.True(vm.IsProfilesPage);
+        var item = new LaunchItem { FullPath = @"C:\Scripts\Reset.ps1", Type = ItemType.PowerShell, RootFolder = @"C:\Scripts", DisplayName = "Reset.ps1" };
+        PowerExec.Core.Metadata.ScriptInfoReader.FillFromText(item, "param([Parameter(Mandatory)][string]$User, [ValidateSet('A','B')][string]$Mode = 'A')\nWrite-Host $User");
+        return new ProfilesViewModel(host, item, host.Settings, saveImmediately: false);
+    }
+
+    [Fact]
+    public void SectionsFollowTheKindOfEntry()
+    {
+        var script = Script(new FakeEntryHost());
+        Assert.Equal(new[] { "general", "parameters", "start", "presets", "behavior" }, script.Sections.Select(s => s.Key));
+        Assert.Equal("general", script.Section);
+        Assert.Equal("2", script.Sections.Single(s => s.Key == "parameters").Badge);
+
+        // Webseite: keine Parameter; Presets erst nach „Preset anlegen“
+        var (_, url) = Ticket();
+        Assert.Equal(new[] { "general", "variables", "start", "behavior" }, url.Sections.Select(s => s.Key));
+        Assert.True(url.CanRevealPresets);
+        url.RevealPresetsCommand.Execute(null);
+        Assert.Equal("presets", url.Section);
+        Assert.Contains(url.Sections, s => s.Key == "presets" && s.IsSelected);
+        Assert.Single(url.Presets);
+
+        url.Sections.Single(s => s.Key == "behavior").SelectCommand.Execute(null);
+        Assert.Equal("behavior", url.Section);
+    }
+
+    [Fact]
+    public void PresetListsOnlyItsDeviationsWithTheStandardValue()
+    {
+        var vm = Script(new FakeEntryHost());
+        var standard = vm.DefaultProfile!;
+        vm.Section = "presets";
+        vm.AddCommand.Execute(null);
+        var test = vm.Selected!;
+        Assert.Same(test, Assert.Single(vm.Presets));
+        Assert.Empty(test.OwnRows);
+        Assert.Contains(test.AddableKeys, k => k.Label == "Mode");
+
+        test.AddableKeys.Single(k => k.Label == "Mode").Command.Execute(null);
+        var row = Assert.Single(test.OwnRows);
+        Assert.Equal("param", row.Kind);
+        Assert.DoesNotContain(test.AddableKeys, k => k.Label == "Mode");
+        row.Param!.Mode = ParameterMode.Fixed;
+        row.Param.Value = "B";
+        Assert.Equal("Mode = B", test.PresetSummary);
+        Assert.Contains("A", row.BaseText, StringComparison.Ordinal);       // „statt A (vorbelegt)“
+
+        standard.Parameters.Single(p => p.Name == "Mode").Value = "A";      // Standard ändern: Zeile zeigt den neuen Wert
+        row.RemoveCommand.Execute(null);                                    // × → wieder vom Standard
+        Assert.Empty(test.OwnRows);
+        Assert.Equal(standard.Parameters.Single(p => p.Name == "Mode").Value, test.Parameters.Single(p => p.Name == "Mode").Value);
+    }
+
+    [Fact]
+    public void PresetCanBecomeTheStandardAndBeRemoved()
+    {
+        var vm = Script(new FakeEntryHost());
+        vm.AddCommand.Execute(null);
+        var preset = vm.Selected!;
+        preset.MakeStandardCommand.Execute(null);
+        Assert.Same(preset, vm.DefaultProfile);
+        var old = Assert.Single(vm.Presets);
+        Assert.NotSame(preset, old);
+        old.RemovePresetCommand.Execute(null);
+        Assert.Empty(vm.Presets);
+        Assert.Single(vm.Profiles);
     }
 
     [Fact]

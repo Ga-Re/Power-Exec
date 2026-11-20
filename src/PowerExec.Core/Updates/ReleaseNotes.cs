@@ -8,6 +8,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 39, 0), L.T("Clearer entry window, profiles are now presets"), new[]
+        {
+            L.T("The entry window has a navigation on the left instead of two tabs – General, Parameters, Variables, Start, Presets and Behavior, each only where the type needs it"),
+            L.T("Profiles are now called presets: a preset only lists what differs from ★ Standard, with the standard value next to it – “+ Change a value …” adds one, × takes it back"),
+            L.T("Simple entries like web pages and folders only show presets after “Create preset” – handy with a variable such as {{$environment}} for test and production")
+        }),
         new ReleaseNote(new Version(0, 38, 3), L.T("Snappier: smooth panel slide, faster search"), new[]
         {
             L.T("The panel slides as smoothly as Windows flyouts – also with clear glass and solid: the whole window glides instead of redrawing its content in every frame, and it stays drawn behind the edge when hidden"),
