@@ -32,15 +32,15 @@
   "GroupColorsForTags": true,
   "FontFamily": "Bahnschrift",
   "Pair": {
-    "PanelColor": "#F4F1F6",
+    "PanelColor": "#EAE0F3",
     "AccentColor": "#FF6C11",
     "Palette": {
-      "Card": "#FBF7F8",
-      "Input": "#FDFCFD",
-      "Line": "#D8BFB4",
-      "Text": "#2C2119",
-      "TextSecondary": "#6C6460",
-      "Selected": "#F6DCD1"
+      "Card": "#F7E9EC",
+      "Input": "#FCFAFD",
+      "Line": "#D9A89A",
+      "Text": "#3F2719",
+      "TextSecondary": "#6E5954",
+      "Selected": "#F0BDAF"
     },
     "GroupColors": "#B5510A, #B81F6B, #00788F, #6A3FC9, #7F6500, #0C7558"
   }

@@ -32,15 +32,15 @@
   "GroupColorsForTags": true,
   "MonoFontFamily": "Cascadia Code",
   "Pair": {
-    "PanelColor": "#F1F6F2",
+    "PanelColor": "#CEF4D7",
     "AccentColor": "#00FF41",
     "Palette": {
-      "Card": "#F5FBF7",
-      "Input": "#FCFDFC",
-      "Line": "#AEDAB9",
-      "Text": "#182C1D",
-      "TextSecondary": "#5D6D61",
-      "Selected": "#CAF7D6"
+      "Card": "#DBFAE3",
+      "Input": "#F8FDF9",
+      "Line": "#7EDF96",
+      "Text": "#163F20",
+      "TextSecondary": "#487052",
+      "Selected": "#90F7AA"
     },
     "GroupColors": "#0A7F2A, #427500, #0B7F64, #1E6AA8, #707500, #2E7D52"
   }

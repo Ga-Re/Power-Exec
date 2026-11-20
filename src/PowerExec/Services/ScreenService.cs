@@ -55,6 +55,13 @@ public static class ScreenService
     public static void Place(IntPtr hwnd, Rectangle r) =>
         NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOPMOST, r.Left, r.Top, r.Width, r.Height, NativeMethods.SWP_NOACTIVATE);
 
+    /// <summary>Abstand des Mauszeigers zum Rechteck in Bildschirmpixeln (0 = darin).</summary>
+    public static double CursorDistance(Rectangle r)
+    {
+        NativeMethods.GetCursorPos(out var p);
+        return Core.Layout.HotZoneFade.Distance(p.X, p.Y, r.Left, r.Top, r.Right - 1, r.Bottom - 1);
+    }
+
     public static bool CursorInside(Rectangle r, int tolerance = 0)
     {
         NativeMethods.GetCursorPos(out var p);
