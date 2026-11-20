@@ -7,7 +7,7 @@
         xmlns:v="clr-namespace:PowerExec.Desktop.Views"
         xmlns:infra="clr-namespace:PowerExec.Desktop.Infrastructure"
         Title="{Binding WindowTitle}" Style="{StaticResource AppWindow}"
-        Width="900" Height="800" MinWidth="680" MinHeight="480" WindowStartupLocation="CenterScreen">
+        Width="1060" Height="800" MinWidth="760" MinHeight="480" WindowStartupLocation="CenterScreen">
     <Window.Resources>
       <ResourceDictionary>
         <Style x:Key="SectionCard" TargetType="Border">
@@ -33,6 +33,15 @@
         </Style>
         <Style x:Key="CardTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
             <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="PageHint" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
 
         <!-- Kachel im ersten Schritt -->
@@ -62,68 +71,42 @@
             </Setter>
         </Style>
 
-        <!-- Geerbt oder eigen: Zustand, ✎ anpassen, ↺ zurück zum Standard (nur in anderen Profilen als dem Standard) -->
-        <DataTemplate x:Key="InheritControls">
-            <StackPanel Orientation="Horizontal" Visibility="{Binding ShowControls, Converter={StaticResource Vis}}">
-                <TextBlock x:Name="State" Text="{Binding StateText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Customize'}" Command="{Binding MakeOwnCommand}" Padding="8,0" Height="26" MinHeight="26"
-                           FontSize="{StaticResource Font.Caption}" ToolTip="{l:T 'Set this value for this profile only'}"
-                           Visibility="{Binding IsInherited, Converter={StaticResource Vis}}"/>
-                <ui:Button Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding ResetCommand}" ToolTip="{l:T 'Back to the value of ★ Standard'}"
-                           AutomationProperties.Name="{l:T 'Back to the value of ★ Standard'}" Visibility="{Binding IsOwn, Converter={StaticResource Vis}}">
-                    <TextBlock Text="&#xE7A7;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
-                </ui:Button>
-            </StackPanel>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsOwn}" Value="True">
-                    <Setter TargetName="State" Property="Foreground" Value="{DynamicResource Accent}"/>
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
-
-        <!-- Parameterzeile eines Profils -->
+        <!-- Parameterzeile (ProfileParamViewModel) -->
         <DataTemplate x:Key="ParamRow">
-            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="0,8">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="170"/>
-                        <ColumnDefinition Width="230"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ContentControl Grid.Column="3" Content="{Binding Inherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                    <StackPanel Margin="0,0,12,0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding TypeLabel}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
-                        </StackPanel>
-                        <TextBlock x:Name="Note" Text="{Binding Note}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            <Grid Margin="0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="170"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="230"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding TypeLabel}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,1,0,0"/>
                     </StackPanel>
-                    <Border Grid.Column="1" Style="{StaticResource SegmentHost}" VerticalAlignment="Center" Margin="0,0,12,0" HorizontalAlignment="Stretch"
-                            Visibility="{Binding IsNotSecure, Converter={StaticResource Vis}}">
-                        <UniformGrid Columns="3">
-                            <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Fixed'}"
-                                         IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Fixed}"/>
-                            <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Prefilled'}"
-                                         IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Preset}"/>
-                            <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Ask'}"
-                                         IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
-                        </UniformGrid>
-                    </Border>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Visibility="{Binding IsSecure, Converter={StaticResource Vis}}">
+                    <TextBlock x:Name="Note" Text="{Binding Note}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsValueEnabled}"
+                             Visibility="{Binding IsText, Converter={StaticResource Vis}}" Tag="{l:T 'Value'}" AutomationProperties.Name="{Binding Name}"/>
+                    <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsValueEnabled}"
+                              Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{Binding Name}"/>
+                    <CheckBox Content="{l:T 'Enable'}" IsChecked="{Binding BoolValue}" IsEnabled="{Binding IsValueEnabled}"
+                              Visibility="{Binding IsCheck, Converter={StaticResource Vis}}"/>
+                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsSecure, Converter={StaticResource Vis}}">
                         <TextBlock Text="&#xE72E;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0" Foreground="{DynamicResource Text.Secondary}"/>
                         <TextBlock Text="{l:T 'Always asked at launch'}" FontSize="{StaticResource Font.Body}" Foreground="{DynamicResource Text.Secondary}"/>
                     </StackPanel>
-                    <Grid Grid.Column="2" VerticalAlignment="Center">
-                        <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsValueEnabled}"
-                                 Visibility="{Binding IsText, Converter={StaticResource Vis}}" Tag="Wert"/>
-                        <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Value}" IsEnabled="{Binding IsValueEnabled}"
-                                  Visibility="{Binding IsChoice, Converter={StaticResource Vis}}"/>
-                        <CheckBox Content="{l:T 'Enable'}" IsChecked="{Binding BoolValue}" IsEnabled="{Binding IsValueEnabled}"
-                                  Visibility="{Binding IsCheck, Converter={StaticResource Vis}}"/>
-                    </Grid>
                 </Grid>
-            </Border>
+                <Border Grid.Column="2" Style="{StaticResource SegmentHost}" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                        Visibility="{Binding IsNotSecure, Converter={StaticResource Vis}}">
+                    <UniformGrid Columns="3">
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Fixed'}" IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Fixed}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Prefilled'}" IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Preset}"/>
+                        <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Ask'}" IsChecked="{Binding Mode, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
+                    </UniformGrid>
+                </Border>
+            </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding NoteIsWarning}" Value="True">
                     <Setter TargetName="Note" Property="Foreground" Value="{DynamicResource Status.Warning}"/>
@@ -131,291 +114,287 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Abschnitte eines Profils (DataContext: ProfileEditViewModel) -->
-        <DataTemplate x:Key="ProfileSections">
+        <!-- Variable bzw. Abfrage (ProfileVariableRowViewModel) -->
+        <DataTemplate x:Key="VariableRow">
+            <Grid Margin="0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="170"/>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,8,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Token}" FontFamily="{DynamicResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Token}"/>
+                    <TextBlock Text="{Binding Origin}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}"/>
+                </StackPanel>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Kinds}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding KindKey}"
+                          Margin="0,0,8,0" VerticalAlignment="Center" AutomationProperties.Name="{l:T 'Kind'}"
+                          Visibility="{Binding IsQuery, Converter={StaticResource Vis}}"/>
+                <TextBlock Grid.Column="1" Text="{l:T 'Value'}" Style="{StaticResource Caption}" VerticalAlignment="Center"
+                           Visibility="{Binding IsVariable, Converter={StaticResource Vis}}"/>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=200}" Tag="{Binding ValueHint}" AutomationProperties.Name="{l:T 'Value'}"/>
+                    <TextBox Text="{Binding ChoicesText, UpdateSourceTrigger=PropertyChanged, Delay=200}" Tag="{l:T 'more values, separated by ;'}" Margin="0,4,0,0"
+                             Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Choices'}"/>
+                </StackPanel>
+                <ui:Button Grid.Column="3" Style="{StaticResource Btn.Icon}" Width="26" Height="26" Margin="8,0,0,0" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove variable'}"
+                           AutomationProperties.Name="{l:T 'Remove variable'}" Visibility="{Binding IsProfileOnly, Converter={StaticResource Vis}}">
+                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
+                </ui:Button>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Ausführen als / wo (ProfileEditViewModel) -->
+        <DataTemplate x:Key="RunAsBody">
             <StackPanel>
-                <!-- Kopf: Name, Standard, Hinweis, Testen -->
-                <DockPanel Margin="0,0,0,8">
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" VerticalAlignment="Bottom" Margin="8,0,0,0"
-                               ToolTip="{l:T 'Start with this profile once (not recorded)'}">
+                <StackPanel Visibility="{Binding DataContext.ShowRunAs, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{l:T 'Run as'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SegmentHost}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{l:T 'Test'}"/>
-                        </StackPanel>
-                    </ui:Button>
-                    <StackPanel DockPanel.Dock="Left" Width="240" Margin="0,0,16,0">
-                        <TextBlock Text="{l:T 'Profile name'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <StackPanel VerticalAlignment="Bottom">
-                        <CheckBox Content="{l:T 'Default profile (click in the panel)'}" IsChecked="{Binding IsDefault}"/>
-                        <TextBlock Text="{Binding HeaderHint}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"/>
-                    </StackPanel>
-                </DockPanel>
-
-                <!-- Standard wurde nach dem Anpassen geändert -->
-                <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
-                        Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
-                        Visibility="{Binding HasStandardChanged, Converter={StaticResource Vis}}">
-                    <DockPanel>
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep mine'}" Command="{Binding DismissStandardChangeCommand}" Margin="8,0,0,0"/>
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Take over Standard'}" Command="{Binding AdoptStandardCommand}" Margin="8,0,0,0"/>
-                        <TextBlock Text="{Binding StandardChangedText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                    </DockPanel>
-                </Border>
-
-                <!-- Ziel bzw. Code: im Standard das Formular des Eintrags, sonst überschreibbar -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch" Visibility="{Binding DataContext.HasEntry, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ContentControl DockPanel.Dock="Right" Content="{Binding TargetInherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                            <TextBlock Text="{l:T 'Target / code'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,8,0,4">
-                        <v:CustomEntryForm DataContext="{Binding DataContext.Entry, RelativeSource={RelativeSource AncestorType=Window}}" Visibility="{Binding DataContext.Selected.ShowEntryForm, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
-                        <StackPanel Visibility="{Binding ShowTargetOverride, Converter={StaticResource Vis}}" IsEnabled="{Binding TargetInherit.IsEditable}">
-                            <TextBox Text="{Binding TargetText, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{DynamicResource MonoFont}"
-                                     Visibility="{Binding UsesTarget, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Target of this profile'}"/>
-                            <TextBox Text="{Binding CodeText, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{DynamicResource MonoFont}" AcceptsReturn="True" AcceptsTab="True"
-                                     MinHeight="140" MaxHeight="360" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8"
-                                     Visibility="{Binding UsesCode, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Code of this profile'}"/>
-                            <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
-                                       Text="{l:T 'Comes from ★ Standard until you customize it here; then it applies to this profile only.'}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Script-Datei: Pfad zur Info -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch" Header="{Binding DataContext.FileKindText, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding DataContext.IsScannedFile, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                    <StackPanel Margin="0,8,0,4">
-                        <DockPanel>
-                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Show in Explorer'}" Command="{Binding DataContext.OpenFileLocationCommand, RelativeSource={RelativeSource AncestorType=Window}}" Margin="8,0,0,0"/>
-                            <TextBox Text="{Binding DataContext.Item.FullPath, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" IsReadOnly="True" FontFamily="{DynamicResource MonoFont}"/>
-                        </DockPanel>
-                        <TextBlock Text="{Binding DataContext.FileInfo, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
-                        <TextBlock Text="{l:T 'The file is the source – the path is shown for information. Profiles set parameters, variables and how it starts.'}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Variablen: Abfragen und {{$Variablen}} dieses Profils -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T '+ Variable'}" Command="{Binding AddVariableCommand}" Padding="8,0" Height="26" MinHeight="26"
-                                       FontSize="{StaticResource Font.Caption}" ToolTip="{l:T 'Variable only for this entry, used as \{\{$Name\}\}'}"/>
-                            <TextBlock Text="{l:T 'Variables'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,8,0,4">
-                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
-                                   Text="{l:T 'Queries \{\{Name\}\} are asked at launch – with a suggestion, as a choice or with a fixed value. \{\{$Variables\}\} take the value set here before the global one. Quick choice in the text: \{\{Server:A;B;C\}\}.'}"/>
-                        <TextBlock Text="{l:T 'No variables yet – use \{\{Name\}\} in the target or code, or add one.'}" Style="{StaticResource Caption}"
-                                   Visibility="{Binding HasVariables, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
-                        <ItemsControl ItemsSource="{Binding Variables}" Focusable="False">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="150"/>
-                                                <ColumnDefinition Width="110"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Margin="0,0,8,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Token}" FontFamily="{DynamicResource MonoFont}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Token}"/>
-                                                <TextBlock Text="{Binding Origin}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}"/>
-                                            </StackPanel>
-                                            <ComboBox Grid.Column="1" ItemsSource="{Binding Kinds}" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding KindKey}"
-                                                      Margin="0,0,8,0" VerticalAlignment="Center" IsEnabled="{Binding Inherit.IsEditable}" AutomationProperties.Name="{l:T 'Kind'}"
-                                                      Visibility="{Binding IsQuery, Converter={StaticResource Vis}}"/>
-                                            <TextBlock Grid.Column="1" Text="{l:T 'Value'}" Style="{StaticResource Caption}" VerticalAlignment="Center"
-                                                       Visibility="{Binding IsVariable, Converter={StaticResource Vis}}"/>
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" IsEnabled="{Binding Inherit.IsEditable}">
-                                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged, Delay=200}" Tag="{Binding ValueHint}" AutomationProperties.Name="{l:T 'Value'}"/>
-                                                <TextBox Text="{Binding ChoicesText, UpdateSourceTrigger=PropertyChanged, Delay=200}" Tag="{l:T 'more values, separated by ;'}" Margin="0,4,0,0"
-                                                         Visibility="{Binding IsChoice, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Choices'}"/>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                                                <ContentControl Content="{Binding Inherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                                                <ui:Button Style="{StaticResource Btn.Icon}" Width="26" Height="26" Command="{Binding RemoveCommand}" ToolTip="{l:T 'Remove variable'}"
-                                                           AutomationProperties.Name="{l:T 'Remove variable'}" Visibility="{Binding IsProfileOnly, Converter={StaticResource Vis}}">
-                                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
-                                                </ui:Button>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Ausführen als / Ziel -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch" Visibility="{Binding DataContext.ShowRunAsSection, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ContentControl DockPanel.Dock="Right" Content="{Binding RunAsInherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                            <TextBlock Text="{l:T 'Run as / where'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,4,0,4" IsEnabled="{Binding RunAsInherit.IsEditable}">
-                        <StackPanel Visibility="{Binding DataContext.ShowRunAs, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                            <TextBlock Text="{l:T 'Run as'}" Style="{StaticResource FieldLabel}" Margin="0,4,0,4"/>
-                            <Border Style="{StaticResource SegmentHost}">
+                            <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Current account'}" Width="140"
+                                         IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=normal}"/>
+                            <RadioButton Style="{StaticResource Segment}" Width="140"
+                                         IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=admin}"
+                                         Visibility="{Binding DataContext.ShowAdminMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Current account'}" Width="140"
-                                                 IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=normal}"/>
-                                    <RadioButton Style="{StaticResource Segment}" Width="140"
-                                                 IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=admin}"
-                                                 Visibility="{Binding DataContext.ShowAdminMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,8,0"/>
-                                            <TextBlock Text="{l:T 'Administrator'}"/>
-                                        </StackPanel>
-                                    </RadioButton>
-                                    <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Different user'}" Width="150"
-                                                 IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=other}"/>
+                                    <TextBlock Text="&#xE7EF;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Foreground="{DynamicResource Status.Warning}" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{l:T 'Administrator'}"/>
                                 </StackPanel>
-                            </Border>
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="{l:T 'For a different user, Power-Exec asks for the sign-in at every launch – it is never saved.'}"
-                                       Visibility="{Binding RunMode, Converter={StaticResource EqVis}, ConverterParameter=other}"/>
+                            </RadioButton>
+                            <RadioButton Style="{StaticResource Segment}" Content="{l:T 'Different user'}" Width="150"
+                                         IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=other}"/>
                         </StackPanel>
-                        <StackPanel Visibility="{Binding DataContext.ShowPsOptions, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                            <TextBlock Text="{l:T 'Where'}" Style="{StaticResource FieldLabel}"/>
-                            <Border Style="{StaticResource SegmentHost}">
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'This PC'}"
-                                                 IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Local}"/>
-                                    <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'Fixed computers'}"
-                                                 IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Fixed}"/>
-                                    <RadioButton Style="{StaticResource Segment}" Width="150" Content="{l:T 'Choose at launch'}"
-                                                 IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
-                                </StackPanel>
-                            </Border>
-                            <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0"
-                                          Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
-                            <ComboBox Width="210" Margin="0,12,0,0" HorizontalAlignment="Left" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
-                                      ItemsSource="{Binding DataContext.Engines, RelativeSource={RelativeSource AncestorType=Window}}" AutomationProperties.Name="{l:T 'PowerShell version'}"/>
+                    </Border>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{l:T 'For a different user, Power-Exec asks for the sign-in at every launch – it is never saved.'}"
+                               Visibility="{Binding RunMode, Converter={StaticResource EqVis}, ConverterParameter=other}"/>
+                </StackPanel>
+                <StackPanel Visibility="{Binding DataContext.ShowPsOptions, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{l:T 'Where'}" Style="{StaticResource FieldLabel}"/>
+                    <Border Style="{StaticResource SegmentHost}">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'This PC'}" IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Local}"/>
+                            <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'Fixed computers'}" IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Fixed}"/>
+                            <RadioButton Style="{StaticResource Segment}" Width="150" Content="{l:T 'Choose at launch'}" IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
                         </StackPanel>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Parameter (PowerShell) -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch" Header="{l:T 'Parameters'}"
-                          Visibility="{Binding DataContext.ShowParametersSection, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                    <StackPanel Margin="0,4,0,4">
-                        <TextBlock Text="{l:T 'Fixed = always passed · Prefilled = editable in the dialog · Ask = field stays empty'}" Style="{StaticResource Caption}" Margin="0,0,0,8"/>
-                        <ItemsControl ItemsSource="{Binding Parameters}" Focusable="False">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ParamRow}" IsEnabled="{Binding Inherit.IsEditable}"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Argumente (Programme) -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch" Visibility="{Binding DataContext.ShowProgramArgs, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ContentControl DockPanel.Dock="Right" Content="{Binding ArgumentsInherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                            <TextBlock Text="{l:T 'Arguments'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,4,0,4" IsEnabled="{Binding ArgumentsInherit.IsEditable}">
-                        <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'optional, e.g. /v:SRV-APP02'}"
-                                 AutomationProperties.Name="{l:T 'Additional arguments at launch'}"/>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Fenster und Verhalten -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="True" HorizontalContentAlignment="Stretch">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ContentControl DockPanel.Dock="Right" Content="{Binding WindowInherit}" ContentTemplate="{StaticResource InheritControls}" Focusable="False"/>
-                            <TextBlock Text="{l:T 'Window and behavior'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,4,0,4" IsEnabled="{Binding WindowInherit.IsEditable}">
-                        <!-- Startoptionen der Art (Browser, Anzeige, Öffnen mit …) -->
-                        <v:CustomEntryForm DataContext="{Binding Options}" Visibility="{Binding HasOptions, Converter={StaticResource Vis}}" Margin="0,0,0,4"/>
-                        <StackPanel Visibility="{Binding DataContext.ShowPsOptions, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
-                            <TextBlock Text="{l:T 'Run dialog'}" Style="{StaticResource FieldLabel}"/>
-                            <Border Style="{StaticResource SegmentHost}">
-                                <StackPanel Orientation="Horizontal">
-                                    <RadioButton Style="{StaticResource Segment}" Width="110" Content="{l:T 'Always'}"
-                                                 IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=Always}"/>
-                                    <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'Only when needed'}"
-                                                 IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=WhenNeeded}"/>
-                                    <RadioButton Style="{StaticResource Segment}" Width="110" Content="{l:T 'Never'}"
-                                                 IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=Never}"/>
-                                </StackPanel>
-                            </Border>
-                            <TextBlock Text="{Binding DialogHint}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
-                            <WrapPanel Margin="0,8,0,0">
-                                <CheckBox Content="{l:T 'Keep console open (-NoExit)'}" IsChecked="{Binding NoExit}" Margin="0,0,16,0"/>
-                                <CheckBox Content="{l:T 'Without profile (-NoProfile)'}" IsChecked="{Binding NoProfile}"/>
-                            </WrapPanel>
-                        </StackPanel>
-                        <CheckBox Content="{l:T 'Keep console open after finishing'}" IsChecked="{Binding NoExit}" Margin="0,8,0,0"
-                                  Visibility="{Binding DataContext.ShowKeepOpen, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
-                        <CheckBox Content="{l:T 'Confirm before launch (“Really run?”)'}" IsChecked="{Binding ConfirmBeforeRun}" Margin="0,8,0,0"/>
-                    </StackPanel>
-                </ui:CardExpander>
-
-                <!-- Vorschau: Aufruf und Code (schreibgeschützt; Datei-Scripte lassen sich bearbeiten) -->
-                <ui:CardExpander Margin="0,0,0,8" IsExpanded="False" HorizontalContentAlignment="Stretch">
-                    <ui:CardExpander.Header>
-                        <DockPanel>
-                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding EditCodeCommand}" Padding="8,0" Height="26" MinHeight="26"
-                                       FontSize="{StaticResource Font.Caption}" Visibility="{Binding CanEditFile, Converter={StaticResource Vis}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{l:T 'Edit'}"/>
-                                </StackPanel>
-                            </ui:Button>
-                            <TextBlock Text="{l:T 'Preview'}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </ui:CardExpander.Header>
-                    <StackPanel Margin="0,8,0,4">
-                        <TextBlock Text="{l:T 'Call'}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
-                        <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="10,8">
-                            <TextBox Text="{Binding Preview, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"
-                                     FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}"/>
-                        </Border>
-                        <StackPanel Visibility="{Binding HasCode, Converter={StaticResource Vis}}" Margin="0,12,0,0">
-                            <TextBlock Text="{l:T 'Code'}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
-                            <!-- Lesen: mit Syntaxfarben -->
-                            <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="10,8"
-                                    Visibility="{Binding IsReadingCode, Converter={StaticResource Vis}}">
-                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="420">
-                                    <TextBlock infra:CodeView.Segments="{Binding CodeSegments}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"
-                                               Foreground="{DynamicResource Text.Primary}"/>
-                                </ScrollViewer>
-                            </Border>
-                            <!-- Bearbeiten: in die Datei, mit Sicherung -->
-                            <StackPanel Visibility="{Binding IsEditingCode, Converter={StaticResource Vis}}">
-                                <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
-                                        Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}">
-                                    <DockPanel>
-                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Save to file'}" Command="{Binding SaveCodeCommand}" Margin="8,0,0,0"/>
-                                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Discard'}" Command="{Binding CancelEditCodeCommand}" Margin="8,0,0,0"/>
-                                        <TextBlock Text="{Binding EditWarning}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                                    </DockPanel>
-                                </Border>
-                                <TextBox Text="{Binding EditableCode, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" AcceptsReturn="True" AcceptsTab="True"
-                                         MinHeight="220" MaxHeight="480" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                                         VerticalContentAlignment="Top" Padding="8" AutomationProperties.Name="{l:T 'Script code'}"/>
-                            </StackPanel>
-                            <TextBlock Text="{Binding CodeStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
-                </ui:CardExpander>
+                    </Border>
+                    <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0" Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{l:T 'PowerShell version'}" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox Width="230" HorizontalAlignment="Left" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
+                              ItemsSource="{Binding DataContext.Engines, RelativeSource={RelativeSource AncestorType=Window}}" AutomationProperties.Name="{l:T 'PowerShell version'}"/>
+                </StackPanel>
             </StackPanel>
+        </DataTemplate>
+
+        <!-- Verhalten beim Start: Startblatt, Konsole, Rückfrage (ProfileEditViewModel) -->
+        <DataTemplate x:Key="LaunchBody">
+            <StackPanel>
+                <StackPanel Visibility="{Binding DataContext.ShowPsOptions, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
+                    <TextBlock Text="{l:T 'Run dialog'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                    <Border Style="{StaticResource SegmentHost}">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Style="{StaticResource Segment}" Width="110" Content="{l:T 'Always'}" IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=Always}"/>
+                            <RadioButton Style="{StaticResource Segment}" Width="130" Content="{l:T 'Only when needed'}" IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=WhenNeeded}"/>
+                            <RadioButton Style="{StaticResource Segment}" Width="110" Content="{l:T 'Never'}" IsChecked="{Binding Dialog, Converter={StaticResource Eq}, ConverterParameter=Never}"/>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="{Binding DialogHint}" Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    <WrapPanel Margin="0,8,0,0">
+                        <CheckBox Content="{l:T 'Keep console open (-NoExit)'}" IsChecked="{Binding NoExit}" Margin="0,0,16,0"/>
+                        <CheckBox Content="{l:T 'Without PowerShell profile (-NoProfile)'}" IsChecked="{Binding NoProfile}"/>
+                    </WrapPanel>
+                </StackPanel>
+                <CheckBox Content="{l:T 'Keep console open after finishing'}" IsChecked="{Binding NoExit}" Margin="0,8,0,0"
+                          Visibility="{Binding DataContext.ShowKeepOpen, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}"/>
+                <CheckBox Content="{l:T 'Confirm before launch (“Really run?”)'}" IsChecked="{Binding ConfirmBeforeRun}" Margin="0,8,0,0"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Startoptionen und Verhalten – ein Schlüssel bei Presets (ProfileEditViewModel) -->
+        <DataTemplate x:Key="WindowBody">
+            <StackPanel>
+                <v:CustomEntryForm DataContext="{Binding Options}" Visibility="{Binding HasOptions, Converter={StaticResource Vis}}" Margin="0,0,0,4"/>
+                <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LaunchBody}" Focusable="False"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Argumente (ProfileEditViewModel) -->
+        <DataTemplate x:Key="ArgsBody">
+            <TextBox Text="{Binding Arguments, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" Tag="{l:T 'optional, e.g. /v:SRV-APP02'}"
+                     AutomationProperties.Name="{l:T 'Additional arguments at launch'}"/>
+        </DataTemplate>
+
+        <!-- Eigenes Ziel bzw. eigener Code eines Presets (ProfileEditViewModel) -->
+        <DataTemplate x:Key="TargetBody">
+            <StackPanel>
+                <TextBox Text="{Binding TargetText, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{DynamicResource MonoFont}"
+                         Visibility="{Binding UsesTarget, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Target of this preset'}"/>
+                <TextBox Text="{Binding CodeText, UpdateSourceTrigger=PropertyChanged, Delay=250}" FontFamily="{DynamicResource MonoFont}" AcceptsReturn="True" AcceptsTab="True"
+                         MinHeight="120" MaxHeight="320" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top" Padding="8"
+                         Visibility="{Binding UsesCode, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Code of this preset'}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Vorschau: Aufruf und Code (ProfileEditViewModel) -->
+        <DataTemplate x:Key="PreviewBody">
+            <StackPanel>
+                <TextBlock Text="{l:T 'Call'}" Style="{StaticResource Caption}" Margin="0,0,0,4"/>
+                <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="10,8">
+                    <TextBox Text="{Binding Preview, Mode=OneWay}" IsReadOnly="True" BorderThickness="0" Background="Transparent" Padding="0" MinHeight="0"
+                             FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}" TextWrapping="Wrap" Foreground="{DynamicResource Text.Secondary}"/>
+                </Border>
+                <StackPanel Visibility="{Binding HasCode, Converter={StaticResource Vis}}" Margin="0,12,0,0">
+                    <DockPanel Margin="0,0,0,4">
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Command="{Binding EditCodeCommand}" Padding="8,0" Height="26" MinHeight="26"
+                                   FontSize="{StaticResource Font.Caption}" Visibility="{Binding CanEditFile, Converter={StaticResource Vis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Margin="0,0,6,0"/>
+                                <TextBlock Text="{l:T 'Edit'}"/>
+                            </StackPanel>
+                        </ui:Button>
+                        <TextBlock Text="{l:T 'Code'}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Background="{DynamicResource Bg.Code}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="10,8"
+                            Visibility="{Binding IsReadingCode, Converter={StaticResource Vis}}">
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MaxHeight="420">
+                            <TextBlock infra:CodeView.Segments="{Binding CodeSegments}" FontFamily="{DynamicResource MonoFont}" FontSize="{StaticResource Font.Body}"
+                                       Foreground="{DynamicResource Text.Primary}"/>
+                        </ScrollViewer>
+                    </Border>
+                    <StackPanel Visibility="{Binding IsEditingCode, Converter={StaticResource Vis}}">
+                        <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
+                                Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}">
+                            <DockPanel>
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Save to file'}" Command="{Binding SaveCodeCommand}" Margin="8,0,0,0"/>
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Discard'}" Command="{Binding CancelEditCodeCommand}" Margin="8,0,0,0"/>
+                                <TextBlock Text="{Binding EditWarning}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <TextBox Text="{Binding EditableCode, UpdateSourceTrigger=PropertyChanged}" FontFamily="{DynamicResource MonoFont}" AcceptsReturn="True" AcceptsTab="True"
+                                 MinHeight="220" MaxHeight="480" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                 VerticalContentAlignment="Top" Padding="8" AutomationProperties.Name="{l:T 'Script code'}"/>
+                    </StackPanel>
+                    <TextBlock Text="{Binding CodeStatus}" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Eine Abweichung eines Presets (PresetValueRow): Bezeichnung, „statt …“, ×, darunter der Editor -->
+        <DataTemplate x:Key="PresetRow">
+            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="0,10,0,6">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding RemoveCommand}"
+                                   ToolTip="{l:T 'Remove – takes the value from ★ Standard again'}" AutomationProperties.Name="{l:T 'Remove deviation'}">
+                            <TextBlock Text="&#xE711;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}"/>
+                        </ui:Button>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding BaseText}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,0,8,0"
+                                   TextTrimming="CharacterEllipsis" MaxWidth="320" ToolTip="{Binding BaseText}"/>
+                        <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
+                    <ContentControl Content="{Binding Profile}" ContentTemplate="{StaticResource TargetBody}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=target}"/>
+                    <ContentControl Content="{Binding Profile}" ContentTemplate="{StaticResource RunAsBody}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=runas}"/>
+                    <ContentControl Content="{Binding Profile}" ContentTemplate="{StaticResource WindowBody}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=window}"/>
+                    <ContentControl Content="{Binding Profile}" ContentTemplate="{StaticResource ArgsBody}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=args}"/>
+                    <ContentControl Content="{Binding Param}" ContentTemplate="{StaticResource ParamRow}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=param}"/>
+                    <ContentControl Content="{Binding Variable}" ContentTemplate="{StaticResource VariableRow}" Focusable="False"
+                                    Visibility="{Binding Kind, Converter={StaticResource EqVis}, ConverterParameter=var}"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Ein Preset in der Liste: zugeklappt Name und Abweichungen, aufgeklappt bearbeitbar -->
+        <DataTemplate x:Key="PresetCard">
+            <Border x:Name="Card" Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.Tile}" Margin="0,0,0,8">
+                <StackPanel>
+                    <Button Command="{Binding SelectCommand}" Cursor="Hand" FocusVisualStyle="{StaticResource FocusVisual}" HorizontalContentAlignment="Stretch"
+                            AutomationProperties.Name="{Binding Name}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="Transparent" CornerRadius="{DynamicResource Radius.Tile}" Padding="16,12">
+                                    <ContentPresenter/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/></Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <DockPanel>
+                            <Border DockPanel.Dock="Right" MinWidth="22" Height="22" Padding="7,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Bg.Chip}"
+                                    VerticalAlignment="Center" Visibility="{Binding HasOwnValues, Converter={StaticResource Vis}}" ToolTip="{Binding InheritText}">
+                                <TextBlock Text="{Binding OwnCount}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="Arrow" DockPanel.Dock="Left" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
+                                       VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontWeight="SemiBold" Width="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding PresetSummary}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        </DockPanel>
+                    </Button>
+                    <StackPanel x:Name="Body" Visibility="Collapsed" Margin="16,0,16,14">
+                        <DockPanel Margin="0,4,0,10">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" Margin="8,0,0,0" ToolTip="{l:T 'Start with this preset once (not recorded)'}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{l:T 'Test'}"/>
+                                    </StackPanel>
+                                </ui:Button>
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Make standard'}" Command="{Binding MakeStandardCommand}" Margin="8,0,0,0"
+                                           ToolTip="{l:T 'This preset becomes ★ Standard; the others then keep their differences to it'}"/>
+                                <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Duplicate'}" Command="{Binding DuplicatePresetCommand}" Margin="8,0,0,0"/>
+                                <ui:Button Style="{StaticResource Btn.Icon}" Width="34" Height="34" Command="{Binding RemovePresetCommand}" Margin="8,0,0,0"
+                                           ToolTip="{l:T 'Delete preset'}" AutomationProperties.Name="{l:T 'Delete preset'}">
+                                    <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}"/>
+                                </ui:Button>
+                            </StackPanel>
+                            <StackPanel Width="260" HorizontalAlignment="Left">
+                                <TextBlock Text="{l:T 'Name'}" Style="{StaticResource FieldLabel}" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{l:T 'Preset name'}"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Standard wurde nach dem Anpassen geändert -->
+                        <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
+                                Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
+                                Visibility="{Binding HasStandardChanged, Converter={StaticResource Vis}}">
+                            <DockPanel>
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep mine'}" Command="{Binding DismissStandardChangeCommand}" Margin="8,0,0,0"/>
+                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Take over Standard'}" Command="{Binding AdoptStandardCommand}" Margin="8,0,0,0"/>
+                                <TextBlock Text="{Binding StandardChangedText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+
+                        <TextBlock Text="{l:T 'No deviations yet – the preset starts exactly like ★ Standard.'}" Style="{StaticResource Caption}" Margin="0,0,0,8"
+                                   Visibility="{Binding HasOwnRows, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                        <ItemsControl ItemsSource="{Binding OwnRows}" ItemTemplate="{StaticResource PresetRow}" Focusable="False"/>
+                        <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ Change a value …'}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                   Click="AddPresetValue_Click" IsEnabled="{Binding CanAddKeys}">
+                            <ui:Button.ContextMenu>
+                                <ContextMenu ItemsSource="{Binding AddableKeys}">
+                                    <ContextMenu.ItemContainerStyle>
+                                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                            <Setter Property="Header" Value="{Binding Label}"/>
+                                            <Setter Property="Command" Value="{Binding Command}"/>
+                                        </Style>
+                                    </ContextMenu.ItemContainerStyle>
+                                </ContextMenu>
+                            </ui:Button.ContextMenu>
+                        </ui:Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter TargetName="Body" Property="Visibility" Value="Visible"/>
+                    <Setter TargetName="Arrow" Property="Text" Value="&#xE70D;"/>
+                    <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
       </ResourceDictionary>
     </Window.Resources>
@@ -423,23 +402,13 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ===== Reiter: Allgemein / Profile ===== -->
-        <Border Grid.Row="1" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="16,4,16,0" Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
-            <StackPanel Orientation="Horizontal">
-                <RadioButton Style="{StaticResource TabHeader}" GroupName="EntryTabs" Content="{l:T 'General'}" IsChecked="{Binding IsGeneralPage}"/>
-                <RadioButton Style="{StaticResource TabHeader}" GroupName="EntryTabs" Content="{Binding ProfilesTabText}" IsChecked="{Binding IsProfilesPage}"/>
-            </StackPanel>
-        </Border>
-
-        <!-- ===== Kopf: Symbol, Anzeigename, Beschreibung ===== -->
+        <!-- ===== Kopf: Symbol, Anzeigename, Beschreibung, Art, Ausprobieren ===== -->
         <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,0,1" Padding="24,16,24,16" Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
             <DockPanel>
-                <!-- Symbol -->
                 <StackPanel DockPanel.Dock="Left" Margin="0,0,16,0">
                     <ui:Button Width="60" Height="60" Style="{StaticResource Btn.Standard}" Padding="0" Command="{Binding Entry.ChooseIconCommand}"
                             IsEnabled="{Binding HasEntry}" ToolTip="{l:T 'Choose icon (Fluent 2, Heroicons, emoji, custom image)'}">
@@ -456,9 +425,15 @@
                             Margin="0,4,0,0" HorizontalAlignment="Center" ToolTip="{l:T 'Use favicon, program or folder icon'}"
                             Visibility="{Binding Entry.HasIcon, Converter={StaticResource Vis}, FallbackValue=Collapsed}" />
                 </StackPanel>
-                <!-- Art -->
                 <StackPanel DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Top">
-                    <TextBlock Text="{Binding PathText}" Style="{StaticResource Caption}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding DefaultProfile.TestCommand}" HorizontalAlignment="Right"
+                               ToolTip="{l:T 'Start with ★ Standard once (not recorded)'}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE768;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{l:T 'Test'}"/>
+                        </StackPanel>
+                    </ui:Button>
+                    <TextBlock Text="{Binding PathText}" Style="{StaticResource Caption}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="260" Margin="0,8,0,0"/>
                     <ui:Button Style="{StaticResource Btn.Subtle}" Content="{l:T 'Change type …'}" Command="{Binding ChangeKindCommand}" FontSize="{StaticResource Font.Body}" Padding="8,0" MinHeight="26" Height="26"
                             HorizontalAlignment="Right" Foreground="{DynamicResource Accent}" Visibility="{Binding CanChangeKind, Converter={StaticResource Vis}}" />
                 </StackPanel>
@@ -471,58 +446,96 @@
             </DockPanel>
         </Border>
 
-        <ScrollViewer Grid.Row="2" x:Name="BodyScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-            <Grid Margin="24,16,24,8">
+        <!-- ===== Schritt 1: Art wählen ===== -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Visibility="{Binding ShowKindPicker, Converter={StaticResource Vis}}">
+            <StackPanel Margin="24,16,24,8">
+                <DockPanel Margin="0,0,0,12">
+                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Back to entry'}" Command="{Binding BackToFormCommand}"
+                            Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource Vis}}" />
+                    <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
+                </DockPanel>
+                <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource Tile}" Command="{Binding DataContext.PickKindCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding Key}" AutomationProperties.Name="{Binding Label}">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.Hero}" HorizontalAlignment="Left" Foreground="{DynamicResource Accent}"/>
+                                    <TextBlock Text="{Binding Label}" FontSize="{StaticResource Font.Subtitle}" Margin="0,12,0,0" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
-                <!-- ===== Schritt 1: Art wählen ===== -->
-                <StackPanel Visibility="{Binding ShowKindPicker, Converter={StaticResource Vis}}">
-                    <DockPanel Margin="0,0,0,12">
-                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Subtle}" Content="{l:T 'Back to entry'}" Command="{Binding BackToFormCommand}"
-                                Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource Vis}}" />
-                        <TextBlock Text="{Binding Title}" FontSize="{StaticResource Font.Header}" FontWeight="SemiBold"/>
+                <TextBlock Text="{l:T 'Or'}" Style="{StaticResource FieldLabel}" Margin="0,8,0,8"/>
+                <Border Style="{StaticResource SectionCard}" Padding="16,12" Visibility="{Binding HasClipboardSuggestion, Converter={StaticResource Vis}}">
+                    <DockPanel>
+                        <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" Command="{Binding UseClipboardCommand}" Margin="12,0,0,0" />
+                        <TextBlock Text="&#xE77F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XXL}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{l:T 'From the clipboard'}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding ClipboardText}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
                     </DockPanel>
-                    <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Style="{StaticResource Tile}" Command="{Binding DataContext.PickKindCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding Key}" AutomationProperties.Name="{Binding Label}">
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.Hero}" HorizontalAlignment="Left" Foreground="{DynamicResource Accent}"/>
-                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource Font.Subtitle}" Margin="0,12,0,0" TextTrimming="CharacterEllipsis"/>
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                </Border>
+                <WrapPanel>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding CatalogCommand}" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'From templates …'}"/></StackPanel>
+                    </ui:Button>
+                    <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding FilesCommand}" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'Select files …'}"/></StackPanel>
+                    </ui:Button>
+                </WrapPanel>
+            </StackPanel>
+        </ScrollViewer>
 
-                    <TextBlock Text="{l:T 'Or'}" Style="{StaticResource FieldLabel}" Margin="0,8,0,8"/>
-                    <Border Style="{StaticResource SectionCard}" Padding="16,12" Visibility="{Binding HasClipboardSuggestion, Converter={StaticResource Vis}}">
-                        <DockPanel>
-                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T 'Apply'}" Command="{Binding UseClipboardCommand}" Margin="12,0,0,0" />
-                            <TextBlock Text="&#xE77F;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.XXL}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{l:T 'From the clipboard'}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding ClipboardText}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
+        <!-- ===== Schritt 2: Navigation links, Abschnitt rechts ===== -->
+        <Grid Grid.Row="1" Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="210"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,0,1,0" Padding="10,12">
+                <ItemsControl ItemsSource="{Binding Sections}" Focusable="False" AutomationProperties.Name="{l:T 'Sections'}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <RadioButton Style="{StaticResource NavItem}" GroupName="EntrySections" IsChecked="{Binding IsSelected, Mode=OneWay}" Command="{Binding SelectCommand}"
+                                         AutomationProperties.Name="{Binding Label}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Text="{Binding Badge}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="8,0,0,0"
+                                               Visibility="{Binding HasBadge, Converter={StaticResource Vis}}"/>
+                                    <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.M}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="{StaticResource Font.Body}"/>
+                                </DockPanel>
+                            </RadioButton>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+
+            <ScrollViewer Grid.Column="1" x:Name="BodyScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <Grid Margin="24,18,24,8">
+
+                    <!-- Allgemein: Ziel bzw. Datei, Schlagworte, Notiz -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
+                        <Border Style="{StaticResource SectionCard}" Visibility="{Binding HasEntry, Converter={StaticResource Vis}}">
+                            <v:CustomEntryForm DataContext="{Binding Entry}"/>
+                        </Border>
+                        <Border Style="{StaticResource SectionCard}" Visibility="{Binding IsScannedFile, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Text="{Binding FileKindText}" Style="{StaticResource CardTitle}"/>
+                                <DockPanel Margin="0,8,0,0">
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Show in Explorer'}" Command="{Binding OpenFileLocationCommand}" Margin="8,0,0,0"/>
+                                    <TextBox Text="{Binding Item.FullPath, Mode=OneWay}" IsReadOnly="True" FontFamily="{DynamicResource MonoFont}"/>
+                                </DockPanel>
+                                <TextBlock Text="{Binding FileInfo}" Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding FileParametersText}" Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
-                        </DockPanel>
-                    </Border>
-                    <WrapPanel>
-                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding CatalogCommand}" Margin="0,0,8,8">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8F1;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'From templates …'}"/></StackPanel>
-                        </ui:Button>
-                        <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding FilesCommand}" Margin="0,0,8,8">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8E5;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Margin="0,0,8,0"/><TextBlock Text="{l:T 'Select files …'}"/></StackPanel>
-                        </ui:Button>
-                    </WrapPanel>
-                </StackPanel>
-
-                <!-- ===== Schritt 2: Formular ===== -->
-                <StackPanel Visibility="{Binding ShowForm, Converter={StaticResource Vis}}">
-                    <!-- Reiter „Allgemein“: Schlagworte, Notiz, Verhalten im Panel (die Gruppe ändert man im Panel per Ziehen) -->
-                    <StackPanel Visibility="{Binding IsGeneralPage, Converter={StaticResource Vis}}">
+                        </Border>
                         <Border Style="{StaticResource SectionCard}">
                             <StackPanel>
                                 <TextBlock Text="{l:T 'Tags'}" Style="{StaticResource CardTitle}"/>
@@ -538,102 +551,140 @@
                                          Tag="{l:T 'e.g. “Only after consulting the DBA” – appears in the panel and the Run dialog'}"/>
                             </StackPanel>
                         </Border>
+                        <Button Command="{Binding RevealPresetsCommand}" Cursor="Hand" FocusVisualStyle="{StaticResource FocusVisual}" HorizontalContentAlignment="Stretch"
+                                Visibility="{Binding CanRevealPresets, Converter={StaticResource Vis}}" AutomationProperties.Name="{l:T 'Create preset'}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" BorderBrush="{DynamicResource Border.Control}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Tile}" Padding="16,12" Background="Transparent">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <DockPanel>
+                                <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.L}" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="{l:T 'Create preset'}" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{l:T 'e.g. the same page for test and production – a preset changes single values like a variable. Only then does the “Presets” section appear.'}"
+                                               Style="{StaticResource Caption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Parameter -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=parameters}">
+                        <TextBlock Text="{l:T 'Parameters'}" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="{l:T 'Values of ★ Standard. Fixed = always passed · Prefilled = editable at launch · Ask = field stays empty. Presets change single values.'}" Style="{StaticResource PageHint}"/>
+                        <Border Style="{StaticResource SectionCard}" Padding="18,4">
+                            <ItemsControl ItemsSource="{Binding DefaultProfile.Parameters}" ItemTemplate="{StaticResource ParamRow}" Focusable="False"/>
+                        </Border>
+                        <Border Style="{StaticResource SectionCard}">
+                            <ContentControl Content="{Binding DefaultProfile}" ContentTemplate="{StaticResource PreviewBody}" Focusable="False"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Variablen -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=variables}">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T '+ Variable'}" Command="{Binding DefaultProfile.AddVariableCommand}"
+                                       VerticalAlignment="Top" ToolTip="{l:T 'Variable only for this entry, used as \{\{$Name\}\}'}"/>
+                            <TextBlock Text="{l:T 'Variables'}" Style="{StaticResource PageTitle}"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource PageHint}"
+                                   Text="{l:T 'Queries \{\{Name\}\} are asked at launch – with a suggestion, as a choice or with a fixed value. \{\{$Variables\}\} take the value set here before the global one. Quick choice in the text: \{\{Server:A;B;C\}\}.'}"/>
+                        <Border Style="{StaticResource SectionCard}" Padding="18,4">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'No variables yet – use \{\{Name\}\} in the target or code, or add one.'}" Style="{StaticResource Caption}" Margin="0,10"
+                                           Visibility="{Binding DefaultProfile.HasVariables, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                                <ItemsControl ItemsSource="{Binding DefaultProfile.Variables}" ItemTemplate="{StaticResource VariableRow}" Focusable="False"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Start bzw. Öffnen mit -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=start}">
+                        <TextBlock Text="{Binding StartSectionLabel}" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="{l:T 'How ★ Standard starts. Presets can change single values.'}" Style="{StaticResource PageHint}"/>
+                        <Border Style="{StaticResource SectionCard}" Visibility="{Binding ShowRunAsSection, Converter={StaticResource Vis}}">
+                            <ContentControl Content="{Binding DefaultProfile}" ContentTemplate="{StaticResource RunAsBody}" Focusable="False"/>
+                        </Border>
+                        <Border Style="{StaticResource SectionCard}" Visibility="{Binding DefaultProfile.HasOptions, Converter={StaticResource Vis}, FallbackValue=Collapsed}">
+                            <v:CustomEntryForm DataContext="{Binding DefaultProfile.Options}"/>
+                        </Border>
+                        <Border Style="{StaticResource SectionCard}" Visibility="{Binding ShowProgramArgs, Converter={StaticResource Vis}}">
+                            <StackPanel>
+                                <TextBlock Text="{l:T 'Arguments'}" Style="{StaticResource CardTitle}" Margin="0,0,0,8"/>
+                                <ContentControl Content="{Binding DefaultProfile}" ContentTemplate="{StaticResource ArgsBody}" Focusable="False"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SectionCard}">
+                            <ContentControl Content="{Binding DefaultProfile}" ContentTemplate="{StaticResource PreviewBody}" Focusable="False"/>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Presets -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=presets}">
+                        <DockPanel>
+                            <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T '+ Preset'}" Command="{Binding AddCommand}" VerticalAlignment="Top"/>
+                            <TextBlock Text="{l:T 'Presets'}" Style="{StaticResource PageTitle}"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource PageHint}"
+                                   Text="{l:T 'A preset only stores what differs from ★ Standard – everything else it takes over automatically. In the panel a click starts ★ Standard, right-click or the arrow shows the presets.'}"/>
+                        <Border Background="{DynamicResource Bg.Card}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Tile}"
+                                Padding="16,12" Margin="0,0,0,8">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="★" Foreground="{DynamicResource Star}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                <TextBlock DockPanel.Dock="Left" Text="{Binding DefaultProfile.Name}" FontWeight="SemiBold" Width="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                <TextBlock Text="{l:T 'Basis · starts with a click in the panel'}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <ItemsControl ItemsSource="{Binding Presets}" ItemTemplate="{StaticResource PresetCard}" Focusable="False"/>
+                        <TextBlock Text="{l:T 'No presets yet. “+ Preset” creates one that starts like ★ Standard – then change single values.'}" Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                   Visibility="{Binding HasPresets, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
+                    </StackPanel>
+
+                    <!-- Verhalten -->
+                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
+                        <TextBlock Text="{l:T 'Behavior'}" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="{l:T 'What happens on a click and at launch.'}" Style="{StaticResource PageHint}"/>
                         <Border Style="{StaticResource SectionCard}">
                             <StackPanel>
-                                <TextBlock Text="{l:T 'Behavior in the panel'}" Style="{StaticResource CardTitle}"/>
+                                <TextBlock Text="{l:T 'In the panel'}" Style="{StaticResource CardTitle}"/>
                                 <CheckBox Margin="0,8,0,0" IsChecked="{Binding SingleClick}" Content="{l:T 'Start with one click (instead of expanding the entry in the panel)'}"/>
                                 <DockPanel Margin="0,12,0,0">
                                     <ComboBox DockPanel.Dock="Right" Width="250" ItemsSource="{Binding AskProfileChoices}" DisplayMemberPath="Value" SelectedValuePath="Key"
-                                              SelectedValue="{Binding AskProfile}" AutomationProperties.Name="{l:T 'Ask for the profile at launch'}"/>
-                                    <TextBlock Text="{l:T 'Ask for the profile at launch'}" VerticalAlignment="Center"
-                                               ToolTip="{l:T 'Only with several profiles – the choice appears in the same window as the values for \{\{placeholders\}\}'}"/>
+                                              SelectedValue="{Binding AskProfile}" AutomationProperties.Name="{l:T 'Ask for the preset at launch'}"/>
+                                    <TextBlock Text="{l:T 'Ask for the preset at launch'}" VerticalAlignment="Center"
+                                               ToolTip="{l:T 'Only with several presets – the choice appears in the same window as the values for \{\{placeholders\}\}'}"/>
                                 </DockPanel>
                             </StackPanel>
                         </Border>
-                        <Border Padding="16,12" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
-                                Background="{DynamicResource Status.Info.Bg}" BorderBrush="{DynamicResource Status.Info.Border}">
-                            <DockPanel>
-                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'To the profiles'}" Command="{Binding ShowProfilesPageCommand}" Margin="12,0,0,0"/>
-                                <TextBlock TextWrapping="Wrap" VerticalAlignment="Center"
-                                           Text="{l:T 'Target, code, variables and launch settings are under “Profiles” – ★ Standard is the basis, other profiles change single values.'}"/>
-                            </DockPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- Reiter „Profile“: Liste links, Abschnitte des gewählten Profils rechts -->
-                    <Grid Visibility="{Binding IsProfilesPage, Converter={StaticResource Vis}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="220"/>
-                            <ColumnDefinition Width="16"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Border Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}"
-                                VerticalAlignment="Top" Padding="8">
+                        <Border Style="{StaticResource SectionCard}">
                             <StackPanel>
-                                <ItemsControl ItemsSource="{Binding Profiles}" Focusable="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Button Command="{Binding SelectCommand}" Margin="0,0,0,4" Cursor="Hand" FocusVisualStyle="{StaticResource FocusVisual}" HorizontalContentAlignment="Stretch"
-                                                    AutomationProperties.Name="{Binding Name}">
-                                                <Button.Template>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="Bd" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Padding="10,8">
-                                                            <DockPanel>
-                                                                <Border DockPanel.Dock="Right" MinWidth="20" Height="20" Padding="6,0" infra:Pill.IsEnabled="True" Background="{DynamicResource Accent}"
-                                                                        VerticalAlignment="Top" Visibility="{Binding HasOwnValues, Converter={StaticResource Vis}}" ToolTip="{Binding InheritText}">
-                                                                    <TextBlock Text="{Binding OwnCount}" Foreground="{DynamicResource OnAccent}" FontSize="{StaticResource Font.Caption}" FontWeight="Bold"
-                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                                </Border>
-                                                                <StackPanel>
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <TextBlock Text="★" Foreground="{DynamicResource Accent}" Margin="0,0,6,0" Visibility="{Binding IsDefault, Converter={StaticResource Vis}}"/>
-                                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Text.Primary}" TextTrimming="CharacterEllipsis"/>
-                                                                    </StackPanel>
-                                                                    <TextBlock Text="{Binding InheritText}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                                                                </StackPanel>
-                                                            </DockPanel>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Hover}"/></Trigger>
-                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Bg.Card}"/>
-                                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                                            </DataTrigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Button.Template>
-                                            </Button>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <WrapPanel Margin="0,4,0,0">
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T '+ New'}" Command="{Binding AddCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Duplicate'}" Command="{Binding DuplicateCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
-                                    <ui:Button Style="{StaticResource Btn.Standard}" Content="{l:T 'Delete'}" Command="{Binding DeleteCommand}" Margin="0,0,6,6" FontSize="{StaticResource Font.Body}" />
-                                </WrapPanel>
-                                <TextBlock Text="{l:T '★ starts with a click in the panel. More profiles are in the menu on the Run button.'}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="2,4,2,2"/>
+                                <TextBlock Text="{l:T 'At launch'}" Style="{StaticResource CardTitle}" Margin="0,0,0,8"/>
+                                <ContentControl Content="{Binding DefaultProfile}" ContentTemplate="{StaticResource LaunchBody}" Focusable="False"/>
                             </StackPanel>
                         </Border>
-                        <ContentControl Grid.Column="2" Content="{Binding Selected}" ContentTemplate="{StaticResource ProfileSections}" Focusable="False"/>
-                    </Grid>
-                </StackPanel>
-            </Grid>
-        </ScrollViewer>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
 
         <!-- ===== Fußzeile ===== -->
-        <Border Grid.Row="3" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
-            <StackPanel>
-                <DockPanel>
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" MinWidth="110" Height="34" Margin="8,0,0,0" />
-                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click" />
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding FirstError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"
-                                   Visibility="{Binding FirstError, Converter={StaticResource Vis}}"/>
-                        <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
-                        <TextBlock Text="{Binding SaveHint}" Style="{StaticResource Caption}"/>
-                    </StackPanel>
-                </DockPanel>
-            </StackPanel>
+        <Border Grid.Row="2" Background="{DynamicResource Bg.Subtle}" BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="24,12">
+            <DockPanel>
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" MinWidth="110" Height="34" Margin="8,0,0,0" />
+                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Cancel'}" IsCancel="True" MinWidth="96" Height="34" Click="Cancel_Click" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FirstError}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" TextTrimming="CharacterEllipsis"
+                               Visibility="{Binding FirstError, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding Error}" Foreground="{DynamicResource Status.Error}" FontSize="{StaticResource Font.Body}" Visibility="{Binding Error, Converter={StaticResource Vis}}"/>
+                    <TextBlock Text="{Binding SaveHint}" Style="{StaticResource Caption}"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
     </Grid>
 </Window>

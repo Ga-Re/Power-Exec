@@ -1573,59 +1573,74 @@ public sealed partial class SelfTestController : AppController
             var item = Repository.Items.First(i => i.FullPath.Equals(script, StringComparison.OrdinalIgnoreCase));
             await ShowAndClose(new ProfilesWindow(new ProfilesViewModel(this, item, Settings, saveImmediately: false), this));
 
-            Step("Eintrag: Reiter, Profile mit Vererbung, Vorschau des Scripts");
+            Step("Eintrag: Abschnitte, Presets mit Abweichungen, Vorschau des Scripts");
             {
                 var profilesVm = new ProfilesViewModel(this, item, Settings, saveImmediately: false);
                 var editor = new ProfilesWindow(profilesVm, this);
                 editor.Show();
                 await Settle();
-                if (!profilesVm.IsProfilesPage) Fail("Eintrag: öffnet nicht mit dem Reiter „Profile“");
-                if (editor.Content is FrameworkElement standardRoot) Screenshot(standardRoot, "eintrag-profil-standard");
-                profilesVm.IsGeneralPage = true;
-                await Settle();
+                if (profilesVm.Section != "general") Fail("Eintrag: öffnet nicht mit „Allgemein“");
+                var keys = profilesVm.Sections.Select(s => s.Key).ToList();
+                foreach (var k in new[] { "general", "parameters", "start", "presets", "behavior" })
+                    if (!keys.Contains(k)) Fail($"Eintrag (Script): Abschnitt „{k}“ fehlt – vorhanden: {string.Join(", ", keys)}");
                 if (editor.Content is FrameworkElement generalRoot) Screenshot(generalRoot, "eintrag-allgemein");
-                profilesVm.IsProfilesPage = true;
-                if (profilesVm.Profiles.All(p => p.IsDefault)) profilesVm.AddCommand.Execute(null);
-                var other = profilesVm.Profiles.First(p => !p.IsDefault);
-                profilesVm.Selected = other;
-                await Settle();
-                // Vererbung: Werte kommen vom Standard; ✎ macht sie eigen, ↺ setzt zurück
-                var standardEdit = profilesVm.Profiles.First(p => p.IsDefault);
-                // Frisch übernommenes Profil: kein Hinweis „Standard geändert“, solange niemand den Standard geändert hat
-                if (other.HasStandardChanged) Fail("Vererbung: Hinweis „Standard geändert“ ohne Änderung – " + other.StandardChangedText);
-                if (!other.RunAsInherit.IsOwn)
+                foreach (var (section, shot) in new[] { ("parameters", "eintrag-parameter"), ("start", "eintrag-start"), ("behavior", "eintrag-verhalten") })
                 {
-                    standardEdit.Dialog = standardEdit.Dialog == DialogMode.Always ? DialogMode.Never : DialogMode.Always;
-                    if (!other.WindowInherit.IsOwn && other.Dialog != standardEdit.Dialog) Fail("Vererbung: Änderung am Standard kommt im Profil nicht an");
+                    profilesVm.Section = section;
+                    await Settle();
+                    if (editor.Content is FrameworkElement root) Screenshot(root, shot);
                 }
-                other.RunAsInherit.MakeOwnCommand.Execute(null);
-                if (!other.RunAsInherit.IsOwn || other.OwnCount == 0) Fail("Vererbung: „Anpassen“ macht den Wert nicht eigen");
+
+                // Presets: neues Preset übernimmt alles, „+ Wert ändern“ legt eine Abweichung an, × nimmt sie zurück
+                profilesVm.Section = "presets";
+                profilesVm.AddCommand.Execute(null);
+                var standardEdit = profilesVm.DefaultProfile!;
+                var other = profilesVm.Selected!;
+                if (other.IsDefault) Fail("Presets: kein Preset aufgeklappt");
+                if (other.HasStandardChanged) Fail("Presets: Hinweis „Standard geändert“ ohne Änderung – " + other.StandardChangedText);
+                var ownBefore = other.OwnCount;
+                if (other.AddableKeys.FirstOrDefault(k => k.Label == PowerExec.Core.Localization.L.T("Run as / where")) is { } runAs) runAs.Command.Execute(null);
+                else Fail("Presets: „Ausführen als / wo“ fehlt in „+ Wert ändern“");
+                if (other.OwnCount != ownBefore + 1 || other.OwnRows.All(r => r.Kind != "runas")) Fail("Presets: „+ Wert ändern“ legt keine Abweichung an");
+                other.RunAsAdmin = true;
+                if (!other.PresetSummary.Contains(PowerExec.Core.Localization.L.T("Administrator"), StringComparison.Ordinal)) Fail("Presets: Zusammenfassung zeigt die Abweichung nicht – " + other.PresetSummary);
+                standardEdit.ConfirmBeforeRun = !standardEdit.ConfirmBeforeRun;
+                if (!other.OwnRows.Any(r => r.Kind == "window") && other.ConfirmBeforeRun != standardEdit.ConfirmBeforeRun) Fail("Presets: Änderung am Standard kommt im Preset nicht an");
+                standardEdit.ConfirmBeforeRun = !standardEdit.ConfirmBeforeRun;
                 await Settle();
-                if (editor.Content is FrameworkElement inheritRoot) Screenshot(inheritRoot, "eintrag-profil-geerbt");
-                other.RunAsInherit.ResetCommand.Execute(null);
-                if (other.RunAsInherit.IsOwn) Fail("Vererbung: ↺ setzt den Wert nicht auf den Standard zurück");
-                // Vorschau aufklappen: Script mit Syntaxfarben
-                profilesVm.Selected = standardEdit;
+                if (editor.Content is FrameworkElement presetRoot) Screenshot(presetRoot, "eintrag-presets");
+                other.OwnRows.First(r => r.Kind == "runas").RemoveCommand.Execute(null);
+                if (other.OwnCount != ownBefore || other.RunAsAdmin != standardEdit.RunAsAdmin) Fail("Presets: × setzt den Wert nicht auf den Standard zurück");
+
+                // Vorschau des Scripts im Abschnitt Start, mit Bearbeiten
+                profilesVm.Section = "start";
                 await Settle();
                 if (!standardEdit.HasCode) Fail("Vorschau: Script-Inhalt fehlt");
                 if (!standardEdit.CanEditFile) Fail("Vorschau: Script-Datei lässt sich nicht bearbeiten");
-                foreach (var expander in VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().ToList()) expander.IsExpanded = false;
-                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } preview)
-                {
-                    preview.IsExpanded = true;
-                    await Settle();
-                    preview.BringIntoView();
-                }
-                await Settle();
-                if (VisualDescendants(editor).OfType<Wpf.Ui.Controls.CardExpander>().LastOrDefault() is { } shown)
-                    Dispatcher.CurrentDispatcher.Invoke(shown.BringIntoView, DispatcherPriority.Background);
-                if (editor.Content is FrameworkElement previewRoot) Screenshot(previewRoot, "eintrag-vorschau");
                 standardEdit.EditCodeCommand.Execute(null);
                 await Settle();
                 if (!standardEdit.IsEditingCode) Fail("Vorschau: „Bearbeiten“ öffnet den Editor nicht");
                 if (editor.Content is FrameworkElement editRoot) Screenshot(editRoot, "eintrag-vorschau-bearbeiten");
                 standardEdit.CancelEditCodeCommand.Execute(null);
                 editor.Close();
+                await Settle();
+            }
+
+            Step("Eintrag: Webseite zeigt Presets erst nach „Preset anlegen“");
+            {
+                var url = new CustomEntry { Kind = CustomEntryKind.Url, Name = "Intranet", Target = "https://intranet-{{Umgebung:prod;test}}.example.local/" };
+                var urlEditor = (ProfilesWindow)ProfilesWindow.ForTest(this, url);
+                var urlVm = urlEditor.ViewModelForTest;
+                urlEditor.Show();
+                await Settle();
+                if (urlVm.Sections.Any(s => s.Key is "parameters" or "presets")) Fail("Eintrag (Webseite): unpassende Abschnitte – " + string.Join(", ", urlVm.Sections.Select(s => s.Key)));
+                if (!urlVm.CanRevealPresets) Fail("Eintrag (Webseite): „Preset anlegen“ fehlt");
+                if (urlEditor.Content is FrameworkElement urlRoot) Screenshot(urlRoot, "eintrag-webseite");
+                urlVm.RevealPresetsCommand.Execute(null);
+                await Settle();
+                if (urlVm.Section != "presets" || urlVm.Presets.Count != 1) Fail("Eintrag (Webseite): „Preset anlegen“ öffnet kein Preset");
+                if (urlEditor.Content is FrameworkElement urlPresetRoot) Screenshot(urlPresetRoot, "eintrag-webseite-preset");
+                urlEditor.Close();
                 await Settle();
             }
             await ShowAndClose(new RunWindow(new RunViewModel(this, item, ExecutionMode.CurrentUser, remote: false)));
