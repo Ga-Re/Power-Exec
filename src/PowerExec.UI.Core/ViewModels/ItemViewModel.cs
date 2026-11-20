@@ -188,6 +188,15 @@ public sealed class ItemViewModel : ObservableObject
     public string? RecentWhen { get; }
     public bool HasRecentWhen => RecentWhen != null;
 
+    private string? _groupHint;
+    /// <summary>Trefferliste der Suche: Gruppe, aus der der Eintrag stammt (klein rechts in der Zeile).</summary>
+    public string? GroupHint
+    {
+        get => _groupHint;
+        set { if (Set(ref _groupHint, value)) OnPropertyChanged(nameof(HasGroupHint)); }
+    }
+    public bool HasGroupHint => !string.IsNullOrEmpty(_groupHint);
+
     private bool _isRunning;
     /// <summary>Dieser Eintrag läuft gerade (Aktivitäten-Leiste).</summary>
     public bool IsRunning { get => _isRunning; set => Set(ref _isRunning, value); }

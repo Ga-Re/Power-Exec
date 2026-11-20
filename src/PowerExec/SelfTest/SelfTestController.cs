@@ -203,7 +203,7 @@ public sealed partial class SelfTestController : AppController
                 {
                     if (!hit.IsSelected) vm.Select(hit); // Select schaltet um
                     vm.SearchText = "clean";
-                    var again = vm.AllItems.FirstOrDefault(i => i.Key == hit.Key); // dieselbe Gruppe (nicht „Beste Treffer“)
+                    var again = vm.AllItems.FirstOrDefault(i => i.Key == hit.Key); // dieselbe Zeile der Trefferliste
                     if (again == null) Fail("Suche: „clean“ findet Cleanup.cmd nicht");
                     else
                     {
@@ -510,6 +510,26 @@ public sealed partial class SelfTestController : AppController
                     var c2 = StripeContrast(wr.Left + (wr.Right - wr.Left) / 2 - 60, wr.Top + 200);
                     var glassState = host.Window.GlassActive ? "aktiv" : host.Window.GlassError is { } ge ? "Fehler: " + ge.Replace("|", "/") : "–";
                     report.AppendLine(CultureInfo.InvariantCulture, $"| {name} (Milchglas {frost}) | {expected} | {glassState} | {host.Window.FrostBrightnessAlpha:P0} | {wr.Right - wr.Left}×{wr.Bottom - wr.Top} | {bw}×{bh} | {c1:0.0} | {c2:0.0} | {slide} |");
+                    // Alltag ohne Glas: erneut ausfahren – das Fenster ist schon gezeichnet, hier zählt nur die Bewegung
+                    // (das erste Anzeigen oben enthält auch das erstmalige Zeichnen des Fensters)
+                    if (!host.Window.GlassActive && Settings.Animation != AnimationMode.Off)
+                    {
+                        host.Window.HidePanel();
+                        await Settle();
+                        await Task.Delay(300);
+                        var again = new List<double>();
+                        var clockAgain = System.Diagnostics.Stopwatch.StartNew();
+                        var lastAgain = 0.0;
+                        EventHandler onFrameAgain = (_, _) => { var t = clockAgain.Elapsed.TotalMilliseconds; again.Add(t - lastAgain); lastAgain = t; };
+                        System.Windows.Media.CompositionTarget.Rendering += onFrameAgain;
+                        host.Window.ShowPanel(monitor, viaHotkey: true);
+                        await Settle();
+                        System.Windows.Media.CompositionTarget.Rendering -= onFrameAgain;
+                        await Task.Delay(300);
+                        var how = host.Window.MovesWindowForTest ? "Fenster gleitet" : "Inhalt gleitet";
+                        report.AppendLine(CultureInfo.InvariantCulture,
+                            $"| {name}, erneut ausgefahren | {expected} ({how}) | – | – | – | – | – | – | {(again.Count > 1 ? $"{again.Count} · {again.Skip(1).Max():0} ms" : "–")} |");
+                    }
                     if (Math.Abs(wr.Right - wr.Left - bw) > 3 || Math.Abs(wr.Bottom - wr.Top - bh) > 3)
                         Fail($"Hintergrund {b}: Fenster ({wr.Right - wr.Left}×{wr.Bottom - wr.Top}) größer als das Panel ({bw}×{bh})");
                     if (host.Window.Content is FrameworkElement bgRoot) Screenshot(bgRoot, "panel-hintergrund-" + name);

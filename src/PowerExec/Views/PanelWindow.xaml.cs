@@ -132,7 +132,8 @@ public partial class PanelWindow : Window
     {
         AnimationMode.Off => TimeSpan.Zero,
         AnimationMode.Fast => Tokens.MotionFast,
-        _ => Tokens.MotionSlow
+        // „Weich“: 250 ms – ausgefahren nach 200 ms wie die Flyouts von Windows (vorher 320 ms, das wirkte träge)
+        _ => Tokens.MotionNormal
     };
 
     public void ShowPanel(MonitorInfo monitor, bool viaHotkey)
@@ -157,9 +158,9 @@ public partial class PanelWindow : Window
         // Für „Text einfügen“: das Fenster merken, in dem vorher gearbeitet wurde
         var fg = NativeMethods.GetForegroundWindow();
         if (fg != IntPtr.Zero && fg != _hwnd) Services.ForegroundTracker.Remember(fg);
-        if (_systemWindow && !IsVisible)
+        if (!IsVisible)
         {
-            // Fenster beginnt eingefahren hinter dem Rand des Arbeitsbereichs
+            // Fenster beginnt eingefahren hinter dem Rand des Arbeitsbereichs (gleitet nur der Inhalt, ohne Wirkung)
             _slide.SetNow(0);
         }
         var wasVisible = IsVisible;
@@ -176,18 +177,19 @@ public partial class PanelWindow : Window
             }
         }
         else if (_systemWindow) _glass.Resize(_rect.Width, _rect.Height); // geparkt: Kindfenster trotzdem verankern
-        if (!wasVisible && _glass.HasContentHost)
+        if (!wasVisible && FirstRenderBeforeSlide)
         {
-            // Glas: das Kindfenster erst fertig zeichnen lassen – sonst fällt das Zeichnen in den schnellen Anfang des Ausfahrens
+            // Erst fertig zeichnen lassen (Glas: Kindfenster; sonst das transparente Fenster hinter dem Rand) – sonst fällt
+            // das Zeichnen in den schnellen Anfang des Ausfahrens
             PanelBorder.UpdateLayout();
             Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
         }
         if (_systemWindow) PanelWindowNative.ShowAsActive(_hwnd);
         IsOpen = true;
         _poll.Start();
-        if (!wasVisible && _glass.HasContentHost && !_skipNextAnimation)
+        if (!wasVisible && FirstRenderBeforeSlide && !_skipNextAnimation)
         {
-            // Glas: erstes Zeichnen des Kindfensters zuerst – die Bewegung startet erst danach
+            // Erstes Zeichnen zuerst – die Bewegung startet erst danach
             Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () => { if (IsOpen && !_hiding) Animate(show: true); });
             return;
         }
@@ -481,8 +483,14 @@ public partial class PanelWindow : Window
     /// Bildschirms bzw. auf einen leeren Fensterbereich zugeschnitten). Würde es versteckt, müsste Windows beim nächsten
     /// Ausfahren Weichzeichner, Composition und Kindfenster neu aufbauen – genau in den ersten, schnellsten Bildern der
     /// Bewegung, und das Ausfahren ruckelte (das Einfahren nicht). Geparkt gleitet es in beide Richtungen gleich.
+    /// <para>Transparente Fenster (Klarglas, Vollton) parken ebenso, wenn das ganze Fenster gleitet – dann steht es
+    /// eingefahren ganz außerhalb aller Bildschirme. Versteckt müsste WPF das ganze transparente Fenster beim nächsten
+    /// Ausfahren erst neu zeichnen: ein langes erstes Bild, genau am Anfang der Bewegung.</para>
     /// </summary>
-    private bool ParkWhenHidden => _glass.HasContentHost;
+    private bool ParkWhenHidden => _glass.HasContentHost || (!_systemWindow && _slide.MovesWindow);
+
+    /// <summary>Beim ersten Anzeigen erst zeichnen, dann gleiten: wenn das Fenster hinter dem Rand startet (es gleitet als Ganzes).</summary>
+    private bool FirstRenderBeforeSlide => _glass.HasContentHost || _slide.MovesWindow;
 
     /// <summary>Für den Selbsttest: eingefahren, aber geparkt statt versteckt.</summary>
     internal bool IsParked => ParkWhenHidden && IsVisible && !IsOpen && !_hiding;
@@ -511,6 +519,9 @@ public partial class PanelWindow : Window
 
     /// <summary>Für den Selbsttest: steht das ausgefahrene Fenster genau an seiner Ziellage?</summary>
     internal bool IsSettledForTest => _slide.IsSettled;
+
+    /// <summary>Für den Selbsttest: gleitet das ganze Fenster (statt nur seines Inhalts)?</summary>
+    internal bool MovesWindowForTest => _slide.MovesWindowForTest;
 
     /// <summary>Für den Selbsttest: Lage des Fensters, Arbeitsbereich seines Monitors, Zuschnitt an der Kante.</summary>
     internal System.Drawing.Rectangle WindowRectForTest => _slide.WindowRect();

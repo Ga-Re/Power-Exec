@@ -50,13 +50,13 @@ public static class Tokens
     /// <summary>Panel ein- und ausfahren.</summary>
     public static TimeSpan MotionSlow => Get("Motion.Slow", new Duration(TimeSpan.FromMilliseconds(320))).TimeSpan;
     /// <summary>Seitenwechsel: die alte Seite blendet aus.</summary>
-    public static TimeSpan MotionPageOut => Get("Motion.PageOut", new Duration(TimeSpan.FromMilliseconds(160))).TimeSpan;
+    public static TimeSpan MotionPageOut => Get("Motion.PageOut", new Duration(TimeSpan.FromMilliseconds(120))).TimeSpan;
     /// <summary>Seitenwechsel: die neue Seite blendet ein.</summary>
-    public static TimeSpan MotionPageIn => Get("Motion.PageIn", new Duration(TimeSpan.FromMilliseconds(220))).TimeSpan;
+    public static TimeSpan MotionPageIn => Get("Motion.PageIn", new Duration(TimeSpan.FromMilliseconds(150))).TimeSpan;
     /// <summary>Seitenwechsel zurück (etwas schneller).</summary>
-    public static TimeSpan MotionPageBack => Get("Motion.PageBack", new Duration(TimeSpan.FromMilliseconds(180))).TimeSpan;
+    public static TimeSpan MotionPageBack => Get("Motion.PageBack", new Duration(TimeSpan.FromMilliseconds(140))).TimeSpan;
     /// <summary>Versatz beim gestaffelten Einblenden der Karten einer Seite.</summary>
-    public static TimeSpan MotionStagger => Get("Motion.Stagger", new Duration(TimeSpan.FromMilliseconds(35))).TimeSpan;
+    public static TimeSpan MotionStagger => Get("Motion.Stagger", new Duration(TimeSpan.FromMilliseconds(20))).TimeSpan;
     /// <summary>Kacheln gleiten nach einem Umbruch an ihren neuen Platz.</summary>
     public static TimeSpan MotionReflow => Get("Motion.Reflow", new Duration(TimeSpan.FromMilliseconds(180))).TimeSpan;
 

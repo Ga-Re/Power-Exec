@@ -22,7 +22,12 @@ namespace PowerExec.Desktop.Views;
 /// freigelegt (<see cref="ApplyInPlace"/>) – pro Bild keine Änderung am Fenster; ganz eingefahren ist es für Windows
 /// ausgeblendet.</para>
 ///
-/// <para><b>Klarglas</b> (transparentes WPF-Fenster): das Fenster steht an seiner Ziellage, der Inhalt gleitet darin.</para>
+/// <para><b>Klarglas, Vollton</b> (transparentes WPF-Fenster): liegt an der Kante weder Nachbarmonitor noch Taskleiste,
+/// gleitet ebenfalls das ganze Fenster (<see cref="MovesWindow"/>). Das ist ruckelfrei: Windows verschiebt die fertig
+/// gezeichnete Fläche, WPF muss pro Bild nichts neu zeichnen. Verschöbe sich dagegen nur der Inhalt, müsste WPF das ganze
+/// transparente Fenster in jedem Bild neu erzeugen und an Windows übergeben. Sonst (Kante mit Nachbarmonitor oder
+/// Taskleiste) steht das Fenster an seiner Ziellage und der Inhalt gleitet darin – das Fenster würde sonst auf dem
+/// Nachbarmonitor bzw. über der Taskleiste sichtbar.</para>
 /// </summary>
 internal sealed class PanelSlideController
 {
@@ -100,6 +105,12 @@ internal sealed class PanelSlideController
     /// <summary>Glas: das Fenster gleitet gerade (oder steht eingefahren am Rand).</summary>
     public bool IsSliding => _systemWindow && _window.IsVisible && Reveal < 1;
 
+    /// <summary>
+    /// Gleitet das ganze Fenster (statt nur seines Inhalts)? Bei Glas immer; bei transparenten Fenstern, solange an der
+    /// Kante weder Nachbarmonitor noch Taskleiste liegt – dann steht der eingefahrene Weg ganz außerhalb aller Bildschirme.
+    /// </summary>
+    public bool MovesWindow => _systemWindow || (_target.Width > 0 && !_clip);
+
     /// <summary>Weg zum Ein-/Ausfahren für die aktuelle Ziellage bestimmen (bei jedem Platzieren).</summary>
     /// <param name="target">Ziellage in Pixeln.</param>
     /// <param name="workArea">Arbeitsbereich des Monitors.</param>
@@ -112,11 +123,11 @@ internal sealed class PanelSlideController
         _workArea = workArea;
         _edge = edge;
         _cornerRadius = cornerRadius;
-        if (!_systemWindow) return;
         _hidden = PanelSlide.Hidden(target, workArea, edge);
         var all = monitors as IReadOnlyCollection<Rectangle> ?? monitors.ToList();
         _clip = PanelSlide.NeedsClip(target, workArea, edge, all);
-        _guardShadow = PanelSlide.ShadowReachesOtherMonitor(target, all);
+        // Schatten und Rand zeichnet Windows nur bei Glas; transparente Fenster haben keinen
+        _guardShadow = _systemWindow && PanelSlide.ShadowReachesOtherMonitor(target, all);
         // Größe bei jedem Platzieren ausdrücklich setzen: hat WPF oder Windows das Fenster inzwischen anders bemessen,
         // bliebe das sonst unbemerkt (SWP_NOSIZE gilt nur für die Einzelbilder der Bewegung)
         _appliedSize = System.Drawing.Size.Empty;
@@ -129,14 +140,14 @@ internal sealed class PanelSlideController
     /// </summary>
     public void Place()
     {
-        if (_systemWindow) Apply();
+        if (MovesWindow) Apply();
         else ScreenService.Place(_hwnd, _target);
     }
 
-    /// <summary>Glas: Fenster auf die Lage zum aktuellen <see cref="Reveal"/> setzen; die Größe bleibt die des Panels.</summary>
+    /// <summary>Fenster auf die Lage zum aktuellen <see cref="Reveal"/> setzen (<see cref="MovesWindow"/>); die Größe bleibt die des Panels.</summary>
     private void Apply()
     {
-        if (!_systemWindow || _hwnd == IntPtr.Zero || _target.Width <= 0) return;
+        if (!MovesWindow || _hwnd == IntPtr.Zero || _target.Width <= 0) return;
         if (_clip && ContentHost is { HasContentHost: true } host)
         {
             ApplyInPlace(host);
@@ -246,11 +257,11 @@ internal sealed class PanelSlideController
     /// <param name="completed">Abschluss der Bewegung.</param>
     public void Animate(bool show, TimeSpan duration, double fallbackWidth, Action completed)
     {
-        if (_systemWindow) AnimateWindow(show, duration, completed);
+        if (MovesWindow) AnimateWindow(show, duration, completed);
         else AnimateContent(show, duration, fallbackWidth, completed);
     }
 
-    /// <summary>Glas: das Fenster gleitet.</summary>
+    /// <summary>Das Fenster gleitet (Glas; transparente Fenster ohne Nachbarmonitor oder Taskleiste an der Kante).</summary>
     private void AnimateWindow(bool show, TimeSpan duration, Action completed)
     {
         ResetContent();
@@ -261,19 +272,31 @@ internal sealed class PanelSlideController
             completed();
             return;
         }
-        // Ausfahren zügig (80 % der Dauer, wie Windows 11) mit Sine-EaseOut, Einfahren mit Cubic-EaseIn (70 %);
+        // Ausfahren zügig (80 % der Dauer) mit der abbremsenden Kurve der Windows-Flyouts, Einfahren beschleunigend (70 %);
         // Startwert ausdrücklich der aktuelle Stand
         var showDuration = TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.8);
         var hideDuration = TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7);
-        var anim = new DoubleAnimation(show ? 1.0 : 0.0, show ? showDuration : hideDuration)
-        {
-            From = Reveal,
-            EasingFunction = show
-                ? new SineEase { EasingMode = EasingMode.EaseOut }
-                : new CubicEase { EasingMode = EasingMode.EaseIn }
-        };
+        var anim = Curve(Reveal, show ? 1.0 : 0.0, show ? showDuration : hideDuration, show);
         anim.Completed += (_, _) => completed();
         _window.BeginAnimation(RevealProperty, anim);
+    }
+
+    /// <summary>Kurve wie Windows: ausfahren abbremsend (fast sofort da, ruhiges Ende), einfahren beschleunigend.</summary>
+    private static readonly KeySpline DecelerateSpline = Frozen(new KeySpline(0.1, 0.9, 0.2, 1.0));
+    private static readonly KeySpline AccelerateSpline = Frozen(new KeySpline(0.7, 0.0, 1.0, 0.5));
+
+    private static KeySpline Frozen(KeySpline s)
+    {
+        s.Freeze();
+        return s;
+    }
+
+    private static DoubleAnimationUsingKeyFrames Curve(double from, double to, TimeSpan duration, bool show)
+    {
+        var a = new DoubleAnimationUsingKeyFrames();
+        a.KeyFrames.Add(new DiscreteDoubleKeyFrame(from, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        a.KeyFrames.Add(new SplineDoubleKeyFrame(to, KeyTime.FromTimeSpan(duration), show ? DecelerateSpline : AccelerateSpline));
+        return a;
     }
 
     /// <summary>Klarglas: Fenster mit Transparenz-Schicht, der Inhalt gleitet im Fenster und blendet ein bzw. aus.</summary>
@@ -298,12 +321,8 @@ internal sealed class PanelSlideController
             return;
         }
 
-        var ease = new CubicEase { EasingMode = show ? EasingMode.EaseOut : EasingMode.EaseIn };
         var from = show ? hiddenOffset : (double)_contentSlide.GetValue(property);
-        var slide = new DoubleAnimation(from, show ? 0.0 : hiddenOffset, show ? duration : TimeSpan.FromMilliseconds(duration.TotalMilliseconds * 0.7))
-        {
-            EasingFunction = ease
-        };
+        var slide = Curve(from, show ? 0.0 : hiddenOffset, TimeSpan.FromMilliseconds(duration.TotalMilliseconds * (show ? 0.8 : 0.7)), show);
         var fade = new DoubleAnimation(show ? 0.0 : 1.0, show ? 1.0 : 0.0, TimeSpan.FromMilliseconds(Math.Min(220, duration.TotalMilliseconds)));
         slide.Completed += (_, _) => completed();
         _contentSlide.BeginAnimation(property, slide);
@@ -331,11 +350,13 @@ internal sealed class PanelSlideController
     public bool Settle()
     {
         if (_hwnd == IntPtr.Zero || _target.Width <= 0) return true;
-        if (_systemWindow)
+        if (MovesWindow)
         {
             SetNow(1);
             LeaveInPlace(); // ganz ausgefahren: Inhalt an seinem Platz, Weichzeichner im ganzen Fenster
-            var settled = PanelSlide.IsSettled(WindowRect(), _target, tolerance: 0);
+            if (!_systemWindow) ResetContent();
+            // Transparente Fenster: WPF rechnet Lage und Größe über DIP um – bis zu 2 px Abweichung sind Rundung
+            var settled = PanelSlide.IsSettled(WindowRect(), _target, tolerance: _systemWindow ? 0 : 2);
             if (!settled)
             {
                 AppLog.Warn($"Panel: corrected end position, window at {WindowRect()}, expected {_target}");
@@ -358,6 +379,9 @@ internal sealed class PanelSlideController
 
     /// <summary>Steht das ausgefahrene Fenster an seiner Ziellage (Klarglas: bis auf Rundung)?</summary>
     public bool IsSettled => PanelSlide.IsSettled(WindowRect(), _target, _systemWindow ? 0 : 2);
+
+    /// <summary>Für den Selbsttest: gleitet das ganze Fenster (statt nur seines Inhalts)?</summary>
+    public bool MovesWindowForTest => MovesWindow;
 
     /// <summary>Tatsächliche Lage des Fensters in Pixeln.</summary>
     public Rectangle WindowRect()

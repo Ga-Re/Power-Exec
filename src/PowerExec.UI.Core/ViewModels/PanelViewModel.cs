@@ -42,6 +42,16 @@ public sealed class PanelViewModel : ObservableObject
 
     public ObservableCollection<GroupViewModel> Groups { get; } = new();
 
+    /// <summary>
+    /// Treffer der Suche als flache, nach Relevanz sortierte Liste (beste oben). Die Gruppen bleiben beim Suchen
+    /// unverändert stehen und werden nur ausgeblendet – Suche leeren zeigt sie wieder, ohne sie neu aufzubauen.
+    /// </summary>
+    public ObservableCollection<ItemViewModel> SearchResults { get; } = new();
+
+    private bool _showsResults;
+    /// <summary>Statt der Gruppen ist die Trefferliste zu sehen (Suchbegriff oder Filter im Suchfeld).</summary>
+    public bool ShowsSearchResults { get => _showsResults; private set => Set(ref _showsResults, value); }
+
     public string SearchText
     {
         get => _searchText;
@@ -202,7 +212,7 @@ public sealed class PanelViewModel : ObservableObject
     private ICommand? _showFolderWarning;
     public bool HasNoFolders => _app.Settings.Folders.Count == 0 && _app.Settings.CustomEntries.Count == 0 && GroupManager.All(_app.Settings).Count == 0;
     public string EmptyHint => L.T("No groups yet. Create a group – with a folder it shows its scripts and programs – or add custom entries.");
-    public bool IsEmpty => Groups.Count == 0 && !HasNoFolders;
+    public bool IsEmpty => _showsResults ? SearchResults.Count == 0 : Groups.Count == 0 && !HasNoFolders;
 
     // Update-Hinweis
     public bool UpdateVisible => _app.Update.Available && !_updateDismissed;
@@ -774,7 +784,13 @@ public sealed class PanelViewModel : ObservableObject
 
     // ---- Suche: Hervorhebung und Filter-Chips --------------------------------
 
-    private const int BestHitsCount = 5;
+    /// <summary>Gruppenschlüssel der Einträge in der Trefferliste (eigene ViewModels, unabhängig von den Gruppen).</summary>
+    private const string SearchResultsKey = "search";
+
+    /// <summary>Woher ein Treffer stammt („Admin › AD“, „Eigene Einträge“) – klein rechts in der Trefferzeile.</summary>
+    private string GroupHintOf(LaunchItem i) => GroupOfItem(i) is { Length: > 0 } path
+        ? string.Join(" › ", path.Split(GroupManager.Separator))
+        : L.T("Custom entries");
 
     /// <summary>Suchbegriffe ohne Filter – für die Hervorhebung in Name und Info-Zeile.</summary>
     public IReadOnlyList<string> HighlightTerms { get; private set; } = Array.Empty<string>();
@@ -940,114 +956,122 @@ public sealed class PanelViewModel : ObservableObject
             Items = Arrange(key, items).Select(i => ItemVm(i, key)).ToList()
         };
 
+        // Suche: flache Trefferliste, beste oben (Enter startet den ersten). Die Gruppen bleiben, wie sie sind – sie neu
+        // aufzubauen und beim Leeren der Suche wieder herzustellen kostete bei vielen Einträgen Sekunden.
+        ShowsSearchResults = searching;
+        if (searching)
+        {
+            ItemViewModel ResultVm(LaunchItem i)
+            {
+                var vm = ItemVm(i, SearchResultsKey);
+                vm.GroupHint = GroupHintOf(i);
+                return vm;
+            }
+            CollectionSync.SyncTo(SearchResults, Order(pool).Select(ResultVm).ToList(), LastSyncStats);
+        }
+        else if (SearchResults.Count > 0) SearchResults.Clear();
+
         var groups = new List<GroupSpec>();
-        // Bei vielen Treffern: die besten oben gesammelt (Enter startet den ersten)
-        if (query.HasTerms && pool.Count > BestHitsCount)
-            groups.Add(new GroupSpec
-            {
-                Key = "best",
-                Title = L.T("Best matches"),
-                Kind = "best",
-                Expanded = true,
-                AllowReorder = false,
-                Items = Order(pool).Take(BestHitsCount).Select(i => ItemVm(i, "best")).ToList()
-            });
-        // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
-        var fixedSpecs = new Dictionary<string, GroupSpec>();
-        var topLevel = new List<GroupSpec>();
-        if (!searching && _filter == TypeFilter.All)
+        // Gruppenbaum nur ohne Suche – beim Suchen bleiben die Gruppen, wie sie sind (ausgeblendet)
+        if (!searching)
         {
-            // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
-            if (settings.RecentRunsCount > 0 && ShowsGroup(FixedGroups.Recent))
+            // Feste Gruppen (Zuletzt ausgeführt, Favoriten, Eigene Einträge): Position und Sichtbarkeit wie eigene Gruppen
+            var fixedSpecs = new Dictionary<string, GroupSpec>();
+            var topLevel = new List<GroupSpec>();
+            if (!searching && _filter == TypeFilter.All)
             {
-                var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
-                var recent = settings.RecentRuns
-                    .Where(r => byPath.ContainsKey(r.Path))
-                    .Take(settings.RecentRunsCount)
-                    .Select(r =>
-                    {
-                        var item = byPath[r.Path];
-                        var profile = ProfileResolver.GetProfiles(settings, item)
-                            .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
-                        // Zeit rechts in der Zeile; darunter das Profil (falls gewählt), sonst die normale Info-Zeile
-                        var subtitle = profile.IsImplicit ? null : L.T("Profile ") + profile.Name;
-                        return new ItemViewModel(_app, this, item, "recent", profile, subtitle, RecentRunList.Ago(r.TimeUtc));
-                    })
-                    .ToList();
-                if (recent.Count > 0)
-                    fixedSpecs[FixedGroups.Recent] = new GroupSpec
-                    {
-                        Key = "recent",
-                        Title = L.T("Recently run"),
-                        Kind = "recent",
-                        Expanded = !collapsed.Contains("recent"),
-                        AllowReorder = false,
-                        Items = recent
-                    };
+                // Zuletzt ausgeführt (mit dem jeweils verwendeten Profil)
+                if (settings.RecentRunsCount > 0 && ShowsGroup(FixedGroups.Recent))
+                {
+                    var byPath = pool.GroupBy(i => i.FullPath, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+                    var recent = settings.RecentRuns
+                        .Where(r => byPath.ContainsKey(r.Path))
+                        .Take(settings.RecentRunsCount)
+                        .Select(r =>
+                        {
+                            var item = byPath[r.Path];
+                            var profile = ProfileResolver.GetProfiles(settings, item)
+                                .FirstOrDefault(p => p.Name.Equals(r.ProfileName, StringComparison.OrdinalIgnoreCase)) ?? ProfileResolver.GetDefault(settings, item);
+                            // Zeit rechts in der Zeile; darunter das Profil (falls gewählt), sonst die normale Info-Zeile
+                            var subtitle = profile.IsImplicit ? null : L.T("Profile ") + profile.Name;
+                            return new ItemViewModel(_app, this, item, "recent", profile, subtitle, RecentRunList.Ago(r.TimeUtc));
+                        })
+                        .ToList();
+                    if (recent.Count > 0)
+                        fixedSpecs[FixedGroups.Recent] = new GroupSpec
+                        {
+                            Key = "recent",
+                            Title = L.T("Recently run"),
+                            Kind = "recent",
+                            Expanded = !collapsed.Contains("recent"),
+                            AllowReorder = false,
+                            Items = recent
+                        };
+                }
+
+                var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
+                if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", L.T("Favorites"), "fav", null, favs);
             }
 
-            var favs = pool.Where(i => IsFav(i.FullPath)).ToList();
-            if (favs.Count > 0 && ShowsGroup(FixedGroups.Favorites)) fixedSpecs[FixedGroups.Favorites] = MakeGroup("fav", L.T("Favorites"), "fav", null, favs);
-        }
+            // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
+            bool showEmpty = !searching && _filter == TypeFilter.All;
+            var byGroup = pool.GroupBy(GroupOf, StringComparer.CurrentCultureIgnoreCase).ToDictionary(g => g.Key, g => g.ToList(), StringComparer.CurrentCultureIgnoreCase);
+            var paths = GroupManager.All(settings).ToList();
+            var virtualPaths = new List<string>();
+            foreach (var g in byGroup.Keys.Where(k => k.Length > 0))
+                for (var p = g; p != null; p = GroupManager.ParentOf(p))
+                    if (!paths.Contains(p, StringComparer.CurrentCultureIgnoreCase) && !virtualPaths.Contains(p, StringComparer.CurrentCultureIgnoreCase)) virtualPaths.Add(p);
+            paths.AddRange(virtualPaths.OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase));
 
-        // Gruppenbaum: eigene und smarte Gruppen (Ordner), bei „Unterordner als Untergruppen“ zusätzlich die Unterordner
-        bool showEmpty = !searching && _filter == TypeFilter.All;
-        var byGroup = pool.GroupBy(GroupOf, StringComparer.CurrentCultureIgnoreCase).ToDictionary(g => g.Key, g => g.ToList(), StringComparer.CurrentCultureIgnoreCase);
-        var paths = GroupManager.All(settings).ToList();
-        var virtualPaths = new List<string>();
-        foreach (var g in byGroup.Keys.Where(k => k.Length > 0))
-            for (var p = g; p != null; p = GroupManager.ParentOf(p))
-                if (!paths.Contains(p, StringComparer.CurrentCultureIgnoreCase) && !virtualPaths.Contains(p, StringComparer.CurrentCultureIgnoreCase)) virtualPaths.Add(p);
-        paths.AddRange(virtualPaths.OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase));
-
-        (string? Folder, string? Error) FolderInfo(string path)
-        {
-            if (SmartGroups.FolderOf(settings, path) is { } f)
+            (string? Folder, string? Error) FolderInfo(string path)
             {
-                var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, f.Path, StringComparison.OrdinalIgnoreCase));
-                return (f.Path, status?.Error);
+                if (SmartGroups.FolderOf(settings, path) is { } f)
+                {
+                    var status = repo.FolderStatuses.FirstOrDefault(s => string.Equals(s.Path, f.Path, StringComparison.OrdinalIgnoreCase));
+                    return (f.Path, status?.Error);
+                }
+                // Unterordner einer smarten Gruppe
+                for (var parent = GroupManager.ParentOf(path); parent != null; parent = GroupManager.ParentOf(parent))
+                    if (SmartGroups.FolderOf(settings, parent) is { SubfoldersAsGroups: true } pf)
+                        return (Path.Combine(pf.Path, path[(parent.Length + 1)..].Replace(GroupManager.Separator, '\\')), null);
+                return (null, null);
             }
-            // Unterordner einer smarten Gruppe
-            for (var parent = GroupManager.ParentOf(path); parent != null; parent = GroupManager.ParentOf(parent))
-                if (SmartGroups.FolderOf(settings, parent) is { SubfoldersAsGroups: true } pf)
-                    return (Path.Combine(pf.Path, path[(parent.Length + 1)..].Replace(GroupManager.Separator, '\\')), null);
-            return (null, null);
-        }
 
-        var nodes = new Dictionary<string, GroupSpec>(StringComparer.CurrentCultureIgnoreCase);
-        foreach (var path in paths)
-        {
-            if (!ShowsGroup(path)) continue;
-            var items = byGroup.GetValueOrDefault(path) ?? new List<LaunchItem>();
-            var (folderPath, error) = FolderInfo(path);
-            var kind = virtualPaths.Contains(path, StringComparer.CurrentCultureIgnoreCase) ? "subfolder" : "group";
-            var node = MakeGroup(GroupManager.GroupKey(path), path, kind, folderPath, items, error);
-            nodes[path] = node;
-            if (GroupManager.ParentOf(path) is { } parentPath)
+            var nodes = new Dictionary<string, GroupSpec>(StringComparer.CurrentCultureIgnoreCase);
+            foreach (var path in paths)
             {
-                if (nodes.TryGetValue(parentPath, out var parentNode)) parentNode.Children.Add(node);
+                if (!ShowsGroup(path)) continue;
+                var items = byGroup.GetValueOrDefault(path) ?? new List<LaunchItem>();
+                var (folderPath, error) = FolderInfo(path);
+                var kind = virtualPaths.Contains(path, StringComparer.CurrentCultureIgnoreCase) ? "subfolder" : "group";
+                var node = MakeGroup(GroupManager.GroupKey(path), path, kind, folderPath, items, error);
+                nodes[path] = node;
+                if (GroupManager.ParentOf(path) is { } parentPath)
+                {
+                    if (nodes.TryGetValue(parentPath, out var parentNode)) parentNode.Children.Add(node);
+                }
+                else topLevel.Add(node);
             }
-            else topLevel.Add(node);
-        }
-        // Leere Zweige bei Suche/Filter weglassen (fehlerhafte Ordner bleiben sichtbar)
-        bool Prune(GroupSpec g)
-        {
-            g.Children.RemoveAll(c => !Prune(c));
-            return showEmpty || g.TotalCount > 0 || g.HasError;
-        }
-        topLevel.RemoveAll(g => g.GroupPath != null && !Prune(g));
+            // Leere Zweige bei Suche/Filter weglassen (fehlerhafte Ordner bleiben sichtbar)
+            bool Prune(GroupSpec g)
+            {
+                g.Children.RemoveAll(c => !Prune(c));
+                return showEmpty || g.TotalCount > 0 || g.HasError;
+            }
+            topLevel.RemoveAll(g => g.GroupPath != null && !Prune(g));
 
-        // Eigene Einträge ohne Gruppe (bei der Suche immer, damit Treffer nicht verschwinden)
-        var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
-        if (rest.Count > 0 && (searching || ShowsGroup(FixedGroups.Custom)))
-            fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, L.T("Custom entries"), "custom", null, rest);
+            // Eigene Einträge ohne Gruppe (bei der Suche immer, damit Treffer nicht verschwinden)
+            var rest = byGroup.GetValueOrDefault(string.Empty) ?? new List<LaunchItem>();
+            if (rest.Count > 0 && (searching || ShowsGroup(FixedGroups.Custom)))
+                fixedSpecs[FixedGroups.Custom] = MakeGroup(SmartGroups.CustomFallbackKey, L.T("Custom entries"), "custom", null, rest);
 
-        // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
-        var topByPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
-        foreach (var key in FixedGroups.Compose(settings, topLevel.Select(g => g.GroupPath ?? g.Key).ToList()))
-        {
-            if (FixedGroups.IsFixed(key)) { if (fixedSpecs.TryGetValue(key, out var f)) groups.Add(f); }
-            else if (topByPath.TryGetValue(key, out var g)) groups.Add(g);
+            // Oberste Ebene: eigene Gruppen und feste Gruppen in der eingestellten Reihenfolge
+            var topByPath = topLevel.ToDictionary(g => g.GroupPath ?? g.Key, StringComparer.CurrentCultureIgnoreCase);
+            foreach (var key in FixedGroups.Compose(settings, topLevel.Select(g => g.GroupPath ?? g.Key).ToList()))
+            {
+                if (FixedGroups.IsFixed(key)) { if (fixedSpecs.TryGetValue(key, out var f)) groups.Add(f); }
+                else if (topByPath.TryGetValue(key, out var g)) groups.Add(g);
+            }
         }
 
         // Alt+1 … 9: Favoriten in der Reihenfolge der Gruppe „Favoriten“ (unabhängig von Suche und Filter)
@@ -1083,7 +1107,7 @@ public sealed class PanelViewModel : ObservableObject
             g.RaiseContentChanged();
             return g;
         }
-        CollectionSync.SyncTo(Groups, groups.Select(Materialize).ToList(), LastSyncStats);
+        if (!searching) CollectionSync.SyncTo(Groups, groups.Select(Materialize).ToList(), LastSyncStats);
         // Wiederverwendete Einträge behalten ihren Haken – mit der Mehrfachauswahl abgleichen
         if (_checked.Count > 0 || reuse) ApplyChecked();
         if (!reuse) StickyGroup = null;
@@ -1146,7 +1170,8 @@ public sealed class PanelViewModel : ObservableObject
     /// <summary>Alle Gruppen einschließlich Untergruppen.</summary>
     public IEnumerable<GroupViewModel> AllGroups => Groups.SelectMany(g => g.SelfAndDescendants);
 
-    public IEnumerable<ItemViewModel> AllItems => AllGroups.SelectMany(g => g.Items);
+    /// <summary>Alle angezeigten Einträge: beim Suchen die Treffer, sonst die Einträge aller Gruppen.</summary>
+    public IEnumerable<ItemViewModel> AllItems => _showsResults ? SearchResults : AllGroups.SelectMany(g => g.Items);
 
     /// <summary>Drag &amp; Drop: Eintrag innerhalb seiner Gruppe vor bzw. hinter einen anderen schieben.</summary>
     public void MoveItem(ItemViewModel dragged, ItemViewModel target, bool after)
@@ -1378,7 +1403,7 @@ public sealed class PanelViewModel : ObservableObject
     }
 
     /// <summary>Sichtbare Einträge in Anzeigereihenfolge (eingeklappte Gruppen samt Untergruppen ausgenommen).</summary>
-    public IEnumerable<ItemViewModel> VisibleItems => Groups.SelectMany(VisibleIn);
+    public IEnumerable<ItemViewModel> VisibleItems => _showsResults ? SearchResults : Groups.SelectMany(VisibleIn);
 
     private static IEnumerable<ItemViewModel> VisibleIn(GroupViewModel g) =>
         g.IsExpanded ? g.Items.Concat(g.Children.SelectMany(VisibleIn)) : Enumerable.Empty<ItemViewModel>();

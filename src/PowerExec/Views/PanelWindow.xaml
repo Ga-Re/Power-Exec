@@ -608,6 +608,10 @@
                                 <!-- Zuletzt ausgeführt: wann -->
                                 <TextBlock Text="{Binding RecentWhen}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"
                                            Visibility="{Binding HasRecentWhen, Converter={StaticResource Vis}}"/>
+                                <!-- Trefferliste der Suche: Gruppe, aus der der Eintrag stammt -->
+                                <TextBlock Text="{Binding GroupHint}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Tertiary}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                           MaxWidth="120" TextTrimming="CharacterEllipsis" ToolTip="{Binding GroupHint}"
+                                           Visibility="{Binding HasGroupHint, Converter={StaticResource Vis}}"/>
                                 <!-- Schnellstart-Taste (Favoriten) -->
                                 <Border VerticalAlignment="Center" Margin="6,0,0,0" Padding="5,1" CornerRadius="{DynamicResource Radius.Control}" BorderThickness="1"
                                         BorderBrush="{DynamicResource Border.Control}" Visibility="{Binding HasQuickKey, Converter={StaticResource Vis}}"
@@ -1256,8 +1260,33 @@
             </Border>
 
             <!-- Liste -->
+            <!-- Trefferliste der Suche: flach, beste oben, virtualisiert (nur sichtbare Zeilen werden aufgebaut). Die Gruppen
+                 darunter bleiben beim Suchen unverändert. Beide Listen sind nur unsichtbar (Hidden), nicht aus dem Layout
+                 genommen: so behalten sie Größe und Messung – die Gruppen stehen nach der Suche sofort wieder da, und die
+                 Trefferliste kennt schon beim ersten Buchstaben ihre Höhe (sonst baute die Virtualisierung zu viele Zeilen auf). -->
+            <Grid Grid.Row="5" Visibility="{Binding ShowsSearchResults, Converter={StaticResource Vis}, ConverterParameter=hidden}">
+                <TextBlock Visibility="{Binding IsEmpty, Converter={StaticResource Vis}}" Margin="16,32,16,0" TextAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top"
+                           Style="{StaticResource Caption}" Text="{l:T 'No results. Searches name, synopsis, description, note and tags. Clicking into the search box offers filters (tag, type, group, property).'}"/>
+                <ItemsControl x:Name="ResultsList" ItemsSource="{Binding SearchResults}" ItemTemplate="{StaticResource ItemTemplate}" Focusable="False"
+                              VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel"
+                              ScrollViewer.CanContentScroll="True">
+                    <ItemsControl.Template>
+                        <ControlTemplate TargetType="ItemsControl">
+                            <ScrollViewer x:Name="ResultsScroll" Padding="8,0,8,8" Focusable="False" CanContentScroll="True" HorizontalScrollBarVisibility="Disabled" Background="Transparent"
+                                          VerticalScrollBarVisibility="{Binding ShowListScrollBar, Mode=OneWay, Converter={StaticResource ScrollBarAuto}}">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </Grid>
+
             <ScrollViewer x:Name="ListScroll" Grid.Row="5" VerticalScrollBarVisibility="{Binding ShowListScrollBar, Mode=OneWay, Converter={StaticResource ScrollBarAuto}}" HorizontalScrollBarVisibility="Disabled"
-                          Background="Transparent" ScrollChanged="ListScroll_ScrollChanged">
+                          Background="Transparent" ScrollChanged="ListScroll_ScrollChanged"
+                          Visibility="{Binding ShowsSearchResults, Converter={StaticResource Vis}, ConverterParameter=invert-hidden}">
                 <ScrollViewer.Style>
                     <Style TargetType="ScrollViewer">
                         <Setter Property="Padding" Value="8,0,8,8"/>

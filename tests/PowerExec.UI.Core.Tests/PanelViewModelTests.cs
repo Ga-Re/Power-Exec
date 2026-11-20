@@ -315,4 +315,43 @@ public class PanelViewModelTests
         Assert.Contains(parts, p => p.IsHit && p.Text.Length > 1);       // nicht Buchstabe für Buchstabe
         for (int i = 1; i < parts.Count; i++) Assert.False(parts[i].IsHit && parts[i - 1].IsHit, "zwei Treffer-Abschnitte nebeneinander");
     }
+
+    [Fact]
+    public void SearchShowsFlatRankedResultsAndLeavesGroupsUntouched()
+    {
+        var host = HostWithScripts();
+        GroupManager.Create(host.Settings, "Admin");
+        var vm = host.CreatePanel();
+        vm.Rebuild();
+        var groupsBefore = vm.Groups.ToList();
+        var itemsBefore = vm.AllGroups.SelectMany(g => g.Items).ToList();
+
+        // Suchen: flache Trefferliste, beste oben, mit der Gruppe als Hinweis – die Gruppen bleiben, wie sie sind
+        vm.SearchText = "disk";
+        Assert.True(vm.ShowsSearchResults);
+        var first = vm.SearchResults[0];
+        Assert.Equal("Get-DiskSpace", first.DisplayName);
+        Assert.Equal("Scripts", first.GroupHint);
+        Assert.Same(first, vm.VisibleItems.First());                   // ↑ ↓ und Enter gehen durch die Treffer
+        Assert.Equal(vm.SearchResults, vm.AllItems);
+        Assert.Equal(groupsBefore, vm.Groups);
+        Assert.Equal(itemsBefore, vm.AllGroups.SelectMany(g => g.Items));
+
+        // Weitertippen: dieselben Treffer-ViewModels
+        vm.SearchText = "diskspace";
+        Assert.Same(first, vm.SearchResults[0]);
+
+        // Suche leeren: Gruppen und ihre Einträge sind dieselben Objekte – nichts wird neu aufgebaut
+        vm.ClearSearchCommand.Execute(null);
+        Assert.False(vm.ShowsSearchResults);
+        Assert.Empty(vm.SearchResults);
+        Assert.Equal(groupsBefore, vm.Groups);
+        Assert.Equal(itemsBefore, vm.AllItems);
+        Assert.Equal(0, vm.LastSyncStats.Inserted + vm.LastSyncStats.Moved + vm.LastSyncStats.Removed);
+
+        // Ohne Treffer: leer, Hinweis „Keine Treffer“
+        vm.SearchText = "zzzz-nichts";
+        Assert.True(vm.IsEmpty);
+        Assert.Empty(vm.SearchResults);
+    }
 }
