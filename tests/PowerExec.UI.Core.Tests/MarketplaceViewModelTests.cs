@@ -292,12 +292,172 @@ public class MarketplaceViewModelTests
         vm.Page.Categories.First(c => c.Name == "Links").SelectCommand.Execute(null);
         Assert.Equal(vm.Page.AllCount, vm.Page.Cards.Count);
 
-        // Details: immer nur eine Karte offen
-        vm.Page.Cards[0].TogglePreviewCommand.Execute(null);
-        vm.Page.Cards[1].TogglePreviewCommand.Execute(null);
+        // Detailseite: immer nur ein Eintrag offen; „← Entdecken“ führt zurück
+        Assert.False(vm.Page.IsDetailOpen);
+        Assert.Equal("← Entdecken", vm.Page.BackText);
+        vm.Page.Cards[0].OpenCommand.Execute(null);
+        vm.Page.Cards[1].OpenCommand.Execute(null);
+        Assert.True(vm.Page.IsDetailOpen);
+        Assert.Same(vm.Page.Cards[1], vm.Page.OpenItem);
         Assert.False(vm.Page.Cards[0].IsPreviewOpen);
         Assert.True(vm.Page.Cards[1].IsPreviewOpen);
+        vm.Page.BackCommand.Execute(null);
+        Assert.False(vm.Page.IsDetailOpen);
+        Assert.Null(vm.Page.OpenItem);
+        Assert.False(vm.Page.Cards[1].IsPreviewOpen);
+
+        // Ein anderer Bereich oder eine Kategorie in der Navigation schließt die Detailseite
+        vm.Page.Cards[0].OpenCommand.Execute(null);
+        vm.Page.Category = "Links";
+        Assert.False(vm.Page.IsDetailOpen);
+        vm.Page.Category = string.Empty;
+        vm.Page.Cards[0].OpenCommand.Execute(null);
         vm.Tab = "Entry";
+        Assert.False(vm.Page.IsDetailOpen);
+        Assert.Equal("← Einträge", vm.Page.BackText);
+    }
+
+    [Fact]
+    public async Task EntryDetailShowsActionsAndStaysOpenAfterInstall()
+    {
+        var host = Host();
+        var vm = new MarketplaceWindowViewModel(host, _ => { });
+        await vm.Page.LoadAsync(force: false);
+        var google = vm.Page.Cards.First(c => c.Name == "Google");
+        google.OpenCommand.Execute(null);
+
+        Assert.Equal("Google öffnen · Links · von Power-Exec", google.MetaText);
+        Assert.True(google.ShowInstall);
+        Assert.False(google.ShowApply);                         // „Anwenden“ gibt es nur bei Designs
+
+        // Nach dem Herunterladen bleibt die Seite offen – mit dem neuen Stand
+        host.FakeDialogs.Answer = "Links";
+        await vm.Page.InstallAsync(new[] { google });
+        Assert.True(vm.Page.IsDetailOpen);
+        var open = vm.Page.OpenItem!;
+        Assert.Equal("Google", open.Name);
+        Assert.True(open.IsInstalled);
+        Assert.False(open.ShowInstall);
+        Assert.True(open.IsPreviewOpen);
+    }
+
+    [Fact]
+    public async Task DesignDetailColorsPaletteFontsAndForm()
+    {
+        var host = Host();
+        host.Downloads[DefaultRaw + "Designs/Ozean.design.json"] = """
+            { "Name": "Ozean", "Description": "Tiefes Blau", "Theme": "Dark", "PanelColor": "#0B2233", "AccentColor": "#3AA0FF", "Opacity": 80, "Frost": 20,
+              "Backdrop": "Clear", "Corners": "Rounded", "FontFamily": "Fehlt Sans", "MonoFontFamily": "JetBrains Mono",
+              "GroupColors": "#FF8A70, #7FD1C7, #F2C14E", "GroupColorsForTags": true,
+              "Pair": { "PanelColor": "#EEF4F8", "AccentColor": "#0A6FD6", "GroupColors": "#B4472F, #2F7F76" } }
+            """;
+        var theme = (FakeTheme)host.Theme;
+        theme.IsDark = false;                                   // App läuft hell
+        theme.MissingFonts.Add("Fehlt Sans");
+        theme.MissingFonts.Add("JetBrains Mono");
+        var vm = new MarketplaceWindowViewModel(host, _ => { });
+        await vm.Page.LoadAsync(force: false);
+        vm.Tab = "Design";
+        var card = Assert.Single(vm.Page.Cards);
+        Assert.True(card.ShowsDark);                            // Karte: Hauptvariante
+
+        // Öffnen: Vorschau startet in der Variante der App (hell)
+        card.OpenCommand.Execute(null);
+        Assert.Equal("← Entdecken", vm.Page.BackText);
+        Assert.False(card.ShowsDark);
+        Assert.True(card.IsPreviewLight);
+        Assert.Equal("Tiefes Blau · von Power-Exec", card.MetaText);
+
+        // Farben: erst dunkel, dann hell; je sieben Felder; die gezeigte Variante ist hervorgehoben
+        Assert.Equal(new[] { true, false }, card.DesignColorRows.Select(r => r.IsDark));
+        Assert.All(card.DesignColorRows, r => Assert.Equal(7, r.Swatches.Count));
+        Assert.Equal(new[] { "Panel", "Karte", "Eingabe", "Linie", "Text", "Auswahl", "Akzent" }, card.DesignColorRows[0].Swatches.Select(s => s.Name));
+        Assert.Equal("#0B2233", card.DesignColorRows[0].Swatches[0].Hex);
+        Assert.Equal("#EEF4F8", card.DesignColorRows[1].Swatches[0].Hex);
+        Assert.False(card.DesignColorRows[0].IsActive);
+        Assert.True(card.DesignColorRows[1].IsActive);
+
+        // Gruppenpalette: sechs übersetzte Beispielgruppen, Farben der Variante der Reihe nach (umlaufend)
+        var darkGroups = card.DesignGroupRows.Single(r => r.IsDark);
+        Assert.Equal(new[] { "Favoriten", "Admin", "Tools", "Netzwerk", "Server", "Links" }, darkGroups.Pills.Select(p => p.Name));
+        Assert.Equal(new[] { "#FF8A70", "#7FD1C7", "#F2C14E", "#FF8A70", "#7FD1C7", "#F2C14E" }, darkGroups.Pills.Select(p => p.Hex));
+        Assert.Equal(new[] { "#B4472F", "#2F7F76", "#B4472F" }, card.DesignGroupRows.Single(r => !r.IsDark).Pills.Take(3).Select(p => p.Hex));
+        Assert.Equal("#EEF4F8", card.DesignGroupRows.Single(r => !r.IsDark).SurfaceHex);
+        Assert.Equal("gilt auch für Schlagworte · Gruppen „Vom Design“ bekommen sie der Reihe nach", card.GroupPaletteHint);
+
+        // Umschalten (auch per Klick auf die andere Zeile): Vorschau und Hervorhebung wechseln mit
+        var changed = new List<string?>();
+        card.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        card.DesignGroupRows.Single(r => r.IsDark).SelectCommand.Execute(null);
+        Assert.True(card.ShowsDark);
+        Assert.True(card.IsPreviewDark);
+        Assert.True(card.DesignColorRows[0].IsActive);
+        Assert.False(card.DesignGroupRows.Single(r => !r.IsDark).IsActive);
+        Assert.Contains(nameof(MarketplaceItemRow.PreviewSurface), changed);
+        Assert.Equal(0x0B, card.PreviewSurface!.Value.R);
+        card.IsPreviewLight = true;
+        Assert.Equal(0xEE, card.PreviewSurface!.Value.R);
+
+        // Schrift: fehlende Schriften nennen den Ersatz
+        Assert.Equal("Fehlt Sans · fehlt hier, es gilt Segoe UI", card.DesignFontText);
+        Assert.Equal("JetBrains Mono · fehlt hier, es gilt Cascadia Mono", card.DesignMonoText);
+        Assert.True(card.IsDesignFontMissing);
+        Assert.StartsWith("JetBrains Mono, ", card.DesignMonoFont, StringComparison.Ordinal);
+        Assert.Equal("Aa Server neu starten 0123", MarketplaceItemRow.FontSample);
+        theme.MissingFonts.Clear();
+        Assert.Equal("JetBrains Mono", card.DesignMonoText);
+
+        // Form und Hintergrund
+        Assert.Equal("Ecken 12 px · Karten 12 px", card.DesignFormText);
+        Assert.Equal(12, card.PreviewCornerRadius);
+        Assert.Equal("Transparent · Deckkraft 80 % · Milchglas 20 %", card.DesignBackgroundText);
+        Assert.Equal(0.8, card.PreviewOpacity, 3);
+        Assert.True(card.PreviewFrost > 0);
+        Assert.False(card.UsesWindowsAccent);
+        Assert.Equal("Eigene Akzentfarbe (nicht die von Windows)", card.AccentText);
+
+        // Aktionen: nicht installiert → „Installieren und anwenden“; danach aktiv
+        Assert.Equal("Installieren und anwenden", card.ApplyText);
+        Assert.True(card.ShowApply);
+        Assert.False(card.IsActiveDesign);
+        Assert.False(card.IsInstalled);
+        await vm.Page.InstallAndApplyAsync(card);
+        var open = vm.Page.OpenItem!;
+        Assert.True(vm.Page.IsDetailOpen);
+        Assert.True(open.IsInstalled);
+        Assert.True(open.IsActiveDesign);
+        Assert.False(open.ShowApply);
+        Assert.False(open.ShowsDark);                           // gewählte Variante bleibt
+    }
+
+    [Fact]
+    public async Task DesignDetailWithoutPairOrGroupColors()
+    {
+        var host = Host();                                      // Ozean: nur dunkel, ohne Gruppenfarben, Akzent von Windows
+        host.Downloads[DefaultRaw + "Designs/Ozean.design.json"] = """{ "Name": "Ozean", "Theme": "Dark", "PanelColor": "#0B2233", "WindowsAccent": true, "Backdrop": "Solid" }""";
+        ((FakeTheme)host.Theme).IsDark = false;
+        var vm = new MarketplaceWindowViewModel(host, _ => { });
+        await vm.Page.LoadAsync(force: false);
+        vm.Tab = "Design";
+        var card = Assert.Single(vm.Page.Cards);
+        card.OpenCommand.Execute(null);
+
+        Assert.True(card.ShowsDark);                            // einzige Variante, auch wenn die App hell läuft
+        card.IsPreviewLight = true;
+        Assert.True(card.ShowsDark);
+        Assert.Equal("Dieses Design gibt es nur dunkel", card.VariantHint);
+        var row = Assert.Single(card.DesignColorRows);
+        Assert.True(row.IsActive);
+        Assert.Equal("Akzent (Windows)", row.Swatches[^1].Name);
+        Assert.All(Assert.Single(card.DesignGroupRows).Pills, p => Assert.Equal(card.DesignColorRows[0].Swatches[4].Hex, p.Hex)); // neutral: Textfarbe
+        Assert.Equal("keine Gruppenfarben – Gruppen behalten ihre eigene Farbe", card.GroupPaletteHint);
+        Assert.Equal("Ecken wie in der App eingestellt", card.DesignFormText);
+        Assert.Equal("Vollton (deckend)", card.DesignBackgroundText);
+        Assert.Equal(1.0, card.PreviewOpacity);
+        Assert.Equal(0, card.PreviewFrost);
+        Assert.True(card.UsesWindowsAccent);
+        Assert.Equal("Windows-Akzentfarbe wird übernommen", card.AccentText);
+        Assert.Equal("Cascadia Mono (Schrift der App)", card.DesignMonoText);
     }
 
     [Fact]

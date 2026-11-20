@@ -1257,7 +1257,8 @@ public sealed partial class SelfTestController : AppController
                 var marketWindow = new MarketplaceWindow(marketVm);
                 marketWindow.Show();
                 // Mitgelieferten Marktplatz laden; ohne Netz nicht hängen bleiben
-                await Task.WhenAny(marketVm.EnsureLoadedAsync(), Task.Delay(5000));
+                try { await marketVm.EnsureLoadedAsync().WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (TimeoutException) { /* ohne Netz: mit dem weiter, was schon geladen ist */ }
                 await Settle();
                 if (marketVm.Tabs.Count != 5) Fail($"Marktplatz: {marketVm.Tabs.Count} Bereiche statt 5");
                 if (marketVm.Tab != "All") Fail($"Marktplatz: öffnet mit „{marketVm.Tab}“ statt „Entdecken“");
@@ -1265,17 +1266,17 @@ public sealed partial class SelfTestController : AppController
                 else
                 {
                     if (marketVm.Page.Categories.Count == 0) Fail("Marktplatz: keine Kategorien in der Navigation");
-                    // Details aufklappen: die Karte nimmt die ganze Zeile ein, es ist immer nur eine offen
+                    // Detailseite öffnen und mit „← Entdecken“ zurück zur Galerie
                     var firstCard = marketVm.Page.Cards[0];
-                    firstCard.TogglePreviewCommand.Execute(null);
+                    firstCard.OpenCommand.Execute(null);
                     await Settle();
+                    await Task.Delay(500); // Seitenwechsel abwarten
+                    if (!marketVm.Page.IsDetailOpen || marketWindow.IsGalleryShownForTest) Fail("Marktplatz: Detailseite öffnet nicht");
                     if (marketWindow.Content is FrameworkElement openRoot) Screenshot(openRoot, "marktplatz-details");
-                    if (marketVm.Page.Cards.Count > 1)
-                    {
-                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
-                        if (firstCard.IsPreviewOpen || !marketVm.Page.Cards[1].IsPreviewOpen) Fail("Marktplatz: mehr als eine Karte aufgeklappt");
-                        marketVm.Page.Cards[1].TogglePreviewCommand.Execute(null);
-                    }
+                    marketVm.Page.BackCommand.Execute(null);
+                    await Settle();
+                    await Task.Delay(500);
+                    if (marketVm.Page.IsDetailOpen || !marketWindow.IsGalleryShownForTest) Fail("Marktplatz: „Zurück“ zeigt die Galerie nicht wieder");
                     if (marketVm.Page.Categories.Count > 0)
                     {
                         var category = marketVm.Page.Categories[0];
@@ -1303,10 +1304,30 @@ public sealed partial class SelfTestController : AppController
                 if (marketVm.Page.Cards.FirstOrDefault(c => c.HasBothVariants) is { } designCard)
                 {
                     designCard.ShowLightCommand.Execute(null);
-                    designCard.TogglePreviewCommand.Execute(null);
+                    designCard.OpenCommand.Execute(null);
                     await Settle();
+                    await Task.Delay(500); // Seitenwechsel und gestaffeltes Einblenden abwarten
                     if (designCard.DesignColorRows.Count != 2) Fail($"Marktplatz: Design-Details mit {designCard.DesignColorRows.Count} statt 2 Varianten");
+                    if (designCard.DesignColorRows.Any(r => r.Swatches.Count != 7)) Fail("Marktplatz: Design-Details ohne sieben Farbfelder je Variante");
+                    if (designCard.DesignGroupRows.Any(r => r.Pills.Count != 6)) Fail("Marktplatz: Gruppenpalette ohne sechs Beispielgruppen je Variante");
+                    if (designCard.ShowsDark || !designCard.DesignColorRows.Single(r => !r.IsDark).IsActive) Fail("Marktplatz: helle Variante nicht hervorgehoben");
                     if (marketWindow.Content is FrameworkElement detailRoot) Screenshot(detailRoot, "marktplatz-design-details");
+                    // Hell/dunkel: Vorschau und hervorgehobene Zeile wechseln mit
+                    designCard.IsPreviewDark = true;
+                    await Settle();
+                    await Task.Delay(300);
+                    if (!designCard.DesignColorRows.Single(r => r.IsDark).IsActive || designCard.DesignGroupRows.Single(r => !r.IsDark).IsActive)
+                        Fail("Marktplatz: Umschalter dunkel hebt die Zeilen nicht hervor");
+                    if (marketWindow.Content is FrameworkElement darkRoot) Screenshot(darkRoot, "marktplatz-design-details-dunkel");
+                    // Schmales Fenster: linke Spalte über dem Inhalt, Farbfelder brechen um
+                    var wide = marketWindow.Width;
+                    marketWindow.Width = marketWindow.MinWidth;
+                    await Settle();
+                    await Task.Delay(400);
+                    if (!marketWindow.DetailForTest.IsNarrowForTest) Fail("Marktplatz: Detailseite stellt sich im schmalen Fenster nicht um");
+                    if (marketWindow.Content is FrameworkElement narrowRoot) Screenshot(narrowRoot, "marktplatz-design-details-schmal");
+                    marketWindow.Width = wide;
+                    await Settle();
                     var keyBefore = marketVm.Page.Settings.DesignKey;
                     designCard.TryCommand.Execute(null);
                     await Settle();

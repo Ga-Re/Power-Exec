@@ -3,13 +3,16 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using PowerExec.Core.Config;
+using PowerExec.Core.Localization;
 using PowerExec.Desktop.Services;
 using PowerExec.Desktop.Interop;
 using PowerExec.Desktop.Infrastructure;
+using PowerExec.UI.ViewModels;
 
 namespace PowerExec.Desktop.Controls;
 
@@ -31,6 +34,19 @@ public sealed class DesignPreview : Border
         new PropertyMetadata(null, (d, _) => ((DesignPreview)d).Rebuild()));
 
     public bool? ShowDark { get => (bool?)GetValue(ShowDarkProperty); set => SetValue(ShowDarkProperty, value); }
+
+    /// <summary>
+    /// Große Vorschau (Detailseite im Marktplatz): statt der Desktop-Szene ein ganzes Panel auf dem Hintergrundbild – Kopf
+    /// mit Symbol und Zahnrad, Suchfeld, Gruppen mit Kacheln (eine ausgewählt) und Schlagworten.
+    /// </summary>
+    public static readonly DependencyProperty DetailedProperty = DependencyProperty.Register(nameof(Detailed), typeof(bool), typeof(DesignPreview),
+        new PropertyMetadata(false, (d, _) => ((DesignPreview)d).Rebuild()));
+
+    public bool Detailed { get => (bool)GetValue(DetailedProperty); set => SetValue(DetailedProperty, value); }
+
+    /// <summary>Abstand des Panels zum Rand der Bühne in der großen Vorschau.</summary>
+    private const double StageInset = 16;
+    private double _panelRadius;
 
     private readonly Grid _root = new() { ClipToBounds = true };
     private Border? _panel;
@@ -105,6 +121,13 @@ public sealed class DesignPreview : Border
         var accent = !d.WindowsAccent && colors.AccentColor.Length > 0 ? resolved.Accent.ToColor()
             : TryFindResource("Accent") is SolidColorBrush ab ? ab.Color : Color.FromRgb(0x00, 0x78, 0xD4);
         var opacity = d.Backdrop == PanelBackdrop.Solid ? 1.0 : Math.Clamp(d.Opacity / 100.0, 0.2, 1.0);
+
+        if (Detailed)
+        {
+            BuildDetailed(d, resolved, accent, groups, opacity);
+            UpdateClip();
+            return;
+        }
 
         // Desktop
         if (Wallpaper is { } wp) _root.Children.Add(new Image { Source = wp, Stretch = Stretch.UniformToFill });
@@ -215,6 +238,182 @@ public sealed class DesignPreview : Border
         UpdateClip();
     }
 
+    // ---- Große Vorschau -------------------------------------------------------------------
+
+    /// <summary>Ganzes Panel auf dem (leicht abgedunkelten) Hintergrundbild: so wirken Deckkraft, Glas und Milchglas wie echt.</summary>
+    private void BuildDetailed(DesignPreset d, ResolvedPalette p, Color accent, IReadOnlyList<string> groups, double opacity)
+    {
+        CornerRadius = Tokens.RadiusTile;
+        var panel = p.Surface.ToColor();
+        var ink = p.Text.ToColor();
+        var secondary = p.TextSecondary.ToColor();
+        var card = p.Card.ToColor();
+        var radii = CornerRadii.Of(d.Corners ?? CornerStyle.Standard);
+        _panelRadius = radii.Tile;
+        var iconFont = TryFindResource("IconFont") as FontFamily ?? new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets");
+        var onAccent = PanelColors.IsLight(new Rgb(accent.R, accent.G, accent.B)) ? Colors.Black : Colors.White;
+
+        // Bühne
+        if (Wallpaper is { } wp) _root.Children.Add(new Image { Source = wp, Stretch = Stretch.UniformToFill });
+        else _root.Children.Add(new Border { Background = FallbackDesktop() });
+        _root.Children.Add(new Border { Background = new SolidColorBrush(Color.FromArgb(0x38, 0, 0, 0)) });
+        if (d.Backdrop == PanelBackdrop.Glass && Wallpaper is { } wp2)
+        {
+            _blurred = new Image { Source = wp2, Stretch = Stretch.UniformToFill, Effect = new BlurEffect { Radius = 14 } };
+            _root.Children.Add(_blurred);
+        }
+
+        TextBlock Text(string text, double size, Color color, bool strong = false) => new()
+        {
+            Text = text,
+            FontSize = size,
+            Foreground = new SolidColorBrush(color),
+            FontWeight = strong ? FontWeights.SemiBold : FontWeights.Normal,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis
+        };
+        TextBlock Glyph(string glyph, double size, Color color) => new()
+        {
+            Text = glyph,
+            FontFamily = iconFont,
+            FontSize = size,
+            Foreground = new SolidColorBrush(color),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var content = new StackPanel { Margin = new Thickness(12) };
+        if (!string.IsNullOrEmpty(d.FontFamily)) TextElement.SetFontFamily(content, new FontFamily(d.FontFamily + ", Segoe UI"));
+
+        // Kopf: Symbol in Akzentfarbe, Name, Zahnrad
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+        var icon = new Border
+        {
+            Width = 20,
+            Height = 20,
+            CornerRadius = new CornerRadius(Math.Max(radii.Control, 3) + 1),
+            Background = new SolidColorBrush(accent),
+            Child = Glyph("", 11, onAccent)
+        };
+        DockPanel.SetDock(icon, Dock.Left);
+        header.Children.Add(icon);
+        var gear = Glyph("", 12, secondary);
+        DockPanel.SetDock(gear, Dock.Right);
+        header.Children.Add(gear);
+        var title = Text("Power-Exec", 12.5, ink, strong: true);
+        title.Margin = new Thickness(8, 0, 8, 0);
+        header.Children.Add(title);
+        content.Children.Add(header);
+
+        // Suchfeld
+        var search = new DockPanel();
+        var lens = Glyph("", 11, secondary);
+        lens.Margin = new Thickness(9, 0, 7, 0);
+        DockPanel.SetDock(lens, Dock.Left);
+        search.Children.Add(lens);
+        search.Children.Add(Text(L.T("Search …"), 11.5, secondary));
+        content.Children.Add(new Border
+        {
+            Height = 28,
+            Margin = new Thickness(0, 0, 0, 14),
+            CornerRadius = new CornerRadius(radii.Control),
+            Background = new SolidColorBrush(p.Input.ToColor()),
+            BorderBrush = new SolidColorBrush(p.Line.ToColor()),
+            BorderThickness = new Thickness(1),
+            Child = search
+        });
+
+        // Drei Beispielgruppen in den Farben der Reihe (ohne Reihe: neutral)
+        var names = MarketplaceItemRow.SampleGroupNames;
+        var tiles = L.T("Cleanup|RDP").Split('|');
+        var tags = L.T("#net|#ad").Split('|');
+        var tileRadius = new CornerRadius(radii.Card);
+        for (int g = 0; g < 3; g++)
+        {
+            var hasColor = groups.Count > 0 && PanelColors.TryParse(groups[g % groups.Count], out _);
+            var color = hasColor && PanelColors.TryParse(groups[g % groups.Count], out var gc) ? gc.ToColor() : Mix(panel, ink, 0.45);
+            var tileBg = d.GroupStyle == GroupCardStyle.Tinted ? Mix(panel, color, 0.3) : card;
+            var head = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+            var bar = new Border { Width = 3, Height = 12, CornerRadius = new CornerRadius(1.5), Background = new SolidColorBrush(color), Margin = new Thickness(0, 0, 6, 0) };
+            DockPanel.SetDock(bar, Dock.Left);
+            head.Children.Add(bar);
+            head.Children.Add(Text(g < names.Count ? names[g] : string.Empty, 11, hasColor ? color : ink, strong: true));
+            content.Children.Add(head);
+
+            Border Tile(string label, Color background, Color? frame, double height)
+            {
+                var inner = new Grid();
+                if (d.GroupStyle == GroupCardStyle.Accent)
+                    inner.Children.Add(new Border { Width = 2.5, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(1.25), Background = new SolidColorBrush(color), Margin = new Thickness(0, 6, 0, 6) });
+                if (label.Length > 0)
+                {
+                    var t = Text(label, 11, ink, strong: true);
+                    t.Margin = new Thickness(10, 0, 6, 0);
+                    inner.Children.Add(t);
+                }
+                return new Border
+                {
+                    Height = height,
+                    CornerRadius = tileRadius,
+                    Background = new SolidColorBrush(background),
+                    BorderBrush = new SolidColorBrush(frame ?? Colors.Transparent),
+                    BorderThickness = new Thickness(frame == null ? 0 : 1.5),
+                    Child = inner
+                };
+            }
+
+            FrameworkElement body;
+            if (g < 2)
+            {
+                var grid = new Grid();
+                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition());
+                var left = g == 0 ? Tile(tiles[0], tileBg, null, 40) : Tile(string.Empty, tileBg, null, 28);
+                var right = g == 0 ? Tile(tiles.Length > 1 ? tiles[1] : string.Empty, p.Selected.ToColor(), accent, 40) : Tile(string.Empty, tileBg, null, 28);
+                if (g == 1) left.Opacity = right.Opacity = 0.75;
+                Grid.SetColumn(right, 2);
+                grid.Children.Add(left);
+                grid.Children.Add(right);
+                body = grid;
+            }
+            else
+            {
+                var wrap = new WrapPanel();
+                foreach (var tag in tags)
+                    wrap.Children.Add(new Border
+                    {
+                        CornerRadius = new CornerRadius(10),
+                        Padding = new Thickness(8, 2, 8, 3),
+                        Margin = new Thickness(0, 0, 6, 0),
+                        Background = new SolidColorBrush(Mix(panel, color, 0.18)),
+                        BorderBrush = new SolidColorBrush(Mix(panel, color, 0.45)),
+                        BorderThickness = new Thickness(1),
+                        Child = Text(tag, 10.5, hasColor ? color : ink)
+                    });
+                body = wrap;
+            }
+            body.Margin = new Thickness(0, 0, 0, 14);
+            content.Children.Add(body);
+        }
+
+        var surface = new Grid();
+        if (d.Backdrop != PanelBackdrop.Solid && d.Frost > 0)
+            surface.Children.Add(new Border { Background = new SolidColorBrush(Color.FromArgb((byte)Math.Round(Math.Clamp(d.Frost / 100.0, 0, 1) * 0.35 * 255), 255, 255, 255)) });
+        surface.Children.Add(content);
+        _panel = new Border
+        {
+            Margin = new Thickness(StageInset),
+            CornerRadius = new CornerRadius(radii.Tile),
+            ClipToBounds = true,
+            Background = new SolidColorBrush(Color.FromArgb((byte)Math.Round(opacity * 255), panel.R, panel.G, panel.B)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, ink.R, ink.G, ink.B)),
+            BorderThickness = new Thickness(1),
+            Child = surface
+        };
+        _root.Children.Add(_panel);
+    }
+
     private static Border Line(Color c, double width, Thickness margin, double opacity = 1) =>
         new() { Height = 3, Width = width, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(1.5), Margin = margin, Opacity = opacity, Background = new SolidColorBrush(c) };
 
@@ -223,6 +422,11 @@ public sealed class DesignPreview : Border
 
     private void UpdateLayoutParts()
     {
+        if (Detailed)
+        {
+            UpdateBlurClip();
+            return;
+        }
         if (_panel != null && ActualWidth > 0) _panel.Width = Math.Round(ActualWidth * 0.54);
         // Hover-Zone: mittleres Drittel der Höhe
         if (_root.Children.Count > 0 && _root.Children[^1] is Border zone && ActualHeight > 0) zone.Height = Math.Round(ActualHeight * 0.4);
@@ -240,6 +444,12 @@ public sealed class DesignPreview : Border
     private void UpdateBlurClip()
     {
         if (_blurred == null || ActualWidth <= 0 || ActualHeight <= 0) return;
+        if (Detailed)
+        {
+            _blurred.Clip = new RectangleGeometry(new Rect(StageInset, StageInset, Math.Max(0, ActualWidth - 2 * StageInset), Math.Max(0, ActualHeight - 2 * StageInset)),
+                _panelRadius, _panelRadius);
+            return;
+        }
         var w = Math.Round(ActualWidth * 0.54);
         _blurred.Clip = new RectangleGeometry(new Rect(ActualWidth - w, 4, w, Math.Max(0, ActualHeight - 15)), 4, 4);
     }

@@ -16,7 +16,9 @@ namespace PowerExec.Desktop.Infrastructure;
 /// anderen aufzutauchen. Ist die Oberkategorie des ausgewählten Punkts zugeklappt, steht er an der Oberkategorie.</item>
 /// </list>
 /// Die Vorlagen von WPF UI bleiben unverändert: die eigenen Balken der Einträge werden nur unsichtbar gemacht.
-/// Mit ausgeschalteten Animationen (Einstellungen von Power-Exec) springt alles ohne Bewegung.
+/// Dazu Seitenwechsel (<see cref="SwapPages"/>), gestaffeltes Einblenden (<see cref="Stagger"/>), weiches Hervorheben
+/// (<see cref="FadeToProperty"/>) und gleitende Kacheln nach einem Umbruch (<see cref="Glide"/>).
+/// Mit ausgeschalteten Animationen (Einstellungen von Power-Exec oder Windows) springt alles ohne Bewegung.
 /// </summary>
 public static class NavigationMotion
 {
@@ -25,6 +27,154 @@ public static class NavigationMotion
 
     /// <summary>Animationen nach der Einstellung von Power-Exec (Einstellungen › Verhalten › Animation).</summary>
     private static bool Animate => Views.WindowHelper.Settings?.Invoke() is not { } s || s.Animation != Core.Config.AnimationMode.Off;
+
+    /// <summary>
+    /// Bewegung erlaubt? Einstellung von Power-Exec und von Windows („Animationseffekte“,
+    /// <see cref="SystemParameters.ClientAreaAnimation"/>). Sonst wird sofort umgeschaltet.
+    /// </summary>
+    public static bool Enabled => Animate && SystemParameters.ClientAreaAnimation;
+
+    // ---- Seitenwechsel, gestaffeltes Einblenden, Hervorheben, Umbruch ----------------------------
+
+    /// <summary>So weit weicht die alte Seite aus bzw. kommt die Seite beim Zurückgehen herein (DIP).</summary>
+    private const double PageOutShift = 16;
+    /// <summary>So weit gleitet die neue Seite beim Öffnen herein (DIP).</summary>
+    private const double PageInShift = 20;
+    /// <summary>So weit gleiten die Karten einer Seite beim gestaffelten Einblenden nach oben (DIP).</summary>
+    private const double StaggerShift = 10;
+
+    private static readonly IEasingFunction EaseOut = Frozen(new CubicEase { EasingMode = EasingMode.EaseOut });
+    private static readonly IEasingFunction EaseIn = Frozen(new CubicEase { EasingMode = EasingMode.EaseIn });
+
+    private static IEasingFunction Frozen(CubicEase ease)
+    {
+        ease.Freeze();
+        return ease;
+    }
+
+    /// <summary>Soll die Seite (noch) zu sehen sein? Ein unterbrochenes Ausblenden versteckt sie dann nicht mehr.</summary>
+    private static readonly DependencyProperty ShowingProperty = DependencyProperty.RegisterAttached(
+        "Showing", typeof(bool), typeof(NavigationMotion), new PropertyMetadata(true));
+
+    /// <summary>
+    /// Von einer Seite zur anderen wechseln: die alte blendet aus und weicht leicht zur Seite, die neue blendet ein und
+    /// gleitet an ihren Platz – vorwärts von rechts, zurück von links (etwas schneller). Beide liegen übereinander.
+    /// </summary>
+    public static void SwapPages(FrameworkElement from, FrameworkElement to, bool forward)
+    {
+        from.SetValue(ShowingProperty, false);
+        to.SetValue(ShowingProperty, true);
+        to.IsHitTestVisible = true;
+        to.Visibility = Visibility.Visible;
+        if (!Enabled || !from.IsVisible)
+        {
+            Reset(from);
+            Reset(to);
+            from.Visibility = Visibility.Collapsed;
+            return;
+        }
+        from.IsHitTestVisible = false;
+        var outDuration = new Duration(Tokens.MotionPageOut);
+        var fade = new DoubleAnimation(0, outDuration) { EasingFunction = EaseIn, FillBehavior = FillBehavior.HoldEnd };
+        fade.Completed += (_, _) =>
+        {
+            if ((bool)from.GetValue(ShowingProperty)) return; // inzwischen wieder gezeigt
+            from.Visibility = Visibility.Collapsed;
+            from.IsHitTestVisible = true;
+            Reset(from);
+        };
+        Shift(from).BeginAnimation(TranslateTransform.XProperty,
+            new DoubleAnimation(forward ? -PageOutShift : PageOutShift, outDuration) { EasingFunction = EaseIn, FillBehavior = FillBehavior.HoldEnd });
+        from.BeginAnimation(UIElement.OpacityProperty, fade);
+        FadeIn(to, forward ? Tokens.MotionPageIn : Tokens.MotionPageBack, TimeSpan.Zero, forward ? PageInShift : -PageOutShift, 0);
+    }
+
+    /// <summary>Teile einer Seite nacheinander einblenden (je leicht von unten), z. B. Kopf, dann die Karten.</summary>
+    public static void Stagger(IEnumerable<UIElement> parts)
+    {
+        if (!Enabled) return;
+        var i = 0;
+        foreach (var part in parts.Where(p => p.Visibility == Visibility.Visible))
+            FadeIn(part, Tokens.MotionPageIn, TimeSpan.FromTicks(Tokens.MotionStagger.Ticks * i++), 0, StaggerShift);
+    }
+
+    /// <summary>
+    /// Deckkraft, die ein Element weich ansteuert (<see cref="Tokens.MotionFast"/>) – für Hervorhebungen per Trigger,
+    /// z. B. die gewählte Variante hell/dunkel. Ohne Animationen oder solange das Element nicht zu sehen ist: sofort.
+    /// </summary>
+    public static readonly DependencyProperty FadeToProperty = DependencyProperty.RegisterAttached(
+        "FadeTo", typeof(double), typeof(NavigationMotion), new PropertyMetadata(1.0, OnFadeTo));
+
+    public static double GetFadeTo(DependencyObject element) => (double)element.GetValue(FadeToProperty);
+    public static void SetFadeTo(DependencyObject element, double value) => element.SetValue(FadeToProperty, value);
+
+    private static void OnFadeTo(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not UIElement element) return;
+        var to = (double)e.NewValue;
+        var from = element.Opacity; // auch mitten in einer laufenden Bewegung
+        element.BeginAnimation(UIElement.OpacityProperty, null);
+        element.Opacity = to;
+        if (!Enabled || !element.IsVisible || Math.Abs(from - to) < 0.001) return;
+        element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(from, to, new Duration(Tokens.MotionFast)) { EasingFunction = EaseOut, FillBehavior = FillBehavior.Stop });
+    }
+
+    /// <summary>
+    /// Element gleitet von seinem bisherigen Platz an den neuen: <paramref name="offset"/> = alter minus neuer Platz.
+    /// Eine laufende Bewegung wird vom aktuellen Stand aus fortgesetzt.
+    /// </summary>
+    public static void Glide(UIElement element, Vector offset)
+    {
+        var t = Shift(element);
+        var (x, y) = (offset.X + t.X, offset.Y + t.Y); // t.X/Y: aktueller Stand einer laufenden Bewegung
+        var duration = new Duration(Tokens.MotionReflow);
+        t.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(x, 0, duration) { EasingFunction = EaseOut, FillBehavior = FillBehavior.Stop });
+        t.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(y, 0, duration) { EasingFunction = EaseOut, FillBehavior = FillBehavior.Stop });
+    }
+
+    /// <summary>Einblenden ab <paramref name="delay"/>: Deckkraft 0 → 1, Versatz (<paramref name="x"/>, <paramref name="y"/>) → 0.</summary>
+    private static void FadeIn(UIElement element, TimeSpan duration, TimeSpan delay, double x, double y)
+    {
+        // Schlüsselbilder statt BeginTime: bis zum Start bleibt das Element unsichtbar statt kurz aufzublitzen
+        static DoubleAnimationUsingKeyFrames Frames(double from, double to, TimeSpan delay, TimeSpan duration)
+        {
+            var a = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
+            a.KeyFrames.Add(new DiscreteDoubleKeyFrame(from, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            if (delay > TimeSpan.Zero) a.KeyFrames.Add(new DiscreteDoubleKeyFrame(from, KeyTime.FromTimeSpan(delay)));
+            a.KeyFrames.Add(new EasingDoubleKeyFrame(to, KeyTime.FromTimeSpan(delay + duration), EaseOut));
+            return a;
+        }
+        element.Opacity = 1;
+        element.BeginAnimation(UIElement.OpacityProperty, Frames(0, 1, delay, duration));
+        var t = Shift(element);
+        t.X = 0;
+        t.Y = 0;
+        t.BeginAnimation(TranslateTransform.XProperty, x == 0 ? null : Frames(x, 0, delay, duration));
+        t.BeginAnimation(TranslateTransform.YProperty, y == 0 ? null : Frames(y, 0, delay, duration));
+    }
+
+    /// <summary>Bewegung beenden: ganz sichtbar, am eigenen Platz.</summary>
+    private static void Reset(UIElement element)
+    {
+        element.BeginAnimation(UIElement.OpacityProperty, null);
+        element.Opacity = 1;
+        if (element.RenderTransform is TranslateTransform { IsFrozen: false } t)
+        {
+            t.BeginAnimation(TranslateTransform.XProperty, null);
+            t.BeginAnimation(TranslateTransform.YProperty, null);
+            t.X = 0;
+            t.Y = 0;
+        }
+    }
+
+    /// <summary>Verschiebung des Elements (wird bei Bedarf angelegt).</summary>
+    private static TranslateTransform Shift(UIElement element)
+    {
+        if (element.RenderTransform is TranslateTransform { IsFrozen: false } t) return t;
+        t = new TranslateTransform();
+        element.RenderTransform = t;
+        return t;
+    }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<NavigationView, IndicatorAdorner> Indicators = new();
 

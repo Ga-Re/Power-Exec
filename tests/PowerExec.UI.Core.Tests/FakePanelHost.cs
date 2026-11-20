@@ -29,6 +29,9 @@ internal sealed class FakeTheme : IThemeInfo
 {
     public bool IsHighContrast { get; set; }
     public bool IsDark { get; set; } = true;
+    /// <summary>Schriften, die es auf dem „PC“ des Tests nicht gibt.</summary>
+    public HashSet<string> MissingFonts { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public bool IsFontInstalled(string family) => !MissingFonts.Contains(family.Split(',')[0].Trim());
 }
 
 internal sealed class FakeIcons : IIconProvider

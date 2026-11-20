@@ -89,4 +89,12 @@
     <Duration x:Key="Motion.Normal">0:0:0.25</Duration>
     <!-- Panel ein- und ausfahren -->
     <Duration x:Key="Motion.Slow">0:0:0.32</Duration>
+    <!-- Seitenwechsel (Marktplatz: Galerie ↔ Detailseite): alte Seite aus, neue ein, zurück -->
+    <Duration x:Key="Motion.PageOut">0:0:0.16</Duration>
+    <Duration x:Key="Motion.PageIn">0:0:0.22</Duration>
+    <Duration x:Key="Motion.PageBack">0:0:0.18</Duration>
+    <!-- Versatz beim gestaffelten Einblenden von Karten einer Seite -->
+    <Duration x:Key="Motion.Stagger">0:0:0.035</Duration>
+    <!-- Kacheln gleiten an ihren neuen Platz (Umbruch beim Ändern der Fenstergröße) -->
+    <Duration x:Key="Motion.Reflow">0:0:0.18</Duration>
 </ResourceDictionary>

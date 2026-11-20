@@ -493,7 +493,8 @@ public sealed class CustomEntryViewModel : ObservableObject
         try
         {
             var check = Task.Run(() => IsFolder ? Directory.Exists(t) : IsFile ? File.Exists(t) : ProgramResolver.Resolve(t) != null);
-            ok = await Task.WhenAny(check, Task.Delay(3000)) == check ? check.Result : null;
+            try { ok = await check.WaitAsync(TimeSpan.FromSeconds(3)); }
+            catch (TimeoutException) { ok = null; } // dauert zu lange (Netzlaufwerk): Zustand unbekannt
         }
         catch { ok = false; }
         if (version != _checkVersion) return;

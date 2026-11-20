@@ -118,8 +118,10 @@ public sealed class HealthService
                     if (colon > 0 && int.TryParse(host[(colon + 1)..], out var p)) { port = p; host = host[..colon]; }
                     using var tcp = new TcpClient();
                     var connect = tcp.ConnectAsync(host, port);
-                    var done = await Task.WhenAny(connect, Task.Delay(3000));
-                    if (done == connect && !connect.IsFaulted && tcp.Connected) return new HealthResult(true, L.F("Port {0} reachable", port), now);
+                    try { await connect.WaitAsync(TimeSpan.FromSeconds(3)); }
+                    catch (TimeoutException) { /* keine Antwort: unten als „antwortet nicht“ gemeldet */ }
+                    catch (SocketException) { /* nicht erreichbar: unten mit der Meldung aus connect.Exception */ }
+                    if (connect.IsCompletedSuccessfully && tcp.Connected) return new HealthResult(true, L.F("Port {0} reachable", port), now);
                     return new HealthResult(false, connect.IsFaulted
                         ? L.F("{0}:{1} unreachable ({2})", host, port, connect.Exception?.GetBaseException().Message)
                         : L.F("{0}:{1} doesn't respond", host, port), now);
@@ -137,8 +139,8 @@ public sealed class HealthService
 
     private static async Task<bool> WithTimeout(Func<bool> check, int ms)
     {
-        var task = Task.Run(check);
-        return await Task.WhenAny(task, Task.Delay(ms)) == task && task.Result;
+        try { return await Task.Run(check).WaitAsync(TimeSpan.FromMilliseconds(ms)); }
+        catch (TimeoutException) { return false; } // Prüfung hängt (z. B. Freigabe nicht erreichbar): gilt als fehlgeschlagen
     }
 }
 

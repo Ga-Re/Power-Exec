@@ -32,9 +32,10 @@ public partial class AppController
     {
         try
         {
-            var read = Task.Run(() => File.ReadAllText(path));
-            if (await Task.WhenAny(read, Task.Delay(CatalogReadTimeout)) != read) return (null, L.T("Timeout while reading (share unreachable?)"));
-            return (await read, null);
+            string content;
+            try { content = await Task.Run(() => File.ReadAllText(path)).WaitAsync(CatalogReadTimeout); }
+            catch (TimeoutException) { return (null, L.T("Timeout while reading (share unreachable?)")); }
+            return (content, null);
         }
         catch (Exception ex)
         {
