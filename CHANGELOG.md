@@ -2,6 +2,12 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.38.1 – Helle Design-Varianten tragen ihre Farbe, die Hover-Zone blendet beim Annähern stufenlos ein
+
+- Helle Varianten sind deutlich in der Farbe des Designs getönt statt fast weiß; Linien, Auswahl und Text greifen die Akzentfarbe auf – neutrale Designs bleiben neutral
+- Alle Designs im Marktplatz haben eine neu berechnete helle Variante (auch Mint); eigene Designs bekommen das neue helle Gegenstück im Designer
+- Hover-Zone „Erst beim Annähern zeigen“: je näher der Mauszeiger kommt, desto deutlicher erscheint der Streifen – stufenlos statt auf einen Schlag
+
 ## 0.38.0 – Marktplatz: eigene Detailseite je Eintrag, weiche Übergänge, sauber umbrechende Kacheln
 
 - Ein Klick auf eine Karte öffnet ihre eigene Detailseite; „← Entdecken“, die Zurück-Taste der Maus oder Alt+← führen zurück – mit weichem Ein- und Ausblenden

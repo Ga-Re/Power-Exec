@@ -11,7 +11,7 @@
     }
   },
   "Theme": "Light",
-  "PanelColor": "#F4FBF8",
+  "PanelColor": "#D2ECE2",
   "Opacity": 100,
   "Frost": 0,
   "WindowsAccent": false,
@@ -20,12 +20,12 @@
   "GlassSaturation": 100,
   "AccentColor": "#2E9E7A",
   "Palette": {
-    "Card": "#F7FCFA",
-    "Input": "#FDFEFE",
-    "Line": "#B7CEC6",
-    "Text": "#1C2522",
-    "TextSecondary": "#616966",
-    "Selected": "#D4ECE4"
+    "Card": "#E0F1EB",
+    "Input": "#F8FCFB",
+    "Line": "#8EBEAE",
+    "Text": "#1D2F29",
+    "TextSecondary": "#4E625B",
+    "Selected": "#A1D5C3"
   },
   "GroupColors": "#247A5F, #3572B2, #8A5CC2, #B25070, #95671A, #3D792D",
   "GroupColorsForTags": true,

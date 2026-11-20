@@ -281,10 +281,30 @@ public static class Appearance
     {
         if (!PanelColors.TryParse(from.PanelColor, out var surface)) return new DesignVariant(string.Empty, from.AccentColor, null);
         var (h, sat, _) = ToHsl(surface);
-        var accent = PanelColors.TryParse(from.AccentColor, out var a) ? a : surface;
-        // Hell: fast weiß mit einem Hauch des Farbtons; dunkel: tief, leicht gesättigt
-        var other = fromDark ? FromHsl(h, Math.Min(sat, 0.35) * 0.55, 0.955) : FromHsl(h, Math.Min(sat, 0.45), 0.12);
+        var hasAccent = PanelColors.TryParse(from.AccentColor, out var a);
+        // Hell: deutlich getönt im Farbton des Designs; dunkel: tief, leicht gesättigt
+        var other = fromDark ? LightSurfaceFor(h, sat, hasAccent ? a : null) : FromHsl(h, Math.Min(sat, 0.45), 0.12);
+        // Ohne eigenen Akzent tönt ein Mittelton zwischen beiden Flächen (die andere Fläche allein wäre zu kräftig)
+        var accent = hasAccent ? a : PanelColors.Blend(other, surface, 0.55);
         return new DesignVariant(other.Hex, from.AccentColor, PaletteFor(other, accent));
+    }
+
+    /// <summary>
+    /// Helle Fläche zu einer dunklen: deutlich im Farbton des Designs getönt (nicht fast weiß), dazu ein Hauch des
+    /// Akzents – so trägt auch die helle Variante die Farbe des Designs. Neutral-graue Designs bleiben neutral, außer
+    /// ihr Akzent gibt den Farbton vor.
+    /// </summary>
+    private static Rgb LightSurfaceFor(double hue, double saturation, Rgb? accent)
+    {
+        const double lightness = 0.915;
+        var (ah, asat, _) = accent is { } acc ? ToHsl(acc) : (0, 0, 0);
+        // Kaum getönte Fläche, kräftiger Akzent (Night-City: fast schwarz mit Gelb): der Akzent gibt den Farbton
+        if (saturation < 0.2 && asat >= 0.4) return FromHsl(ah, Math.Min(asat, 0.6) * 0.45, lightness);
+        if (saturation < 0.06) return FromHsl(hue, 0, 0.94); // grau bleibt grau
+        var tinted = FromHsl(hue, Math.Clamp(saturation, 0.25, 0.45), lightness);
+        // Ein Hauch Akzent nur bei verwandtem Farbton – gegenüberliegende Töne (Blau und Orange) höben sich zu Grau auf
+        var apart = Math.Abs(hue - ah);
+        return accent is { } c && asat >= 0.15 && Math.Min(apart, 1 - apart) < 0.25 ? PanelColors.Blend(tinted, c, 0.08) : tinted;
     }
 
     /// <summary>
@@ -298,11 +318,12 @@ public static class Appearance
         Rgb card, input, line, selected, text;
         if (light)
         {
-            card = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.04), white, 0.6);
-            input = PanelColors.Blend(surface, white, 0.8);
-            line = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.18), black, 0.12);
-            selected = PanelColors.Blend(surface, accent, 0.16);
-            text = PanelColors.Blend(new Rgb(0x1A, 0x1A, 0x1A), accent, 0.08);
+            // Karten heller als die Fläche, aber getönt; Linien, Auswahl und Text deutlich zum Akzent hin
+            card = PanelColors.Blend(PanelColors.Blend(surface, white, 0.55), accent, 0.06);
+            input = PanelColors.Blend(surface, white, 0.85);
+            line = PanelColors.Blend(PanelColors.Blend(surface, accent, 0.32), black, 0.10);
+            selected = PanelColors.Blend(surface, accent, 0.30);
+            text = PanelColors.Blend(new Rgb(0x1A, 0x1A, 0x1A), accent, 0.16);
         }
         else
         {

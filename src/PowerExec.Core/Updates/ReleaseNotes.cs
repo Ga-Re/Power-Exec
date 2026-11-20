@@ -8,6 +8,12 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 38, 1), L.T("Light design variants carry their color, hover zone fades in as you approach"), new[]
+        {
+            L.T("Light variants are clearly tinted in the design's color instead of almost white; lines, selection and text pick up the accent color – neutral designs stay neutral"),
+            L.T("All marketplace designs got their light variant recalculated (Mint as well); your own designs get the new light counterpart in the designer"),
+            L.T("Hover zone “Show only when the pointer is near”: the closer the mouse pointer gets, the more the strip appears – smoothly instead of all at once")
+        }),
         new ReleaseNote(new Version(0, 38, 0), L.T("Marketplace: a detail page for every item, smooth transitions, tiles that wrap neatly"), new[]
         {
             L.T("A click on a card opens its own detail page; “← Discover”, the mouse back button or Alt+← lead back – with a smooth fade and slide"),

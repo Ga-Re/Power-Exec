@@ -6,6 +6,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 using System.Windows.Threading;
 using PowerExec.Core.Config;
+using PowerExec.Core.Layout;
 using PowerExec.Desktop.Interop;
 using PowerExec.Desktop.Services;
 using PowerExec.Desktop.Infrastructure;
@@ -73,9 +74,9 @@ public sealed class EdgeTriggerWindow : Window
         _baseOpacity = strip.Opacity;
         if (settings.HotZoneAutoHide)
         {
-            // Erst beim Annähern zeigen: der Streifen ist in Ruhe unsichtbar (das Fenster löst weiter aus)
+            // Erst beim Annähern zeigen: in Ruhe unsichtbar (das Fenster löst weiter aus), je näher der Mauszeiger, desto deutlicher
             strip.Opacity = 0;
-            _nearTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _nearTimer = new DispatcherTimer { Interval = NearInterval };
             _nearTimer.Tick += (_, _) => UpdateNear();
             IsVisibleChanged += (_, _) => { if (IsVisible) _nearTimer.Start(); else _nearTimer.Stop(); };
             Closed += (_, _) => _nearTimer.Stop();
@@ -146,19 +147,32 @@ public sealed class EdgeTriggerWindow : Window
     public MonitorInfo Monitor => _monitor;
 
     private readonly DispatcherTimer? _nearTimer;
-    private bool _near;
+    /// <summary>Wie deutlich der Streifen gerade erscheinen soll (0 … 1), nach dem Abstand des Mauszeigers.</summary>
+    private double _nearness;
 
-    /// <summary>Abstand in DIP, ab dem sich die Hover-Zone zeigt.</summary>
-    private const int NearDistance = 48;
+    /// <summary>So oft wird der Abstand gemessen; dazwischen gleitet die Deckkraft (kein Stufensprung).</summary>
+    private static readonly TimeSpan NearInterval = TimeSpan.FromMilliseconds(40);
 
-    /// <summary>Mauszeiger in der Nähe? Dann den Streifen weich ein-, sonst ausblenden (solange nichts läuft).</summary>
+    /// <summary>
+    /// Abstand des Mauszeigers messen und den Streifen entsprechend deutlich zeigen (<see cref="HotZoneFade"/>):
+    /// stufenlos, je näher, desto sichtbarer. Läuft gerade etwas, pulsiert die Zone stattdessen.
+    /// </summary>
     private void UpdateNear()
     {
-        var near = ScreenService.CursorInside(CurrentRect, (int)Math.Round(NearDistance * _monitor.Scale));
-        if (near == _near) return;
-        _near = near;
-        if (_busy) return; // läuft etwas, pulsiert die Zone sichtbar
-        _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(near ? _baseOpacity : 0, Tokens.MotionFast));
+        var distance = ScreenService.CursorDistance(CurrentRect) / Math.Max(0.1, _monitor.Scale); // in DIP
+        var nearness = HotZoneFade.Visibility(distance);
+        if (Math.Abs(nearness - _nearness) < 0.01) return;
+        _nearness = nearness;
+        if (_busy) return;
+        var target = _baseOpacity * nearness;
+        if (_app.Settings.Animation == AnimationMode.Off || !SystemParameters.ClientAreaAnimation)
+        {
+            _strip.BeginAnimation(OpacityProperty, null);
+            _strip.Opacity = target;
+            return;
+        }
+        // Bis zur nächsten Messung weich nachführen (vom aktuellen Stand aus)
+        _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(target, new Duration(NearInterval + NearInterval)));
     }
 
     private bool _suspended;
@@ -173,7 +187,7 @@ public sealed class EdgeTriggerWindow : Window
         if (_busy == busy) return;
         _busy = busy;
         _strip.BeginAnimation(OpacityProperty, null);
-        if (!busy) { _strip.Opacity = _nearTimer != null && !_near ? 0 : _baseOpacity; return; }
+        if (!busy) { _strip.Opacity = _nearTimer != null ? _baseOpacity * _nearness : _baseOpacity; return; }
         if (_app.Settings.Animation == AnimationMode.Off || !SystemParameters.ClientAreaAnimation) { _strip.Opacity = 1; return; }
         _strip.BeginAnimation(OpacityProperty, new DoubleAnimation(Math.Min(_baseOpacity, 0.45), 1, TimeSpan.FromMilliseconds(900))
         {

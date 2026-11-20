@@ -30,15 +30,15 @@
   "GroupColors": "#7FB0FF, #9E8CFF, #F49AC1, #FFC27A, #7FD8A6, #6FD3E8",
   "GroupColorsForTags": true,
   "Pair": {
-    "PanelColor": "#F1F3F6",
+    "PanelColor": "#E0E6F3",
     "AccentColor": "",
     "Palette": {
-      "Card": "#F6F7F9",
-      "Input": "#FCFDFD",
-      "Line": "#B1B4BB",
-      "Text": "#1A1B1D",
-      "TextSecondary": "#5F6062",
-      "Selected": "#CED1D8"
+      "Card": "#E9EDF4",
+      "Input": "#FAFBFD",
+      "Line": "#A9B0BE",
+      "Text": "#28292D",
+      "TextSecondary": "#63656C",
+      "Selected": "#BEC6D5"
     },
     "GroupColors": "#2459B8, #5643C2, #B0326E, #A0600A, #1E7F4C, #0E7084"
   }

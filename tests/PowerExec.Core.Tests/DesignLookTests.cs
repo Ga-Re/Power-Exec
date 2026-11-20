@@ -243,5 +243,59 @@ public class DesignLookTests
         Assert.Equal(string.Empty, Appearance.Counterpart(new DesignColors("", accent, null), dark).PanelColor);
     }
 
+    [Theory]
+    [InlineData("#1B2A1F", "#8BC34A")]   // Forest
+    [InlineData("#0F2A3D", "#4FC3F7")]   // Ocean
+    [InlineData("#0D0D12", "#FCEE0A")]   // fast neutral, kräftiger Akzent: der Akzent gibt den Farbton
+    public void LightCounterpartCarriesTheDesignColor(string panel, string accent)
+    {
+        var light = Appearance.Counterpart(new DesignColors(panel, accent, Appearance.PaletteFor(Rgb(panel), Rgb(accent))), fromDark: true);
+        var surface = Rgb(light.PanelColor);
+        Assert.True(PanelColors.IsLight(surface));
+        Assert.True(Chroma(surface) >= 12, $"helle Fläche {light.PanelColor} kaum getönt");          // nicht fast weiß
+        Assert.True(Chroma(Rgb(light.Palette!.Selected)) > Chroma(surface), "Auswahl trägt den Akzent"); // Auswahl kräftiger als die Fläche
+        Assert.True(Chroma(Rgb(light.Palette.Line)) > Chroma(surface));
+    }
+
+    [Theory]
+    [InlineData("#1C1C1C")]   // Graphite
+    [InlineData("#202020")]   // Fluent-Clean (Akzent von Windows)
+    public void LightCounterpartOfNeutralDesignStaysNeutral(string panel)
+    {
+        var light = Appearance.Counterpart(new DesignColors(panel, string.Empty, null), fromDark: true);
+        Assert.True(Chroma(Rgb(light.PanelColor)) <= 2, light.PanelColor);
+        Assert.True(Chroma(Rgb(light.Palette!.Selected)) <= 2);
+        var r = Appearance.Resolve(new DesignColors(light.PanelColor, string.Empty, light.Palette), dark: false);
+        Assert.True(PanelColors.Contrast(r.Text, r.Surface) >= 7);
+    }
+
+    /// <summary>Alle Designs im Marktplatz: beide Varianten lesbar, helle Varianten farbiger Designs erkennbar getönt.</summary>
+    [Fact]
+    public void MarketplaceDesignsAreReadableAndLightVariantsAreTinted()
+    {
+        var folder = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "marketplace", "Designs");
+        foreach (var file in Directory.GetFiles(folder, "*.design.json"))
+        {
+            var d = Marketplace.ParseDesign(File.ReadAllText(file), new MarketplaceFile("Designs/" + Path.GetFileName(file), "v", MarketplaceItemType.Design));
+            var variants = new List<(DesignColors Colors, bool Dark)> { (new DesignColors(d.PanelColor, d.AccentColor, d.Palette), d.PrimaryIsDark) };
+            if (d.Pair is { } p) variants.Add((new DesignColors(p.PanelColor, p.AccentColor, p.Palette), !d.PrimaryIsDark));
+            foreach (var (colors, dark) in variants)
+            {
+                var r = Appearance.Resolve(colors, dark);
+                var name = $"{Path.GetFileName(file)} ({(dark ? "dunkel" : "hell")})";
+                Assert.True(PanelColors.Contrast(r.Text, r.Surface) >= 7, name);
+                Assert.True(PanelColors.Contrast(r.Text, r.Card) >= 7, name);
+                Assert.True(PanelColors.Contrast(r.TextSecondary, r.Surface) >= 4.5, name);
+                if (colors.AccentColor.Length > 0) Assert.True(PanelColors.Contrast(r.Accent, r.Surface) >= 3, name);
+                // Helle Variante eines farbigen Designs (eigener Akzent, nicht „Paper“): Fläche getönt, nicht fast weiß
+                if (!dark && colors.AccentColor.Length > 0 && !d.Name.Equals("Paper", StringComparison.Ordinal))
+                    Assert.True(Chroma(r.Surface) >= 8, $"{name}: Fläche {r.Surface.Hex} kaum getönt");
+            }
+        }
+    }
+
+    /// <summary>Wie bunt eine Farbe ist: Abstand zwischen größtem und kleinstem Kanal (0 = grau).</summary>
+    private static int Chroma(Rgb c) => Math.Max(c.R, Math.Max(c.G, c.B)) - Math.Min(c.R, Math.Min(c.G, c.B));
+
     private static Rgb Rgb(string hex) => PanelColors.TryParse(hex, out var c) ? c : throw new ArgumentException(hex);
 }

@@ -33,15 +33,15 @@
   "FontFamily": "Bahnschrift",
   "MonoFontFamily": "Cascadia Code",
   "Pair": {
-    "PanelColor": "#F1F4F6",
+    "PanelColor": "#CEEBF4",
     "AccentColor": "#00E5FF",
     "Palette": {
-      "Card": "#F5FAFB",
-      "Input": "#FCFDFD",
-      "Line": "#AED4DA",
-      "Text": "#182A2C",
-      "TextSecondary": "#5D6B6D",
-      "Selected": "#CAF2F7"
+      "Card": "#DBF5FA",
+      "Input": "#F8FCFD",
+      "Line": "#7ED2DF",
+      "Text": "#163A3F",
+      "TextSecondary": "#486A70",
+      "Selected": "#90E9F7"
     },
     "GroupColors": "#00727F, #A25300, #3A5FA8, #1E5AC2, #09755D, #7F6500"
   }
