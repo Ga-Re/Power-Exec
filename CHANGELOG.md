@@ -2,6 +2,11 @@
 
 Erzeugt aus `src/PowerExec.Core/Updates/ReleaseNotes.cs` (`dotnet run --project tools/Changelog`) – nicht von Hand bearbeiten.
 
+## 0.39.1 – Sanfte Übergänge im Eintragsfenster
+
+- Presets klappen weich auf und zu, Abschnitte blenden beim Wechsel ein, Hinweise und Rechnerfelder gleiten herein statt zu springen
+- Scripte aus Ordnern haben jetzt auch „Bearbeiten …“ im Kontextmenü (F2)
+
 ## 0.39.0 – Übersichtlicheres Eintragsfenster, Profile heißen jetzt Presets
 
 - Das Eintragsfenster hat links eine Navigation statt zwei Reitern – Allgemein, Parameter, Variablen, Start, Presets und Verhalten, jeweils nur, wo die Art sie braucht

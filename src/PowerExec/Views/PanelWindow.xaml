@@ -239,8 +239,9 @@
             <MenuItem Header="{l:T 'Remote …'}" Command="{Binding RunRemoteCommand}" Visibility="{Binding IsPowerShell, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE7F4;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="{l:T 'Manage profiles …'}" Command="{Binding ManageProfilesCommand}">
-                <MenuItem.Icon><TextBlock Text="&#xE713;" Style="{StaticResource Icon}"/></MenuItem.Icon>
+            <MenuItem Header="{l:T 'Edit …'}" Command="{Binding ManageProfilesCommand}" InputGestureText="F2"
+                      ToolTip="{l:T 'Name, parameters, start, presets and behavior of this entry'}">
+                <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
             <MenuItem Header="{l:T 'Schedule …'}" Command="{Binding ScheduleCommand}" ToolTip="{l:T 'Run once, daily or at an interval'}">
@@ -278,9 +279,6 @@
                 <MenuItem.Icon><TextBlock Text="&#xE8E6;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>
             <Separator/>
-            <MenuItem Header="{l:T 'Edit …'}" Command="{Binding EditCustomCommand}" Visibility="{Binding IsCustom, Converter={StaticResource Vis}}">
-                <MenuItem.Icon><TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/></MenuItem.Icon>
-            </MenuItem>
             <MenuItem Header="{l:T 'Duplicate …'}" Command="{Binding DuplicateCommand}" Visibility="{Binding CanDuplicate, Converter={StaticResource Vis}}">
                 <MenuItem.Icon><TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/></MenuItem.Icon>
             </MenuItem>

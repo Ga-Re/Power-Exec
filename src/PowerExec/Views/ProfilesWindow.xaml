@@ -165,8 +165,9 @@
                                          IsChecked="{Binding RunMode, Converter={StaticResource Eq}, ConverterParameter=other}"/>
                         </StackPanel>
                     </Border>
-                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{l:T 'For a different user, Power-Exec asks for the sign-in at every launch – it is never saved.'}"
-                               Visibility="{Binding RunMode, Converter={StaticResource EqVis}, ConverterParameter=other}"/>
+                    <c:CollapsePanel Animate="True" Fade="True" IsExpanded="{Binding RunMode, Mode=OneWay, Converter={StaticResource Eq}, ConverterParameter=other}">
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{l:T 'For a different user, Power-Exec asks for the sign-in at every launch – it is never saved.'}"/>
+                    </c:CollapsePanel>
                 </StackPanel>
                 <StackPanel Visibility="{Binding DataContext.ShowPsOptions, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
                     <TextBlock Text="{l:T 'Where'}" Style="{StaticResource FieldLabel}"/>
@@ -177,7 +178,9 @@
                             <RadioButton Style="{StaticResource Segment}" Width="150" Content="{l:T 'Choose at launch'}" IsChecked="{Binding Target, Converter={StaticResource Eq}, ConverterParameter=Ask}"/>
                         </StackPanel>
                     </Border>
-                    <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0" Visibility="{Binding IsFixedTarget, Converter={StaticResource Vis}}"/>
+                    <c:CollapsePanel Animate="True" Fade="True" IsExpanded="{Binding IsFixedTarget, Mode=OneWay}">
+                        <c:MachineBox Text="{Binding Machines, UpdateSourceTrigger=PropertyChanged}" Margin="0,8,0,0"/>
+                    </c:CollapsePanel>
                     <TextBlock Text="{l:T 'PowerShell version'}" Style="{StaticResource FieldLabel}"/>
                     <ComboBox Width="230" HorizontalAlignment="Left" DisplayMemberPath="Value" SelectedValuePath="Key" SelectedValue="{Binding Engine}"
                               ItemsSource="{Binding DataContext.Engines, RelativeSource={RelativeSource AncestorType=Window}}" AutomationProperties.Name="{l:T 'PowerShell version'}"/>
@@ -280,7 +283,7 @@
 
         <!-- Eine Abweichung eines Presets (PresetValueRow): Bezeichnung, „statt …“, ×, darunter der Editor -->
         <DataTemplate x:Key="PresetRow">
-            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="0,10,0,6">
+            <Border BorderBrush="{DynamicResource Border.Default}" BorderThickness="0,1,0,0" Padding="0,10,0,6" infra:NavigationMotion.Appear="True">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,6">
                         <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Icon}" Width="28" Height="28" Command="{Binding RemoveCommand}"
@@ -329,13 +332,16 @@
                                     VerticalAlignment="Center" Visibility="{Binding HasOwnValues, Converter={StaticResource Vis}}" ToolTip="{Binding InheritText}">
                                 <TextBlock Text="{Binding OwnCount}" FontSize="{StaticResource Font.Caption}" Foreground="{DynamicResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock x:Name="Arrow" DockPanel.Dock="Left" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
-                                       VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock DockPanel.Dock="Left" Text="&#xE76C;" Style="{StaticResource Icon}" FontSize="{StaticResource Icon.S}" Foreground="{DynamicResource Text.Secondary}"
+                                       VerticalAlignment="Center" Margin="0,0,12,0" RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform><RotateTransform x:Name="ArrowTurn"/></TextBlock.RenderTransform>
+                            </TextBlock>
                             <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontWeight="SemiBold" Width="160" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding PresetSummary}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         </DockPanel>
                     </Button>
-                    <StackPanel x:Name="Body" Visibility="Collapsed" Margin="16,0,16,14">
+                    <c:CollapsePanel Animate="True" Fade="True" IsExpanded="{Binding IsSelected, Mode=OneWay}">
+                    <StackPanel Margin="16,0,16,14">
                         <DockPanel Margin="0,4,0,10">
                             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Bottom">
                                 <ui:Button Style="{StaticResource Btn.Standard}" Command="{Binding TestCommand}" Margin="8,0,0,0" ToolTip="{l:T 'Start with this preset once (not recorded)'}">
@@ -359,15 +365,16 @@
                         </DockPanel>
 
                         <!-- Standard wurde nach dem Anpassen geändert -->
-                        <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
-                                Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}"
-                                Visibility="{Binding HasStandardChanged, Converter={StaticResource Vis}}">
-                            <DockPanel>
-                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep mine'}" Command="{Binding DismissStandardChangeCommand}" Margin="8,0,0,0"/>
-                                <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Take over Standard'}" Command="{Binding AdoptStandardCommand}" Margin="8,0,0,0"/>
-                                <TextBlock Text="{Binding StandardChangedText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                            </DockPanel>
-                        </Border>
+                        <c:CollapsePanel Animate="True" Fade="True" IsExpanded="{Binding HasStandardChanged, Mode=OneWay}">
+                            <Border Padding="12,8" Margin="0,0,0,8" CornerRadius="{DynamicResource Radius.Card}" BorderThickness="1"
+                                    Background="{DynamicResource Status.Warning.Bg}" BorderBrush="{DynamicResource Status.Warning.Border}">
+                                <DockPanel>
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Keep mine'}" Command="{Binding DismissStandardChangeCommand}" Margin="8,0,0,0"/>
+                                    <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T 'Take over Standard'}" Command="{Binding AdoptStandardCommand}" Margin="8,0,0,0"/>
+                                    <TextBlock Text="{Binding StandardChangedText}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                        </c:CollapsePanel>
 
                         <TextBlock Text="{l:T 'No deviations yet – the preset starts exactly like ★ Standard.'}" Style="{StaticResource Caption}" Margin="0,0,0,8"
                                    Visibility="{Binding HasOwnRows, Converter={StaticResource Vis}, ConverterParameter=invert}"/>
@@ -386,13 +393,30 @@
                             </ui:Button.ContextMenu>
                         </ui:Button>
                     </StackPanel>
+                    </c:CollapsePanel>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                    <Setter TargetName="Body" Property="Visibility" Value="Visible"/>
-                    <Setter TargetName="Arrow" Property="Text" Value="&#xE70D;"/>
                     <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="ArrowTurn" Storyboard.TargetProperty="Angle" To="90" Duration="0:0:0.167">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="ArrowTurn" Storyboard.TargetProperty="Angle" To="0" Duration="0:0:0.167">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -521,7 +545,7 @@
                 <Grid Margin="24,18,24,8">
 
                     <!-- Allgemein: Ziel bzw. Datei, Schlagworte, Notiz -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=general}">
                         <Border Style="{StaticResource SectionCard}" Visibility="{Binding HasEntry, Converter={StaticResource Vis}}">
                             <v:CustomEntryForm DataContext="{Binding Entry}"/>
                         </Border>
@@ -575,7 +599,7 @@
                     </StackPanel>
 
                     <!-- Parameter -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=parameters}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=parameters}">
                         <TextBlock Text="{l:T 'Parameters'}" Style="{StaticResource PageTitle}"/>
                         <TextBlock Text="{l:T 'Values of ★ Standard. Fixed = always passed · Prefilled = editable at launch · Ask = field stays empty. Presets change single values.'}" Style="{StaticResource PageHint}"/>
                         <Border Style="{StaticResource SectionCard}" Padding="18,4">
@@ -587,7 +611,7 @@
                     </StackPanel>
 
                     <!-- Variablen -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=variables}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=variables}">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Standard}" Content="{l:T '+ Variable'}" Command="{Binding DefaultProfile.AddVariableCommand}"
                                        VerticalAlignment="Top" ToolTip="{l:T 'Variable only for this entry, used as \{\{$Name\}\}'}"/>
@@ -605,7 +629,7 @@
                     </StackPanel>
 
                     <!-- Start bzw. Öffnen mit -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=start}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=start}">
                         <TextBlock Text="{Binding StartSectionLabel}" Style="{StaticResource PageTitle}"/>
                         <TextBlock Text="{l:T 'How ★ Standard starts. Presets can change single values.'}" Style="{StaticResource PageHint}"/>
                         <Border Style="{StaticResource SectionCard}" Visibility="{Binding ShowRunAsSection, Converter={StaticResource Vis}}">
@@ -626,7 +650,7 @@
                     </StackPanel>
 
                     <!-- Presets -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=presets}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=presets}">
                         <DockPanel>
                             <ui:Button DockPanel.Dock="Right" Style="{StaticResource Btn.Accent}" Content="{l:T '+ Preset'}" Command="{Binding AddCommand}" VerticalAlignment="Top"/>
                             <TextBlock Text="{l:T 'Presets'}" Style="{StaticResource PageTitle}"/>
@@ -647,7 +671,7 @@
                     </StackPanel>
 
                     <!-- Verhalten -->
-                    <StackPanel Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
+                    <StackPanel infra:NavigationMotion.Appear="True" Visibility="{Binding Section, Converter={StaticResource EqVis}, ConverterParameter=behavior}">
                         <TextBlock Text="{l:T 'Behavior'}" Style="{StaticResource PageTitle}"/>
                         <TextBlock Text="{l:T 'What happens on a click and at launch.'}" Style="{StaticResource PageHint}"/>
                         <Border Style="{StaticResource SectionCard}">
