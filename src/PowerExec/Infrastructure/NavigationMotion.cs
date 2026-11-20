@@ -99,6 +99,42 @@ public static class NavigationMotion
     }
 
     /// <summary>
+    /// Element blendet weich ein (leicht von unten), sobald es sichtbar wird – z. B. ein Abschnitt nach dem Wechsel in der
+    /// Navigation oder eine neue Karte in einer Liste. Ohne Animationen: sofort.
+    /// </summary>
+    public static readonly DependencyProperty AppearProperty = DependencyProperty.RegisterAttached(
+        "Appear", typeof(bool), typeof(NavigationMotion), new PropertyMetadata(false, OnAppearChanged));
+
+    public static bool GetAppear(DependencyObject element) => (bool)element.GetValue(AppearProperty);
+    public static void SetAppear(DependencyObject element, bool value) => element.SetValue(AppearProperty, value);
+
+    private static void OnAppearChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not FrameworkElement element) return;
+        element.IsVisibleChanged -= OnAppearVisible;
+        element.Loaded -= OnAppearLoaded;
+        if (!(bool)e.NewValue) return;
+        element.IsVisibleChanged += OnAppearVisible;
+        element.Loaded += OnAppearLoaded;
+    }
+
+    private static void OnAppearVisible(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true && sender is FrameworkElement { IsLoaded: true } element) Appear(element);
+    }
+
+    private static void OnAppearLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { IsVisible: true } element) Appear(element);
+    }
+
+    private static void Appear(UIElement element)
+    {
+        if (!Enabled) return;
+        FadeIn(element, Tokens.MotionPageIn, TimeSpan.Zero, 0, StaggerShift);
+    }
+
+    /// <summary>
     /// Deckkraft, die ein Element weich ansteuert (<see cref="Tokens.MotionFast"/>) – für Hervorhebungen per Trigger,
     /// z. B. die gewählte Variante hell/dunkel. Ohne Animationen oder solange das Element nicht zu sehen ist: sofort.
     /// </summary>

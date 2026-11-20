@@ -59,6 +59,12 @@ public sealed class CollapsePanel : Decorator
 
     public bool IsExpanded { get => (bool)GetValue(IsExpandedProperty); set => SetValue(IsExpandedProperty, value); }
     public bool Animate { get => (bool)GetValue(AnimateProperty); set => SetValue(AnimateProperty, value); }
+
+    public static readonly DependencyProperty FadeProperty = DependencyProperty.Register(
+        nameof(Fade), typeof(bool), typeof(CollapsePanel), new PropertyMetadata(false));
+
+    /// <summary>Inhalt beim Auf- und Zuklappen mit ein- bzw. ausblenden (für kleine Bereiche; große Listen nur in der Höhe).</summary>
+    public bool Fade { get => (bool)GetValue(FadeProperty); set => SetValue(FadeProperty, value); }
     public double Progress { get => (double)GetValue(ProgressProperty); set => SetValue(ProgressProperty, value); }
 
     public static TimeSpan Duration => Tokens.MotionFast;
@@ -85,10 +91,25 @@ public sealed class CollapsePanel : Decorator
         {
             BeginAnimation(ProgressProperty, null);
             Progress = expanded ? 1 : 0;
-            if (Child != null) Child.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            if (Child != null)
+            {
+                Child.BeginAnimation(OpacityProperty, null);
+                Child.Opacity = 1;
+                Child.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            }
             return;
         }
         if (Child != null) Child.Visibility = Visibility.Visible;
+        if (Child != null && Fade)
+        {
+            // Inhalt blendet mit: beim Aufklappen etwas verzögert hell, beim Zuklappen zuerst aus
+            Child.BeginAnimation(OpacityProperty, new DoubleAnimation(expanded ? 0 : Child.Opacity, expanded ? 1 : 0, Duration)
+            {
+                EasingFunction = new CubicEase { EasingMode = expanded ? EasingMode.EaseIn : EasingMode.EaseOut },
+                FillBehavior = FillBehavior.Stop
+            });
+            Child.Opacity = expanded ? 1 : 0;
+        }
         var from = expanded ? 0.0 : Progress;
         var anim = new DoubleAnimation(from, expanded ? 1 : 0, Duration)
         {
@@ -100,7 +121,11 @@ public sealed class CollapsePanel : Decorator
             if (IsExpanded != expanded) return;
             BeginAnimation(ProgressProperty, null);
             Progress = expanded ? 1 : 0;
-            if (!expanded && Child != null) Child.Visibility = Visibility.Collapsed;
+            if (Child != null)
+            {
+                Child.Opacity = 1;
+                if (!expanded) Child.Visibility = Visibility.Collapsed;
+            }
         };
         BeginAnimation(ProgressProperty, anim);
     }

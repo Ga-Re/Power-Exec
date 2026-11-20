@@ -8,6 +8,11 @@ public static class ReleaseNotes
 {
     public static readonly IReadOnlyList<ReleaseNote> All = new[]
     {
+        new ReleaseNote(new Version(0, 39, 1), L.T("Smooth transitions in the entry window"), new[]
+        {
+            L.T("Presets fold open and closed smoothly, sections fade in when switching, hints and computer fields slide in instead of jumping"),
+            L.T("Scripts from folders now also have “Edit …” in the context menu (F2)")
+        }),
         new ReleaseNote(new Version(0, 39, 0), L.T("Clearer entry window, profiles are now presets"), new[]
         {
             L.T("The entry window has a navigation on the left instead of two tabs – General, Parameters, Variables, Start, Presets and Behavior, each only where the type needs it"),
