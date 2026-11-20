@@ -8,3 +8,6 @@ publish/
 .vscode/
 TestResults/
 *.swp
+
+# Claude Code (persönliche Einstellungen)
+.claude/settings.local.json
